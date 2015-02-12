@@ -1,0 +1,6421 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>i3 Code Reviews</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" media="screen" href="http://i3wm.org/css/style.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="/public/stylesheets/main.css">
+    <link rel="shortcut icon" type="image/png" href="http://i3wm.org/favicon.png">
+    <script src="/public/js/jquery-1.9.0.min.js" type="text/javascript" charset="utf-8"></script>
+	<link href='http://fonts.googleapis.com/css?family=Ubuntu+Mono' rel='stylesheet' type='text/css'>
+    
+    
+  </head>
+  <body>
+
+
+<div id="main">
+	<a href="/"><h1 id="title">i3 - improved tiling WM</h1></a>
+				<ul id="nav">
+						<li><a style="border-bottom: 2px solid #fff" href="/">Reviews</a></li>
+						<li><a href="http://bugs.i3wm.org/">Bugs</a></li>
+				</ul>
+<br style="clear: both">
+
+<div id="content">
+
+<h1>Submit a patch for i3</h1>
+
+<p>We moved to GitHub: <a href="https://github.com/i3">https://github.com/i3</a></p>
+
+
+
+<h1 style="margin-top: 2em">Latest Reviews</h1>
+
+<table width="100%">
+<tr>
+<th>Subject</th>
+<th>Author</th>
+<th>Status</th>
+<th>Submitted</th>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/709">Support _NET_WM_MOVERESIZE</a>
+</td>
+<td class="pauthor">Lukas K</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2015-02-01 22:09:12 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/708">i3bar: Fix &#34;off by one&#34;-error when rendering workspace buttons in i3bar</a>
+</td>
+<td class="pauthor">Øystein Dale</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2015-01-31 16:40:56 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/707">Support _NET_WM_MOVERESIZE</a>
+</td>
+<td class="pauthor">Lukas K</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2015-01-30 17:14:06 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/706">Add mouse binding pointer position configuration</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2015-01-30 01:53:34 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/705">Suppport _NET_WM_MOVERESIZE, simplified resizing</a>
+</td>
+<td class="pauthor">Lukas K</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2015-01-27 22:12:05 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/704">Suppport _NET_WM_MOVERESIZE completely</a>
+</td>
+<td class="pauthor">Lukas K</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2015-01-25 20:44:29 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/703">i3bar: suspend the child when bars are fully obscured</a>
+</td>
+<td class="pauthor">Alexander Monakov</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2015-01-25 19:16:44 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/702">Add lxterminal to i3-sensible-terminal</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2015-01-25 02:53:59 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/701">i3bar: suspend the child when bars are fully obscured</a>
+</td>
+<td class="pauthor">Alexander Monakov</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2015-01-18 21:32:04 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/700">Add &#39;mark&#39; as allowed key to i3-save-tree output</a>
+</td>
+<td class="pauthor">Marein Konings</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2015-01-18 19:49:07 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/699">Suppport _NET_WM_MOVERESIZE</a>
+</td>
+<td class="pauthor">Lukas K</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2015-01-18 14:09:55 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/698">i3bar: suspend the child when bars are fully obscured</a>
+</td>
+<td class="pauthor">Alexander Monakov</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2015-01-08 22:20:27 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/697">Inset the urgent background of a status block for consistency with workspace buttons. fixes #1423</a>
+</td>
+<td class="pauthor">Ingo Bürk</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-12-24 20:49:18 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/696">Bugfix: Render popups during global fullscreen</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-12-21 16:16:42 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/695">Fix start_application() doc about which shell is used</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-12-21 00:40:37 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/694">Include workspace con in workspace event</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-12-20 04:46:23 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/693">Avoid use of uninitialized variable in print_battery_info</a>
+</td>
+<td class="pauthor">Alexander Monakov</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-12-18 15:37:02 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/692">Use nl80211 to retrieve wireless stats on Linux</a>
+</td>
+<td class="pauthor">Alexander Monakov</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-12-12 21:37:28 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/691">Use nl80211 to retrieve wireless stats on Linux</a>
+</td>
+<td class="pauthor">Alexander Monakov</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-12-11 20:57:10 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/690">Use nl80211 to retrieve wireless stats on Linux</a>
+</td>
+<td class="pauthor">Alexander Monakov</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-12-07 23:20:44 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/689">Allocate and expose per-instance pointers for plugins</a>
+</td>
+<td class="pauthor">Alexander Monakov</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-12-07 23:20:28 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/688">Improve error message when a full_text property is missing</a>
+</td>
+<td class="pauthor">Ingo Bürk</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-12-07 18:52:15 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/687">Extend the fullscreen command</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-12-07 17:43:49 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/686">Prevent workspace change during global fullscreen</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-12-07 17:43:20 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/685">Use nl80211 to retrieve wireless stats on Linux (#1082)</a>
+</td>
+<td class="pauthor">Alexander Monakov</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-12-07 15:20:01 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/684">Improve error message when a full_text property is missing</a>
+</td>
+<td class="pauthor">Ingo Bürk</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-12-03 19:11:59 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/683">#1403: ensure align = left is the default and update documentation accordingly</a>
+</td>
+<td class="pauthor">Ingo Bürk</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-12-02 20:53:03 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/682">i3bar: Respect the urgency flag on status blocks by drawing urgent blocks with the same settings as an urgent workspace.</a>
+</td>
+<td class="pauthor">Ingo Bürk</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-12-02 17:33:13 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/681">i3status: Support %frequency for wireless interfaces</a>
+</td>
+<td class="pauthor">Tuomas Tynkkynen</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-12-01 16:46:16 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/680">add deco_rect property to con in ipc response</a>
+</td>
+<td class="pauthor">cornerman</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-11-29 16:53:02 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/679">Updated battery info to display colors depending on state</a>
+</td>
+<td class="pauthor">alfonzo1955</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-11-28 17:47:12 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/678">add deco_rect property to con in ipc response</a>
+</td>
+<td class="pauthor">cornerman</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-11-27 15:23:07 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/677">Added bitrate_format options to wireless configuration block</a>
+</td>
+<td class="pauthor">Enrico Carlesso</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-11-25 10:45:58 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/676">Added bitrate_format options to wireless configuration block</a>
+</td>
+<td class="pauthor">Enrico Carlesso</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-11-25 10:39:03 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/675">Added termite to default terminals</a>
+</td>
+<td class="pauthor">smlb</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-11-23 16:53:19 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/674">add setting decoration colors for specific windows</a>
+</td>
+<td class="pauthor">Lukas</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-11-22 23:39:03 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/673">Added bitrate_format options to wireless configuration block</a>
+</td>
+<td class="pauthor">Enrico Carlesso</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-11-21 21:08:03 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/672">Handle _NET_CLOSE_WINDOW client message requests</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-11-17 02:12:55 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/671">Document new maildir support in man page</a>
+</td>
+<td class="pauthor">Timo Buhrmester</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-11-16 23:18:45 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/670">Add support for mail notification for local maildirs</a>
+</td>
+<td class="pauthor">Timo Buhrmester</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-11-16 23:18:13 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/669">add deco_rect property to con in ipc response</a>
+</td>
+<td class="pauthor">cornerman</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-11-16 21:09:28 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/668">bugfix: copy binding before run</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-11-10 05:08:12 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/667">Bugfix: reset last_timestamp for each event</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-11-07 00:39:17 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/666">added --verification-script entry to manpage</a>
+</td>
+<td class="pauthor">Michael Ensslin</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-11-05 20:18:26 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/665">added --verification-script option</a>
+</td>
+<td class="pauthor">Michael Ensslin</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-11-05 20:17:59 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/664">i3status: external command support</a>
+</td>
+<td class="pauthor">Christoph Hoopmann</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-10-29 13:03:33 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/663">Extend the fullscreen command</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-10-26 18:53:10 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/662">Add one more sensible terminal: x-terminal-emulator, it is provided by  default on all debian-like systems.</a>
+</td>
+<td class="pauthor">Han Boetes</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-10-24 17:27:09 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/661">Makefile.PL: Add Inline::C dependency</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-10-22 12:24:17 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/660">t/234-layout-restore-output: Remove unused import</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-10-22 12:24:04 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/659">Makefile.PL: Add Inline::C and List::MoreUtils</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-10-21 23:09:51 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/658">Add option to center image</a>
+</td>
+<td class="pauthor">Romuald Brunet</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-10-21 18:13:01 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/657">Add man page for center image</a>
+</td>
+<td class="pauthor">Romuald Brunet</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-10-21 18:02:16 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/656">First draft to center the given image</a>
+</td>
+<td class="pauthor">Romuald Brunet</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-10-21 17:47:43 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/655">Ignore password validation is pam is in wrong state</a>
+</td>
+<td class="pauthor">Neodyblue</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-10-13 09:41:28 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/654">Created three individual Strings for each battery status (charging, dicharching, full)</a>
+</td>
+<td class="pauthor">Cyril Andreatta</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-10-07 14:23:01 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/653">Bugfix: check symbol for NULL in binding json dump</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-10-05 18:52:30 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/652">Testcases: rename StartXDummy to StartXServer</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-10-04 19:04:21 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/651">Implement the ipc &#39;binding&#39; event</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-10-02 23:06:09 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/650">Implement the ipc &#39;binding&#39; event</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-10-02 21:41:56 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/649">Testcases: Use Xephyr instead of XDummy</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-10-01 23:29:27 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/648">Testcases: Use Xephyr instead of XDummy</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-09-30 22:05:55 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/647">test 510: Use workspace assignments</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-09-29 01:16:28 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/646">Don&#39;t draw borders wider than actual width</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-09-25 19:13:11 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/645">Created three individual Strings for each battery status (charging, dicharching, full)</a>
+</td>
+<td class="pauthor">Cyril Andreatta</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-09-22 09:19:05 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/644">IPC: set ws reply &#34;num&#34; member to -1 when named</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-09-22 05:18:34 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/643">Bugfix: do not require string param for `nop` cmd</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-09-22 00:18:36 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/642">Do not resend focus on click</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-09-20 21:25:29 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/641">Add a list of dev packages for easy dev env setup</a>
+</td>
+<td class="pauthor">Vytautas Šaltenis</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-09-09 17:44:29 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/640">i3-msg: support SUBSCRIBE message type</a>
+</td>
+<td class="pauthor">Vivien Didelot</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-09-05 22:22:28 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/639">Implemented configurable scratchpad size.</a>
+</td>
+<td class="pauthor">Matthias Fulz</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-08-29 07:08:59 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/638">Fix battery indicator on systems without POWER_SUPPLY_VOLTAGE_NOW.</a>
+</td>
+<td class="pauthor">Klemen Košir</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-08-25 17:07:22 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/637">implemented logging the number of failed attempts</a>
+</td>
+<td class="pauthor">koebi</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-08-14 17:26:41 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/636">Allow to validate the config file without X.</a>
+</td>
+<td class="pauthor">aszlig</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-08-08 16:15:52 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/635">Fix Dragonfly BSD CPU temperature gauge</a>
+</td>
+<td class="pauthor">Robin Hahling</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-08-04 13:03:39 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/634">Draw borders not wider than specified width</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-08-03 13:42:26 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/633">Align lower line of bar decoration to border width</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-08-02 12:59:14 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/632">Raise floating windows on `focus [direction]`</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-07-28 02:38:13 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/631">Command `focus [direc]` raises floating windows</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-07-27 03:50:08 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/630">implemented logging the number of failed attempts</a>
+</td>
+<td class="pauthor">koebi</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-07-24 20:34:52 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/629">Add file_contents module to print arbitrary file data.</a>
+</td>
+<td class="pauthor">Luke Heberling</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-07-19 20:43:45 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/628">Add file_contents module to print arbitrary file data.</a>
+</td>
+<td class="pauthor">Luke Heberling</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-07-19 20:34:46 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/627">Add file_contents module to print arbitrary file data.</a>
+</td>
+<td class="pauthor">Luke Heberling</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-07-19 20:16:04 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/626">Handle WM_CLASS changes</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-07-12 02:25:28 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/625">Wait for the child process to surface the exit status.</a>
+</td>
+<td class="pauthor">Wael M. Nasreddine</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-07-11 19:37:40 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/624">Always explicitly set border widths on manage</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-07-08 01:07:45 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/623">bugfix: default floating border regression</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-07-07 22:50:00 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/622">Add testcase for EWMH desktop viewport</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-07-06 21:29:18 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/621">Add link to git repository in hacking docs</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-07-05 14:39:34 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/620">Add testcase for EWMH desktop names</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-07-05 13:59:51 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/619">i3bar: implement custom mouse wheel commands</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-07-04 09:54:10 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/618">Handle EWMH requests to change current desktop</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-07-04 09:41:51 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/617">Handle EWMH requests to change current desktop</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-07-02 04:52:36 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/616">Use FREE macro for freeing colors</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-07-02 03:19:13 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/615">Make command `move absolute position [position]` work with criteria</a>
+</td>
+<td class="pauthor">Jesse Luehrs</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-07-02 01:31:37 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/614">Make absolute floating move work with criteria</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-07-01 06:14:36 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/613">Bugfix: _NET_SUPPORTED property fixes</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-07-01 00:42:09 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/612">Explicitly set current border width when BS_PIXEL</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-28 01:24:49 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/611">Bugfix: _NET_SUPPORTED property fixes</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-06-27 22:09:31 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/610">Bugfix: _NET_SUPPORTED property corruption</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-06-26 19:36:13 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/609">i3bar: implement custom mouse wheel commands</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-06-25 22:44:44 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/608">Bugfix: missed case for decoration rerender</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-24 21:27:33 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/607">Implement the window::urgent event</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-23 21:50:16 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/606">Implement EWMH desktop names</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-23 21:46:35 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/605">Bugfix: don&#39;t focus unmapped container on manage</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-23 21:26:26 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/604">Bugfix: don&#39;t focus unmapped container on manage</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-06-23 19:06:55 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/603">feature: implement ewmh desktop viewport property</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-22 19:22:27 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/602">Workspace command number selection</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-22 16:29:28 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/601">Consistently parse workspace numbers</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-22 15:14:14 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/600">Implement the window::urgent event</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-06-20 12:33:50 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/599">Implement the window::floating event</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-20 11:45:43 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/598">Consider motif border for floating geometry</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-20 11:30:06 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/597">Cross-output focus focus floating exception</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-20 09:20:27 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/596">Consistently set focus across outputs</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-06-20 08:04:47 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/595">Implement EWMH desktop names</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-06-19 16:02:47 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/594">default config: add mouse bindings</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-06-19 12:19:20 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/593">Make command `move [direction]` work with criteria</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-19 12:11:43 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/592">Implement the window::move event</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-19 08:59:30 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/591">Implement the window::close event</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-19 07:18:46 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/590">Implement the ipc &#39;binding&#39; event</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-06-18 12:04:06 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/589">Implement the window::urgent event</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-06-18 11:42:07 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/588">Handle WM_CHANGE_STATE requests for iconic state</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-18 08:23:46 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/587">Implement the ipc window::floating event</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-06-18 05:39:27 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/586">Feature: implement mouse bindings</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-17 13:35:05 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/585">bugfix: floating enable overcorrection</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-06-17 08:36:05 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/584">bugfix: don&#39;t set input focus if not accepted</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-17 06:56:30 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/583">Implement EWMH number of desktops property</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-16 06:53:46 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/582">bugfix: unneeded render on map request</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-16 06:35:39 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/581">bugfix: unneeded render on unmap</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-16 06:32:26 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/580">Feature: implement mouse bindings</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-06-16 03:32:05 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/579">Bugfix: cross-output focus should focus floating</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-06-15 10:21:48 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/578">userguide: document exit confirmation dialog</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-15 04:24:08 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/577">default config: bar position top</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-06-15 04:04:06 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/576">docs: fix ipc library list formatting</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-14 00:07:12 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/575">default config: use `set` for directions</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-06-12 23:38:31 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/574">default config: use `set` for directions</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-12 23:38:29 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/573">Bugfix: Set input focus with last timestamp</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-12 05:37:31 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/572">Bugfix: Typo in i3.xsession.desktop TryExec rule.</a>
+</td>
+<td class="pauthor">Holger Langenau</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-11 10:38:19 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/571">Bugfix: prevent unneeded render on pointer enter</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-11 00:35:13 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/570">Allow i3-input to be set a name with -n option.</a>
+</td>
+<td class="pauthor">Harri Montonen</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-06-10 16:40:47 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/569">Use XCB_BUTTON_INDEX defines for mouse buttons</a>
+</td>
+<td class="pauthor">Campbell Barton</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-08 07:15:33 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/568">Clarify color_separator relation to output_format</a>
+</td>
+<td class="pauthor">Bas Pape</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-07 13:52:28 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/567">Don&#39;t ELOG ipc EOF</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-07 02:17:55 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/566">adding window event for urgency</a>
+</td>
+<td class="pauthor">Anders Aagaard</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-06-06 17:33:12 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/565">Mod i3.xsession.desktop for autostart Ubuntu 14.04</a>
+</td>
+<td class="pauthor">Matthias Thubauville</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-06-03 06:42:10 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/564">Feature: mouse bindings over container decorations</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-06-01 17:07:26 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/563">Set EWMH active window to None when none has focus</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-05-31 16:09:13 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/562">Add abstraction for running a binding</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-05-31 15:03:16 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/561">Set EWMH active window to None when none has focus</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-05-29 17:17:30 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/560">Refactor parse_command</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-05-28 06:51:15 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/559">event for window focus changes</a>
+</td>
+<td class="pauthor">andaagar</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-05-27 17:40:02 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/558">commands.c yajl macros allow NULL json_gen</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-05-23 10:02:04 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/557">Add configuration option for disabling mouse warping</a>
+</td>
+<td class="pauthor">Atte Peltomaki</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-05-21 10:01:14 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/556">Abstract wm event sending to wm_events.[ch]</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-05-18 10:01:44 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/555">Bugfix: double X render on manage</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-05-18 07:16:31 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/554">Fix test 517</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-05-18 06:01:14 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/553">Change the names of parser result structs</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-05-18 04:49:05 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/552">commands.c yajl macros allow NULL</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-05-18 04:48:49 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/551">Feature: Workspace assignment by number</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-05-18 03:40:11 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/550">Add configuration option for disabling mouse warping</a>
+</td>
+<td class="pauthor">Atte Peltomaki</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-05-16 17:48:03 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/549">Add configuration option for disabling mouse warping</a>
+</td>
+<td class="pauthor">Atte Peltomaki</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-05-16 16:57:17 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/548">Add configuration option for disabling mouse warping</a>
+</td>
+<td class="pauthor">Atte Peltomaki</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-05-16 16:53:13 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/547">Separate border width for floating windows</a>
+</td>
+<td class="pauthor">Aleksi Blinnikka</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-05-12 11:45:09 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/546">&#34;somewhen&#34; -&gt; &#34;some time&#34; in i3-config-wizard(1)</a>
+</td>
+<td class="pauthor">Jean-Philippe Ouellet</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-05-11 10:35:20 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/545">Feature: Workspace assignment by number</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-05-10 02:41:58 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/544">Separate border width for floating windows</a>
+</td>
+<td class="pauthor">Aleksi Blinnikka</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-05-09 16:50:39 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/543">Feature: EWMH desktop properties</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-05-05 23:00:33 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/542">i3bar: implement custom workspace numbers config</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-05-05 18:06:21 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/541">Refactor parse_command</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-05-05 17:03:39 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/540">Implement sticky windows</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-05-05 13:23:25 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/539">Rerender on button press only when focus changes</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-05-04 11:53:06 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/538">Refactor parse_command</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-05-04 03:31:28 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/537">Remove yajl major version conditionals</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-05-04 01:05:46 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/536">i3bar: reinit colors on barconfig update</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-05-02 23:58:34 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/535">Dont include dock clients in ewmh lists</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-05-02 20:55:01 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/534">Feature: improve active window request handling</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-05-02 20:31:22 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/533">i3bar: implement custom workspace numbers config</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-05-02 18:39:48 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/532">Refactor binding accessor</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-05-02 14:29:43 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/531">Key binding to match any key</a>
+</td>
+<td class="pauthor">Ari Edelkind</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-05-01 06:00:33 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/530">Ignore KeyRelease events without KeyPress</a>
+</td>
+<td class="pauthor">Ari Edelkind</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-05-01 05:48:04 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/529">Make all workspaces starting with &#34;__&#34; internal</a>
+</td>
+<td class="pauthor">Alexander Berntsen</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-04-30 09:13:18 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/528">Delegate click handling to dock clients</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-04-30 01:35:27 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/527">Fix NetBSD CPU temp gauge bug</a>
+</td>
+<td class="pauthor">Alexander Vasarab</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-04-29 22:53:04 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/526">Bugfix: client requests to focus switch workspaces</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-04-29 18:31:27 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/525">Bugfix: client requests to focus switch workspaces</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-04-29 17:39:30 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/524">Feature: EWMH desktop properties</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-04-29 17:27:01 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/523">Dont include dock clients in ewmh lists</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-04-29 13:49:44 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/522">Implement battery functionality for NetBSD users</a>
+</td>
+<td class="pauthor">Alexander Vasarab</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-04-29 00:50:47 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/521">Implement the window::fullscreen_mode event</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-04-28 22:40:39 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/520">Bugfix: ipc window event crash with no window</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-04-28 22:22:12 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/519">Implement battery functionality for NetBSD users</a>
+</td>
+<td class="pauthor">Alexander Vasarab</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-04-28 20:29:33 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/518">Disallow using reserved wspace namespace in config</a>
+</td>
+<td class="pauthor">Alexander Berntsen</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-04-28 08:20:40 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/517">Disallow renaming workspaces to reserved namespace</a>
+</td>
+<td class="pauthor">Alexander Berntsen</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-04-28 08:20:28 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/516">Make all workspaces starting with &#34;__&#34; internal</a>
+</td>
+<td class="pauthor">Alexander Berntsen</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-04-28 08:20:10 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/515">Feature: support ewmh _NET_NUMBER_OF_DESKTOPS</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-04-27 10:53:35 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/514">Implement bindsym mouse configuration</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-04-27 05:48:51 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/513">Feature: send complete config on barconfig_update</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-04-27 05:40:28 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/512">Implement the window::fullscreen event</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-04-25 09:44:04 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/511">Bugfix: ipc window event crash with no window</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-04-25 09:21:12 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/510">Reset SIGIPE handler before executing a command</a>
+</td>
+<td class="pauthor">Petr Písař</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-04-24 19:14:10 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/509">i3bar: implement custom workspace numbers config</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-04-24 01:56:38 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/508">Implement the ipc &#39;binding&#39; event</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-04-23 09:01:45 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/507">Implement bindsym mouse configuration</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-04-23 01:46:23 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/506">Move check_for_duplicate_bindings to bindings.[ch]</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-04-23 01:46:05 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/505">Bugfix: resize window check should check for null</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-04-18 18:21:35 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/504">Move switch_mode to bindings.[ch]</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-04-14 18:54:26 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/503">Dont set input focus and send WM_TAKE_FOCUS</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-04-10 17:30:54 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/502">Maintain the _NET_CLIENT_LIST property</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-04-08 18:33:20 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/501">Test workspace empty event semantics</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-04-01 17:40:46 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/500">Fix test 158</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-04-01 10:54:10 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/499">Send IPC workspace blank event when workspace becomes empty</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-04-01 05:56:36 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/498">Send last event timestamp with WM_TAKE_FOCUS msg</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-29 04:29:42 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/497">Dont set input focus and send WM_TAKE_FOCUS</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-03-29 04:22:45 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/496">OpenBSD does not have librt</a>
+</td>
+<td class="pauthor">David Coppa</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-26 09:05:00 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/495">Add configuration option for disabling mouse warping</a>
+</td>
+<td class="pauthor">Atte Peltomaki</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-03-24 17:12:32 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/494">i3-nagbar.man: updated man page to include all options</a>
+</td>
+<td class="pauthor">Arun Persaud</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-23 17:55:03 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/493">i3-nagbar: add missing newline when printing version information</a>
+</td>
+<td class="pauthor">Arun Persaud</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-23 17:54:38 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/492">Cleanup scattered timer calls to use macros</a>
+</td>
+<td class="pauthor">Vytautas Šaltenis</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-23 17:24:38 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/491">Send IPC workspace empty event after last window closed</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-03-23 12:36:23 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/490">Fix typo in manual</a>
+</td>
+<td class="pauthor">Vytautas Šaltenis</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-23 08:51:55 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/489">Ignore empty passwd after repeated Enter keypress</a>
+</td>
+<td class="pauthor">Vytautas Šaltenis</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-23 08:51:45 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/488">Fix typo</a>
+</td>
+<td class="pauthor">Vytautas Šaltenis</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-23 08:51:34 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/487">Discard half-entered passwd after some inactivity</a>
+</td>
+<td class="pauthor">Vytautas Šaltenis</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-23 08:51:19 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/486">Send IPC workspace empty event after last window closed</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-03-22 00:08:47 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/485">Send IPC workspace empty event after last window closed</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-03-21 22:15:30 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/484">Delay to turn off the screen after wrong passwd</a>
+</td>
+<td class="pauthor">Vytautas Šaltenis</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-21 18:57:19 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/483">i3bar: Send mouse wheel events to child too</a>
+</td>
+<td class="pauthor">Quentin Glidic</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-20 16:20:17 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/482">Free owindow when no con_id match or window</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-19 09:42:06 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/481">Free match after criteria initialization</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-19 09:41:49 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/480">Test 175: use BAIL_OUT instead of `die`</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-19 03:16:35 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/479">Test 222: call exit_gracefully</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-19 03:16:24 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/478">Test 517: avoid command chaining</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-03-19 03:16:12 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/477">i3bar: Send mouse wheel events to child too</a>
+</td>
+<td class="pauthor">Quentin Glidic</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-03-17 11:36:10 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/476">Add test for _NET_CLIENT_LIST</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-03-17 03:05:20 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/475">docs: fix typo</a>
+</td>
+<td class="pauthor">jeroentbt</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-17 00:25:02 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/474">fix typo</a>
+</td>
+<td class="pauthor">jeroentbt</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-17 00:00:34 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/473">Replace &#39;1&#39; with &#34;EXIT_FAILURE&#34;</a>
+</td>
+<td class="pauthor">TheKK</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-16 14:03:09 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/472">adding option (-C) to enable centering of an image</a>
+</td>
+<td class="pauthor">Richard Leitner</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-03-15 22:04:17 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/471">Remove custom color options from order array</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-15 14:13:19 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/470">Avoid unnecessary string duplication</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-15 13:56:51 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/469">restore original DPMS state after succesful screen unlock</a>
+</td>
+<td class="pauthor">Bill Kolokithas</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-03-15 11:31:15 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/468">Bugfix: don&#39;t try to resize docks by command</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-15 03:01:43 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/467">i3bar: Send mouse wheel events to child too</a>
+</td>
+<td class="pauthor">Quentin Glidic</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-03-13 13:02:22 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/466">Move translate_keysyms to bindings.[ch]</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-13 12:04:40 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/465">Perform minute alignment for refreshes only once per minute</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-03-11 19:33:03 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/464">Unify use of string comparisons</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-11 19:32:20 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/463">For the %percentage display of batteries, drop the leading &#39;0&#39; for values &lt; 10.</a>
+</td>
+<td class="pauthor">Jasper Lievisse Adriaanse</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-11 18:03:08 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/462">Delay to turn off the screen after wrong passwd</a>
+</td>
+<td class="pauthor">Vytautas Šaltenis</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-03-11 08:13:25 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/461">Extract start/stop timer code to reusable funcs</a>
+</td>
+<td class="pauthor">Vytautas Šaltenis</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-10 20:23:33 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/460">Extract if(dpms) calls to wrapper functions</a>
+</td>
+<td class="pauthor">Vytautas Šaltenis</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-10 20:23:10 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/459">For the %percentage display of batteries, drop the leading &#39;0&#39; for values &lt; 10.</a>
+</td>
+<td class="pauthor">Jasper Lievisse Adriaanse</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-03-10 09:23:31 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/458">Add valgrind suppression file to testcases</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-10 08:53:53 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/457">Free window ran_assignments on tree_close</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-10 08:38:14 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/456">Initialize size hints struct on manage</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-03-10 05:54:47 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/455">Set con window to NULL on tree_close</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-10 04:41:17 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/454">Update ipc library list documentation</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-10 01:36:32 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/452">disk: Colorize output when below given threshold</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-03-09 16:28:11 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/453">disk: Colorize output when below given threshold</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-09 16:28:11 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/451">Add test for floating types</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-08 13:21:00 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/450">Bugfix: ipc_receive_message reply leak</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-08 05:02:12 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/449">disk: Colorize output when below given threshold</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-03-07 23:49:43 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/448">Support align and min_width module options</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-05 19:57:30 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/447">Support align and min_width module options</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-03-05 07:53:12 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/446">Reduce calls to strncmp in print_battery_info.c.</a>
+</td>
+<td class="pauthor">Kim Svensson ks6g10</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-03-02 13:15:42 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/444">Support align and min_width module options</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-03-02 12:07:39 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/443">Improved detection of windows that want floating</a>
+</td>
+<td class="pauthor">Kernc</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-02 03:28:23 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/442">Support align and min_width module options</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-03-01 15:08:09 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/441">Typo in function name</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-01 10:08:27 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/440">i3status: Allow customization of module separator</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-03-01 08:57:37 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/439">i3status: Allow customization of module separator</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-03-01 08:31:09 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/438">i3status: Allow cpu temperature to be specified in celsius, fahrenheit, or kelvin</a>
+</td>
+<td class="pauthor">Matt Schwager</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-02-28 22:00:39 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/437">Update ipc COMMAND reply documentation</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-02-28 18:48:16 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/436">i3status: Allow customization of module separator</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-02-28 17:00:57 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/435">disk: Colorize output when below given threshold</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-26 20:20:14 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/434">i3status: Bugfix: Reading multiple temperature sensors not possible</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-02-25 19:55:25 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/433">Fix current_workspace outputs reply member docs</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-02-23 09:37:36 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/432">Move keyboard binding accessor to bindings.[ch]</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-02-22 22:31:32 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/431">Send IPC window events for focus and title changes</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-02-22 11:24:15 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/430">Send IPC window events for focus and title changes</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-02-20 19:30:24 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/429">Fix workspaces&#39; and window&#39;s urgency on window move</a>
+</td>
+<td class="pauthor">Yuriy Taraday</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-20 10:11:25 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/428">This patch fixes ticket #1168 to extend the window IPC event mechanism to send IPC events for window focus and title changes. The newly added window events use the same format as the already established &#34;new&#34; event.</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-18 20:54:44 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/427">Improved detection of windows that want floating</a>
+</td>
+<td class="pauthor">Kernc</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-15 17:50:25 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/426">man/i3.man: Update font doc to reflect i3.config</a>
+</td>
+<td class="pauthor">Alexander Berntsen</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-02-15 12:04:26 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/425">Move grab_all_keys to bindings.[ch]</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-02-14 23:38:36 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/424">Bugfix: Don&#39;t set input focus to window that has been closed</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-14 18:30:27 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/423">i3bar: Do not kill watcher on EOF</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-02-14 01:34:08 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/422">Improve drag_pointer error handling</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-02-12 10:20:56 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/421">Better detect windows that want floating</a>
+</td>
+<td class="pauthor">Kernc</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-12 00:43:35 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/420">Send IPC window events for focus and title changes</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-11 19:23:24 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/419">Center i3bar text vertically</a>
+</td>
+<td class="pauthor">S0lll0s</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-11 13:50:00 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/418">Add background color to i3bar segments</a>
+</td>
+<td class="pauthor">S0lll0s</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-02-11 13:49:42 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/417">Add support for double-sided i3bar, background colors and centered text</a>
+</td>
+<td class="pauthor">S0lll0s</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-02-10 15:46:56 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/416">If setcap fails during install, try again with sudo.</a>
+</td>
+<td class="pauthor">Kevin Pulo</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-02-10 04:57:33 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/415">Pad wifi bitrate.</a>
+</td>
+<td class="pauthor">Kevin Pulo</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-10 04:57:20 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/414">Colorized output for disk usage (revised).</a>
+</td>
+<td class="pauthor">Kevin Pulo</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-10 04:56:41 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/413">Send IPC window events for focus and title changes</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-02-09 17:19:43 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/412">Do not send WM_TAKE_FOCUS when InputHint is set</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-08 23:25:20 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/411">Bugfix: `tree_split` does not split floating cons</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-02-07 15:10:11 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/410">Doc update: title right click resizes floating windows</a>
+</td>
+<td class="pauthor">Jonas Maaskola</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-02-07 10:59:56 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/409">Doc update: title right click resizes floating windows</a>
+</td>
+<td class="pauthor">Jonas Maaskola</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-02-06 17:41:25 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/408">Do not send WM_TAKE_FOCUS when InputHint is set</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-06 12:39:45 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/407">Add support for the _NET_CLIENT_LIST root window property.</a>
+</td>
+<td class="pauthor">Steve Jones</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-06 12:19:29 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/406">Set EWMH desktop properties on startup.</a>
+</td>
+<td class="pauthor">Steve Jones</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-02-06 12:10:57 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/405">Add hide_seconds option</a>
+</td>
+<td class="pauthor">Iakov Davydov</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-02-06 10:26:13 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/404">Resize floating windows by right-clicking decoration</a>
+</td>
+<td class="pauthor">Jonas Maaskola</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-02-05 16:30:44 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/403">Add hide_seconds option</a>
+</td>
+<td class="pauthor">Iakov Davydov</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-05 10:40:32 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/402">Do not send WM_TAKE_FOCUS when InputHint is set</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-04 23:52:42 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/401">Really do not create con pixmap when not needed</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-02-04 18:42:37 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/400">Document the existence of a C ipc project</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-02-04 15:53:44 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/399">Add configuration options for tray icon size and minimum panel size</a>
+</td>
+<td class="pauthor">Jaroslav Smid</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-02 17:57:55 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/398">Set EWMH desktop properties on startup.</a>
+</td>
+<td class="pauthor">Steve Jones</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-02 17:17:22 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/397">Set EWMH desktop properties on startup.</a>
+</td>
+<td class="pauthor">Steve Jones</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-02-02 17:13:32 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/396">Add support for the _NET_CLIENT_LIST root window property.</a>
+</td>
+<td class="pauthor">Steve Jones</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-02 15:55:07 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/395">Set EWMH desktop properties on startup.</a>
+</td>
+<td class="pauthor">Steve Jones</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-01 23:13:03 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/394">Set EWMH desktop properties on startup.</a>
+</td>
+<td class="pauthor">Steve Jones</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-01 16:11:00 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/393">Added support for i3status to display file contents</a>
+</td>
+<td class="pauthor">EscapedNull</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-02-01 14:44:12 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/392">Added support for i3status to display file contents</a>
+</td>
+<td class="pauthor">EscapedNull</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-02-01 14:34:57 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/391">Add support for the _NET_CLIENT_LIST root window property.</a>
+</td>
+<td class="pauthor">Steve Jones</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-02-01 13:46:09 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/390">Document the existence of a C ipc project</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-01-28 22:20:29 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/389">Abstract binding configuration to bindings.[ch]</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-01-28 03:48:07 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/388">Program version shows wrong year</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-01-24 22:56:56 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/387">Send IPC window events for focus and title changes</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-01-24 22:37:49 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/386">Abstract binding configuration to bindings.[ch]</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-01-24 10:36:49 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/385">docs/userguide: change &#39;reseted&#39; to &#39;reset&#39;</a>
+</td>
+<td class="pauthor">Wieland Hoffmann</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-01-22 21:49:23 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/384">Add IPC event for window title changes</a>
+</td>
+<td class="pauthor">Marco Hunsicker</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-01-20 05:46:01 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/383">Do not create container pixmap when not needed</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-01-19 15:27:02 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/382">Abstract binding functions to bindings.h</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-01-17 07:14:07 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/381">Do not create container pixmap when not needed</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-01-15 04:49:08 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/380">Do not create container pixmap when not needed</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-01-15 02:37:00 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/379">Respect Motif hint for window decorations</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-01-15 02:36:37 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/378">docs/i3bar-protocol: add missing newline</a>
+</td>
+<td class="pauthor">Vivien Didelot</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-01-14 21:17:44 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/377">Bugfix: `move &lt;direction&gt;` sends workspace focus</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-01-13 20:41:20 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/376">Docs: Change title of hide_edge_borders paragraph</a>
+</td>
+<td class="pauthor">Joep van Delft</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-01-12 11:32:01 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/375">Log DPI change only if noticeable in logged output</a>
+</td>
+<td class="pauthor">Leo Gaspard</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-01-12 01:47:05 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/374">Do not create container pixmap without a border</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-01-11 11:09:43 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/373">Respect Motif hint for window decorations</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-01-11 11:09:23 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/372">Add `input_type` enum to `Binding` typedef</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-01-09 17:10:39 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/371">i3bar: Amend status line error 127 message</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-01-08 07:57:18 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/370">i3bar Bugfix: don&#39;t show &#34;EOF&#34; status line error</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-01-07 18:39:42 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/369">Move `ipc_send_workspace_focus_event` to icp.h</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-01-07 18:25:17 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/368">Add a format_down example for battery</a>
+</td>
+<td class="pauthor">Wieland Hoffmann</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-01-05 22:44:08 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/367">man: Add a missing colon</a>
+</td>
+<td class="pauthor">Wieland Hoffmann</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-01-05 22:43:27 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/366">use designated initializers for yajl_callbacks struct</a>
+</td>
+<td class="pauthor">Alexander Kedrik</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-01-05 19:28:27 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/365">Bugfix: moving across outputs sends IPC event</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-01-04 21:21:40 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/364">Disable render-time pointer warps if asked</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-01-04 12:26:21 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/363">Fix &#39;gcc -Wextra -Wno-unused-parameter&#39;.</a>
+</td>
+<td class="pauthor">Peter Boström</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-01-04 12:19:49 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/362">Respect Motif hint for window decorations</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-01-04 12:02:40 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/361">Respect Motif hint for window decorations</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2014-01-03 16:38:38 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/360">Add support for new _NET_WM_WINDOW_TYPE</a>
+</td>
+<td class="pauthor">none</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2014-01-03 09:43:53 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/359">Fix clang -Wextra except -Wunused-parameter.</a>
+</td>
+<td class="pauthor">Peter Boström</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-01-02 20:43:26 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/358">use designated initializers for yajl_callbacks struct</a>
+</td>
+<td class="pauthor">Alexander Kedrik</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2014-01-01 16:48:37 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/357">remove unnecessary forward declaration of set_statusline_error</a>
+</td>
+<td class="pauthor">Alexander Kedrik</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2014-01-01 16:48:29 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/356">Use #pragma once</a>
+</td>
+<td class="pauthor">Alexander Kedrik</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-12-29 02:15:24 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/355">i3bar: Don&#39;t start child unless status_command</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-12-27 03:13:42 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/354">i3bar: Set `mapped` flag on trayclient creation</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-12-26 14:01:33 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/353">Fix clang -Wextra except -Wunused-parameter.</a>
+</td>
+<td class="pauthor">Peter Boström</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-12-25 19:05:31 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/352">Size resizebar according to container size.</a>
+</td>
+<td class="pauthor">Peter Boström</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-12-24 11:59:46 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/351">Snap pointer to resize bar on drag resize</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-12-23 16:45:33 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/350">Snap pointer to resize bar on drag resize</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-12-21 20:12:40 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/349">Move the pointer to the resizebar before resizing.</a>
+</td>
+<td class="pauthor">Peter Boström</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-12-21 14:13:52 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/348">i3bar: Print error message when status_command fails</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-12-20 23:20:30 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/347">i3bar: Print error message when status_command fails</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-12-19 07:35:25 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/346">i3bar: Print error message when status command fails</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-12-15 09:38:24 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/345">Movement into a branch considers movement direction</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-12-12 13:50:59 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/344">Remove pointer warp from test boilerplate</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-12-06 06:53:53 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/343">Movement into a branch considers movement direction</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-12-05 23:53:49 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/342">disk: Distinguish between IEC, SI and custom prefixes</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-12-05 21:25:50 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/341">Testcases: init pointer in a predictable position</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-12-02 23:20:33 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/340">Refactor and improve test 514</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-12-02 21:52:11 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/339">i3bar: Group child processes for signalling</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-12-01 09:39:11 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/338">Remove flex/bison from common.mk since they aren&#39;t used anymore</a>
+</td>
+<td class="pauthor">Jean-Philippe Ouellet</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-11-27 04:23:54 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/337">Movement into a branch considers movement direction</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-26 14:18:30 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/336">ignore symbol files on OS X (only for debugging, breaks git-add -A)</a>
+</td>
+<td class="pauthor">Jean-Philippe Ouellet</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-11-26 11:34:20 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/335">fix the build on OS X</a>
+</td>
+<td class="pauthor">Jean-Philippe Ouellet</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-11-26 11:33:55 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/334">libi3/root_atom_contents: handle data of arbitrary length</a>
+</td>
+<td class="pauthor">Lancelot SIX</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-11-25 20:43:21 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/333">libi3/root_atom_contents:  handle data of arbitrary length</a>
+</td>
+<td class="pauthor">Lancelot SIX</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-24 13:55:14 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/332">i3bar: Realign tray clients on map/unmap notify</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-11-24 13:34:14 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/331">i3bar: Realign tray clients on UnmapNotify</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-11-24 11:57:42 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/330">Remove references to PATH_MAX macro</a>
+</td>
+<td class="pauthor">Lancelot SIX</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-11-23 16:46:12 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/329">libi3/root_atom_contents: Free xcb reply structures</a>
+</td>
+<td class="pauthor">Lancelot SIX</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-11-23 16:44:33 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/328">i3bar: Handle DestroyNotify events</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-11-23 02:34:52 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/327">Remove-child callback skips output content cons</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-11-22 15:46:17 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/326">Add support for path_exists directive.</a>
+</td>
+<td class="pauthor">Kinware AB</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-11-22 14:30:59 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/325">Fix incorrect wording in manual for run_watch.</a>
+</td>
+<td class="pauthor">Kinware AB</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-11-22 14:10:06 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/324">Add support for path_exists directive.</a>
+</td>
+<td class="pauthor">Kinware AB</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-22 14:06:53 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/323">Remove references to PATH_MAX macro</a>
+</td>
+<td class="pauthor">Lancelot SIX</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-21 21:11:05 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/322">Add xcb_get_property_unchecked_no_length wrapper</a>
+</td>
+<td class="pauthor">Lancelot SIX</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-11-21 21:09:59 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/321">disk: Distinguish between metric and binary prefixes</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-11-21 17:39:35 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/320">Remove-child callback will not handle output cons</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-20 14:58:33 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/319">Add support for path_exists directive.</a>
+</td>
+<td class="pauthor">Kinware AB</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-20 07:18:27 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/318">Add support for path_exists directive.</a>
+</td>
+<td class="pauthor">Kinware AB</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-20 05:45:12 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/317">Remove references to PATH_MAX macro</a>
+</td>
+<td class="pauthor">Lancelot SIX</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-18 21:39:20 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/316">Added different format string for volume in case it is muted.</a>
+</td>
+<td class="pauthor">Gereon Kremer</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-11-16 16:06:01 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/315">Add support for path_exists directive.</a>
+</td>
+<td class="pauthor">Kinware AB</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-16 11:23:05 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/314">Added different format string for volume in case it is muted.</a>
+</td>
+<td class="pauthor">Gereon Kremer</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-14 23:46:04 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/313">default config: show %avail disk space instead of %free</a>
+</td>
+<td class="pauthor">Sebastian Ullrich</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-11-14 12:31:20 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/312">libi3/font: Set DPI for the pango context</a>
+</td>
+<td class="pauthor">Bas Pape</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-11-13 20:05:44 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/311">Command &#39;move &lt;direction&gt;&#39; moves across outputs</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-11-13 11:20:47 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/310">Add support for file_exists directive.</a>
+</td>
+<td class="pauthor">Kinware AB</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-12 19:57:37 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/309">Remove references to PATH_MAX macro</a>
+</td>
+<td class="pauthor">Lancelot SIX</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-12 13:08:01 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/308">Turn on the screen on successful authentication</a>
+</td>
+<td class="pauthor">Philippe Virouleau</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-11-11 23:33:55 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/306">Turn on the screen on successful authentication</a>
+</td>
+<td class="pauthor">Philippe Virouleau</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-10 22:24:37 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/305">Authentication in different process</a>
+</td>
+<td class="pauthor">Philippe Virouleau</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-11-10 14:32:05 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/304">Update userguide on multiple criteria</a>
+</td>
+<td class="pauthor">Trung Ngo</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-11-10 10:21:55 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/303">Update userguide on multiple criteria</a>
+</td>
+<td class="pauthor">Trung Ngo</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-10 09:12:37 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/302">i3bar: Reduce noise to tray clients</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-09 19:51:51 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/301">Add sensible discretion to UnmapNotify drag abort</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-11-09 18:03:25 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/300">Authentication in different process</a>
+</td>
+<td class="pauthor">Philippe Virouleau</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-11-09 16:10:59 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/299">Return DRAG_ABORT on UnmapNotify from drag_pointer</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-11-09 11:07:07 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/298">Authentication in different process</a>
+</td>
+<td class="pauthor">Philippe Virouleau</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-09 10:55:36 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/297">Use _PATH_BSHELL to ensure using a bourne shell</a>
+</td>
+<td class="pauthor">Baptiste Daroussin</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-11-08 20:46:30 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/296">i3bar: Introducing noninteractive mode</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-11-06 10:20:36 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/295">i3bar: Repair tray client handling</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-06 07:35:23 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/294">Return DRAG_ABORT on UnmapNotify from drag_pointer</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-06 00:24:21 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/293">Authentication in different process</a>
+</td>
+<td class="pauthor">Philippe Virouleau</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-05 09:15:33 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/292">Colorized output for disk usage</a>
+</td>
+<td class="pauthor">Kevin Pulo</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-04 05:53:48 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/291">Return DRAG_ABORT on UnmapNotify from drag_pointer</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-11-01 00:46:10 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/290">Improve dragging pointer UnmapNotify policy</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-10-30 09:59:52 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/289">Improve dragging pointer UnmapNotify policy</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-10-30 09:41:08 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/288">Abort drag when involved window(s) vanish</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-10-30 09:40:58 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/287">i3bar: Simplify hide mode logic</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-30 04:18:37 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/286">Improve drag-cancel UnmapNotify policy</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-10-30 04:04:50 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/285">Do not reposition floating containers if unmapped</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-10-30 03:31:06 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/284">Added new configuration option &#34;mutediszero&#34; for volume module.</a>
+</td>
+<td class="pauthor">Gereon Kremer</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-10-24 18:15:46 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/283">Authentication in multiple processes</a>
+</td>
+<td class="pauthor">Philippe Virouleau</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-10-24 15:08:58 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/282">Add `.clang_complete` and `Xdummy.so` to gitignore</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-23 17:23:27 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/281">i3bar: Only configure tray on own outputs</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-23 16:53:32 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/280">Update comment for the con_toggle_fullscreen method</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-22 12:25:47 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/279">Fix output retrieval for floating cons</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-22 11:53:12 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/278">Fix focus issue when client requests focus in fs mode</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-10-21 12:30:57 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/277">i3bar: Only configure tray on own outputs</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-10-20 12:13:50 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/276">Bug fix: Call clear_input() when the password is wrong.</a>
+</td>
+<td class="pauthor">oblique</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-20 09:06:09 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/275">IPC: Custom &#39;event&#39; command documentation</a>
+</td>
+<td class="pauthor">Paul Grove</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-10-19 22:38:50 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/274">IPC: Custom &#39;event&#39; command</a>
+</td>
+<td class="pauthor">Paul Grove</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-10-19 22:04:02 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/273">Testcases: Bar modes and states</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-10-19 11:08:31 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/272">Testcases: Use AnyEvent::I3 version 0.15</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-19 00:06:13 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/271">Testcases: new-test prints usage without input</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-17 11:29:54 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/270">Bug fix: Call clear_input() when password is wrong and not in every fork.</a>
+</td>
+<td class="pauthor">oblique</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-10-17 10:47:47 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/269">i3bar: Simplify hide mode logic</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-10-17 06:56:22 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/268">Assigned windows open urgent when not visible</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-17 03:10:28 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/267">Testcases: remove &#34;latest&#34; if it is a symbolic link</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-15 07:45:03 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/266">Correct typos in user guide</a>
+</td>
+<td class="pauthor">Alexander Neumann</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-13 20:54:25 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/265">Add quoting for sample command</a>
+</td>
+<td class="pauthor">Alexander Neumann</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-13 13:22:04 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/264">Prevent an infinite loop when an output is disabled</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-10-12 03:26:16 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/263">Update docs/hacking-howto to reflect parser changes</a>
+</td>
+<td class="pauthor">Peter Maatman</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-11 21:03:13 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/262">Testcases: ignore Xorg config dir when starting Xdummy</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-11 19:56:36 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/261">Fix command parser: resizing tiling windows</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-10 20:05:53 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/260">Fix command parser: resizing tiling windows</a>
+</td>
+<td class="pauthor">johannes karoff</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-10-10 20:03:16 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/259">Fix command parser: resizing tiling windows</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-10-09 20:40:58 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/258">This patch adds a new option to i3lock. If the user specifies the -s option (in conjunction with -i), the image will be scaled to match the screen&#39;s resolution. Note that the aspect ratio will not be preserved.</a>
+</td>
+<td class="pauthor">Martin Ichilevici de Oliveira</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-10-09 17:55:00 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/257">i3-nagbar: Set button inner-width to the width of the label</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-09 17:35:38 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/256">Reply to _NET_REQUEST_FRAME_EXTENTS correctly</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-09 16:54:06 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/255">i3-nagbar: Set close button inner-width to label width</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-10-07 16:59:33 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/254">i3-nagbar: Set button inner-width to the width of the label</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-10-07 16:14:56 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/253">Add support for cpu temperature on NetBSD (using envsys(4))</a>
+</td>
+<td class="pauthor">Arnaud Degroote</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-06 19:20:20 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/252">Allow to print cpu usage on NetBSD</a>
+</td>
+<td class="pauthor">Arnaud Degroote</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-06 16:24:29 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/251">Allow to print eth information on NetBSD</a>
+</td>
+<td class="pauthor">Arnaud Degroote</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-06 16:24:16 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/250">Fix the build on NetBSD</a>
+</td>
+<td class="pauthor">Arnaud Degroote</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-10-06 16:23:48 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/249">Reply to _NET_REQUEST_FRAME_EXTENTS correctly</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-10-04 14:47:06 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/248">move scratchpad on a scratchpad windows inserts in head</a>
+</td>
+<td class="pauthor">Philippe Virouleau</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-10-04 13:04:54 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/247">Draw Binding mode indicator before workspace buttons.</a>
+</td>
+<td class="pauthor">syl20bnr</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-10-04 01:36:53 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/246">Set urgency hint on windows assigned to workspace</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-10-02 19:44:04 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/245">commands: (rename) check workspace number</a>
+</td>
+<td class="pauthor">Vivien Didelot</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-10-02 13:22:29 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/244">Run authentication in different threads</a>
+</td>
+<td class="pauthor">Philippe Virouleau</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-10-02 12:17:41 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/243">Do not resize/reposition floating containers when moving them to scratchpad</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-09-30 19:22:18 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/242">Add ability to escape out of a mouse-resize operation</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-09-29 03:14:51 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/241">libi3/font: Draw the text at the expected place</a>
+</td>
+<td class="pauthor">Quentin Glidic</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-09-28 09:28:40 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/240">Do not resize/reposition floating containers when moving them to scratchpad</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-09-27 09:07:57 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/239">Fix keyboard and mouse resize in nested containers</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-09-26 17:21:12 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/238">reduce some yajl boilerplate</a>
+</td>
+<td class="pauthor">Vivien Didelot</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-09-26 14:18:15 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/237">Add ability to escape out of a mouse-resize operation</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-09-26 01:06:13 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/236">Implement drag cancel for resizing tiled windows</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-09-25 21:48:11 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/235">Implement drag cancel for resizing floating windows</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-09-25 21:47:56 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/234">Implement drag cancel for moving floating windows</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-09-25 21:47:15 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/233">Change drag_pointer return type to int</a>
+</td>
+<td class="pauthor">Tony Crisci</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-09-25 21:20:12 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/232">common.mk: change default PREFIX</a>
+</td>
+<td class="pauthor">Vivien Didelot</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-09-25 19:09:38 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/231">new command line argument -g for i3-input options: -g &lt;default,focused,WxH&#43;X&#43;Y&gt; default: legacy behavior focused: i3-input widget is placed at top of the window with input focus WxH&#43;X&#43;Y: specify fixed position in X11 geometry style</a>
+</td>
+<td class="pauthor">Bastian</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-09-25 07:27:57 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/230">Fix keyboard and mouse resize in nested containers</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-09-24 14:22:28 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/229">add thread usage indicator</a>
+</td>
+<td class="pauthor">Vadim Zubov</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-09-21 21:51:36 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/228">Fix keyboard resize in windows beneath stacked/tabbed containers</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-09-19 19:03:41 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/227">Fix mouse resize in nested containers</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-09-19 13:28:34 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/226">Close all children when closing a workspace</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-09-19 12:38:53 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/225">Close all children when closing a workspace</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-09-19 12:24:50 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/224">new commandline argument for i3-input -c with options &#34;default&#34;, &#34;focused&#34; or ${W}x${H}&#43;${X}&#43;${Y}</a>
+</td>
+<td class="pauthor">Bastian</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-09-19 06:42:18 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/223">Fix handling of new windows with WM_STATE_FULLSCREEN</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-09-18 18:16:36 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/222">Run authentification in different process</a>
+</td>
+<td class="pauthor">koebi</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-09-18 10:42:51 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/221">Fix handling of new windows with WM_STATE_FULLSCREEN</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-09-16 08:21:09 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/220">Add new bar.binding_mode_indicator configuration.</a>
+</td>
+<td class="pauthor">syl20bnr</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-09-16 03:19:36 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/219">Add scratchpad bindings to the default config.</a>
+</td>
+<td class="pauthor">Deiz</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-09-14 18:58:32 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/218">Fix handling of new windows with WM_STATE_FULLSCREEN</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-09-14 17:01:04 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/217">Add scratchpad bindings to the default config.</a>
+</td>
+<td class="pauthor">Deiz</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-09-14 15:42:44 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/216">Add scratchpad bindings to the default config.</a>
+</td>
+<td class="pauthor">Deiz</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-09-13 05:19:29 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/215">Run authentification in different process</a>
+</td>
+<td class="pauthor">koebi</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-09-11 16:01:36 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/214">Run authentification in different process</a>
+</td>
+<td class="pauthor">koebi</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-09-10 15:53:14 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/213">Clarify userguide description of urgent_workspace configuration</a>
+</td>
+<td class="pauthor">James Baumgarten</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-09-09 02:32:00 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/212">Add new bar.binding_mode_indicator configuration.</a>
+</td>
+<td class="pauthor">syl20bnr</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-09-08 04:42:11 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/211">Run authentification in different process</a>
+</td>
+<td class="pauthor">koebi</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-09-07 17:46:10 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/210">Add `-e` option to not validate empty password.</a>
+</td>
+<td class="pauthor">Vincent Bernat</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-08-31 18:35:11 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/209">Create pixmaps using the real bar height, rather than screen height.</a>
+</td>
+<td class="pauthor">Deiz</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-08-31 15:48:04 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/208">Small improvements to manual page.</a>
+</td>
+<td class="pauthor">Vincent Bernat</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-08-31 12:01:57 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/207">Add `-e` option to not validate empty password.</a>
+</td>
+<td class="pauthor">Vincent Bernat</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-08-31 11:53:29 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/206">Do not try to validate an empty password with XF86ScreenSaver</a>
+</td>
+<td class="pauthor">Vincent Bernat</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-08-26 21:40:57 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/205">Remove debug message when debugging is disabled</a>
+</td>
+<td class="pauthor">Leo Gaspard</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-08-20 00:12:42 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/204">Initialize variables to prevent (false) warnings.</a>
+</td>
+<td class="pauthor">Bas Pape</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-08-18 16:16:48 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/203">Add new bar.binding_mode_button configuration.</a>
+</td>
+<td class="pauthor">syl20bnr</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-08-09 03:38:36 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/202">Respect workspace numbers when looking for a free workspace name</a>
+</td>
+<td class="pauthor">Sebastian Ullrich</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-08-08 22:03:19 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/201">Include float.h for DBL_EPSILON</a>
+</td>
+<td class="pauthor">Kacper Kowalik (Xarthisius)</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-08-08 18:50:03 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/200">Respect workspace numbers when looking for a free workspace</a>
+</td>
+<td class="pauthor">Sebastian Ullrich</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-08-07 17:23:55 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/199">Update documentation paragraph on variables to emphasize on limitation (see http://infra.in.zekjur.net/archives/i3-discuss/2013-August/001377.html)</a>
+</td>
+<td class="pauthor">syl20bnr</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-08-04 01:31:16 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/198">Use cairo_status_to_string for descriptive errors.</a>
+</td>
+<td class="pauthor">Bas Pape</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-07-30 18:07:13 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/197">Add missing return after error reporting.</a>
+</td>
+<td class="pauthor">Franck Michea</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-07-29 20:46:09 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/196">document nopass option</a>
+</td>
+<td class="pauthor">Travis Cardwell</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-07-27 12:03:57 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/195">add nopass option</a>
+</td>
+<td class="pauthor">Travis Cardwell</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-07-27 12:03:05 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/194">Add exmple path for CPU temperature</a>
+</td>
+<td class="pauthor">Jan-Erik Rediger</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-07-17 21:45:15 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/193">implement unmark command</a>
+</td>
+<td class="pauthor">koebi</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-07-17 20:20:47 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/192">implement unmark command</a>
+</td>
+<td class="pauthor">koebi</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-07-17 20:02:30 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/191">add command to remove marks</a>
+</td>
+<td class="pauthor">koebi</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-07-17 19:45:33 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/190">add command to remove marks</a>
+</td>
+<td class="pauthor">koebi</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-07-15 22:33:40 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/189">bugfix: Resize and center a scratchpad even when a criteria is used.</a>
+</td>
+<td class="pauthor">Franck Michea</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-07-10 20:20:21 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/188">Fix problem with floating container when switching outputs</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-07-08 23:00:32 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/187">allow load to be a float</a>
+</td>
+<td class="pauthor">M. Kory Woods</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-07-07 15:55:19 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/186">Implement debuglog command</a>
+</td>
+<td class="pauthor">Alexander Berntsen</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-07-03 17:15:40 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/185">Implement debuglog command</a>
+</td>
+<td class="pauthor">Alexander Berntsen</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-07-02 18:50:50 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/184">Bugfix: Ignore spaces in front of default workspace name</a>
+</td>
+<td class="pauthor">Eika Enge</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-06-29 18:57:52 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/183">Implement debuglog command</a>
+</td>
+<td class="pauthor">Alexander Berntsen</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-06-23 21:43:36 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/182">Add a few things to .gitignore</a>
+</td>
+<td class="pauthor">Alexander Berntsen</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-06-23 20:20:53 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/181">Fix incorrect comment</a>
+</td>
+<td class="pauthor">Alexander Berntsen</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-06-23 20:20:43 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/180">Implement debug command</a>
+</td>
+<td class="pauthor">Alexander Berntsen</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-06-23 20:20:31 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/179">Implement shmlog command</a>
+</td>
+<td class="pauthor">Alexander Berntsen</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-06-23 19:33:39 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/178">Update parent urgency hint if a child is removed.</a>
+</td>
+<td class="pauthor">oblique</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-06-20 22:00:20 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/177">Fix problem with floating container when switching outputs</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-06-18 20:18:43 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/176">Implement shmlog command</a>
+</td>
+<td class="pauthor">Alexander Berntsen</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-06-17 17:10:19 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/175">Implement shmlog command</a>
+</td>
+<td class="pauthor">Alexander Berntsen</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-06-12 19:13:28 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/174">Make default shmlog_size a const int</a>
+</td>
+<td class="pauthor">Alexander Berntsen</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-06-12 18:06:37 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/173">Implement shmlog command</a>
+</td>
+<td class="pauthor">Alexander Berntsen</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-06-12 17:35:59 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/172">Make default shmlog_size a #define, SHMLOG_SIZE</a>
+</td>
+<td class="pauthor">Alexander Berntsen</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-06-12 17:35:28 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/171">Add &#39;NoDisplay=true&#39; to i3.application.desktop</a>
+</td>
+<td class="pauthor">Simon Wesp</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-06-12 17:00:13 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/170">Bugfix: In term-output, clear line before drawing new one</a>
+</td>
+<td class="pauthor">Axel Wagner</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-06-11 14:10:14 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/169">Fix wrong placement of i3bar when connecting/disconnecting outputs</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-05-29 18:27:39 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/168">introduced i3 command for changing the hidden state and the mode of i3bar</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-05-25 12:57:39 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/167">Fix problem when moving fullscreen window to scratchpad</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-05-24 13:18:53 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/166">Draw indicator border only for split layouts</a>
+</td>
+<td class="pauthor">Diego Ongaro</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-05-22 04:36:21 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/165">Give layout enum a name: layout_t</a>
+</td>
+<td class="pauthor">Diego Ongaro</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-05-22 04:35:53 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/164">i3-msg.man: updated man page to include all options</a>
+</td>
+<td class="pauthor">Arun Persaud</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-05-21 17:43:04 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/163">i3bar: Fix pixel offset calculation in dual-head</a>
+</td>
+<td class="pauthor">Thomas Adam</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-05-19 21:02:21 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/162">Implement term-output-format</a>
+</td>
+<td class="pauthor">Axel Wagner</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-05-16 22:53:24 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/161">print_volume(linux): Open a new mixer every time.</a>
+</td>
+<td class="pauthor">oblique</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-05-12 17:53:32 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/160">i3bar: Fix pixel offset calculation in dual-head</a>
+</td>
+<td class="pauthor">Thomas Adam</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-05-12 16:52:16 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/159">Fix problem when moving fullscreen window to scratchpad</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-05-01 20:36:07 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/158">contrib/dump-asy.pl: Fix $ and &amp; in window titles</a>
+</td>
+<td class="pauthor">Diego Ongaro</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-05-01 05:41:24 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/157">contrib/gtk-tree-watch.pl: Remove bogus default socket path</a>
+</td>
+<td class="pauthor">Diego Ongaro</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-05-01 05:24:36 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/156">contrib/dump-asy.pl: Display nicer double-quotes</a>
+</td>
+<td class="pauthor">Diego Ongaro</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-05-01 05:19:52 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/155">contrib/dump-asy.pl: Fix $ in window titles</a>
+</td>
+<td class="pauthor">Diego Ongaro</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-05-01 05:19:34 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/154">Fix problem when moving fullscreen window to scratchpad</a>
+</td>
+<td class="pauthor">haptix@web.de</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-04-29 12:17:46 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/153">Draw indicator border only for split layouts</a>
+</td>
+<td class="pauthor">Diego Ongaro</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-04-29 08:32:11 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/152">introduced i3 command for changing the hidden state and the mode of i3bar</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-04-25 13:05:23 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/151">Handle synthetic UnmapNotify.</a>
+</td>
+<td class="pauthor">oblique</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-04-23 03:44:29 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/150">Ignore UnmapNotify if the window wants to enter WithdrawnState.</a>
+</td>
+<td class="pauthor">oblique</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-04-22 17:33:44 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/149">Fix problem when moving fullscreen window to screen window to scratchpad</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-04-21 15:07:01 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/148">Fix problem when moving fullscreen window to scratchpad</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-04-21 13:25:13 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/147">render_con: fix height rounding in aspect ratio computation</a>
+</td>
+<td class="pauthor">Clément Bœsch</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-04-20 22:12:39 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/146">introduced i3 command for changing the hidden state and the mode of i3bar</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-04-20 15:54:09 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/145">introduced i3 command for changing the hidden state and the mode of i3bar</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-04-19 11:55:09 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/144">introduced i3 command for changing the hidden state and the mode of i3bar</a>
+</td>
+<td class="pauthor">haptix@web.de</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-04-19 11:42:57 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/143">The use of toggle in the split-mode documentation was confusing.</a>
+</td>
+<td class="pauthor">Eric S. Raymond</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-04-18 03:04:30 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/142">Ignore UnmapNotify if the window wants to enter WithdrawnState</a>
+</td>
+<td class="pauthor">oblique</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-04-16 12:30:55 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/141">introduced i3 command for showing/hiding/toggling i3bar</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-04-16 11:46:48 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/140">Ensure that resize will take place even if pixel is smaller than size increments.</a>
+</td>
+<td class="pauthor">oblique</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-04-15 18:42:11 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/139">introduced i3 command for showing/hiding/toggling i3bar</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-04-15 15:23:58 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/138">introduced i3 command for showing/hiding/toggling i3bar</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-04-15 12:53:37 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/137">fix font display height in i3bar</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-04-13 10:33:32 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/136">unhide hidden i3bar when mode is active</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-04-13 00:00:28 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/135">unhide hidden i3bar when mode is active</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-04-12 20:34:28 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/134">unhide hidden i3bar when mode is active</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-04-11 22:27:01 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/133">Set window name</a>
+</td>
+<td class="pauthor">Axel Wagner</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-04-11 20:46:00 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/132">Set window name</a>
+</td>
+<td class="pauthor">Axel Wagner</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-04-11 20:45:31 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/131">Set window name</a>
+</td>
+<td class="pauthor">Axel Wagner</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-04-09 22:19:33 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/130">Set window name</a>
+</td>
+<td class="pauthor">Axel Wagner</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-04-09 21:29:29 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/129">Document fixes and workarounds for test failures.</a>
+</td>
+<td class="pauthor">Eric S. Raymond</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-04-07 21:04:05 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/128">Typo and usage fixes in documentation and comments.</a>
+</td>
+<td class="pauthor">Eric S. Raymond</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-04-07 14:58:37 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/127">unhide hidden i3bar when mode is active</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-04-07 14:28:31 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/126">unhide hidden i3bar when mode is active</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-04-07 10:10:26 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/125">restore i3bar compatibility with libyajl version 1</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-04-06 13:05:14 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/124">Fixed the i3-nagbar commandline to call the script instead of another i3-nagbar.</a>
+</td>
+<td class="pauthor">Sebastian Rachuj</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-04-04 22:58:22 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/123">added testcase for the workspace-focus ipc event when switching focus between two outputs</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-04-02 15:46:11 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/122">workspace-change event now sends the previously focused workspace across all outputs (fixes #990)</a>
+</td>
+<td class="pauthor">jj</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-04-02 15:45:45 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/121">Add &#39;line&#39; as a configuration parsing primitive and use it for ignoring comment lines, so that punctuation in them doesn&#39;t cause problems anymore.</a>
+</td>
+<td class="pauthor">Eelis van der Weegen</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-04-01 16:00:07 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/120">Fix centering the indicator in the no-xinerama case</a>
+</td>
+<td class="pauthor">Sebastian Ullrich</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-28 23:57:26 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/119">Fix resetting the password after failed authentications</a>
+</td>
+<td class="pauthor">Sebastian Ullrich</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-28 23:56:52 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/118">i3bar: fix font displaying</a>
+</td>
+<td class="pauthor">Simon Elsbrock</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-03-28 19:14:31 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/117">i3bar: fix usage description, make -b happen</a>
+</td>
+<td class="pauthor">Simon Elsbrock</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-28 19:14:14 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/116">Fix scratchpad_show</a>
+</td>
+<td class="pauthor">Philippe Virouleau</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-27 13:45:43 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/115">Fix scratchpad_show     Test if window is in scratchpad Test if function is called without criteria     Updated testcase</a>
+</td>
+<td class="pauthor">Philippe Virouleau</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-03-27 12:52:25 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/114">Fix scratchpad_show : actually test that the window is in the scratchpad actually test that it was a scratchpad_show without criteria</a>
+</td>
+<td class="pauthor">Philippe Virouleau</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-03-26 17:57:07 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/113">Philippe Virouleau introduced a bug about the scratchpad behaviour on the i3-discuss mailing list. I was able to reproduce it. This patch solves that problem.</a>
+</td>
+<td class="pauthor">Marcos Moyano</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-03-26 15:25:38 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/112">Don&#39;t dup2() the parent&#39;s stdout to child&#39;s stdin.</a>
+</td>
+<td class="pauthor">Yuxuan Shui</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-24 08:32:16 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/111">Add ctrl&#43;u password reset</a>
+</td>
+<td class="pauthor">Philip Dexter</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-23 16:41:25 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/110">Implementation of &#39;floating hide|show|toggle_hide&#39; commands</a>
+</td>
+<td class="pauthor">Fabián Ezequiel Gallina</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-03-21 21:50:16 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/109">Use a saner sanity check for floating_reposition.</a>
+</td>
+<td class="pauthor">Yuxuan Shui</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-21 17:42:58 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/108">Fix restarting with 32bit depth windows (v5)</a>
+</td>
+<td class="pauthor">Yuxuan Shui</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-21 17:34:27 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/107">Add click events to i3bar</a>
+</td>
+<td class="pauthor">Michael Stapelberg</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-03-21 15:32:25 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/106">Add click events to i3bar</a>
+</td>
+<td class="pauthor">enkore</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-21 10:50:37 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/105">Fix restarting with 32bit depth windows (v4)</a>
+</td>
+<td class="pauthor">Yuxuan Shui</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-03-21 06:54:39 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/104">Fix restarting with 32bit depth windows (v4)</a>
+</td>
+<td class="pauthor">Yuxuan Shui</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-03-21 06:52:20 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/103">Use ev_loop_fork after fork, this fix forking on kqueue based OSes</a>
+</td>
+<td class="pauthor">Baptiste Daroussin</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-20 16:50:25 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/102">FreeBSD expect a real path on the filesystem for shm_open</a>
+</td>
+<td class="pauthor">Baptiste Daroussin</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-20 16:27:37 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/101">shm_unlink the created/open shm</a>
+</td>
+<td class="pauthor">Baptiste Daroussin</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-20 16:25:43 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/100">Do not use ELOG while logwalk is not initialized</a>
+</td>
+<td class="pauthor">Baptiste Daroussin</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-20 16:02:36 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/99">Add optional bidirectional interface to i3bar (v11)</a>
+</td>
+<td class="pauthor">enkore</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-03-20 14:58:38 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/98">Colored clock for work hours</a>
+</td>
+<td class="pauthor">Blaz Balon</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-03-20 00:13:19 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/97">All supported FreeBSD version has getline now</a>
+</td>
+<td class="pauthor">Baptiste Daroussin</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-19 23:37:47 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/96">Support colored output for CPU temperature on FreeBSD</a>
+</td>
+<td class="pauthor">Baptiste Daroussin</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-19 23:15:45 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/95">Enable colored output for battery on FreeBSD</a>
+</td>
+<td class="pauthor">Baptiste Daroussin</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-19 18:23:47 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/94">Support colored output for CPU temperature on FreeBSD</a>
+</td>
+<td class="pauthor">Baptiste Daroussin</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-03-19 18:09:23 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/93">Support mixer_idx with OSS</a>
+</td>
+<td class="pauthor">Baptiste Daroussin</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-19 17:52:58 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/92">Support mixer_idx with OSS</a>
+</td>
+<td class="pauthor">Baptiste Daroussin</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-03-19 17:37:23 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/91">Show degraded colors in case volume is muted with OSS</a>
+</td>
+<td class="pauthor">Baptiste Daroussin</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-19 17:34:01 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/90">Implement mute on oss</a>
+</td>
+<td class="pauthor">Baptiste Daroussin</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-03-19 17:27:23 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/89">Implementation of &#39;floating hide|show|toggle_hide&#39; commands</a>
+</td>
+<td class="pauthor">Fabián Ezequiel Gallina</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-03-17 03:25:50 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/88">Add toggle mode for i3bar</a>
+</td>
+<td class="pauthor">philipdexter</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-03-16 05:47:32 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/87">fix a focus problem when hiding a scratchpad</a>
+</td>
+<td class="pauthor">Adrien Schildknecht</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-03-16 04:45:02 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/86">Implement raise_focus for floating windows.</a>
+</td>
+<td class="pauthor">Marcos Moyano</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-03-15 22:10:06 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/85">Fix restarting with 32bit depth windows (v3)</a>
+</td>
+<td class="pauthor">Yuxuan Shui</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-03-15 14:44:33 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/84">Fix restarting with 32bit depth windows (v2)</a>
+</td>
+<td class="pauthor">Yuxuan Shui</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-03-15 14:43:18 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/83">Fix restarting with 32bit depth windows</a>
+</td>
+<td class="pauthor">Yuxuan Shui</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-03-15 14:41:03 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/82">Add YAJL_CFLAGS to i3-msg.mk.</a>
+</td>
+<td class="pauthor">Marcus Crestani</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-14 12:40:32 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/81">added ctrl&#43;u functionality for clearing passwords</a>
+</td>
+<td class="pauthor">Philip Dexter</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-03-12 20:44:48 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/80">Add optional bidirectional interface to i3bar (v10)</a>
+</td>
+<td class="pauthor">enkore</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-03-11 19:27:33 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/79">Add optional bidirectional interface to i3bar. (ver.9)</a>
+</td>
+<td class="pauthor">enkore</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-03-10 12:09:24 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/78">Add optional bidirectional interface to i3bar. (ver.8)</a>
+</td>
+<td class="pauthor">enkore</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-03-10 12:01:31 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/77">Add optional bidirectional interface to i3bar. (ver.7)</a>
+</td>
+<td class="pauthor">enkore</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-03-10 11:26:16 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/76">Add optional bidirectional interface to i3bar. (ver.6)</a>
+</td>
+<td class="pauthor">enkore</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-03-10 11:22:18 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/75">Add optional bidirectional interface to i3bar. (ver.5)</a>
+</td>
+<td class="pauthor">enkore</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-03-10 11:15:56 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/74">Better back_and_forth handling with multimonitor setups</a>
+</td>
+<td class="pauthor">Sebastian Rachuj</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-03-10 10:21:51 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/73">Add optional bidirectional interface to i3bar. (ver.4)</a>
+</td>
+<td class="pauthor">enkore</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-03-10 01:30:35 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/72">Add optional bidirectional interface to i3bar. (ver.3)</a>
+</td>
+<td class="pauthor">enkore</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-03-10 00:19:51 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/71">Add optional bidirectional interface to i3bar. (ver.2)</a>
+</td>
+<td class="pauthor">enkore</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-03-10 00:15:54 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/70">Add optional bidirectional interface to i3bar. (ver.2)</a>
+</td>
+<td class="pauthor">enkore</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-03-09 21:34:44 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/69">Add optional bidirectional interface to i3bar.</a>
+</td>
+<td class="pauthor">enkore</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-03-09 18:29:04 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/68">Added format_down option for battery if no battery is available.</a>
+</td>
+<td class="pauthor">Christoph Göttschkes</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-07 20:39:21 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/67">Make i3bar aware of the new floating_hidden attribute</a>
+</td>
+<td class="pauthor">Fabián Ezequiel Gallina</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-03-04 21:21:36 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/66">Add floating_toggle_hide command to show/hide floating windows.</a>
+</td>
+<td class="pauthor">Fabián Ezequiel Gallina</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-03-04 19:34:43 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/65">Add support for _NET_WM_STATE_DEMANDS_ATTENTION.</a>
+</td>
+<td class="pauthor">oblique</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-03-03 00:06:08 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/64">Bugfix: Quote external shell script that is called in some cases.</a>
+</td>
+<td class="pauthor">Stefan Schroeder</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-02-28 21:20:30 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/63">Allow configuration of colors with alpha channel</a>
+</td>
+<td class="pauthor">Klemens Baum</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-02-28 01:30:12 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/62">Allow configuration of colors with alpha channel</a>
+</td>
+<td class="pauthor">Klemens Baum</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-02-27 23:59:31 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/61">contrib: fix premature insetion of status message into JSON</a>
+</td>
+<td class="pauthor">Jiri Pinkava</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-02-26 19:17:30 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/60">Add support for _NET_WM_STATE_DEMANDS_ATTENTION.</a>
+</td>
+<td class="pauthor">oblique</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-02-26 00:47:34 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/59">Bugfix: Set separator color properly when drawing</a>
+</td>
+<td class="pauthor">András Mohari</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-02-25 16:24:00 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/58">Allow min_width of a block in i3bar to be a string</a>
+</td>
+<td class="pauthor">András Mohari</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-02-25 10:44:47 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/57">Allow min_width of a block in i3bar to be a string</a>
+</td>
+<td class="pauthor">András Mohari</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-02-25 09:44:04 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/56">Add client.focused_float color</a>
+</td>
+<td class="pauthor">oblique</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-02-24 12:00:21 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/55">Colorized output for disk usage</a>
+</td>
+<td class="pauthor">Raphael Michel</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-02-21 17:33:59 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/54">Add colorized output for load avg</a>
+</td>
+<td class="pauthor">Raphael Michel</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-02-21 17:33:39 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/53">Bugfix: Handle nested transient popups properly</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-02-20 16:02:17 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/52">Fix superfluous &lt;/fc&gt; in battery output for xmobar</a>
+</td>
+<td class="pauthor">Axel Beckert</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-02-20 14:59:39 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/51">Add a new IPC event for changes on windows.</a>
+</td>
+<td class="pauthor">Piotr S. Staszewski</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-02-15 16:40:57 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/50">Add a new IPC event for changes on windows.</a>
+</td>
+<td class="pauthor">Piotr S. Staszewski</td>
+<td class="pstatus pstatus-superseded"><span>superseded</span></td>
+<td class="timestamp">2013-02-15 16:04:43 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/49">Separator color via config; separator width and on/off via ipc</a>
+</td>
+<td class="pauthor">Artem Shinkarov</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-02-15 02:27:45 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/48">Add a new IPC event for changes on windows.</a>
+</td>
+<td class="pauthor">Piotr S. Staszewski</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-02-13 22:36:36 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/46">Changed in src/render.c LINE 124, 125 -= 2*2 to -= 4</a>
+</td>
+<td class="pauthor">Sebastian Pielawa</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-02-12 15:37:17 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/45">Always auto center on &#39;scratchpad show&#39; if window hasn&#39;t been repositioned by the user</a>
+</td>
+<td class="pauthor">Sebastian Ullrich</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-02-11 12:51:10 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/44">Add render_deco_height()</a>
+</td>
+<td class="pauthor">oblique</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-02-10 17:03:49 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/43">Added option to show battery capacity without decimals</a>
+</td>
+<td class="pauthor">Julien Lequertier</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-02-10 16:59:58 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/42">Add tztime module to support multiple different timezones.</a>
+</td>
+<td class="pauthor">Emil Mikulic</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-02-10 16:13:14 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/41">Add tztime module to support multiple different timezones.</a>
+</td>
+<td class="pauthor">Emil Mikulic</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-02-10 15:53:47 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/40">Bugfix: Do not move the focus if a container is moved on a visible output</a>
+</td>
+<td class="pauthor">Sebastian Rachuj</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-02-10 14:40:24 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/39">Added option to show battery capacity without decimals</a>
+</td>
+<td class="pauthor">Julien Lequertier</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-02-10 09:06:54 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/38">Add render_deco_height()</a>
+</td>
+<td class="pauthor">oblique</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-02-09 12:42:31 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/37">Obey WM_SIZE_HINTS&#39;s resize increments in floating</a>
+</td>
+<td class="pauthor">oblique</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-02-09 10:38:08 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/36">Add render_deco_height()</a>
+</td>
+<td class="pauthor">oblique</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-02-09 10:37:53 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/35"></a>
+</td>
+<td class="pauthor"></td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-02-06 11:35:22 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/34">Separator color and width via config; separator off via ipc</a>
+</td>
+<td class="pauthor">Artem Shinkarov</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-02-05 14:36:42 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/33">Separator color and width via config; separator off via ipc</a>
+</td>
+<td class="pauthor">Artem Shinkarov</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-02-04 21:16:49 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/32">Bugfix: Correctly parse `move ... workspace *_on_output`</a>
+</td>
+<td class="pauthor">Steven Allen</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-01-29 08:14:56 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/31">Separator color in config; disable separator via ipc</a>
+</td>
+<td class="pauthor">Artem Shinkarov</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-01-29 00:41:23 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/30">i3-input: restore the keyboard focus instead of the pointer focus</a>
+</td>
+<td class="pauthor">Adrien Schildknecht</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-01-28 20:02:15 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/29">i3-dmenu-desktop: List filenames of .desktop files</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-01-28 17:05:57 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/28">put common part of error messages into variable</a>
+</td>
+<td class="pauthor">Sascha Kruse</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-01-28 15:49:10 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/27">Add tztime module to support multiple different timezones.</a>
+</td>
+<td class="pauthor">Emil Mikulic</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-01-28 11:38:06 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/26">scratchpad_show focus unfocused scratchpad window</a>
+</td>
+<td class="pauthor">Sascha Kruse</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-01-28 10:25:11 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/25">Make sure colorful_output variable is initialized.</a>
+</td>
+<td class="pauthor">Emil Mikulic</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-01-28 09:20:02 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/24">Separator color in config; disable separator via ipc</a>
+</td>
+<td class="pauthor">Artem Shinkarov</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-01-27 21:29:18 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/23">scratchpad_show focus unfocused scratchpad window</a>
+</td>
+<td class="pauthor">Sascha Kruse</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-01-27 14:01:20 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/22">update tests to test the output wrapping</a>
+</td>
+<td class="pauthor">Francesco Mazzoli</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-01-26 09:23:43 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/21">wrap when moving things to outputs with direction</a>
+</td>
+<td class="pauthor">Francesco Mazzoli</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-01-26 09:23:34 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/20">Fix decoration rect size for windows without border</a>
+</td>
+<td class="pauthor">Marius Muja</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-01-25 17:47:54 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/19">remove the urgency indicator when a window is closed</a>
+</td>
+<td class="pauthor">Adrien Schildknecht</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-01-25 17:41:09 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/18">remove the urgency indicator when a window is closed</a>
+</td>
+<td class="pauthor">Adrien Schildknecht</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-01-25 14:52:02 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/17">Additional GNOME integration.</a>
+</td>
+<td class="pauthor">Emil Mikulic</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-01-25 10:32:33 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/16">Support multiple times with different timezones.</a>
+</td>
+<td class="pauthor">Emil Mikulic</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-01-25 10:27:11 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/15">src/*.c depends on include/i3status.h</a>
+</td>
+<td class="pauthor">Emil Mikulic</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-01-25 10:25:52 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/14">Make sure colorful_output variable is initialized.</a>
+</td>
+<td class="pauthor">Emil Mikulic</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-01-25 10:18:36 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/13">Split workspace instead of changing orientation</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-01-24 17:05:48 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/12">Bugfix: Handle nested transient popups properly</a>
+</td>
+<td class="pauthor">Mats</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-01-24 17:05:15 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/11">adjust window in scratchpad at move time</a>
+</td>
+<td class="pauthor">Vivien Didelot</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-01-24 15:26:43 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/10">wifi: properly display ad-hoc networks</a>
+</td>
+<td class="pauthor">Adrien Schildknecht</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-01-24 13:56:48 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/9">Ad-hoc network support for Linux</a>
+</td>
+<td class="pauthor">Adrien Schildknecht</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-01-24 13:04:35 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/8">Set scratchpad_state to changed if floating.</a>
+</td>
+<td class="pauthor">Marcus Carlsson</td>
+<td class="pstatus pstatus-needinfo"><span>needinfo</span></td>
+<td class="timestamp">2013-01-24 11:45:17 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/7">Fixing continuous resize bug in floating mode</a>
+</td>
+<td class="pauthor">Marius Muja</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-01-24 11:38:02 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/6">wrap when moving things to outputs with direction</a>
+</td>
+<td class="pauthor">Francesco Mazzoli</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-01-24 11:16:46 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/5">split main .gitignore and ignore more files</a>
+</td>
+<td class="pauthor">Vivien Didelot</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-01-23 22:43:41 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/4">update tests to test the output wrapping</a>
+</td>
+<td class="pauthor">Francesco Mazzoli</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-01-23 19:43:22 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/3">wrap when moving things to outputs with direction</a>
+</td>
+<td class="pauthor">Francesco Mazzoli</td>
+<td class="pstatus pstatus-rejected"><span>rejected</span></td>
+<td class="timestamp">2013-01-23 19:35:43 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/2">Allow servers which do not support the XKB extension.</a>
+</td>
+<td class="pauthor">David Edmondson</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-01-23 17:05:09 &#43;0000</td>
+</tr>
+
+<tr>
+<td>
+<a href="/patch/1">i3-msg: include socket path in error message</a>
+</td>
+<td class="pauthor">Michael Stapelberg</td>
+<td class="pstatus pstatus-merged"><span>merged</span></td>
+<td class="timestamp">2013-01-23 07:44:04 &#43;0000</td>
+</tr>
+
+</table>
+
+</div>
+<script type="text/javascript">
+function pad2(input) {
+	return (input < 10 ? '0' : '') + input;
+}
+
+$().ready(function() {
+	
+	
+	
+	$('.timestamp').each(function(idx, elem) {
+		var split = $(elem).html().split(' ');
+		var o = split[2];
+		o = o.substring(0,3) + ':' + o.substring(3,5);
+		var d = new Date(split[0] + 'T' + split[1] + o);
+		$(elem).html(d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds()));
+	});
+});
+</script>
+  </body>
+</html>
+
