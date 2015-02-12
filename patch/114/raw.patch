@@ -1,0 +1,50 @@
+From 944d6ddd872300d78923b6f3c2a6398dd0395329 Mon Sep 17 00:00:00 2001
+From: Philippe Virouleau <philippe.virouleau@…>
+Date: Tue, 26 Mar 2013 18:59:32 +0100
+Subject: [PATCH] Fix scratchpad_show : actually test that the window is in
+ the scratchpad actually test that it was a scratchpad_show
+ without criteria
+
+---
+ src/scratchpad.c |   11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/src/scratchpad.c b/src/scratchpad.c
+index a4d2950..5afe34c 100644
+--- a/src/scratchpad.c
++++ b/src/scratchpad.c
+@@ -93,7 +93,7 @@ void scratchpad_show(Con *con) {
+     Con *walk_con;
+     Con *focused_ws = con_get_workspace(focused);
+     TAILQ_FOREACH(walk_con, &(focused_ws->floating_head), floating_windows) {
+-        if ((floating = con_inside_floating(walk_con)) &&
++        if (!con && (floating = con_inside_floating(walk_con)) &&
+             floating->scratchpad_state != SCRATCHPAD_NONE &&
+             floating != con_inside_floating(focused)) {
+                 DLOG("Found an unfocused scratchpad window on this workspace\n");
+@@ -112,7 +112,7 @@ void scratchpad_show(Con *con) {
+     focused_ws = con_get_workspace(focused);
+     TAILQ_FOREACH(walk_con, &all_cons, all_cons) {
+         Con *walk_ws = con_get_workspace(walk_con);
+-        if (walk_ws &&
++        if (!con && walk_ws &&
+             !con_is_internal(walk_ws) && focused_ws != walk_ws &&
+             (floating = con_inside_floating(walk_con)) &&
+             floating->scratchpad_state != SCRATCHPAD_NONE) {
+@@ -134,6 +134,13 @@ void scratchpad_show(Con *con) {
+         return;
+     }
+ 
++    /* If this was 'scratchpad show' with criteria, we check if the window
++     * is actually in the scratchpad */
++    if (con && con->parent->scratchpad_state == SCRATCHPAD_NONE) {
++        DLOG("Window is not in the scratchpad, doing nothing.\n");
++        return;
++    }
++
+     /* If this was 'scratchpad show' with criteria, we check if it matches a
+      * currently visible scratchpad window and hide it. */
+     Con *active = con_get_workspace(focused);
+-- 
+1.7.10.4
+

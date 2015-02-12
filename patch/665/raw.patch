@@ -1,0 +1,151 @@
+From 03059d896848e301330c020f8e23efb6f41f31b1 Mon Sep 17 00:00:00 2001
+From: Michael Ensslin <michael@…>
+Date: Wed, 5 Nov 2014 21:06:13 +0100
+Subject: [PATCH 1/2] added --verification-script option
+
+This option lets you specify a script that is run whenever a password has been
+accepted by PAM.
+
+The entered password is given to the script's standard input.
+If the script's exit code is zero, the password is accepted. otherwise, it is
+rejected as if PAM would have failed.
+
+If the can not be executed, the password is accepted as if no script was
+specified.
+
+I'm using this with a script that calls `cryptsetup luksResume` on my home
+partition, which is encrypted with my login password.
+---
+ i3lock.c | 75 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 73 insertions(+), 2 deletions(-)
+
+diff --git a/i3lock.c b/i3lock.c
+index 71b02ee..9e2eb4f 100644
+--- a/i3lock.c
++++ b/i3lock.c
+@@ -22,6 +22,7 @@
+ #include <string.h>
+ #include <ev.h>
+ #include <sys/mman.h>
++#include <sys/wait.h>
+ #include <xkbcommon/xkbcommon.h>
+ #include <xkbcommon/xkbcommon-x11.h>
+ #include <cairo.h>
+@@ -66,6 +67,7 @@ extern unlock_state_t unlock_state;
+ extern pam_state_t pam_state;
+ int failed_attempts = 0;
+ bool show_failed_attempts = false;
++char *verification_script = NULL;
+ 
+ static struct xkb_state *xkb_state;
+ static struct xkb_context *xkb_context;
+@@ -223,13 +225,73 @@ static void discard_passwd_cb(EV_P_ ev_timer *w, int revents) {
+     STOP_TIMER(discard_passwd_timeout);
+ }
+ 
++static bool run_verification_script(void) {
++    if (verification_script == NULL) {
++        return true;
++    }
++
++    DEBUG("running verification script\n");
++
++    int pipefd[2];
++    if (pipe(pipefd) == -1) {
++        DEBUG("couldn't create pipe. skipping verification script\n");
++        return true;
++    }
++
++    pid_t pid = fork();
++    switch(pid) {
++    case -1:
++        DEBUG("couldn't fork. skipping verification script\n");
++        return true;
++        break;
++    case 0:
++        /* we're the child */
++        close(pipefd[1]);
++        dup2(pipefd[0], 0);
++        execl(verification_script, verification_script, NULL);
++        DEBUG("couldn't execute verification script\n");
++        exit(0);
++        break;
++    default:
++        /* we're the parent */
++        close(pipefd[0]);
++        size_t pos = 0;
++        while (pos < input_position) {
++            ssize_t written = write(pipefd[1], &password[pos], input_position - pos);
++            if (written <= 0) {
++                DEBUG("couldn't write password to verification script\n");
++                return true;
++            }
++            pos += written;
++        }
++        /* send EOF to child */
++        close(pipefd[1]);
++        int status;
++        if (waitpid(pid, &status, 0) == -1) {
++            DEBUG("couldn't wait for verification script. assuming success\n");
++            return true;
++        }
++
++        if (WEXITSTATUS(status) == 0) {
++            DEBUG("password accepted by verification script\n");
++            return true;
++        } else {
++            DEBUG("password rejected by verification script\n");
++            return false;
++        }
++    }
++}
++
+ static void input_done(void) {
+     STOP_TIMER(clear_pam_wrong_timeout);
+     pam_state = STATE_PAM_VERIFY;
+     redraw_screen();
+ 
+-    if (pam_authenticate(pam_handle, 0) == PAM_SUCCESS) {
++    if (pam_authenticate(pam_handle, 0) == PAM_SUCCESS &&
++        run_verification_script()) {
++
+         DEBUG("successfully authenticated\n");
++
+         clear_password_memory();
+         /* Turn the screen on, as it may have been turned off
+          * on release of the 'enter' key. */
+@@ -681,6 +743,7 @@ int main(int argc, char *argv[]) {
+         {"ignore-empty-password", no_argument, NULL, 'e'},
+         {"inactivity-timeout", required_argument, NULL, 'I'},
+         {"show-failed-attempts", no_argument, NULL, 'f'},
++        {"verification-script", required_argument, NULL, 'V'},
+         {NULL, no_argument, NULL, 0}
+     };
+ 
+@@ -708,6 +771,14 @@ int main(int argc, char *argv[]) {
+             inactivity_timeout = time;
+             break;
+         }
++        case 'V': {
++            verification_script = optarg;
++            /* sanity check: is verification_script executable? */
++            if(access(verification_script, F_OK | X_OK) != 0) {
++                errx(EXIT_FAILURE, "verification script is not executable\n");
++            }
++            break;
++        }
+         case 'c': {
+             char *arg = optarg;
+ 
+@@ -750,7 +821,7 @@ int main(int argc, char *argv[]) {
+             break;
+         default:
+             errx(EXIT_FAILURE, "Syntax: i3lock [-v] [-n] [-b] [-d] [-c color] [-u] [-p win|default]"
+-            " [-i image.png] [-t] [-e] [-I] [-f]"
++            " [-i image.png] [-t] [-e] [-I] [-f] [--verification-script /bin/foo]"
+             );
+         }
+     }
+-- 
+2.1.1
+

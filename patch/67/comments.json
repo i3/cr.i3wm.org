@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 38,
+    "Comment": "So you parse the value and then do nothing with it? Why? :-)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 38,
+    "Comment": "I know there should be some kind of indicator for this, the problem is that I'm not sure what would that be. If you have any preferences let me know and I'll try to implement it. I was thinking in something like the red box of the resize mode but with the text \"hidden\" (\"floating hidden\" is too long).",
+    "EmailHash": ""
+  }
+]

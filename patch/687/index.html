@@ -1,0 +1,3705 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>i3 Patch: Extend the fullscreen command</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" media="screen" href="http://i3wm.org/css/style.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="/public/stylesheets/main.css">
+    <link rel="shortcut icon" type="image/png" href="http://i3wm.org/favicon.png">
+    <script src="/public/js/jquery-1.9.0.min.js" type="text/javascript" charset="utf-8"></script>
+	<link href='http://fonts.googleapis.com/css?family=Ubuntu+Mono' rel='stylesheet' type='text/css'>
+    
+    
+      <script src="/public/js/patch.js" type="text/javascript" charset="utf-8"></script>
+    
+  </head>
+  <body>
+
+
+<div id="main">
+	<a href="/"><h1 id="title">i3 - improved tiling WM</h1></a>
+				<ul id="nav">
+						<li><a style="border-bottom: 2px solid #fff" href="/">Reviews</a></li>
+						<li><a href="http://bugs.i3wm.org/">Bugs</a></li>
+				</ul>
+<br style="clear: both">
+
+<div id="content">
+
+<h1>Extend the fullscreen command</h1>
+<div style="float: right">
+<p>
+Patch status: merged
+</p>
+<p>
+Patch by Mats
+</p>
+</div>
+
+<p>
+<strong>Long description</strong>:<br>
+<pre>Rather than just toggling the fullscreen modes, allow to set them
+directly with:
+
+    fullscreen enable|toggle [global]
+    fullscreen disable
+
+For compatibility, retain the previous command and its toggling behavior:
+
+    fullscreen [global]
+
+fixes #1120
+</pre>
+</p>
+
+
+<p>
+To apply this patch, use:<br>
+<code>curl http://cr.i3wm.org/patch/687/raw.patch | git am</code>
+</p>
+
+
+
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/docs/userguide</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L34">34</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="34">@@ -91,7 &#43;91,7 @@ To display a window in fullscreen mode or to go out of fullscreen mode again,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L35">35</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="35"> press &#43;$mod&#43;f&#43;.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L36">36</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="36"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L37">37</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="37"> There is also a global fullscreen mode in i3 in which the client will span all</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L38">38</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="38">-available outputs (the command is &#43;fullscreen global&#43;).</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L39">39</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="39">&#43;available outputs (the command is &#43;fullscreen toggle global&#43;).</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L40">40</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="40"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L41">41</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="41"> === Opening other applications</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L42">42</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="42"> </pre>
+  </td>
+  </tr>
+
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L43">43</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="43">@@ -367,7 &#43;367,7 @@ bindcode [--release] [Modifiers&#43;]keycode command</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L44">44</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="44"> *Examples*:</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L45">45</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="45"> --------------------------------</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L46">46</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="46"> # Fullscreen</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L47">47</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="47">-bindsym $mod&#43;f fullscreen</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L48">48</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="48">&#43;bindsym $mod&#43;f fullscreen toggle</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L49">49</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="49"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L50">50</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="50"> # Restart</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L51">51</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="51"> bindsym $mod&#43;Shift&#43;r restart</pre>
+  </td>
+  </tr>
+
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L52">52</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="52">@@ -1502,9 &#43;1502,13 @@ Use &#43;layout toggle split&#43;, &#43;layout stacking&#43;, &#43;layout tabbed&#43;, &#43;layout splitv&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L53">53</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="53"> or &#43;layout splith&#43; to change the current container layout to splith/splitv,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L54">54</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="54"> stacking, tabbed layout, splitv or splith, respectively.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L55">55</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="55"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L56">56</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="56">-To make the current window (!) fullscreen, use &#43;fullscreen&#43;, to make</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L57">57</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="57">-it floating (or tiling again) use &#43;floating enable&#43; respectively &#43;floating disable&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L58">58</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="58">-(or &#43;floating toggle&#43;):</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L59">59</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="59">&#43;To make the current window (!) fullscreen, use &#43;fullscreen enable&#43; (or</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L60">60</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="60">&#43;&#43;fullscreen enable global&#43; for the global mode), to leave either fullscreen</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L61">61</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="61">&#43;mode use &#43;fullscreen disable&#43;, and to toggle between these two states use</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L62">62</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="62">&#43;&#43;fullscreen toggle&#43; (or &#43;fullscreen toggle global&#43;).</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L63">63</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="63">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L64">64</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="64">&#43;Likewise, to make the current window floating (or tiling again) use &#43;floating</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L65">65</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="65">&#43;enable&#43; respectively &#43;floating disable&#43; (or &#43;floating toggle&#43;):</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L66">66</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="66"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L67">67</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="67"> *Syntax*:</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L68">68</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="68"> --------------</pre>
+  </td>
+  </tr>
+
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L69">69</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="69">@@ -1525,7 &#43;1529,7 @@ bindsym $mod&#43;x layout toggle</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L70">70</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="70"> bindsym $mod&#43;x layout toggle all</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L71">71</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="71"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L72">72</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="72"> # Toggle fullscreen</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L73">73</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="73">-bindsym $mod&#43;f fullscreen</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L74">74</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="74">&#43;bindsym $mod&#43;f fullscreen toggle</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L75">75</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="75"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L76">76</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="76"> # Toggle floating/tiling</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L77">77</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="77"> bindsym $mod&#43;t floating toggle</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/i3.config</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L82">82</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="82">@@ -75,7 &#43;75,7 @@ bindsym Mod1&#43;h split h</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L83">83</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="83"> bindsym Mod1&#43;v split v</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L84">84</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="84"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L85">85</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="85"> # enter fullscreen mode for the focused container</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L86">86</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="86">-bindsym Mod1&#43;f fullscreen</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L87">87</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="87">&#43;bindsym Mod1&#43;f fullscreen toggle</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L88">88</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="88"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L89">89</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="89"> # change container layout (stacked, tabbed, toggle split)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L90">90</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="90"> bindsym Mod1&#43;s layout stacking</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/i3.config.keycodes</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L95">95</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="95">@@ -69,7 &#43;69,7 @@ bindcode $mod&#43;43 split h</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L96">96</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="96"> bindcode $mod&#43;55 split v</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L97">97</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="97"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L98">98</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="98"> # enter fullscreen mode for the focused container</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L99">99</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="99">-bindcode $mod&#43;41 fullscreen</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L100">100</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="100">&#43;bindcode $mod&#43;41 fullscreen toggle</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L101">101</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="101"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L102">102</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="102"> # change container layout (stacked, tabbed, toggle split)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L103">103</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="103"> bindcode $mod&#43;39 layout stacking</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/include/commands.h</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L108">108</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="108">@@ -187,10 &#43;187,10 @@ void cmd_focus_level(I3_CMD, char *level);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L109">109</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="109"> void cmd_focus(I3_CMD);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L110">110</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="110"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L111">111</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="111"> /**</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L112">112</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="112">- * Implementation of &#39;fullscreen [global]&#39;.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L113">113</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="113">&#43; * Implementation of &#39;fullscreen [enable|disable|toggle] [global]&#39;.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L114">114</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="114">  *</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L115">115</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="115">  */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L116">116</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="116">-void cmd_fullscreen(I3_CMD, char *fullscreen_mode);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L117">117</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="117">&#43;void cmd_fullscreen(I3_CMD, char *action, char *fullscreen_mode);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L118">118</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="118"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L119">119</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="119"> /**</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L120">120</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="120">  * Implementation of &#39;move &lt;direction&gt; [&lt;pixels&gt; [px]]&#39;.</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/include/con.h</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L125">125</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="125">@@ -173,6 &#43;173,18 @@ void con_fix_percent(Con *con);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L126">126</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="126"> void con_toggle_fullscreen(Con *con, int fullscreen_mode);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L127">127</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="127"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L128">128</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="128"> /**</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L129">129</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="129">&#43; * Enables fullscreen mode for the given container, if necessary.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L130">130</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="130">&#43; *</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L131">131</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="131">&#43; */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L132">132</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="132">&#43;void con_enable_fullscreen(Con *con, fullscreen_mode_t fullscreen_mode);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L133">133</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="133">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L134">134</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="134">&#43;/**</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L135">135</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="135">&#43; * Disables fullscreen mode for the given container, if necessary.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L136">136</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="136">&#43; *</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L137">137</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="137">&#43; */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L138">138</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="138">&#43;void con_disable_fullscreen(Con *con);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L139">139</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="139">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L140">140</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="140">&#43;/**</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L141">141</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="141">  * Moves the given container to the currently focused container on the given</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L142">142</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="142">  * workspace.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L143">143</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="143">  *</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/man/i3.man</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L148">148</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="148">@@ -230,7 &#43;230,7 @@ bindsym Mod1&#43;h split h</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L149">149</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="149"> bindsym Mod1&#43;v split v</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L150">150</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="150"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L151">151</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="151"> # enter fullscreen mode for the focused container</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L152">152</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="152">-bindsym Mod1&#43;f fullscreen</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L153">153</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="153">&#43;bindsym Mod1&#43;f fullscreen toggle</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L154">154</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="154"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L155">155</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="155"> # change container layout (stacked, tabbed, default)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L156">156</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="156"> bindsym Mod1&#43;s layout stacking</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/parser-specs/commands.spec</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L161">161</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="161">@@ -156,12 &#43;156,28 @@ state KILL:</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L162">162</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="162">   end</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L163">163</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="163">       -&gt; call cmd_kill($kill_mode)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L164">164</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="164"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L165">165</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="165">&#43;# fullscreen enable|toggle [global]</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L166">166</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="166">&#43;# fullscreen disable</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L167">167</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="167"> # fullscreen [global]</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L168">168</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="168"> state FULLSCREEN:</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L169">169</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="169">-  fullscreen_mode = &#39;global&#39;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L170">170</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="170">-      -&gt; call cmd_fullscreen($fullscreen_mode)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L171">171</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="171">&#43;  action = &#39;disable&#39;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L172">172</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="172">&#43;      -&gt; call cmd_fullscreen($action, &#34;output&#34;)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L173">173</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="173">&#43;  action = &#39;enable&#39;, &#39;toggle&#39;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L174">174</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="174">&#43;      -&gt; FULLSCREEN_MODE</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L175">175</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="175">&#43;  action = &#39;&#39;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L176">176</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="176">&#43;      -&gt; FULLSCREEN_COMPAT</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L177">177</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="177">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L178">178</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="178">&#43;state FULLSCREEN_MODE:</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L179">179</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="179">&#43;  mode = &#39;global&#39;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L180">180</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="180">&#43;      -&gt; call cmd_fullscreen($action, $mode)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L181">181</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="181">   end</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L182">182</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="182">-      -&gt; call cmd_fullscreen($fullscreen_mode)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L183">183</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="183">&#43;      -&gt; call cmd_fullscreen($action, &#34;output&#34;)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L184">184</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="184">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L185">185</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="185">&#43;state FULLSCREEN_COMPAT:</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L186">186</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="186">&#43;  mode = &#39;global&#39;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L187">187</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="187">&#43;      -&gt; call cmd_fullscreen(&#34;toggle&#34;, $mode)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L188">188</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="188">&#43;  end</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L189">189</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="189">&#43;      -&gt; call cmd_fullscreen(&#34;toggle&#34;, &#34;output&#34;)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L190">190</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="190"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L191">191</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="191"> # split v|h|vertical|horizontal</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L192">192</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="192"> state SPLIT:</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/src/commands.c</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L197">197</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="197">@@ -1574,20 &#43;1574,26 @@ void cmd_focus(I3_CMD) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L198">198</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="198"> }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L199">199</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="199"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L200">200</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="200"> /*</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L201">201</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="201">- * Implementation of &#39;fullscreen [global]&#39;.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L202">202</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="202">&#43; * Implementation of &#39;fullscreen enable|toggle [global]&#39; and</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L203">203</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="203">&#43; *                   &#39;fullscreen disable&#39;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L204">204</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="204">  *</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L205">205</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="205">  */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L206">206</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="206">-void cmd_fullscreen(I3_CMD, char *fullscreen_mode) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L207">207</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="207">-    if (fullscreen_mode == NULL)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L208">208</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="208">-        fullscreen_mode = &#34;output&#34;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L209">209</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="209">-    DLOG(&#34;toggling fullscreen, mode = %s\n&#34;, fullscreen_mode);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L210">210</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="210">&#43;void cmd_fullscreen(I3_CMD, char *action, char *fullscreen_mode) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L211">211</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="211">&#43;    fullscreen_mode_t mode = strcmp(fullscreen_mode, &#34;global&#34;) == 0 ? CF_GLOBAL : CF_OUTPUT;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L212">212</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="212">&#43;    DLOG(&#34;%s fullscreen, mode = %s\n&#34;, action, fullscreen_mode);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L213">213</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="213">     owindow *current;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L214">214</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="214"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L215">215</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="215">     HANDLE_EMPTY_MATCH;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L216">216</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="216"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L217">217</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="217">     TAILQ_FOREACH(current, &amp;owindows, owindows) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L218">218</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="218">         DLOG(&#34;matching: %p / %s\n&#34;, current-&gt;con, current-&gt;con-&gt;name);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L219">219</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="219">-        con_toggle_fullscreen(current-&gt;con, (strcmp(fullscreen_mode, &#34;global&#34;) == 0 ? CF_GLOBAL : CF_OUTPUT));</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L220">220</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="220">&#43;        if (strcmp(action, &#34;toggle&#34;) == 0) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L221">221</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="221">&#43;            con_toggle_fullscreen(current-&gt;con, mode);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L222">222</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="222">&#43;        } else if (strcmp(action, &#34;enable&#34;) == 0) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L223">223</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="223">&#43;            con_enable_fullscreen(current-&gt;con, mode);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L224">224</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="224">&#43;        } else if (strcmp(action, &#34;disable&#34;) == 0) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L225">225</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="225">&#43;            con_disable_fullscreen(current-&gt;con);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L226">226</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="226">&#43;        }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L227">227</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="227">     }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L228">228</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="228"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L229">229</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="229">     cmd_output-&gt;needs_tree_render = true;</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/src/con.c</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L234">234</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="234">@@ -565,37 &#43;565,27 @@ void con_fix_percent(Con *con) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L235">235</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="235">  *</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L236">236</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="236">  */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L237">237</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="237"> void con_toggle_fullscreen(Con *con, int fullscreen_mode) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L238">238</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="238">-    Con *workspace, *fullscreen;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L239">239</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="239">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L240">240</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="240">     if (con-&gt;type == CT_WORKSPACE) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L241">241</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="241">         DLOG(&#34;You cannot make a workspace fullscreen.\n&#34;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L242">242</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="242">         return;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L243">243</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="243">     }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L244">244</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="244"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L245">245</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="245">     DLOG(&#34;toggling fullscreen for %p / %s\n&#34;, con, con-&gt;name);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L246">246</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="246">-    if (con-&gt;fullscreen_mode == CF_NONE) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L247">247</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="247">-        /* 1: check if there already is a fullscreen con */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L248">248</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="248">-        if (fullscreen_mode == CF_GLOBAL)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L249">249</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="249">-            fullscreen = con_get_fullscreen_con(croot, CF_GLOBAL);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L250">250</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="250">-        else {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L251">251</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="251">-            workspace = con_get_workspace(con);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L252">252</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="252">-            fullscreen = con_get_fullscreen_con(workspace, CF_OUTPUT);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L253">253</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="253">-        }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L254">254</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="254">-        if (fullscreen != NULL) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L255">255</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="255">-            /* Disable fullscreen for the currently fullscreened</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L256">256</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="256">-             * container and enable it for the one the user wants</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L257">257</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="257">-             * to have in fullscreen mode. */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L258">258</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="258">-            LOG(&#34;Disabling fullscreen for (%p/%s) upon user request\n&#34;,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L259">259</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="259">-                fullscreen, fullscreen-&gt;name);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L260">260</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="260">-            fullscreen-&gt;fullscreen_mode = CF_NONE;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L261">261</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="261">-        }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L262">262</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="262"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L263">263</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="263">-        /* 2: enable fullscreen */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L264">264</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="264">-        con-&gt;fullscreen_mode = fullscreen_mode;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L265">265</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="265">-    } else {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L266">266</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="266">-        /* 1: disable fullscreen */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L267">267</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="267">-        con-&gt;fullscreen_mode = CF_NONE;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L268">268</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="268">-    }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L269">269</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="269">&#43;    if (con-&gt;fullscreen_mode == CF_NONE)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L270">270</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="270">&#43;        con_enable_fullscreen(con, fullscreen_mode);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L271">271</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="271">&#43;    else</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L272">272</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="272">&#43;        con_disable_fullscreen(con);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L273">273</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="273">&#43;}</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L274">274</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="274">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L275">275</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="275">&#43;/*</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L276">276</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="276">&#43; * Sets the specified fullscreen mode for the given container, sends the</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L277">277</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="277">&#43; * “fullscreen_mode” event and changes the XCB fullscreen property of the</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L278">278</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="278">&#43; * container’s window, if any.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L279">279</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="279">&#43; *</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L280">280</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="280">&#43; */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L281">281</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="281">&#43;static void con_set_fullscreen_mode(Con *con, fullscreen_mode_t fullscreen_mode) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L282">282</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="282">&#43;    con-&gt;fullscreen_mode = fullscreen_mode;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L283">283</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="283"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L284">284</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="284">     DLOG(&#34;mode now: %d\n&#34;, con-&gt;fullscreen_mode);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L285">285</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="285"> </pre>
+  </td>
+  </tr>
+
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L286">286</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="286">@@ -619,6 &#43;609,79 @@ void con_toggle_fullscreen(Con *con, int fullscreen_mode) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L287">287</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="287"> }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L288">288</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="288"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L289">289</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="289"> /*</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L290">290</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="290">&#43; * Enables fullscreen mode for the given container, if necessary.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L291">291</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="291">&#43; *</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L292">292</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="292">&#43; * If the container’s mode is already CF_OUTPUT or CF_GLOBAL, the container is</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L293">293</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="293">&#43; * kept fullscreen but its mode is set to CF_GLOBAL and CF_OUTPUT,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L294">294</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="294">&#43; * respectively.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L295">295</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="295">&#43; *</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L296">296</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="296">&#43; * Other fullscreen containers will be disabled first, if they hide the new</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L297">297</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="297">&#43; * one.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L298">298</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="298">&#43; *</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L299">299</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="299">&#43; */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L300">300</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="300">&#43;void con_enable_fullscreen(Con *con, fullscreen_mode_t fullscreen_mode) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L301">301</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="301">&#43;    if (con-&gt;type == CT_WORKSPACE) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L302">302</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="302">&#43;        DLOG(&#34;You cannot make a workspace fullscreen.\n&#34;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L303">303</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="303">&#43;        return;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L304">304</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="304">&#43;    }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L305">305</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="305">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L306">306</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="306">&#43;    assert(fullscreen_mode == CF_GLOBAL || fullscreen_mode == CF_OUTPUT);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L307">307</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="307">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L308">308</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="308">&#43;    if (fullscreen_mode == CF_GLOBAL)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L309">309</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="309">&#43;        DLOG(&#34;enabling global fullscreen for %p / %s\n&#34;, con, con-&gt;name);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L310">310</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="310">&#43;    else</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L311">311</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="311">&#43;        DLOG(&#34;enabling fullscreen for %p / %s\n&#34;, con, con-&gt;name);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L312">312</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="312">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L313">313</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="313">&#43;    if (con-&gt;fullscreen_mode == fullscreen_mode) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L314">314</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="314">&#43;        DLOG(&#34;fullscreen already enabled for %p / %s\n&#34;, con, con-&gt;name);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L315">315</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="315">&#43;        return;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L316">316</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="316">&#43;    }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L317">317</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="317">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L318">318</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="318">&#43;    Con *con_ws = con_get_workspace(con);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L319">319</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="319">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L320">320</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="320">&#43;    /* Disable any fullscreen container that would conflict the new one. */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L321">321</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="321">&#43;    Con *fullscreen = con_get_fullscreen_con(croot, CF_GLOBAL);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L322">322</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="322">&#43;    if (fullscreen == NULL)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L323">323</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="323">&#43;        fullscreen = con_get_fullscreen_con(con_ws, CF_OUTPUT);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L324">324</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="324">&#43;    if (fullscreen != NULL)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L325">325</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="325">&#43;        con_disable_fullscreen(fullscreen);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L326">326</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="326">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L327">327</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="327">&#43;    /* Set focus to new fullscreen container. Unless in global fullscreen mode</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L328">328</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="328">&#43;     * and on another workspace restore focus afterwards.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L329">329</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="329">&#43;     * Switch to the container’s workspace if mode is global. */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L330">330</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="330">&#43;    Con *cur_ws = con_get_workspace(focused);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L331">331</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="331">&#43;    Con *old_focused = focused;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L332">332</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="332">&#43;    if (fullscreen_mode == CF_GLOBAL &amp;&amp; cur_ws != con_ws)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L333">333</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="333">&#43;        workspace_show(con_ws);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L334">334</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="334">&#43;    con_focus(con);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L335">335</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="335">&#43;    if (fullscreen_mode != CF_GLOBAL &amp;&amp; cur_ws != con_ws)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L336">336</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="336">&#43;        con_focus(old_focused);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L337">337</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="337">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L338">338</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="338">&#43;    con_set_fullscreen_mode(con, fullscreen_mode);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L339">339</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="339">&#43;}</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L340">340</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="340">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L341">341</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="341">&#43;/*</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L342">342</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="342">&#43; * Disables fullscreen mode for the given container regardless of the mode, if</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L343">343</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="343">&#43; * necessary.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L344">344</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="344">&#43; *</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L345">345</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="345">&#43; */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L346">346</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="346">&#43;void con_disable_fullscreen(Con *con) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L347">347</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="347">&#43;    if (con-&gt;type == CT_WORKSPACE) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L348">348</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="348">&#43;        DLOG(&#34;You cannot make a workspace fullscreen.\n&#34;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L349">349</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="349">&#43;        return;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L350">350</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="350">&#43;    }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L351">351</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="351">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L352">352</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="352">&#43;    DLOG(&#34;disabling fullscreen for %p / %s\n&#34;, con, con-&gt;name);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L353">353</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="353">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L354">354</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="354">&#43;    if (con-&gt;fullscreen_mode == CF_NONE) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L355">355</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="355">&#43;        DLOG(&#34;fullscreen already disabled for %p / %s\n&#34;, con, con-&gt;name);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L356">356</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="356">&#43;        return;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L357">357</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="357">&#43;    }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L358">358</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="358">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L359">359</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="359">&#43;    con_set_fullscreen_mode(con, CF_NONE);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L360">360</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="360">&#43;}</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L361">361</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="361">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L362">362</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="362">&#43;/*</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L363">363</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="363">  * Moves the given container to the currently focused container on the given</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L364">364</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="364">  * workspace.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L365">365</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="365">  *</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/testcases/i3-test.config</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L370">370</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="370">@@ -20,7 &#43;20,7 @@ bindsym Mod1&#43;h split h</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L371">371</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="371"> bindsym Mod1&#43;v split v</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L372">372</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="372"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L373">373</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="373"> # Fullscreen (Mod1&#43;f)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L374">374</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="374">-bindsym Mod1&#43;f fullscreen</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L375">375</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="375">&#43;bindsym Mod1&#43;f fullscreen toggle</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L376">376</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="376"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L377">377</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="377"> # Stacking (Mod1&#43;s)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L378">378</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="378"> bindsym Mod1&#43;s layout stacking</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/testcases/t/100-fullscreen.t</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L383">383</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="383">@@ -235,4 &#43;235,131 @@ $swindow = open_window({</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L384">384</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="384"> is(fullscreen_windows($tmp), 1, &#39;one fullscreen window on ws&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L385">385</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="385"> is($x-&gt;input_focus, $swindow-&gt;id, &#39;fullscreen window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L386">386</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="386"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L387">387</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="387">&#43;################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L388">388</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="388">&#43;# Verify that command ‘fullscreen enable’ works and is idempotent.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L389">389</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="389">&#43;################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L390">390</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="390">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L391">391</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="391">&#43;$tmp = fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L392">392</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="392">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L393">393</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="393">&#43;$window = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L394">394</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="394">&#43;is($x-&gt;input_focus, $window-&gt;id, &#39;window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L395">395</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="395">&#43;is(fullscreen_windows($tmp), 0, &#39;no fullscreen window on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L396">396</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="396">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L397">397</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="397">&#43;cmd &#39;fullscreen enable&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L398">398</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="398">&#43;is($x-&gt;input_focus, $window-&gt;id, &#39;window still focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L399">399</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="399">&#43;is(fullscreen_windows($tmp), 1, &#39;one fullscreen window on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L400">400</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="400">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L401">401</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="401">&#43;cmd &#39;fullscreen enable&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L402">402</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="402">&#43;is($x-&gt;input_focus, $window-&gt;id, &#39;window still focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L403">403</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="403">&#43;is(fullscreen_windows($tmp), 1, &#39;still one fullscreen window on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L404">404</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="404">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L405">405</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="405">&#43;$window-&gt;fullscreen(0);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L406">406</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="406">&#43;sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L407">407</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="407">&#43;is(fullscreen_windows($tmp), 0, &#39;no fullscreen window on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L408">408</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="408">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L409">409</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="409">&#43;################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L410">410</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="410">&#43;# Verify that command ‘fullscreen enable global’ works and is idempotent.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L411">411</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="411">&#43;################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L412">412</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="412">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L413">413</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="413">&#43;$tmp = fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L414">414</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="414">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L415">415</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="415">&#43;$window = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L416">416</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="416">&#43;is($x-&gt;input_focus, $window-&gt;id, &#39;window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L417">417</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="417">&#43;is(fullscreen_windows($tmp), 0, &#39;no fullscreen window on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L418">418</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="418">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L419">419</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="419">&#43;cmd &#39;fullscreen enable global&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L420">420</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="420">&#43;is($x-&gt;input_focus, $window-&gt;id, &#39;window still focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L421">421</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="421">&#43;is(fullscreen_windows($tmp), 1, &#39;one fullscreen window on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L422">422</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="422">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L423">423</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="423">&#43;cmd &#39;fullscreen enable global&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L424">424</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="424">&#43;is($x-&gt;input_focus, $window-&gt;id, &#39;window still focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L425">425</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="425">&#43;is(fullscreen_windows($tmp), 1, &#39;still one fullscreen window on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L426">426</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="426">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L427">427</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="427">&#43;$window-&gt;fullscreen(0);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L428">428</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="428">&#43;sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L429">429</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="429">&#43;is(fullscreen_windows($tmp), 0, &#39;no fullscreen window on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L430">430</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="430">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L431">431</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="431">&#43;################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L432">432</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="432">&#43;# Verify that command ‘fullscreen disable’ works and is idempotent.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L433">433</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="433">&#43;################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L434">434</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="434">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L435">435</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="435">&#43;$tmp = fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L436">436</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="436">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L437">437</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="437">&#43;$window = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L438">438</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="438">&#43;is($x-&gt;input_focus, $window-&gt;id, &#39;window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L439">439</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="439">&#43;is(fullscreen_windows($tmp), 0, &#39;no fullscreen window on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L440">440</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="440">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L441">441</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="441">&#43;$window-&gt;fullscreen(1);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L442">442</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="442">&#43;sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L443">443</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="443">&#43;is(fullscreen_windows($tmp), 1, &#39;one fullscreen window on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L444">444</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="444">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L445">445</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="445">&#43;cmd &#39;fullscreen disable&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L446">446</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="446">&#43;is($x-&gt;input_focus, $window-&gt;id, &#39;window still focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L447">447</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="447">&#43;is(fullscreen_windows($tmp), 0, &#39;no fullscreen window on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L448">448</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="448">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L449">449</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="449">&#43;cmd &#39;fullscreen disable&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L450">450</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="450">&#43;is($x-&gt;input_focus, $window-&gt;id, &#39;window still focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L451">451</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="451">&#43;is(fullscreen_windows($tmp), 0, &#39;still no fullscreen window on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L452">452</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="452">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L453">453</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="453">&#43;################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L454">454</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="454">&#43;# Verify that command ‘fullscreen toggle’ works.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L455">455</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="455">&#43;################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L456">456</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="456">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L457">457</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="457">&#43;$tmp = fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L458">458</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="458">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L459">459</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="459">&#43;$window = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L460">460</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="460">&#43;is(fullscreen_windows($tmp), 0, &#39;no fullscreen window on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L461">461</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="461">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L462">462</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="462">&#43;cmd &#39;fullscreen toggle&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L463">463</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="463">&#43;is($x-&gt;input_focus, $window-&gt;id, &#39;window still focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L464">464</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="464">&#43;is(fullscreen_windows($tmp), 1, &#39;one fullscreen window on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L465">465</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="465">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L466">466</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="466">&#43;cmd &#39;fullscreen toggle&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L467">467</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="467">&#43;is($x-&gt;input_focus, $window-&gt;id, &#39;window still focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L468">468</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="468">&#43;is(fullscreen_windows($tmp), 0, &#39;no fullscreen window on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L469">469</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="469">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L470">470</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="470">&#43;################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L471">471</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="471">&#43;# Verify that a window’s fullscreen is disabled when another one is enabled</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L472">472</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="472">&#43;# on the same workspace. The new fullscreen window should be focused.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L473">473</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="473">&#43;################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L474">474</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="474">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L475">475</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="475">&#43;$tmp = fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L476">476</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="476">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L477">477</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="477">&#43;$window = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L478">478</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="478">&#43;$other = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L479">479</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="479">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L480">480</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="480">&#43;is($x-&gt;input_focus, $other-&gt;id, &#39;other window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L481">481</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="481">&#43;is(fullscreen_windows($tmp), 0, &#39;no fullscreen window on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L482">482</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="482">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L483">483</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="483">&#43;cmd &#39;fullscreen enable&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L484">484</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="484">&#43;is($x-&gt;input_focus, $other-&gt;id, &#39;other window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L485">485</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="485">&#43;is(fullscreen_windows($tmp), 1, &#39;one fullscreen window on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L486">486</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="486">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L487">487</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="487">&#43;cmd &#39;[id=&#34;&#39; . $window-&gt;id . &#39;&#34;] fullscreen enable&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L488">488</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="488">&#43;is($x-&gt;input_focus, $window-&gt;id, &#39;window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L489">489</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="489">&#43;is(fullscreen_windows($tmp), 1, &#39;one fullscreen window on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L490">490</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="490">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L491">491</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="491">&#43;################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L492">492</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="492">&#43;# Verify that when a global fullscreen is enabled the window is focused and</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L493">493</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="493">&#43;# it’s workspace is selected, so that disabling the fullscreen keeps the window</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L494">494</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="494">&#43;# focused and visible.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L495">495</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="495">&#43;################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L496">496</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="496">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L497">497</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="497">&#43;$tmp = fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L498">498</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="498">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L499">499</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="499">&#43;$window = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L500">500</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="500">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L501">501</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="501">&#43;is($x-&gt;input_focus, $window-&gt;id, &#39;window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L502">502</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="502">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L503">503</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="503">&#43;cmd &#39;workspace &#39; . get_unused_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L504">504</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="504">&#43;isnt($x-&gt;input_focus, $window-&gt;id, &#39;window not focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L505">505</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="505">&#43;isnt(focused_ws(), $tmp, &#39;workspace not selected&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L506">506</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="506">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L507">507</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="507">&#43;cmd &#39;[id=&#34;&#39; . $window-&gt;id . &#39;&#34;] fullscreen enable global&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L508">508</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="508">&#43;is($x-&gt;input_focus, $window-&gt;id, &#39;window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L509">509</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="509">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L510">510</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="510">&#43;cmd &#39;fullscreen disable&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L511">511</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="511">&#43;is($x-&gt;input_focus, $window-&gt;id, &#39;window still focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L512">512</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="512">&#43;is(focused_ws(), $tmp, &#39;workspace selected&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L513">513</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="513">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L514">514</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="514"> done_testing;</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+
+</div>
+
+  </body>
+</html>
+

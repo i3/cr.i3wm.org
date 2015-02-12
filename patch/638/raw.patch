@@ -1,0 +1,38 @@
+From 205cb38ccb1c3066794a2542a9eb78f673db46c3 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Klemen=20Ko=C5=A1ir?= <klemen913@…>
+Date: Mon, 25 Aug 2014 19:03:11 +0200
+Subject: [PATCH] Fix battery indicator on systems without
+ POWER_SUPPLY_VOLTAGE_NOW.
+
+In my case, the voltage variable would stay initialized as -1,
+which caused the calculation of battery charge percentage to be
+incorrect (I would get the message that there is no battery present
+or even -0% charge).
+
+I have no idea how this would affect other systems, since I don't
+have a chance to test this.
+---
+ src/print_battery_info.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/src/print_battery_info.c b/src/print_battery_info.c
+index 102522b..6b39c12 100644
+--- a/src/print_battery_info.c
++++ b/src/print_battery_info.c
+@@ -124,8 +124,11 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+          * ampere to watt */
+         if (!watt_as_unit) {
+             present_rate = (((float)voltage / 1000.0) * ((float)present_rate / 1000.0));
+-            remaining = (((float)voltage / 1000.0) * ((float)remaining / 1000.0));
+-            full_design = (((float)voltage / 1000.0) * ((float)full_design / 1000.0));
++
++            if (voltage != -1) {
++                remaining = (((float)voltage / 1000.0) * ((float)remaining / 1000.0));
++                full_design = (((float)voltage / 1000.0) * ((float)full_design / 1000.0));
++            }
+         }
+ 
+         if ((full_design == -1) || (remaining == -1)) {
+-- 
+2.1.0
+

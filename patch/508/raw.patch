@@ -1,0 +1,215 @@
+From 669f98b023ac29c38429ba49ca8caae87c54d201 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Wed, 23 Apr 2014 04:49:29 -0400
+Subject: [PATCH] Implement the ipc 'binding' event
+
+The binding event will be triggered when a binding is run as a result of
+some a user action. The binding event has the following properties:
+
+change: (str) Currently this will only be "run" but may be expanded in
+the future. Included for consistency with other events.
+
+binding: (map) the serialized binding
+
+The "binding" member will have these properties:
+
+input_type: (str) either "keyboard" or "mouse"
+
+input_code: (int) the xcb keycode of the keyboard binding if it was
+provided or the mouse button if it is a mouse binding.
+
+symbol: (str) the string representation of the input code
+
+command: (str) the bound command
+
+mods: (list of str) a list of the modifiers that were pressed as string
+symbols
+
+fixes #1210
+---
+ include/bindings.h |  5 ++++
+ include/i3/ipc.h   |  3 ++
+ include/ipc.h      |  5 ++++
+ src/bindings.c     | 16 +++++++++++
+ src/ipc.c          | 81 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ src/key_press.c    |  7 +----
+ 6 files changed, 111 insertions(+), 6 deletions(-)
+
+diff --git a/include/bindings.h b/include/bindings.h
+index d309790..e2ef75a 100644
+--- a/include/bindings.h
++++ b/include/bindings.h
+@@ -48,3 +48,8 @@ void translate_keysyms(void);
+  *
+  */
+ void switch_mode(const char *new_mode);
++
++/**
++ * Runs the given binding and returns a CommandResult
++ */
++struct CommandResult *run_binding(Binding *bind);
+diff --git a/include/i3/ipc.h b/include/i3/ipc.h
+index 94a3990..d5f6ab4 100644
+--- a/include/i3/ipc.h
++++ b/include/i3/ipc.h
+@@ -100,3 +100,6 @@ typedef struct i3_ipc_header {
+ 
+ /** Bar config update will be triggered to update the bar config */
+ #define I3_IPC_EVENT_BARCONFIG_UPDATE           (I3_IPC_EVENT_MASK | 4)
++
++/** The binding event will be triggered when bindings run */
++#define I3_IPC_EVENT_BINDING                    (I3_IPC_EVENT_MASK | 5)
+diff --git a/include/ipc.h b/include/ipc.h
+index 2c25b4e..1aeed29 100644
+--- a/include/ipc.h
++++ b/include/ipc.h
+@@ -93,3 +93,8 @@ void ipc_send_workspace_focus_event(Con *current, Con *old);
+  * also the window container, in "container".
+  */
+ void ipc_send_window_event(const char *property, Con *con);
++
++/**
++ * For the binding events, we send the serialized binding struct.
++ */
++void ipc_send_binding_event(const char *event_type, Binding *binding);
+diff --git a/src/bindings.c b/src/bindings.c
+index c3e9c1b..1824702 100644
+--- a/src/bindings.c
++++ b/src/bindings.c
+@@ -259,3 +259,19 @@ void switch_mode(const char *new_mode) {
+ 
+     ELOG("ERROR: Mode not found\n");
+ }
++
++/*
++ * Runs the given binding and returns a CommandResult
++ */
++struct CommandResult *run_binding(Binding *bind) {
++    char *command_copy = sstrdup(bind->command);
++    struct CommandResult *command_output = parse_command(command_copy);
++    free(command_copy);
++
++    if (command_output->needs_tree_render)
++        tree_render();
++
++    ipc_send_binding_event("run", bind);
++
++    return command_output;
++}
+diff --git a/src/ipc.c b/src/ipc.c
+index 82ab142..80ab163 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -147,6 +147,57 @@ static void dump_rect(yajl_gen gen, const char *name, Rect r) {
+     y(map_close);
+ }
+ 
++static void dump_binding(yajl_gen gen, Binding *bind) {
++    y(map_open);
++    ystr("input_code");
++    y(integer, bind->keycode);
++
++    ystr("input_type");
++    ystr((const char*)(bind->input_type == B_KEYBOARD ? "keyboard" : "mouse"));
++
++    ystr("symbol");
++    ystr(bind->symbol);
++
++    ystr("command");
++    ystr(bind->command);
++
++    ystr("mods");
++    y(array_open);
++    for (int i = 0; i < 8; i++) {
++        if (bind->mods & (1 << i)) {
++            switch (1 << i) {
++                case XCB_MOD_MASK_SHIFT:
++                    ystr("Shift");
++                    break;
++                case XCB_MOD_MASK_LOCK:
++                    ystr("Lock");
++                    break;
++                case XCB_MOD_MASK_CONTROL:
++                    ystr("Control");
++                    break;
++                case XCB_MOD_MASK_1:
++                    ystr("Mod1");
++                    break;
++                case XCB_MOD_MASK_2:
++                    ystr("Mod2");
++                    break;
++                case XCB_MOD_MASK_3:
++                    ystr("Mod3");
++                    break;
++                case XCB_MOD_MASK_4:
++                    ystr("Mod4");
++                    break;
++                case XCB_MOD_MASK_5:
++                    ystr("Mod5");
++                    break;
++            }
++        }
++    }
++    y(array_close);
++
++    y(map_close);
++}
++
+ void dump_node(yajl_gen gen, struct Con *con, bool inplace_restart) {
+     y(map_open);
+     ystr("id");
+@@ -1090,3 +1141,33 @@ void ipc_send_window_event(const char *property, Con *con) {
+     y(free);
+     setlocale(LC_NUMERIC, "");
+ }
++
++/*
++ * For the binding events, we send the serialized binding struct.
++ */
++void ipc_send_binding_event(const char *event_type, Binding *bind) {
++    DLOG("Issue IPC binding %s event (sym = %s, code = %d)\n", event_type, bind->symbol, bind->keycode);
++
++    setlocale(LC_NUMERIC, "C");
++
++    yajl_gen gen = ygenalloc();
++
++    y(map_open);
++
++    ystr("change");
++    ystr(event_type);
++
++    ystr("binding");
++    dump_binding(gen, bind);
++
++    y(map_close);
++
++    const unsigned char *payload;
++    ylength length;
++    y(get_buf, &payload, &length);
++
++    ipc_send_event("binding", I3_IPC_EVENT_BINDING, (const char *)payload);
++
++    y(free);
++    setlocale(LC_NUMERIC, "");
++}
+diff --git a/src/key_press.c b/src/key_press.c
+index 68e2fca..aa71925 100644
+--- a/src/key_press.c
++++ b/src/key_press.c
+@@ -105,12 +105,7 @@ void handle_key_press(xcb_key_press_event_t *event) {
+         }
+     }
+ 
+-    char *command_copy = sstrdup(bind->command);
+-    struct CommandResult *command_output = parse_command(command_copy);
+-    free(command_copy);
+-
+-    if (command_output->needs_tree_render)
+-        tree_render();
++    struct CommandResult *command_output = run_binding(bind);
+ 
+     /* We parse the JSON reply to figure out whether there was an error
+      * ("success" being false in on of the returned dictionaries). */
+-- 
+1.9.2
+

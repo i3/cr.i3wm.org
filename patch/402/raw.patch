@@ -1,0 +1,45 @@
+From 8c9e722a2e0144af99982aca0a4942125a9a588d Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 4 Feb 2014 18:49:06 -0500
+Subject: [PATCH] Do not send WM_TAKE_FOCUS when InputHint is set
+
+Window managers do not conventionally send WM_TAKE_FOCUS when the
+WM_HINTS property of the client has the `input` flag set (which shall be
+"the client's input model").
+
+The "models of input handling" can be found here:
+http://tronche.com/gui/x/icccm/sec-4.html#s-4.1.7
+
+fixes #1167
+---
+ src/x.c | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
+
+diff --git a/src/x.c b/src/x.c
+index 366cbe1..8a3bcb2 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -949,17 +949,13 @@ void x_push_changes(Con *con) {
+             /* Invalidate focused_id to correctly focus new windows with the same ID */
+             focused_id = XCB_NONE;
+         } else {
+-            bool set_focus = true;
+             if (focused->window != NULL &&
+-                focused->window->needs_take_focus) {
++                focused->window->needs_take_focus &&
++                focused->window->doesnt_accept_focus) {
+                 DLOG("Updating focus by sending WM_TAKE_FOCUS to window 0x%08x (focused: %p / %s)\n",
+                      to_focus, focused, focused->name);
+                 send_take_focus(to_focus);
+-                set_focus = !focused->window->doesnt_accept_focus;
+-                DLOG("set_focus = %d\n", set_focus);
+-            }
+-
+-            if (set_focus) {
++            } else {
+                 DLOG("Updating focus (focused: %p / %s) to X11 window 0x%08x\n", focused, focused->name, to_focus);
+                 /* We remove XCB_EVENT_MASK_FOCUS_CHANGE from the event mask to get
+                  * no focus change events for our own focus changes. We only want
+-- 
+1.8.5.3
+

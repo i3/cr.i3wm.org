@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 17,
+    "Comment": "I don’t think anyone should be using this module, it’s only in i3status for backwards compatibility. If you need to monitor your CPU’s temperature, your cooling is broken, so fix that instead of repeatedly checking whether your CPU gets too hot.\n\nTherefore, I don’t want to introduce new options to this module, sorry.\n(Also, celsius is the one true unit anyway. Get used to it already :-p)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Matt Schwager",
+    "Line": 17,
+    "Comment": "I'm glad your personal preference for what people should monitor on their computer, and what format it's in, governs what you put in this software.",
+    "EmailHash": "f6f68e3cf549443e3b5f9bf9f24c6fd3"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 17,
+    "Comment": "Yes, that is how it works. We cannot let any software project grow without bounds, and I have to draw the line somewhere. See also https://faq.i3wm.org/question/778/why-is-patch-not-merged-and-made-optional/",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

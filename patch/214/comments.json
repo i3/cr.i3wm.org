@@ -1,0 +1,44 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 14,
+    "Comment": "If you change the commit description from “This fixes” to “fixes”, it will automatically close the bug :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 26,
+    "Comment": "Missing an empty line between the closing brace and the function.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 27,
+    "Comment": "s/){/) {/, as mentioned in the last review. Please fix these kinds of issues everywhere in your code.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 112,
+    "Comment": "Passing an integer value to exit() is not necessarily a good idea — as the manpage explains, the value is bitwise ANDed with 0377, so you might end up in weird situations.\n\nMost likely nothing bad will happen (for now?), but I still think it’s cleaner to use exit(pam_authenticate(pam_handle, 0) == PAM_SUCCESS); here.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 105,
+    "Comment": "Use pid_t cpid = fork();",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 107,
+    "Comment": "There’s no good reason why the child_watcher is allocated in both the parent and the child. Can you move this code to the end of the function instead?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 114,
+    "Comment": "Careful! The manpage says “The err(), verr(), errx(), and verrx() functions do not return, but exit with the value of the argument eval.”\n\nThis will effectively unlock the screen when fork() fails for some reason — not a good idea :).\n\nPlease implement a fallback to directly calling pam_authenticate etc. blockingly. Some more refactoring will be necessary to get there from the current state of your patch, but we need to get this right.\n",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

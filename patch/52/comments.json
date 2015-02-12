@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Axel Beckert",
+    "Line": 13,
+    "Comment": "Patch not tested for other settings like non-xmobar output!\n\nWorks fine with the following i3statusrc:\n\ngeneral {\n\toutput_format = \"xmobar\"\n\tcolors = true\n\tinterval = 1\n}\nwireless wlan0 {\n\t# if you use %speed, i3status requires root privileges or netcap\n\tformat_up = \"%essid: %ip %quality %bitrate\"\n\tformat_down = \"W\"\n}\nethernet eth0 {\n\t# if you use %speed, i3status requires root privileges or netcap\n\tformat_up = \"E: %ip %speed\"\n\tformat_down = \"E\"\n}\nbattery 0 {\n\tformat = \"%status %percentage %remaining\"\n\tlast_full_capacity = no\n}\nload {\n\tformat = \"%1min %5min %15min\"\n}\ncpu_temperature 0 {\n\tformat = \"%degreesC\"\n}\ndisk \"/\" {\n\tformat = \"/ %avail\"\n}\norder = {}\norder += \"wireless wlan0\"\norder += \"ethernet eth0\"\norder += \"battery 0\"\norder += \"cpu_temperature 0\"\norder += \"load\"\norder += \"disk /\"\n\nWithout that patch, there would be a stray \u003c/fc\u003e behind the battery\ninfo:\n\nWithout patch:\n\n$ ./i3status -c ~/.i3statusrc\n\u003cfc=#FF0000\u003eW\u003c/fc\u003e\u003cfc=#333333\u003e | \u003c/fc\u003e\u003cfc=#00FF00\u003eE: 192.0.2.195 100 Mbit/s\u003c/fc\u003e\u003cfc=#333333\u003e | \u003c/fc\u003eCHR 96.99% 00:29:39\u003c/fc\u003e\u003cfc=#333333\u003e | \u003c/fc\u003e60C\u003cfc=#333333\u003e | \u003c/fc\u003e0.59 0.46 0.44\u003cfc=#333333\u003e | \u003c/fc\u003e/ 22.4 GB\n\n$ ./i3status -c ~/.ratpoison/i3statusrc | perl -pe 's:\u003cfc=#[A-F0-9]{6}\u003e([^\u003c\u003e]*)\u003c/fc\u003e:$1:g'\nW | E: 192.0.2.195 100 Mbit/s | CHR 96.83% 00:29:15\u003c/fc\u003e | 58C | 0.55 0.44 0.44 | / 22.4 GB\n                                                      ^^^^^\n\nWith patch:\n\n$ ./i3status -c ~/.i3statusrc\n\u003cfc=#FF0000\u003eW\u003c/fc\u003e\u003cfc=#333333\u003e | \u003c/fc\u003e\u003cfc=#00FF00\u003eE: 192.0.2.195 100 Mbit/s\u003c/fc\u003e\u003cfc=#333333\u003e | \u003c/fc\u003eCHR 96.99% 00:29:39\u003cfc=#333333\u003e | \u003c/fc\u003e60C\u003cfc=#333333\u003e | \u003c/fc\u003e0.59 0.46 0.44\u003cfc=#333333\u003e | \u003c/fc\u003e/ 22.4 GB\n\n$ ./i3status -c ~/.i3statusrc | perl -pe 's:\u003cfc=#[A-F0-9]{6}\u003e([^\u003c\u003e]*)\u003c/fc\u003e:$1:g'\nW | E: 192.0.2.195 100 Mbit/s | CHR 96.83% 00:29:15 | 58C | 0.55 0.44 0.44 | / 22.4 GB\n",
+    "EmailHash": "9e699d89aa0d5001efb14c91034cee2a"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 13,
+    "Comment": "This was fixed with other changes in i3status git, therefore rejecting.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

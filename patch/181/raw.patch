@@ -1,0 +1,25 @@
+From 06511a61f195ab1d45725d9e3e9ce80edd06aa1d Mon Sep 17 00:00:00 2001
+From: Alexander Berntsen <alexander@…>
+Date: Wed, 5 Jun 2013 15:08:47 +0200
+Subject: [PATCH 4/5] Fix incorrect comment
+
+---
+ src/main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/main.c b/src/main.c
+index 0912d48..bc3bb63 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -294,7 +294,7 @@ int main(int argc, char *argv[]) {
+      * (file) logging. */
+     init_logging();
+ 
+-    /* On non-release builds, disable SHM logging by default. */
++    /* On release builds, disable SHM logging by default. */
+     shmlog_size = (is_debug_build() ? default_shmlog_size : 0);
+ 
+     start_argv = argv;
+-- 
+1.8.1.5
+

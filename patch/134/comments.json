@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 33,
+    "Comment": "There was an oversight when merging this: Putting hide_bars (or unhide_bars) into DLOGMOD() is totally misleading. Could you please make this DLOGMOD(…); hide_bars(); while you’re at it?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 43,
+    "Comment": "This seems weird. Why are you assigning binding.name to a bool?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 17,
+    "Comment": "Please line-wrap your patch description and remove the explanatory first line :-).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "jj",
+    "Line": 33,
+    "Comment": "oh yes. I did not mean to alter the modstate logging and will attach the proposed change in the next patch.",
+    "EmailHash": "2b7ea79fd33d4f8c0bb3ef8a9dc97f64"
+  },
+  {
+    "Author": "jj",
+    "Line": 43,
+    "Comment": "actually wanted to check for a nonempty string, but it is actually not necessary.",
+    "EmailHash": "2b7ea79fd33d4f8c0bb3ef8a9dc97f64"
+  }
+]

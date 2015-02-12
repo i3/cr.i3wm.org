@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 135,
+    "Comment": "this is gone",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 148,
+    "Comment": "this is the same except for opening and closing the map in the right places",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

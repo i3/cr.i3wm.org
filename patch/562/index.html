@@ -1,0 +1,1610 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>i3 Patch: Add abstraction for running a binding</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" media="screen" href="http://i3wm.org/css/style.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="/public/stylesheets/main.css">
+    <link rel="shortcut icon" type="image/png" href="http://i3wm.org/favicon.png">
+    <script src="/public/js/jquery-1.9.0.min.js" type="text/javascript" charset="utf-8"></script>
+	<link href='http://fonts.googleapis.com/css?family=Ubuntu+Mono' rel='stylesheet' type='text/css'>
+    
+    
+      <script src="/public/js/patch.js" type="text/javascript" charset="utf-8"></script>
+    
+  </head>
+  <body>
+
+
+<div id="main">
+	<a href="/"><h1 id="title">i3 - improved tiling WM</h1></a>
+				<ul id="nav">
+						<li><a style="border-bottom: 2px solid #fff" href="/">Reviews</a></li>
+						<li><a href="http://bugs.i3wm.org/">Bugs</a></li>
+				</ul>
+<br style="clear: both">
+
+<div id="content">
+
+<h1>Add abstraction for running a binding</h1>
+<div style="float: right">
+<p>
+Patch status: merged
+</p>
+<p>
+Patch by Tony Crisci
+</p>
+</div>
+
+<p>
+<strong>Long description</strong>:<br>
+<pre>Add run_binding function to bindings.h.
+
+&gt; Runs the given binding and handles parse errors. Returns a
+&gt; CommandResult for running the binding&#39;s command. Caller should render
+&gt; tree if needs_tree_render is true. Free with command_result_free().
+</pre>
+</p>
+
+
+<p>
+To apply this patch, use:<br>
+<code>curl http://cr.i3wm.org/patch/562/raw.patch | git am</code>
+</p>
+
+
+
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/include/bindings.h</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L21">21</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="21">@@ -9,6 &#43;9,8 @@</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L22">22</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="22">  */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L23">23</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="23"> #pragma once</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L24">24</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="24"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L25">25</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="25">&#43;extern pid_t command_error_nagbar_pid;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L26">26</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="26">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L27">27</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="27"> /**</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L28">28</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="28">  * The name of the default mode.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L29">29</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="29">  *</pre>
+  </td>
+  </tr>
+
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L30">30</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="30">@@ -57,3 &#43;59,11 @@ void switch_mode(const char *new_mode);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L31">31</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="31">  *</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L32">32</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="32">  */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L33">33</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="33"> void check_for_duplicate_bindings(struct context *context);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L34">34</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="34">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L35">35</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="35">&#43;/**</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L36">36</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="36">&#43; * Runs the given binding and handles parse errors. Returns a CommandResult for</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L37">37</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="37">&#43; * running the binding&#39;s command. Caller should render tree if</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L38">38</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="38">&#43; * needs_tree_render is true. Free with command_result_free().</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L39">39</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="39">&#43; *</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L40">40</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="40">&#43; */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L41">41</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="41">&#43;CommandResult *run_binding(Binding *bind);</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/include/key_press.h</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L46">46</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="46">@@ -9,8 &#43;9,6 @@</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L47">47</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="47">  */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L48">48</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="48"> #pragma once</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L49">49</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="49"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L50">50</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="50">-extern pid_t command_error_nagbar_pid;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L51">51</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="51">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L52">52</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="52"> /**</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L53">53</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="53">  * There was a key press. We compare this key code with our bindings table and pass</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L54">54</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="54">  * the bound action to parse_command().</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/src/bindings.c</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L59">59</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="59">@@ -8,6 &#43;8,8 @@</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L60">60</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="60">  */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L61">61</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="61"> #include &#34;all.h&#34;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L62">62</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="62"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L63">63</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="63">&#43;pid_t command_error_nagbar_pid = -1;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L64">64</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="64">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L65">65</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="65"> /*</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L66">66</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="66">  * The name of the default mode.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L67">67</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="67">  *</pre>
+  </td>
+  </tr>
+
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L68">68</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="68">@@ -379,3 &#43;381,42 @@ void check_for_duplicate_bindings(struct context *context) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L69">69</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="69">         }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L70">70</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="70">     }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L71">71</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="71"> }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L72">72</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="72">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L73">73</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="73">&#43;/*</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L74">74</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="74">&#43; * Runs the given binding and handles parse errors. Returns a CommandResult for</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L75">75</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="75">&#43; * running the binding&#39;s command. Caller should render tree if</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L76">76</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="76">&#43; * needs_tree_render is true. Free with command_result_free().</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L77">77</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="77">&#43; *</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L78">78</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="78">&#43; */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L79">79</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="79">&#43;CommandResult *run_binding(Binding *bind) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L80">80</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="80">&#43;    char *command_copy = sstrdup(bind-&gt;command);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L81">81</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="81">&#43;    CommandResult *result = parse_command(command_copy, NULL);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L82">82</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="82">&#43;    free(command_copy);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L83">83</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="83">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L84">84</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="84">&#43;    if (result-&gt;needs_tree_render)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L85">85</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="85">&#43;        tree_render();</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L86">86</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="86">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L87">87</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="87">&#43;    if (result-&gt;parse_error) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L88">88</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="88">&#43;        char *pageraction;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L89">89</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="89">&#43;        sasprintf(&amp;pageraction, &#34;i3-sensible-pager \&#34;%s\&#34;\n&#34;, errorfilename);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L90">90</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="90">&#43;        char *argv[] = {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L91">91</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="91">&#43;            NULL, /* will be replaced by the executable path */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L92">92</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="92">&#43;            &#34;-f&#34;,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L93">93</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="93">&#43;            config.font.pattern,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L94">94</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="94">&#43;            &#34;-t&#34;,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L95">95</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="95">&#43;            &#34;error&#34;,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L96">96</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="96">&#43;            &#34;-m&#34;,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L97">97</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="97">&#43;            &#34;The configured command for this shortcut could not be run successfully.&#34;,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L98">98</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="98">&#43;            &#34;-b&#34;,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L99">99</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="99">&#43;            &#34;show errors&#34;,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L100">100</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="100">&#43;            pageraction,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L101">101</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="101">&#43;            NULL</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L102">102</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="102">&#43;        };</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L103">103</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="103">&#43;        start_nagbar(&amp;command_error_nagbar_pid, argv);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L104">104</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="104">&#43;        free(pageraction);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L105">105</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="105">&#43;    }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L106">106</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="106">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L107">107</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="107">&#43;    /* TODO: emit event for running a binding */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L108">108</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="108">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L109">109</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="109">&#43;    return result;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L110">110</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="110">&#43;}</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/src/key_press.c</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L115">115</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="115">@@ -9,50 &#43;9,8 @@</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L116">116</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="116">  * key_press.c: key press handler</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L117">117</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="117">  *</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L118">118</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="118">  */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L119">119</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="119">-#include &lt;sys/types.h&gt;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L120">120</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="120">-#include &lt;sys/stat.h&gt;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L121">121</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="121">-#include &lt;sys/wait.h&gt;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L122">122</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="122">-#include &lt;fcntl.h&gt;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L123">123</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="123"> #include &#34;all.h&#34;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L124">124</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="124"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L125">125</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="125">-static int current_nesting_level;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L126">126</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="126">-static bool parse_error_key;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L127">127</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="127">-static bool command_failed;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L128">128</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="128">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L129">129</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="129">-pid_t command_error_nagbar_pid = -1;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L130">130</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="130">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L131">131</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="131">-static int json_boolean(void *ctx, int boolval) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L132">132</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="132">-    DLOG(&#34;Got bool: %d, parse_error_key %d, nesting_level %d\n&#34;, boolval, parse_error_key, current_nesting_level);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L133">133</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="133">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L134">134</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="134">-    if (parse_error_key &amp;&amp; current_nesting_level == 1 &amp;&amp; boolval)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L135">135</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="135">-        command_failed = true;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L136">136</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="136">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L137">137</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="137">-    return 1;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L138">138</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="138">-}</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L139">139</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="139">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L140">140</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="140">-static int json_map_key(void *ctx, const unsigned char *stringval, size_t stringlen) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L141">141</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="141">-    parse_error_key = (stringlen &gt;= strlen(&#34;parse_error&#34;) &amp;&amp;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L142">142</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="142">-                       strncmp((const char*)stringval, &#34;parse_error&#34;, strlen(&#34;parse_error&#34;)) == 0);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L143">143</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="143">-    return 1;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L144">144</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="144">-}</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L145">145</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="145">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L146">146</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="146">-static int json_start_map(void *ctx) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L147">147</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="147">-    current_nesting_level&#43;&#43;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L148">148</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="148">-    return 1;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L149">149</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="149">-}</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L150">150</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="150">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L151">151</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="151">-static int json_end_map(void *ctx) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L152">152</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="152">-    current_nesting_level--;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L153">153</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="153">-    return 1;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L154">154</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="154">-}</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L155">155</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="155">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L156">156</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="156">-static yajl_callbacks command_error_callbacks = {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L157">157</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="157">-    .yajl_boolean = json_boolean,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L158">158</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="158">-    .yajl_start_map = json_start_map,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L159">159</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="159">-    .yajl_map_key = json_map_key,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L160">160</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="160">-    .yajl_end_map = json_end_map,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L161">161</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="161">-};</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L162">162</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="162">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L163">163</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="163"> /*</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L164">164</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="164">  * There was a KeyPress or KeyRelease (both events have the same fields). We</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L165">165</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="165">  * compare this key code with our bindings table and pass the bound action to</pre>
+  </td>
+  </tr>
+
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L166">166</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="166">@@ -72,53 &#43;30,10 @@ void handle_key_press(xcb_key_press_event_t *event) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L167">167</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="167">     if (bind == NULL)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L168">168</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="168">         return;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L169">169</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="169"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L170">170</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="170">-    yajl_gen gen = yajl_gen_alloc(NULL);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L171">171</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="171">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L172">172</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="172">-    char *command_copy = sstrdup(bind-&gt;command);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L173">173</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="173">-    CommandResult *result = parse_command(command_copy, gen);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L174">174</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="174">-    free(command_copy);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L175">175</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="175">&#43;    CommandResult *result = run_binding(bind);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L176">176</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="176"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L177">177</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="177">     if (result-&gt;needs_tree_render)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L178">178</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="178">         tree_render();</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L179">179</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="179"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L180">180</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="180">     command_result_free(result);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L181">181</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="181">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L182">182</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="182">-    /* We parse the JSON reply to figure out whether there was an error</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L183">183</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="183">-     * (&#34;success&#34; being false in on of the returned dictionaries). */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L184">184</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="184">-    const unsigned char *reply;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L185">185</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="185">-    size_t length;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L186">186</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="186">-    yajl_handle handle = yajl_alloc(&amp;command_error_callbacks, NULL, NULL);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L187">187</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="187">-    yajl_gen_get_buf(gen, &amp;reply, &amp;length);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L188">188</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="188">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L189">189</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="189">-    current_nesting_level = 0;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L190">190</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="190">-    parse_error_key = false;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L191">191</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="191">-    command_failed = false;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L192">192</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="192">-    yajl_status state = yajl_parse(handle, reply, length);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L193">193</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="193">-    if (state != yajl_status_ok) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L194">194</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="194">-        ELOG(&#34;Could not parse my own reply. That&#39;s weird. reply is %.*s\n&#34;, (int)length, reply);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L195">195</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="195">-    } else {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L196">196</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="196">-        if (command_failed) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L197">197</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="197">-            char *pageraction;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L198">198</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="198">-            sasprintf(&amp;pageraction, &#34;i3-sensible-pager \&#34;%s\&#34;\n&#34;, errorfilename);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L199">199</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="199">-            char *argv[] = {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L200">200</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="200">-                NULL, /* will be replaced by the executable path */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L201">201</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="201">-                &#34;-f&#34;,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L202">202</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="202">-                config.font.pattern,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L203">203</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="203">-                &#34;-t&#34;,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L204">204</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="204">-                &#34;error&#34;,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L205">205</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="205">-                &#34;-m&#34;,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L206">206</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="206">-                &#34;The configured command for this shortcut could not be run successfully.&#34;,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L207">207</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="207">-                &#34;-b&#34;,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L208">208</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="208">-                &#34;show errors&#34;,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L209">209</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="209">-                pageraction,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L210">210</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="210">-                NULL</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L211">211</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="211">-            };</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L212">212</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="212">-            start_nagbar(&amp;command_error_nagbar_pid, argv);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L213">213</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="213">-            free(pageraction);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L214">214</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="214">-        }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L215">215</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="215">-    }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L216">216</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="216">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L217">217</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="217">-    yajl_free(handle);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L218">218</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="218">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L219">219</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="219">-    yajl_gen_free(gen);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L220">220</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="220"> }</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+
+</div>
+
+  </body>
+</html>
+

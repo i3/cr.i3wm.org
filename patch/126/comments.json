@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 18,
+    "Comment": "Please be more careful about changing whitespace. Your previous patch introduced trailing whitespace, this one deletes a line.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 27,
+    "Comment": "As far as I understand, this means that the user has no way of hiding i3bar again, i.e. by pressing mod. Can you make this consistent with how unhiding works in the other circumstances please?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "jj",
+    "Line": 27,
+    "Comment": "This will unhide the bar whenever it is drawn and a mode is active. If you press the mod key to hide the bar, it would then stay hidden until it is drawn again, e.g. by switching to another workspace. This is done equivalently to the way the bar is unhidden when an urgency hint occurs. What would you prefer?",
+    "EmailHash": "2b7ea79fd33d4f8c0bb3ef8a9dc97f64"
+  },
+  {
+    "Author": "jj",
+    "Line": 18,
+    "Comment": "will do, sorry",
+    "EmailHash": "2b7ea79fd33d4f8c0bb3ef8a9dc97f64"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 27,
+    "Comment": "You are right, so nevermind. Can you submit a version without whitespace changes please?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

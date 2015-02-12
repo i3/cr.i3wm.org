@@ -1,0 +1,30 @@
+From c81b3d4598b54702118f4e773b73430a113ccccf Mon Sep 17 00:00:00 2001
+From: Michael Ensslin <michael@…>
+Date: Wed, 5 Nov 2014 21:15:19 +0100
+Subject: [PATCH 2/2] added --verification-script entry to manpage
+
+---
+ i3lock.1 | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/i3lock.1 b/i3lock.1
+index 8b07229..0e5c90b 100644
+--- a/i3lock.1
++++ b/i3lock.1
+@@ -120,6 +120,13 @@ your computer with the enter key.
+ .B \-f, \-\-show-failed-attempts
+ Show the number of failed attempts, if any.
+ 
++.TP
++.B \-\-verification-script
++Specifies the (full) path to a script that is run on password entry, in addition
++to the regular PAM authentication.
++The password is passed to the script's stdin, followed by EOF.
++If the script exits with anything but 0, the password is rejected.
++
+ .SH SEE ALSO
+ .IR xautolock(1)
+ \- use i3lock as your screen saver
+-- 
+2.1.1
+

@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Alexander Monakov",
+    "Line": 28,
+    "Comment": "Since libnl-genl depends on libnl, the first addition in each pair can be dropped",
+    "EmailHash": "16414e3fe37df64231d46cda4bcda47a"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 28,
+    "Comment": "Then do so…? :)",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "I haven’t verified the netlink code in detail (and won’t, since I’m not any more familiar with it than you), but overall this looks good. Can you please submit an updated version of this patch which keeps support for %bitrate and supports multiple instances?\n\nAlso, can you please add “fixes: #1082” in the patch description and remove it from the title?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

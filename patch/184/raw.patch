@@ -1,0 +1,25 @@
+From 3810b8904d174a52d66cb80538bdc741228c5504 Mon Sep 17 00:00:00 2001
+From: Eika Enge <eika-enge@…>
+Date: Sun, 26 May 2013 18:24:55 +0700
+Subject: [PATCH] Bugfix: Ignore spaces in front of default workspace name
+
+---
+ src/workspace.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/workspace.c b/src/workspace.c
+index 5a0913b..2c26b0e 100644
+--- a/src/workspace.c
++++ b/src/workspace.c
+@@ -128,6 +128,8 @@ Con *create_workspace_on_output(Output *output, Con *content) {
+             continue;
+         DLOG("relevant command = %s\n", bind->command);
+         char *target = bind->command + strlen("workspace ");
++        while((*target == ' ' || *target == '\t') && target != '\0')
++            target++;
+         /* We check if this is the workspace
+          * next/prev/next_on_output/prev_on_output/back_and_forth/number command.
+          * Beware: The workspace names "next", "prev", "next_on_output",
+-- 
+1.8.2.1
+

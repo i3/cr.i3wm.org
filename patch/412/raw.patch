@@ -1,0 +1,88 @@
+From 926cbca1617024953b8413798b362bfd39511a92 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sat, 8 Feb 2014 18:13:27 -0500
+Subject: [PATCH] Do not send WM_TAKE_FOCUS when InputHint is set
+
+Window managers do not conventionally send WM_TAKE_FOCUS when the
+WM_HINTS property of the client has the `input` flag set (which shall be
+"the client's input model") ''even when the window claims to support the
+protocol''. While the window manager may respond by both setting focus
+for the client and sending WM_TAKE_FOCUS, the latter will not fulfil its
+intended purpose and may complicate input event handling.
+
+Note that whenever the WM_HINTS property is missing from the window, i3
+will treat this window as if the InputHint is set. The window manager is
+allowed by the spec to assume convenient values in this case.
+
+dwm seems to follow this convention:
+http://lists.suckless.org/dev/1104/7548.html#replies
+
+Here is a second-hand report that Compiz and Metacity follow this
+convention:
+www.winehq.org/pipermail/wine-devel/2007-July/058255.html
+
+The "models of input handling" can be found here:
+http://tronche.com/gui/x/icccm/sec-4.html#s-4.1.7
+
+Future work should go towards improving support for the input handling
+models. i3 should implement support for the "no input" model, perhaps
+based on _NET_WM_TYPE. For possible implementation ideas see
+http://mail.gnome.org/archives/wm-spec-list/2007-March/msg00001.html
+
+fixes #1167
+---
+ src/x.c                         | 10 +++-------
+ testcases/t/158-wm_take_focus.t |  5 ++++-
+ 2 files changed, 7 insertions(+), 8 deletions(-)
+
+diff --git a/src/x.c b/src/x.c
+index b3af85a..525efd8 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -964,17 +964,13 @@ void x_push_changes(Con *con) {
+             /* Invalidate focused_id to correctly focus new windows with the same ID */
+             focused_id = XCB_NONE;
+         } else {
+-            bool set_focus = true;
+             if (focused->window != NULL &&
+-                focused->window->needs_take_focus) {
++                focused->window->needs_take_focus &&
++                focused->window->doesnt_accept_focus) {
+                 DLOG("Updating focus by sending WM_TAKE_FOCUS to window 0x%08x (focused: %p / %s)\n",
+                      to_focus, focused, focused->name);
+                 send_take_focus(to_focus);
+-                set_focus = !focused->window->doesnt_accept_focus;
+-                DLOG("set_focus = %d\n", set_focus);
+-            }
+-
+-            if (set_focus) {
++            } else {
+                 DLOG("Updating focus (focused: %p / %s) to X11 window 0x%08x\n", focused, focused->name, to_focus);
+                 /* We remove XCB_EVENT_MASK_FOCUS_CHANGE from the event mask to get
+                  * no focus change events for our own focus changes. We only want
+diff --git a/testcases/t/158-wm_take_focus.t b/testcases/t/158-wm_take_focus.t
+index 222c93e..65ef3ba 100644
+--- a/testcases/t/158-wm_take_focus.t
++++ b/testcases/t/158-wm_take_focus.t
+@@ -30,7 +30,7 @@ subtest 'Window without WM_TAKE_FOCUS', sub {
+     done_testing;
+ };
+ 
+-subtest 'Window with WM_TAKE_FOCUS', sub {
++subtest 'Window with WM_TAKE_FOCUS and without InputHint', sub {
+     fresh_workspace;
+ 
+     my $take_focus = $x->atom(name => 'WM_TAKE_FOCUS');
+@@ -40,6 +40,9 @@ subtest 'Window with WM_TAKE_FOCUS', sub {
+         protocols => [ $take_focus ],
+     });
+ 
++    # add a WM_HINTS property without the InputHint
++    $window->delete_hint('input');
++
+     $window->map;
+ 
+     ok(wait_for_event(1, sub {
+-- 
+1.8.5.4
+

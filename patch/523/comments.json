@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 29,
+    "Comment": "Both the name and the comment don’t make a lot of sense to me :).\n\nI propose for the comment:\n\nReturns true when con is a leaf node with a normal X11 window (i.e. excluding dock containers).\n\nAnd for the name maybe con_has_x11_window()?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 29,
+    "Comment": "Well, dock client windows have x11 windows as well, but they are not managed windows.\n\nWhat about con_has_managed_window() ?",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

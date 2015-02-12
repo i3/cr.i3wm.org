@@ -1,0 +1,81 @@
+From 8d3a58f0e12af929f5d64594a6968b62673739d8 Mon Sep 17 00:00:00 2001
+From: oblique <psyberbits@…>
+Date: Fri, 8 Feb 2013 15:23:50 +0200
+Subject: [PATCH 1/2] Add render_deco_height()
+
+---
+ src/con.c      |  2 +-
+ src/floating.c |  4 ++--
+ src/render.c   | 14 +++++++++++---
+ 3 files changed, 14 insertions(+), 6 deletions(-)
+
+diff --git a/src/con.c b/src/con.c
+index 70c7d7f..01883e0 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -1181,7 +1181,7 @@ void con_set_border_style(Con *con, int border_style, int border_width) {
+     con->current_border_width = border_width;
+     bsr = con_border_style_rect(con);
+     int deco_height =
+-        (con->border_style == BS_NORMAL ? config.font.height + 5 : 0);
++        (con->border_style == BS_NORMAL ? render_deco_height() : 0);
+ 
+     con->rect.x -= bsr.x;
+     con->rect.y -= bsr.y;
+diff --git a/src/floating.c b/src/floating.c
+index 761d207..b37f167 100644
+--- a/src/floating.c
++++ b/src/floating.c
+@@ -165,7 +165,7 @@ void floating_enable(Con *con, bool automatic) {
+     free(name);
+ 
+     /* find the height for the decorations */
+-    int deco_height = config.font.height + 5;
++    int deco_height = render_deco_height();
+ 
+     DLOG("Original rect: (%d, %d) with %d x %d\n", con->rect.x, con->rect.y, con->rect.width, con->rect.height);
+     DLOG("Geometry = (%d, %d) with %d x %d\n", con->geometry.x, con->geometry.y, con->geometry.width, con->geometry.height);
+@@ -251,7 +251,7 @@ void floating_enable(Con *con, bool automatic) {
+     /* 5: Subtract the deco_height in order to make the floating window appear
+      * at precisely the position it specified in its original geometry (which
+      * is what applications might remember). */
+-    deco_height = (con->border_style == BS_NORMAL ? config.font.height + 5 : 0);
++    deco_height = (con->border_style == BS_NORMAL ? render_deco_height() : 0);
+     nc->rect.y -= deco_height;
+ 
+     DLOG("Corrected y = %d (deco_height = %d)\n", nc->rect.y, deco_height);
+diff --git a/src/render.c b/src/render.c
+index 9ac4b78..5b57c59 100644
+--- a/src/render.c
++++ b/src/render.c
+@@ -17,6 +17,16 @@
+ static bool show_debug_borders = false;
+ 
+ /*
++ * Returns the height for the decorations
++ */
++int render_deco_height() {
++    int deco_height = config.font.height + 4;
++    if (config.font.height & 0x01)
++        ++deco_height;
++    return deco_height;
++}
++
++/*
+  * Renders a container with layout L_OUTPUT. In this layout, all CT_DOCKAREAs
+  * get the height of their content and the remaining CT_CON gets the rest.
+  *
+@@ -203,9 +213,7 @@ void render_con(Con *con, bool render_fullscreen) {
+     }
+ 
+     /* find the height for the decorations */
+-    int deco_height = config.font.height + 4;
+-    if (config.font.height & 0x01)
+-        ++deco_height;
++    int deco_height = render_deco_height();
+ 
+     /* precalculate the sizes to be able to correct rounding errors */
+     int sizes[children];
+-- 
+1.8.1.1
+

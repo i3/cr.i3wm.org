@@ -1,0 +1,75 @@
+From aa2be6e1200857e5a718d5d4e0234f687b1e2325 Mon Sep 17 00:00:00 2001
+From: Vivien Didelot <vivien.didelot@…>
+Date: Fri, 5 Sep 2014 16:47:27 -0400
+Subject: [PATCH 1/2] i3-msg: support SUBSCRIBE message type
+
+If i3-msg is invoked with -t subscribe, it will wait for the first event
+corresponding to the given payload, before exiting.
+
+For instance, get the number of the next focused workspace with:
+
+    i3-msg -t subscribe '[ "workspace", "focus" ]' | sed 1d | jshon -e current -e num
+
+Signed-off-by: Vivien Didelot <vivien.didelot@gmail.com>
+---
+ i3-msg/main.c | 16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
+
+diff --git a/i3-msg/main.c b/i3-msg/main.c
+index 354e8af..ef037a1 100644
+--- a/i3-msg/main.c
++++ b/i3-msg/main.c
+@@ -145,6 +145,8 @@ int main(int argc, char *argv[]) {
+                 message_type = I3_IPC_MESSAGE_TYPE_COMMAND;
+             else if (strcasecmp(optarg, "get_workspaces") == 0)
+                 message_type = I3_IPC_MESSAGE_TYPE_GET_WORKSPACES;
++            else if (strcasecmp(optarg, "subscribe") == 0)
++                message_type = I3_IPC_MESSAGE_TYPE_SUBSCRIBE;
+             else if (strcasecmp(optarg, "get_outputs") == 0)
+                 message_type = I3_IPC_MESSAGE_TYPE_GET_OUTPUTS;
+             else if (strcasecmp(optarg, "get_tree") == 0)
+@@ -157,7 +159,7 @@ int main(int argc, char *argv[]) {
+                 message_type = I3_IPC_MESSAGE_TYPE_GET_VERSION;
+             else {
+                 printf("Unknown message type\n");
+-                printf("Known types: command, get_workspaces, get_outputs, get_tree, get_marks, get_bar_config, get_version\n");
++                printf("Known types: command, get_workspaces, subscribe, get_outputs, get_tree, get_marks, get_bar_config, get_version\n");
+                 exit(EXIT_FAILURE);
+             }
+         } else if (o == 'q') {
+@@ -219,16 +221,19 @@ int main(int argc, char *argv[]) {
+     uint32_t reply_type;
+     uint8_t *reply;
+     int ret;
++recv:
+     if ((ret = ipc_recv_message(sockfd, &reply_type, &reply_length, &reply)) != 0) {
+         if (ret == -1)
+             err(EXIT_FAILURE, "IPC: read()");
+         exit(1);
+     }
+-    if (reply_type != message_type)
++
++    /* For events, the highest bit of the message type is set to 1. */
++    if (reply_type != message_type && (message_type == I3_IPC_MESSAGE_TYPE_SUBSCRIBE && !(reply_type >> 31)))
+         errx(EXIT_FAILURE, "IPC: Received reply of type %d but expected %d", reply_type, message_type);
+-    /* For the reply of commands, have a look if that command was successful.
++    /* For the reply of commands or subscribes, have a look if that command was successful.
+      * If not, nicely format the error message. */
+-    if (reply_type == I3_IPC_MESSAGE_TYPE_COMMAND) {
++    if (reply_type == I3_IPC_MESSAGE_TYPE_COMMAND || reply_type == I3_IPC_MESSAGE_TYPE_SUBSCRIBE) {
+         yajl_handle handle;
+         handle = yajl_alloc(&reply_callbacks, NULL, NULL);
+         yajl_status state = yajl_parse(handle, (const unsigned char *)reply, reply_length);
+@@ -246,6 +251,9 @@ int main(int argc, char *argv[]) {
+     printf("%.*s\n", reply_length, reply);
+     free(reply);
+ 
++    if (reply_type == I3_IPC_MESSAGE_TYPE_SUBSCRIBE)
++        goto recv;
++
+     close(sockfd);
+ 
+     return 0;
+-- 
+2.1.0
+

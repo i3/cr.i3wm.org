@@ -1,0 +1,185 @@
+From 3fe46e1482b6dc8805e25d90427a37a1dd16b850 Mon Sep 17 00:00:00 2001
+From: Lancelot SIX <lancelot@…>
+Date: Thu, 21 Nov 2013 21:45:01 +0100
+Subject: [PATCH 1/2] Add xcb_get_property_unchecked_no_length wrapper
+
+Add a wrapper to xcb_get_property_unchecked in order remove the
+necessity to know in advance the lenth of a X property. This is usefull
+when the length of the property is not known in advance.
+The wrapper requires the appropriate amount of data when requesting a property
+from X.
+---
+ i3bar/src/xcb.c                              | 15 +++-----
+ include/libi3.h                              | 13 +++++++
+ libi3/root_atom_contents.c                   | 18 ++++++----
+ libi3/xcb_get_property_unchecked_no_length.c | 53 ++++++++++++++++++++++++++++
+ 4 files changed, 82 insertions(+), 17 deletions(-)
+ create mode 100644 libi3/xcb_get_property_unchecked_no_length.c
+
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index cec7ab8..56d9056 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -960,24 +960,19 @@ char *init_xcb_early() {
+     /* Now we get the atoms and save them in a nice data structure */
+     get_atoms();
+ 
+-    xcb_get_property_cookie_t path_cookie;
+-    path_cookie = xcb_get_property_unchecked(xcb_connection,
+-                                   0,
++    /* We check, if i3 set its socket-path */
++    xcb_get_property_reply_t *path_reply =
++        xcb_get_property_unchecked_no_length(xcb_connection,
+                                    xcb_root,
+                                    atoms[I3_SOCKET_PATH],
+-                                   XCB_GET_PROPERTY_TYPE_ANY,
+-                                   0, PATH_MAX);
+-
+-    /* We check, if i3 set its socket-path */
+-    xcb_get_property_reply_t *path_reply = xcb_get_property_reply(xcb_connection,
+-                                                                  path_cookie,
+-                                                                  NULL);
++                                   XCB_GET_PROPERTY_TYPE_ANY);
+     char *path = NULL;
+     if (path_reply) {
+         int len = xcb_get_property_value_length(path_reply);
+         if (len != 0) {
+             path = strndup(xcb_get_property_value(path_reply), len);
+         }
++        free(path_reply);
+     }
+ 
+ 
+diff --git a/include/libi3.h b/include/libi3.h
+index b0141f1..c6cad6b 100644
+--- a/include/libi3.h
++++ b/include/libi3.h
+@@ -91,6 +91,19 @@ void errorlog(char *fmt, ...);
+ char *root_atom_contents(const char *atomname);
+ 
+ /**
++ * Wrapper around xcb_get_property_unchecked where the length of the property
++ * does not need to be specified. The wrapper specifies a size sufficient to
++ * return the property.
++ *
++ * Returned value must be freed by the caller
++ */
++xcb_get_property_reply_t *
++xcb_get_property_unchecked_no_length(xcb_connection_t *conn,
++                                     xcb_window_t window,
++                                     xcb_atom_t property,
++                                     xcb_atom_t type);
++
++/**
+  * Safe-wrapper around malloc which exits if malloc returns NULL (meaning that
+  * there is no more memory available)
+  *
+diff --git a/libi3/root_atom_contents.c b/libi3/root_atom_contents.c
+index cabaaf2..b0877db 100644
+--- a/libi3/root_atom_contents.c
++++ b/libi3/root_atom_contents.c
+@@ -9,6 +9,7 @@
+ #include <string.h>
+ #include <stdbool.h>
+ #include <limits.h>
++#include <stdlib.h>
+ 
+ #include <xcb/xcb.h>
+ #include <xcb/xcb_aux.h>
+@@ -43,24 +44,27 @@ char *root_atom_contents(const char *atomname) {
+     if (atom_reply == NULL)
+         return NULL;
+ 
+-    xcb_get_property_cookie_t prop_cookie;
+-    xcb_get_property_reply_t *prop_reply;
+-    prop_cookie = xcb_get_property_unchecked(conn, false, root, atom_reply->atom,
+-                                             XCB_GET_PROPERTY_TYPE_ANY, 0, PATH_MAX);
+-    prop_reply = xcb_get_property_reply(conn, prop_cookie, NULL);
++    xcb_get_property_reply_t *prop_reply =
++        xcb_get_property_unchecked_no_length(conn, root,atom_reply->atom,
++                                             XCB_GET_PROPERTY_TYPE_ANY);
+     if (prop_reply == NULL || xcb_get_property_value_length(prop_reply) == 0)
+         return NULL;
+     if (prop_reply->type == XCB_ATOM_CARDINAL) {
+         /* We treat a CARDINAL as a >= 32-bit unsigned int. The only CARDINAL
+          * we query is I3_PID, which is 32-bit. */
+-        if (asprintf(&content, "%u", *((unsigned int*)xcb_get_property_value(prop_reply))) == -1)
++        if (asprintf(&content, "%u", *((unsigned int*)xcb_get_property_value(prop_reply))) == -1) {
++            free(prop_reply);
+             return NULL;
++        }
+     } else {
+         if (asprintf(&content, "%.*s", xcb_get_property_value_length(prop_reply),
+-                     (char*)xcb_get_property_value(prop_reply)) == -1)
++                     (char*)xcb_get_property_value(prop_reply)) == -1) {
++            free(prop_reply);
+             return NULL;
++        }
+     }
+     xcb_disconnect(conn);
++    free(prop_reply);
+     return content;
+ }
+ 
+diff --git a/libi3/xcb_get_property_unchecked_no_length.c b/libi3/xcb_get_property_unchecked_no_length.c
+new file mode 100644
+index 0000000..c585a4d
+--- /dev/null
++++ b/libi3/xcb_get_property_unchecked_no_length.c
+@@ -0,0 +1,53 @@
++/*
++ * vim:ts=4:sw=4:expandtab
++ *
++ * i3 - an improved dynamic tiling window manager
++ * © 2009-2011 Michael Stapelberg and contributors (see also: LICENSE)
++ *
++ */
++#include <stdlib.h>
++#include <xcb/xcb.h>
++#include "libi3.h"
++
++/**
++ * Wrapper around xcb_get_property_unchecked where the length of the property
++ * does not need to be specified. The wrapper specifies a size sufficient to
++ * return the property.
++ *
++ * Returned value must be freed by the caller
++ */
++xcb_get_property_reply_t *
++xcb_get_property_unchecked_no_length(xcb_connection_t *conn,
++                                     xcb_window_t window,
++                                     xcb_atom_t property,
++                                     xcb_atom_t type) {
++    xcb_get_property_cookie_t prop_cookie;
++    xcb_get_property_reply_t *prop_reply;
++    /* xcb_get_property_unsafe needs the size of the required property
++     * expressed in words (4 bytes). Therefor, prop_max_size should always
++     * be a multiple of 4. */
++    size_t prop_max_size = 1024;
++    size_t prop_size;
++
++    prop_cookie = xcb_get_property_unchecked(conn, false, window, property,
++                                             type, 0, (prop_max_size / 4));
++    prop_reply = xcb_get_property_reply(conn, prop_cookie, NULL);
++    if (prop_reply == NULL)
++        return NULL;
++
++    prop_size = xcb_get_property_value_length(prop_reply);
++    if (prop_size > 0 && prop_reply->bytes_after) {
++        /* We received an incomplete value. Ask again but with a properly
++         * adjusted size. */
++        prop_max_size += prop_reply->bytes_after;
++        if ((prop_max_size % 4) != 0)
++            prop_max_size += 4 - (prop_max_size % 4);
++
++        /* Repeat the request */
++        free(prop_reply);
++        prop_cookie = xcb_get_property_unchecked(conn, false, window, property,
++                                                 type, 0, (prop_max_size / 4));
++        prop_reply = xcb_get_property_reply(conn, prop_cookie, NULL);
++    }
++    return prop_reply;
++}
+-- 
+1.8.4.2
+

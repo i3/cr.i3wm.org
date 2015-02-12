@@ -1,0 +1,25 @@
+From afd05a3cba522185ad11d38718b3a115833c4425 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Vytautas=20=C5=A0altenis?= <vytas@…>
+Date: Tue, 18 Mar 2014 22:40:17 +0200
+Subject: [PATCH 5/5] Fix typo in manual
+
+---
+ i3lock.1 | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/i3lock.1 b/i3lock.1
+index 235882d..2170ef4 100644
+--- a/i3lock.1
++++ b/i3lock.1
+@@ -89,7 +89,7 @@ Display the given PNG image instead of a blank screen.
+ 
+ .TP
+ .BI \-c\  rrggbb \fR,\ \fB\-\-color= rrggbb
+-Turn the screen into the given color instead of white. Color must be given in 6-byte
++Turn the screen into the given color instead of white. Color must be given in 3-byte
+ format: rrggbb (i.e. ff0000 is red).
+ 
+ .TP
+-- 
+1.8.3.2
+

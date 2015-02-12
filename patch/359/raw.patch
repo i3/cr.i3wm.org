@@ -1,0 +1,411 @@
+From 0222e560e44305d4e1f03904ebf4fcc01ee559ce Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Peter=20Bostr=C3=B6m?= <git@…>
+Date: Wed, 25 Dec 2013 20:01:37 +0100
+Subject: [PATCH] Fix clang -Wextra except -Wunused-parameter.
+
+Cleared all warnings that occur when passing
+CFLAGS="-Wall -Wextra -Wno-unused-parameter" to make using clang 3.3 on
+Linux x86-64.
+---
+ i3-config-wizard/main.c  |  2 +-
+ i3-msg/main.c            |  2 +-
+ i3-nagbar/main.c         |  2 +-
+ i3bar/src/child.c        |  2 +-
+ i3bar/src/xcb.c          |  6 +++---
+ include/randr.h          |  2 +-
+ libi3/get_exe_path.c     |  2 +-
+ libi3/ipc_send_message.c |  2 +-
+ src/assignments.c        |  2 +-
+ src/click.c              | 10 +++++-----
+ src/commands_parser.c    |  2 +-
+ src/config.c             |  2 +-
+ src/config_parser.c      |  6 +++---
+ src/display_version.c    |  4 ++--
+ src/fake_outputs.c       |  2 +-
+ src/floating.c           |  4 ++--
+ src/handlers.c           |  2 +-
+ src/log.c                |  2 +-
+ src/manage.c             |  2 +-
+ src/randr.c              |  2 +-
+ src/util.c               |  6 +++---
+ src/window.c             |  2 +-
+ src/xinerama.c           |  2 +-
+ 23 files changed, 35 insertions(+), 35 deletions(-)
+
+diff --git a/i3-config-wizard/main.c b/i3-config-wizard/main.c
+index 09b9484..626aa0b 100644
+--- a/i3-config-wizard/main.c
++++ b/i3-config-wizard/main.c
+@@ -299,7 +299,7 @@ static char *rewrite_binding(const char *input) {
+ 
+     /* The "<=" operator is intentional: We also handle the terminating 0-byte
+      * explicitly by looking for an 'end' token. */
+-    while ((walk - input) <= len) {
++    while ((size_t)(walk - input) <= len) {
+         /* Skip whitespace before every token, newlines are relevant since they
+          * separate configuration directives. */
+         while ((*walk == ' ' || *walk == '\t') && *walk != '\0')
+diff --git a/i3-msg/main.c b/i3-msg/main.c
+index 935edc0..11a3197 100644
+--- a/i3-msg/main.c
++++ b/i3-msg/main.c
+@@ -135,7 +135,7 @@ yajl_callbacks reply_callbacks = {
+ int main(int argc, char *argv[]) {
+     socket_path = getenv("I3SOCK");
+     int o, option_index = 0;
+-    int message_type = I3_IPC_MESSAGE_TYPE_COMMAND;
++    uint32_t message_type = I3_IPC_MESSAGE_TYPE_COMMAND;
+     char *payload = NULL;
+     bool quiet = false;
+ 
+diff --git a/i3-nagbar/main.c b/i3-nagbar/main.c
+index 791da97..f0dd407 100644
+--- a/i3-nagbar/main.c
++++ b/i3-nagbar/main.c
+@@ -467,7 +467,7 @@ int main(int argc, char *argv[]) {
+         uint32_t top_end_x;
+         uint32_t bottom_start_x;
+         uint32_t bottom_end_x;
+-    } __attribute__((__packed__)) strut_partial = {0,};
++    } __attribute__((__packed__)) strut_partial = {};
+ 
+     strut_partial.top = font.height + 6;
+     strut_partial.top_start_x = 0;
+diff --git a/i3bar/src/child.c b/i3bar/src/child.c
+index 16d3e09..52019b3 100644
+--- a/i3bar/src/child.c
++++ b/i3bar/src/child.c
+@@ -28,7 +28,7 @@
+ #include "common.h"
+ 
+ /* Global variables for child_*() */
+-i3bar_child child = { 0 };
++i3bar_child child = {};
+ 
+ /* stdin- and sigchild-watchers */
+ ev_io    *stdin_io;
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index 8286103..faae27d 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -417,7 +417,7 @@ void handle_button(xcb_button_press_event_t *event) {
+     const size_t len = namelen + strlen("workspace \"\"") + 1;
+     char *buffer = scalloc(len+num_quotes);
+     strncpy(buffer, "workspace \"", strlen("workspace \""));
+-    int inpos, outpos;
++    size_t inpos, outpos;
+     for (inpos = 0, outpos = strlen("workspace \"");
+          inpos < namelen;
+          inpos++, outpos++) {
+@@ -1524,7 +1524,7 @@ void reconfig_windows(bool redraw_bars) {
+                 uint32_t top_end_x;
+                 uint32_t bottom_start_x;
+                 uint32_t bottom_end_x;
+-            } __attribute__((__packed__)) strut_partial = {0,};
++            } __attribute__((__packed__)) strut_partial = {};
+             switch (config.position) {
+                 case POS_NONE:
+                     break;
+@@ -1717,7 +1717,7 @@ void draw_bars(bool unhide) {
+                           outputs_walk->bargc,
+                           MAX(0, (int16_t)(statusline_width - outputs_walk->rect.w + 4)), 0,
+                           MAX(0, (int16_t)(outputs_walk->rect.w - statusline_width - traypx - 4)), 3,
+-                          MIN(outputs_walk->rect.w - traypx - 4, statusline_width), font.height + 2);
++                          MIN(outputs_walk->rect.w - traypx - 4, (int)statusline_width), font.height + 2);
+         }
+ 
+         if (!config.disable_ws) {
+diff --git a/include/randr.h b/include/randr.h
+index 75c899c..43f7efe 100644
+--- a/include/randr.h
++++ b/include/randr.h
+@@ -84,7 +84,7 @@ Output *get_output_by_name(const char *name);
+  * if there is no output which contains these coordinates.
+  *
+  */
+-Output *get_output_containing(int x, int y);
++Output *get_output_containing(unsigned int x, unsigned int y);
+ 
+ /*
+  * In contained_by_output, we check if any active output contains part of the container.
+diff --git a/libi3/get_exe_path.c b/libi3/get_exe_path.c
+index e0437e5..032ea3d 100644
+--- a/libi3/get_exe_path.c
++++ b/libi3/get_exe_path.c
+@@ -30,7 +30,7 @@ char *get_exe_path(const char *argv0) {
+ #endif
+ 	ssize_t linksize;
+ 
+-	while ((linksize = readlink(exepath, destpath, destpath_size)) == destpath_size) {
++	while ((linksize = readlink(exepath, destpath, destpath_size)) == (ssize_t)destpath_size) {
+ 		destpath_size = destpath_size * 2;
+ 		destpath = srealloc(destpath, destpath_size);
+ 	}
+diff --git a/libi3/ipc_send_message.c b/libi3/ipc_send_message.c
+index c5560c0..0c360c9 100644
+--- a/libi3/ipc_send_message.c
++++ b/libi3/ipc_send_message.c
+@@ -33,7 +33,7 @@ int ipc_send_message(int sockfd, const uint32_t message_size,
+         .type = message_type
+     };
+ 
+-    int sent_bytes = 0;
++    size_t sent_bytes = 0;
+     int n = 0;
+ 
+     /* This first loop is basically unnecessary. No operating system has
+diff --git a/src/assignments.c b/src/assignments.c
+index 655816a..ea39eaf 100644
+--- a/src/assignments.c
++++ b/src/assignments.c
+@@ -28,7 +28,7 @@ void run_assignments(i3Window *window) {
+             continue;
+ 
+         bool skip = false;
+-        for (int c = 0; c < window->nr_assignments; c++) {
++        for (uint32_t c = 0; c < window->nr_assignments; c++) {
+             if (window->ran_assignments[c] != current)
+                 continue;
+ 
+diff --git a/src/click.c b/src/click.c
+index a517838..b6eb948 100644
+--- a/src/click.c
++++ b/src/click.c
+@@ -147,15 +147,15 @@ static bool tiling_resize(Con *con, xcb_button_press_event_t *event, const click
+         return tiling_resize_for_border(con, BORDER_TOP, event);
+     }
+ 
+-    if (event->event_x >= 0 && event->event_x <= bsr.x &&
+-        event->event_y >= bsr.y && event->event_y <= con->rect.height + bsr.height)
++    if (event->event_x >= 0 && event->event_x <= (int32_t)bsr.x &&
++        event->event_y >= (int32_t)bsr.y && event->event_y <= (int32_t)(con->rect.height + bsr.height))
+         return tiling_resize_for_border(con, BORDER_LEFT, event);
+ 
+-    if (event->event_x >= (con->window_rect.x + con->window_rect.width) &&
+-        event->event_y >= bsr.y && event->event_y <= con->rect.height + bsr.height)
++    if (event->event_x >= (int32_t)(con->window_rect.x + con->window_rect.width) &&
++        event->event_y >= (int32_t)bsr.y && event->event_y <= (int32_t)(con->rect.height + bsr.height))
+         return tiling_resize_for_border(con, BORDER_RIGHT, event);
+ 
+-    if (event->event_y >= (con->window_rect.y + con->window_rect.height))
++    if (event->event_y >= (int32_t)(con->window_rect.y + con->window_rect.height))
+         return tiling_resize_for_border(con, BORDER_BOTTOM, event);
+ 
+     return false;
+diff --git a/src/commands_parser.c b/src/commands_parser.c
+index 4f04501..05d39cf 100644
+--- a/src/commands_parser.c
++++ b/src/commands_parser.c
+@@ -232,7 +232,7 @@ struct CommandResult *parse_command(const char *input) {
+ 
+     /* The "<=" operator is intentional: We also handle the terminating 0-byte
+      * explicitly by looking for an 'end' token. */
+-    while ((walk - input) <= len) {
++    while ((size_t)(walk - input) <= len) {
+         /* skip whitespace and newlines before every token */
+         while ((*walk == ' ' || *walk == '\t' ||
+                 *walk == '\r' || *walk == '\n') && *walk != '\0')
+diff --git a/src/config.c b/src/config.c
+index c030eb9..4ce45ad 100644
+--- a/src/config.c
++++ b/src/config.c
+@@ -175,7 +175,7 @@ void grab_all_keys(xcb_connection_t *conn, bool bind_mode_switch) {
+         }
+ 
+         xcb_keycode_t *walk = bind->translated_to;
+-        for (int i = 0; i < bind->number_keycodes; i++)
++        for (uint32_t i = 0; i < bind->number_keycodes; i++)
+             grab_keycode_for_binding(conn, bind, *walk++);
+     }
+ }
+diff --git a/src/config_parser.c b/src/config_parser.c
+index bbd59a4..cb21dae 100644
+--- a/src/config_parser.c
++++ b/src/config_parser.c
+@@ -159,7 +159,7 @@ static const char *get_string(const char *identifier) {
+     return NULL;
+ }
+ 
+-static const long get_long(const char *identifier) {
++static long get_long(const char *identifier) {
+     for (int c = 0; c < 10; c++) {
+         if (stack[c].identifier == NULL)
+             break;
+@@ -346,7 +346,7 @@ struct ConfigResult *parse_config(const char *input, struct context *context) {
+ 
+     /* The "<=" operator is intentional: We also handle the terminating 0-byte
+      * explicitly by looking for an 'end' token. */
+-    while ((walk - input) <= len) {
++    while ((size_t)(walk - input) <= len) {
+         /* Skip whitespace before every token, newlines are relevant since they
+          * separate configuration directives. */
+         while ((*walk == ' ' || *walk == '\t') && *walk != '\0')
+@@ -585,7 +585,7 @@ struct ConfigResult *parse_config(const char *input, struct context *context) {
+             y(map_close);
+ 
+             /* Skip the rest of this line, but continue parsing. */
+-            while ((walk - input) <= len && *walk != '\n')
++            while ((size_t)(walk - input) <= len && *walk != '\n')
+                 walk++;
+ 
+             free(position);
+diff --git a/src/display_version.c b/src/display_version.c
+index 427c4ff..73bc54d 100644
+--- a/src/display_version.c
++++ b/src/display_version.c
+@@ -135,7 +135,7 @@ void display_running_version(void) {
+ 
+     sasprintf(&exepath, "/proc/%d/exe", getpid());
+ 
+-    while ((linksize = readlink(exepath, destpath, destpath_size)) == destpath_size) {
++    while ((linksize = readlink(exepath, destpath, destpath_size)) == (ssize_t)destpath_size) {
+             destpath_size = destpath_size * 2;
+             destpath = srealloc(destpath, destpath_size);
+     }
+@@ -151,7 +151,7 @@ void display_running_version(void) {
+     free(exepath);
+     sasprintf(&exepath, "/proc/%s/exe", pid_from_atom);
+ 
+-    while ((linksize = readlink(exepath, destpath, destpath_size)) == destpath_size) {
++    while ((linksize = readlink(exepath, destpath, destpath_size)) == (ssize_t)destpath_size) {
+         destpath_size = destpath_size * 2;
+         destpath = srealloc(destpath, destpath_size);
+     }
+diff --git a/src/fake_outputs.c b/src/fake_outputs.c
+index e115329..acbc456 100644
+--- a/src/fake_outputs.c
++++ b/src/fake_outputs.c
+@@ -18,7 +18,7 @@ static int num_screens;
+  * Looks in outputs for the Output whose start coordinates are x, y
+  *
+  */
+-static Output *get_screen_at(int x, int y) {
++static Output *get_screen_at(unsigned int x, unsigned int y) {
+     Output *output;
+     TAILQ_FOREACH(output, &outputs, outputs)
+         if (output->rect.x == x && output->rect.y == y)
+diff --git a/src/floating.c b/src/floating.c
+index 166e054..1c35c8d 100644
+--- a/src/floating.c
++++ b/src/floating.c
+@@ -535,12 +535,12 @@ void floating_resize_window(Con *con, const bool proportional,
+      * a bitmask of the nearest borders (BORDER_LEFT, BORDER_RIGHT, …) */
+     border_t corner = 0;
+ 
+-    if (event->event_x <= (con->rect.width / 2))
++    if (event->event_x <= (int16_t)(con->rect.width / 2))
+         corner |= BORDER_LEFT;
+     else corner |= BORDER_RIGHT;
+ 
+     int cursor = 0;
+-    if (event->event_y <= (con->rect.height / 2)) {
++    if (event->event_y <= (int16_t)(con->rect.height / 2)) {
+         corner |= BORDER_TOP;
+         cursor = (corner & BORDER_LEFT) ?
+             XCURSOR_CURSOR_TOP_LEFT_CORNER : XCURSOR_CURSOR_TOP_RIGHT_CORNER;
+diff --git a/src/handlers.c b/src/handlers.c
+index fce6627..312372a 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -1034,7 +1034,7 @@ static void property_notify(uint8_t state, xcb_window_t window, xcb_atom_t atom)
+     struct property_handler_t *handler = NULL;
+     xcb_get_property_reply_t *propr = NULL;
+ 
+-    for (int c = 0; c < sizeof(property_handlers) / sizeof(struct property_handler_t); c++) {
++    for (size_t c = 0; c < sizeof(property_handlers) / sizeof(struct property_handler_t); c++) {
+         if (property_handlers[c].atom != atom)
+             continue;
+ 
+diff --git a/src/log.c b/src/log.c
+index 86f47b9..5635278 100644
+--- a/src/log.c
++++ b/src/log.c
+@@ -250,7 +250,7 @@ static void vlog(const bool print, const char *fmt, va_list args) {
+ 
+         /* If there is no space for the current message in the ringbuffer, we
+          * need to wrap and write to the beginning again. */
+-        if (len >= (logbuffer_size - (logwalk - logbuffer))) {
++        if (len >= (size_t)(logbuffer_size - (logwalk - logbuffer))) {
+             loglastwrap = logwalk;
+             logwalk = logbuffer + sizeof(i3_shmlog_header);
+             store_log_markers();
+diff --git a/src/manage.c b/src/manage.c
+index d7a28eb..8874994 100644
+--- a/src/manage.c
++++ b/src/manage.c
+@@ -252,7 +252,7 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+             cwindow->dock = W_DOCK_BOTTOM;
+         } else {
+             DLOG("Ignoring invalid reserved edges (_NET_WM_STRUT_PARTIAL), using position as fallback:\n");
+-            if (geom->y < (search_at->rect.height / 2)) {
++            if (geom->y < (int16_t)(search_at->rect.height / 2)) {
+                 DLOG("geom->y = %d < rect.height / 2 = %d, it is a top dock client\n",
+                      geom->y, (search_at->rect.height / 2));
+                 cwindow->dock = W_DOCK_TOP;
+diff --git a/src/randr.c b/src/randr.c
+index 1aef9c9..53a9a17 100644
+--- a/src/randr.c
++++ b/src/randr.c
+@@ -77,7 +77,7 @@ Output *get_first_output(void) {
+  * if there is no output which contains these coordinates.
+  *
+  */
+-Output *get_output_containing(int x, int y) {
++Output *get_output_containing(unsigned int x, unsigned int y) {
+     Output *output;
+     TAILQ_FOREACH(output, &outputs, outputs) {
+         if (!output->active)
+diff --git a/src/util.c b/src/util.c
+index e2df3ca..8770175 100644
+--- a/src/util.c
++++ b/src/util.c
+@@ -224,7 +224,7 @@ char *store_restart_layout(void) {
+         return NULL;
+     }
+ 
+-    int written = 0;
++    size_t written = 0;
+     while (written < length) {
+         int n = write(fd, payload + written, length - written);
+         /* TODO: correct error-handling */
+@@ -242,9 +242,9 @@ char *store_restart_layout(void) {
+         }
+         written += n;
+ #if YAJL_MAJOR >= 2
+-        printf("written: %d of %zd\n", written, length);
++        DLOG("written: %zd of %zd\n", written, length);
+ #else
+-        printf("written: %d of %d\n", written, length);
++        DLOG("written: %d of %d\n", written, length);
+ #endif
+     }
+     close(fd);
+diff --git a/src/window.c b/src/window.c
+index b51be53..219e64c 100644
+--- a/src/window.c
++++ b/src/window.c
+@@ -32,7 +32,7 @@ void window_update_class(i3Window *win, xcb_get_property_reply_t *prop, bool bef
+     FREE(win->class_class);
+ 
+     win->class_instance = sstrdup(new_class);
+-    if ((strlen(new_class) + 1) < xcb_get_property_value_length(prop))
++    if ((strlen(new_class) + 1) < (size_t)xcb_get_property_value_length(prop))
+         win->class_class = sstrdup(new_class + strlen(new_class) + 1);
+     else win->class_class = NULL;
+     LOG("WM_CLASS changed to %s (instance), %s (class)\n",
+diff --git a/src/xinerama.c b/src/xinerama.c
+index 7e5b5ae..b3e51ac 100644
+--- a/src/xinerama.c
++++ b/src/xinerama.c
+@@ -22,7 +22,7 @@ static int num_screens;
+  * Looks in outputs for the Output whose start coordinates are x, y
+  *
+  */
+-static Output *get_screen_at(int x, int y) {
++static Output *get_screen_at(unsigned int x, unsigned int y) {
+     Output *output;
+     TAILQ_FOREACH(output, &outputs, outputs)
+         if (output->rect.x == x && output->rect.y == y)
+-- 
+1.8.5.2
+

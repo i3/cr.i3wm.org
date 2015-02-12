@@ -1,0 +1,30 @@
+From f68bca4e320f998f4b7f40f8b6da84447ee483d9 Mon Sep 17 00:00:00 2001
+From: Jiri Pinkava <j-pi@…>
+Date: Tue, 26 Feb 2013 20:16:47 +0100
+Subject: [PATCH] contrib: fix premature insetion of status message into JSON
+
+Pass first 2 lines of JSON unmodified. It contains protocol version
+and start of block of blocks of status messages.
+---
+ contrib/measure-net-speed-i3status.bash | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+ mode change 100755 => 100644 contrib/measure-net-speed-i3status.bash
+
+diff --git a/contrib/measure-net-speed-i3status.bash b/contrib/measure-net-speed-i3status.bash
+old mode 100755
+new mode 100644
+index 9f9e5ce..4eec33b
+--- a/contrib/measure-net-speed-i3status.bash
++++ b/contrib/measure-net-speed-i3status.bash
+@@ -18,7 +18,7 @@
+ #   status_command measure-net-speed-i3status.bash
+ # }
+ 
+-i3status | (read line && echo $line && while :
++i3status | (read line && echo $line && read line && echo $line && while :
+ do
+   read line
+   dat=$(measure-net-speed.bash)
+-- 
+1.8.1.4
+

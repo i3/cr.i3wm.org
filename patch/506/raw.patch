@@ -1,0 +1,154 @@
+From 80395a924d61e292679e83ead3cf6cef1b19edfc Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 22 Apr 2014 21:41:28 -0400
+Subject: [PATCH] Move check_for_duplicate_bindings to bindings.[ch]
+
+Additionally add a check for the same input_type (mouse or keyboard).
+Bindings with different input types cannot be duplicates.
+---
+ include/bindings.h  |  9 +++++++++
+ src/bindings.c      | 53 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ src/config_parser.c | 49 -------------------------------------------------
+ 3 files changed, 62 insertions(+), 49 deletions(-)
+
+diff --git a/include/bindings.h b/include/bindings.h
+index d309790..d3d3aa8 100644
+--- a/include/bindings.h
++++ b/include/bindings.h
+@@ -48,3 +48,12 @@ void translate_keysyms(void);
+  *
+  */
+ void switch_mode(const char *new_mode);
++
++/**
++ * Checks for duplicate key bindings (the same keycode or keysym is configured
++ * more than once). If a duplicate binding is found, a message is printed to
++ * stderr and the has_errors variable is set to true, which will start
++ * i3-nagbar.
++ *
++ */
++void check_for_duplicate_bindings(struct context *context);
+diff --git a/src/bindings.c b/src/bindings.c
+index c3e9c1b..526c1a5 100644
+--- a/src/bindings.c
++++ b/src/bindings.c
+@@ -259,3 +259,56 @@ void switch_mode(const char *new_mode) {
+ 
+     ELOG("ERROR: Mode not found\n");
+ }
++
++/*
++ * Checks for duplicate key bindings (the same keycode or keysym is configured
++ * more than once). If a duplicate binding is found, a message is printed to
++ * stderr and the has_errors variable is set to true, which will start
++ * i3-nagbar.
++ *
++ */
++void check_for_duplicate_bindings(struct context *context) {
++    Binding *bind, *current;
++    TAILQ_FOREACH(current, bindings, bindings) {
++        TAILQ_FOREACH(bind, bindings, bindings) {
++            /* Abort when we reach the current keybinding, only check the
++             * bindings before */
++            if (bind == current)
++                break;
++
++            /* Check if the input types are different */
++            if (bind->input_type != current->input_type)
++                continue;
++
++            /* Check if one is using keysym while the other is using bindsym.
++             * If so, skip. */
++            /* XXX: It should be checked at a later place (when translating the
++             * keysym to keycodes) if there are any duplicates */
++            if ((bind->symbol == NULL && current->symbol != NULL) ||
++                (bind->symbol != NULL && current->symbol == NULL))
++                continue;
++
++            /* If bind is NULL, current has to be NULL, too (see above).
++             * If the keycodes differ, it can't be a duplicate. */
++            if (bind->symbol != NULL &&
++                strcasecmp(bind->symbol, current->symbol) != 0)
++                continue;
++
++            /* Check if the keycodes or modifiers are different. If so, they
++             * can't be duplicate */
++            if (bind->keycode != current->keycode ||
++                bind->mods != current->mods ||
++                bind->release != current->release)
++                continue;
++
++            context->has_errors = true;
++            if (current->keycode != 0) {
++                ELOG("Duplicate keybinding in config file:\n  modmask %d with keycode %d, command \"%s\"\n",
++                     current->mods, current->keycode, current->command);
++            } else {
++                ELOG("Duplicate keybinding in config file:\n  modmask %d with keysym %s, command \"%s\"\n",
++                     current->mods, current->symbol, current->command);
++            }
++        }
++    }
++}
+diff --git a/src/config_parser.c b/src/config_parser.c
+index cb21dae..63cef8d 100644
+--- a/src/config_parser.c
++++ b/src/config_parser.c
+@@ -844,55 +844,6 @@ static char *migrate_config(char *input, off_t size) {
+ }
+ 
+ /*
+- * Checks for duplicate key bindings (the same keycode or keysym is configured
+- * more than once). If a duplicate binding is found, a message is printed to
+- * stderr and the has_errors variable is set to true, which will start
+- * i3-nagbar.
+- *
+- */
+-static void check_for_duplicate_bindings(struct context *context) {
+-    Binding *bind, *current;
+-    TAILQ_FOREACH(current, bindings, bindings) {
+-        TAILQ_FOREACH(bind, bindings, bindings) {
+-            /* Abort when we reach the current keybinding, only check the
+-             * bindings before */
+-            if (bind == current)
+-                break;
+-
+-            /* Check if one is using keysym while the other is using bindsym.
+-             * If so, skip. */
+-            /* XXX: It should be checked at a later place (when translating the
+-             * keysym to keycodes) if there are any duplicates */
+-            if ((bind->symbol == NULL && current->symbol != NULL) ||
+-                (bind->symbol != NULL && current->symbol == NULL))
+-                continue;
+-
+-            /* If bind is NULL, current has to be NULL, too (see above).
+-             * If the keycodes differ, it can't be a duplicate. */
+-            if (bind->symbol != NULL &&
+-                strcasecmp(bind->symbol, current->symbol) != 0)
+-                continue;
+-
+-            /* Check if the keycodes or modifiers are different. If so, they
+-             * can't be duplicate */
+-            if (bind->keycode != current->keycode ||
+-                bind->mods != current->mods ||
+-                bind->release != current->release)
+-                continue;
+-
+-            context->has_errors = true;
+-            if (current->keycode != 0) {
+-                ELOG("Duplicate keybinding in config file:\n  modmask %d with keycode %d, command \"%s\"\n",
+-                     current->mods, current->keycode, current->command);
+-            } else {
+-                ELOG("Duplicate keybinding in config file:\n  modmask %d with keysym %s, command \"%s\"\n",
+-                     current->mods, current->symbol, current->command);
+-            }
+-        }
+-    }
+-}
+-
+-/*
+  * Parses the given file by first replacing the variables, then calling
+  * parse_config and possibly launching i3-nagbar.
+  *
+-- 
+1.9.2
+

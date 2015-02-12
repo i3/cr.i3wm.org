@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 17,
+    "Comment": "So, as you know, our deal was “i’m skeptical, but you’ll send me the patch, and then we’ll decide”.\n\nI took a look at your patch and I think I was rightfully skeptical :). You needed to introduce the “skip”, “line” and “limit” options, which is exactly what I predicted, i.e. instead of just displaying a file you need some sort of preprocessing. These options are really klunky, and I’m sure there will be someone who needs precisely what the module offers, _but_ that one little tweak, leading to even more of these clumsy options…\n\nAlso, the mtime_diff is unexpected.\n\nAs-is, the patch will not be accepted. I’m sorry that you put all this work into it without seeing it merged upstream. You’re free to use your own patch, of course. Also, in case you absolutely want to follow up, feel free to submit a new version of this patch that is a lot simpler, i.e. without all the preprocessing options. Not sure if that helps your use-case, though. If I were you, I’d just wrap i3status in a script, as the manpage recommends.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "EscapedNull",
+    "Line": 17,
+    "Comment": "Rejected? Don't worry: it's only the second one today. No hard feelings though. You did say \"no preprocessing\" and I did it anyway, so I sort of expected it. I introduced \"line\" because it was the only way I could think of to handle newlines. Obviously we can't display newlines in a single-line output, but I guess truncating the file at the first newline is what you had in mind. As for \"skip\" and \"limit\", I only introduced those because they were so easy to implement, and I thought someone somewhere might find them useful. \"mtime\" and \"mtime_diff\", again, were easy to implement and seemed potentially useful for logs.\n\nThis patch is obviously faster than using a shell script, but I realize that i3status can't be expected to handle every file contents use-case. I thought I would keep it in the middle with some basic preprocessing, but I guess it was too much. Although I would have liked to see it go upstream, I learned a little about git from doing this patch, and it felt good to brush up on my C, too.",
+    "EmailHash": "283a471188ee9b1d646f12fc39a0149e"
+  }
+]

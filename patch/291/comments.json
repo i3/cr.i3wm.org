@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 25,
+    "Comment": "This still has some problems and is going to need more work.\n\nIf you want to fix this bug, I recommend the approach in 285.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 37,
+    "Comment": "How about calling this DRAG_REVERT to make it clear that it reverts the window state to what it used to be?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 110,
+    "Comment": "This is missing the focused check, right?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 25,
+    "Comment": "Which problems are there? Are they in this patch or are you going to address them in a follow-up patch? I.e. do you want me to merge this?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 25,
+    "Comment": "You know what, I'm being pedantic. It's just a small issue of sometimes it will abort when it doesn't have to.\n\nBut statistically, this will almost never happen and when it does will only be mildly annoying. I'll change the name to DRAG_REVERT and you can merge that.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 110,
+    "Comment": "I figured since they address different issues they should be in different commits.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

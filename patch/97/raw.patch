@@ -1,0 +1,25 @@
+From d90c62381b58c201685e1d08a5afb8c6976cee85 Mon Sep 17 00:00:00 2001
+From: Baptiste Daroussin <bapt@…>
+Date: Wed, 20 Mar 2013 00:36:50 +0100
+Subject: [PATCH] All supported FreeBSD version has getline now
+
+---
+ i3-config-wizard/main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/i3-config-wizard/main.c b/i3-config-wizard/main.c
+index 54c8e02..ffc3df9 100644
+--- a/i3-config-wizard/main.c
++++ b/i3-config-wizard/main.c
+@@ -13,7 +13,7 @@
+ #endif
+ 
+ /* For systems without getline, fall back to fgetln */
+-#if defined(__APPLE__) || (defined(__FreeBSD__) && __FreeBSD_version < 800000)
++#if defined(__APPLE__)
+ #define USE_FGETLN
+ #elif defined(__FreeBSD__)
+ /* Defining this macro before including stdio.h is necessary in order to have
+-- 
+1.8.1.3
+

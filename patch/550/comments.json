@@ -1,0 +1,56 @@
+[
+  {
+    "Author": "Atte Peltomaki",
+    "Line": 41,
+    "Comment": "The naming is done so that it can be extended in the future to include 'window' mode, where mouse is warped to middle of focused window whenever focus is moved from keyboard.",
+    "EmailHash": "49ceee64b6f02a21cf9fdad5cc26c8a7"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 63,
+    "Comment": "Please make this an enum with POINTER_WARPING_NONE and POINTER_WARPING_OUTPUT entries.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 33,
+    "Comment": "The title is wrong.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 37,
+    "Comment": "The wording is not entirely precise. I suggest rewriting the paragraph like this to be more consistent with the rest of the document:\n\n“By default, when switching focus to a window on a different output (e.g. focusing a window on workspace 3 on output VGA-1, coming from workspace 2 on LVDS-1), the mouse cursor is warped to the center of that window.\n\nWith the +mouse_warping+ option, you can control when the mouse cursor should be warped. +none+ disables warping entirely, whereas +output+ is the default behavior described above.”",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 62,
+    "Comment": "Please also update the comment when you change the wording in docs/userguide",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 98,
+    "Comment": "Please use “value = 'none', 'output'”. This will lead to better error messages and is case-insensitive.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 63,
+    "Comment": "Also rename from disable_mouse_warping to mouse_warping :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 179,
+    "Comment": "Kudos for the testcase!",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Atte Peltomaki",
+    "Line": 33,
+    "Comment": "You can close this change now as superseded, since the new patch is already merged.",
+    "EmailHash": "49ceee64b6f02a21cf9fdad5cc26c8a7"
+  }
+]

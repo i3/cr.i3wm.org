@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 54,
+    "Comment": "I think it’d be reasonable to introduce a flag to control the amount of seconds. 30 is way too much for my taste, for example.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 54,
+    "Comment": "Certainly, I can do that. But I have another patch ready[1] that introduces another timeout, which by its nature asks for longer value. Should I somehow combine the two timeouts and/or their options, or have them completely separate?\n\n[1] https://github.com/rtfb/i3lock/commit/8d8a42025e0bfc25d0443c3167d71d32e061bf4c",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 54,
+    "Comment": "I think the timeout is only relevant for the patch we are talking about here.\n\nYour other patch (turn off the screen after a couple of minutes, even when there are characters in the buffer) doesn’t really have a need for configuration, I think. Using e.g. 10 minutes is fine, nobody will take that long for entering a password, and I don’t think there is any use-case for wanting to have a half-entered password persist in the buffer.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 54,
+    "Comment": "Makes sense. I'll get back when I'm done with the flag.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Vytautas Šaltenis",
+    "Line": 54,
+    "Comment": "I've added the option: https://github.com/rtfb/i3lock/commit/ad7154e8e2cbc4f832c49cb1750c4659e3e58ff8\n\nDo you want me to squash the patches together and resubmit or are you going to merge this one?",
+    "EmailHash": "8980010327a5f99fd2d17261e7002c02"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 54,
+    "Comment": "Please squash :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

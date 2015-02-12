@@ -1,0 +1,163 @@
+From fa2486b9d1fc2f714c5518f060feb74b94187ba8 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Wed, 16 Oct 2013 22:44:56 -0400
+Subject: [PATCH] Assigned windows open urgent when not visible
+
+When i3 begins to manage a window, if the window opens on a workspace
+that is not visible, the urgency hint on the newly managed window will
+be set.
+
+fixes #1088
+---
+ src/manage.c                     |  12 +++--
+ testcases/t/212-assign-urgency.t | 113 +++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 122 insertions(+), 3 deletions(-)
+ create mode 100644 testcases/t/212-assign-urgency.t
+
+diff --git a/src/manage.c b/src/manage.c
+index 892ac4d..af9e8ef 100644
+--- a/src/manage.c
++++ b/src/manage.c
+@@ -279,11 +279,17 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+         if ((assignment = assignment_for(cwindow, A_TO_WORKSPACE | A_TO_OUTPUT))) {
+             DLOG("Assignment matches (%p)\n", match);
+             if (assignment->type == A_TO_WORKSPACE) {
+-                nc = con_descend_tiling_focused(workspace_get(assignment->dest.workspace, NULL));
+-                DLOG("focused on ws %s: %p / %s\n", assignment->dest.workspace, nc, nc->name);
++                Con *assigned_ws = workspace_get(assignment->dest.workspace, NULL);
++                nc = con_descend_tiling_focused(assigned_ws);
++                DLOG("focused on ws %s: %p / %s\n", assigned_ws->name, nc, nc->name);
+                 if (nc->type == CT_WORKSPACE)
+                     nc = tree_open_con(nc, cwindow);
+-                else nc = tree_open_con(nc->parent, cwindow);
++                else
++                    nc = tree_open_con(nc->parent, cwindow);
++
++                /* set the urgency hint on the window if the workspace is not visible */
++                if (!workspace_is_visible(assigned_ws))
++                    urgency_hint = true;
+             }
+         /* TODO: handle assignments with type == A_TO_OUTPUT */
+         } else if (startup_ws) {
+diff --git a/testcases/t/212-assign-urgency.t b/testcases/t/212-assign-urgency.t
+new file mode 100644
+index 0000000..f53eb7e
+--- /dev/null
++++ b/testcases/t/212-assign-urgency.t
+@@ -0,0 +1,113 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Tests if the urgency hint will be set appropriately when opening a window
++# assigned to a workspace.
++#
++use i3test i3_autostart => 0;
++
++# Based on the eponymous function in t/166-assign.t
++sub open_special {
++    my %args = @_;
++    $args{name} //= 'special window';
++
++    # We use dont_map because i3 will not map the window on the current
++    # workspace. Thus, open_window would time out in wait_for_map (2 seconds).
++    my $window = open_window(
++        %args,
++        wm_class => 'special',
++        dont_map => 1,
++    );
++    $window->map;
++    return $window;
++}
++
++#####################################################################
++# start a window assigned to a non-visible workspace and see that the urgency
++# hint is set.
++#####################################################################
++
++my $config = <<EOT;
++# i3 config file (v4)
++font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
++assign [class="special"] → targetws
++EOT
++
++my $pid = launch_with_config($config);
++
++cmd 'workspace ordinaryws';
++my $window = open_special;
++sync_with_i3;
++
++ok(get_ws('targetws')->{urgent}, 'target workspace is urgent');
++
++$window->destroy;
++
++exit_gracefully($pid);
++
++
++#####################################################################
++# start a window assigned to a visible workspace and see that the urgency hint
++# is not set.
++#####################################################################
++
++$config = <<EOT;
++# i3 config file (v4)
++font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
++assign [class="special"] → targetws
++EOT
++
++$pid = launch_with_config($config);
++
++cmd 'workspace targetws';
++$window = open_special;
++sync_with_i3;
++
++ok(!get_ws('targetws')->{urgent}, 'visible workspace is not urgent');
++
++$window->destroy;
++
++exit_gracefully($pid);
++
++#####################################################################
++# start a window assigned to a visible workspace on a different output and see
++# that the urgency hint is not set.
++#####################################################################
++
++$config = <<EOT;
++# i3 config file (v4)
++font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
++
++fake-outputs 1024x768+0+0,1024x768+1024+0
++workspace targetws output fake-0
++workspace ordinaryws output fake-1
++
++assign [class="special"] → targetws
++EOT
++
++$pid = launch_with_config($config);
++
++cmd 'workspace ordinaryws';
++$window = open_special;
++sync_with_i3;
++
++ok(!get_ws('targetws')->{urgent}, 'target workspace is not urgent');
++
++$window->destroy;
++
++exit_gracefully($pid);
++
++done_testing;
+-- 
+1.8.4.1
+

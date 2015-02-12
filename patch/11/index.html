@@ -1,0 +1,1370 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>i3 Patch: adjust window in scratchpad at move time</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" media="screen" href="http://i3wm.org/css/style.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="/public/stylesheets/main.css">
+    <link rel="shortcut icon" type="image/png" href="http://i3wm.org/favicon.png">
+    <script src="/public/js/jquery-1.9.0.min.js" type="text/javascript" charset="utf-8"></script>
+	<link href='http://fonts.googleapis.com/css?family=Ubuntu+Mono' rel='stylesheet' type='text/css'>
+    
+    
+      <script src="/public/js/patch.js" type="text/javascript" charset="utf-8"></script>
+    
+  </head>
+  <body>
+
+
+<div id="main">
+	<a href="/"><h1 id="title">i3 - improved tiling WM</h1></a>
+				<ul id="nav">
+						<li><a style="border-bottom: 2px solid #fff" href="/">Reviews</a></li>
+						<li><a href="http://bugs.i3wm.org/">Bugs</a></li>
+				</ul>
+<br style="clear: both">
+
+<div id="content">
+
+<h1>adjust window in scratchpad at move time</h1>
+<div style="float: right">
+<p>
+Patch status: needinfo
+</p>
+<p>
+Patch by Vivien Didelot
+</p>
+</div>
+
+<p>
+<strong>Long description</strong>:<br>
+<pre>The first aim of this patch was to prevent i3 from resizing an already
+floating window when moved to the scratchpad workspace.
+Indeed, an user may adjust a small media player to his/her liking, move
+it to scratchpad, then doesn&#39;t want i3 to readjust it.
+
+Currently, the resizing of (every) scratchpad windows is done at show
+time (in the scratchpad_show() function).
+To be able to check if the window was not already floating and readjust
+it accordingly, this patch moves the readjusting code from the show
+function to the move function (scratchpad_move()).
+
+This has the side-effect to make the SCRATCHPAD_FRESH state obsolete.
+Consequently, this patch removes this fresh state and renames the state
+SCRATCHPAD_CHANGED to SCRATCHPAD_ENABLED for relevance.
+
+Reported-by: Julien Bonjean &lt;julien.bonjean@savoirfairelinux.com&gt;
+</pre>
+</p>
+
+
+<p>
+To apply this patch, use:<br>
+<code>curl http://cr.i3wm.org/patch/11/raw.patch | git am</code>
+</p>
+
+
+
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/include/data.h</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L33">33</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="33">@@ -571,8 &#43;571,7 @@ struct Con {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L34">34</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="34"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L35">35</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="35">     enum {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L36">36</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="36">         SCRATCHPAD_NONE = 0,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L37">37</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="37">-        SCRATCHPAD_FRESH = 1,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L38">38</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="38">-        SCRATCHPAD_CHANGED = 2</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L39">39</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="39">&#43;        SCRATCHPAD_ENABLED = 1</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L40">40</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="40">     } scratchpad_state;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L41">41</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="41"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L42">42</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="42">     /* The ID of this container before restarting. Necessary to correctly</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/src/ipc.c</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L47">47</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="47">@@ -170,11 &#43;170,8 @@ void dump_node(yajl_gen gen, struct Con *con, bool inplace_restart) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L48">48</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="48">         case SCRATCHPAD_NONE:</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L49">49</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="49">             ystr(&#34;none&#34;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L50">50</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="50">             break;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L51">51</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="51">-        case SCRATCHPAD_FRESH:</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L52">52</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="52">-            ystr(&#34;fresh&#34;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L53">53</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="53">-            break;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L54">54</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="54">-        case SCRATCHPAD_CHANGED:</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L55">55</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="55">-            ystr(&#34;changed&#34;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L56">56</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="56">&#43;        case SCRATCHPAD_ENABLED:</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L57">57</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="57">&#43;            ystr(&#34;enabled&#34;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L58">58</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="58">             break;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L59">59</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="59">     }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L60">60</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="60"> </pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/src/load_layout.c</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L65">65</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="65">@@ -248,10 &#43;248,8 @@ static int json_string(void *ctx, const unsigned char *val, unsigned int len) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L66">66</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="66">             sasprintf(&amp;buf, &#34;%.*s&#34;, (int)len, val);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L67">67</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="67">             if (strcasecmp(buf, &#34;none&#34;) == 0)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L68">68</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="68">                 json_node-&gt;scratchpad_state = SCRATCHPAD_NONE;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L69">69</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="69">-            else if (strcasecmp(buf, &#34;fresh&#34;) == 0)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L70">70</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="70">-                json_node-&gt;scratchpad_state = SCRATCHPAD_FRESH;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L71">71</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="71">-            else if (strcasecmp(buf, &#34;changed&#34;) == 0)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L72">72</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="72">-                json_node-&gt;scratchpad_state = SCRATCHPAD_CHANGED;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L73">73</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="73">&#43;            else if (strcasecmp(buf, &#34;enabled&#34;) == 0)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L74">74</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="74">&#43;                json_node-&gt;scratchpad_state = SCRATCHPAD_ENABLED;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L75">75</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="75">             free(buf);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L76">76</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="76">         }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L77">77</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="77">     }</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/src/scratchpad.c</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L82">82</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="82">@@ -57,11 &#43;57,22 @@ void scratchpad_move(Con *con) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L83">83</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="83">     con_move_to_workspace(con, __i3_scratch, true, true);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L84">84</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="84"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L85">85</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="85">     /* 3: If this is the first time this window is used as a scratchpad, we set</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L86">86</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="86">-     * the scratchpad_state to SCRATCHPAD_FRESH. The window will then be</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L87">87</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="87">-     * adjusted in size according to what the user specifies. */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L88">88</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="88">&#43;     * the scratchpad_state to SCRATCHPAD_ENABLED. If it was not already</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L89">89</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="89">&#43;     * floating, we adjust its size according to what the user specifies. */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L90">90</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="90">     if (con-&gt;scratchpad_state == SCRATCHPAD_NONE) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L91">91</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="91">         DLOG(&#34;This window was never used as a scratchpad before.\n&#34;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L92">92</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="92">-        con-&gt;scratchpad_state = SCRATCHPAD_FRESH;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L93">93</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="93">&#43;        con-&gt;scratchpad_state = SCRATCHPAD_ENABLED;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L94">94</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="94">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L95">95</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="95">&#43;        if (!maybe_floating_con) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L96">96</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="96">&#43;            DLOG(&#34;Adjusting size of this window.\n&#34;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L97">97</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="97">&#43;            Con *output = con_get_output(con);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L98">98</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="98">&#43;            con-&gt;rect.width = output-&gt;rect.width * 0.5;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L99">99</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="99">&#43;            con-&gt;rect.height = output-&gt;rect.height * 0.75;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L100">100</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="100">&#43;            con-&gt;rect.x = output-&gt;rect.x &#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L101">101</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="101">&#43;                ((output-&gt;rect.width / 2.0) - (con-&gt;rect.width / 2.0));</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L102">102</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="102">&#43;            con-&gt;rect.y = output-&gt;rect.y &#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L103">103</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="103">&#43;                ((output-&gt;rect.height / 2.0) - (con-&gt;rect.height / 2.0));</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L104">104</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="104">&#43;        }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L105">105</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="105">     }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L106">106</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="106"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L107">107</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="107">     /* 4: Fix focus. Normally, when moving a window to a different output, the</pre>
+  </td>
+  </tr>
+
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L108">108</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="108">@@ -153,22 &#43;164,9 @@ void scratchpad_show(Con *con) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L109">109</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="109">         }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L110">110</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="110">     }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L111">111</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="111"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L112">112</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="112">-    /* 1: Move the window from __i3_scratch to the current workspace. */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L113">113</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="113">&#43;    /* Move the window from __i3_scratch to the current workspace. */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L114">114</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="114">     con_move_to_workspace(con, active, true, false);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L115">115</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="115"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L116">116</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="116">-    /* 2: Adjust the size if this window was not adjusted yet. */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L117">117</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="117">-    if (con-&gt;scratchpad_state == SCRATCHPAD_FRESH) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L118">118</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="118">-        DLOG(&#34;Adjusting size of this window.\n&#34;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L119">119</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="119">-        Con *output = con_get_output(con);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L120">120</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="120">-        con-&gt;rect.width = output-&gt;rect.width * 0.5;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L121">121</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="121">-        con-&gt;rect.height = output-&gt;rect.height * 0.75;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L122">122</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="122">-        con-&gt;rect.x = output-&gt;rect.x &#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L123">123</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="123">-                      ((output-&gt;rect.width / 2.0) - (con-&gt;rect.width / 2.0));</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L124">124</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="124">-        con-&gt;rect.y = output-&gt;rect.y &#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L125">125</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="125">-                      ((output-&gt;rect.height / 2.0) - (con-&gt;rect.height / 2.0));</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L126">126</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="126">-        con-&gt;scratchpad_state = SCRATCHPAD_CHANGED;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L127">127</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="127">-    }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L128">128</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="128">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L129">129</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="129">     /* Activate active workspace if window is from another workspace to ensure</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L130">130</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="130">      * proper focus. */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L131">131</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="131">     if (current != active) {</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/testcases/t/185-scratchpad.t</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L136">136</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="136">@@ -109,7 &#43;109,7 @@ is(scalar @scratch_nodes, 1, &#39;__i3_scratch contains our window&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L137">137</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="137"> ($nodes, $focus) = get_ws_content($tmp);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L138">138</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="138"> is(scalar @$nodes, 0, &#39;no window on current ws anymore&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L139">139</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="139"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L140">140</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="140">-is($scratch_nodes[0]-&gt;{scratchpad_state}, &#39;fresh&#39;, &#39;scratchpad_state fresh&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L141">141</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="141">&#43;is($scratch_nodes[0]-&gt;{scratchpad_state}, &#39;enabled&#39;, &#39;scratchpad_state enabled&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L142">142</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="142"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L143">143</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="143"> $tree = $i3-&gt;get_tree-&gt;recv;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L144">144</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="144"> my $__i3 = first { $_-&gt;{name} eq &#39;__i3&#39; } @{$tree-&gt;{nodes}};</pre>
+  </td>
+  </tr>
+
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L145">145</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="145">@@ -165,7 &#43;165,7 @@ $__i3_scratch = get_ws(&#39;__i3_scratch&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L146">146</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="146"> @scratch_nodes = @{$__i3_scratch-&gt;{floating_nodes}};</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L147">147</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="147"> is(scalar @scratch_nodes, 1, &#39;__i3_scratch contains our window&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L148">148</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="148"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L149">149</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="149">-is($scratch_nodes[0]-&gt;{scratchpad_state}, &#39;changed&#39;, &#39;scratchpad_state changed&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L150">150</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="150">&#43;is($scratch_nodes[0]-&gt;{scratchpad_state}, &#39;enabled&#39;, &#39;scratchpad_state enabled&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L151">151</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="151"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L152">152</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="152"> ################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L153">153</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="153"> # 6: Verify that repeated &#39;scratchpad show&#39; cycle through the stack, that is,</pre>
+  </td>
+  </tr>
+
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L154">154</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="154">@@ -180,18 &#43;180,13 @@ $__i3_scratch = get_ws(&#39;__i3_scratch&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L155">155</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="155"> @scratch_nodes = @{$__i3_scratch-&gt;{floating_nodes}};</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L156">156</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="156"> is(scalar @scratch_nodes, 2, &#39;__i3_scratch contains both windows&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L157">157</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="157"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L158">158</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="158">-is($scratch_nodes[0]-&gt;{scratchpad_state}, &#39;changed&#39;, &#39;changed window first&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L159">159</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="159">-is($scratch_nodes[1]-&gt;{scratchpad_state}, &#39;fresh&#39;, &#39;fresh window is second&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L160">160</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="160">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L161">161</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="161">-my $changed_id = $scratch_nodes[0]-&gt;{nodes}-&gt;[0]-&gt;{id};</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L162">162</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="162">-my $fresh_id = $scratch_nodes[1]-&gt;{nodes}-&gt;[0]-&gt;{id};</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L163">163</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="163">-is($scratch_nodes[0]-&gt;{id}, $__i3_scratch-&gt;{focus}-&gt;[0], &#39;changed window first&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L164">164</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="164">-is($scratch_nodes[1]-&gt;{id}, $__i3_scratch-&gt;{focus}-&gt;[1], &#39;fresh window second&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L165">165</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="165">&#43;my $first_id = $scratch_nodes[0]-&gt;{nodes}-&gt;[0]-&gt;{id};</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L166">166</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="166">&#43;my $second_id = $scratch_nodes[1]-&gt;{nodes}-&gt;[0]-&gt;{id};</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L167">167</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="167"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L168">168</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="168"> # Repeatedly use &#39;scratchpad show&#39; and check that the windows are different.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L169">169</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="169"> cmd &#39;scratchpad show&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L170">170</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="170"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L171">171</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="171">-is(get_focused($tmp), $changed_id, &#39;focus changed&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L172">172</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="172">&#43;is(get_focused($tmp), $first_id, &#39;focus changed&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L173">173</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="173"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L174">174</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="174"> $ws = get_ws($tmp);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L175">175</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="175"> $scratchrect = $ws-&gt;{floating_nodes}-&gt;[0]-&gt;{rect};</pre>
+  </td>
+  </tr>
+
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L176">176</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="176">@@ -206,15 &#43;201,15 @@ is($scratchrect-&gt;{y},</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L177">177</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="177"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L178">178</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="178"> cmd &#39;scratchpad show&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L179">179</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="179"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L180">180</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="180">-isnt(get_focused($tmp), $changed_id, &#39;focus changed&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L181">181</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="181">&#43;isnt(get_focused($tmp), $first_id, &#39;focus changed&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L182">182</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="182"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L183">183</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="183"> cmd &#39;scratchpad show&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L184">184</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="184"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L185">185</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="185">-is(get_focused($tmp), $fresh_id, &#39;focus changed&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L186">186</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="186">&#43;is(get_focused($tmp), $second_id, &#39;focus changed&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L187">187</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="187"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L188">188</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="188"> cmd &#39;scratchpad show&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L189">189</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="189"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L190">190</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="190">-isnt(get_focused($tmp), $fresh_id, &#39;focus changed&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L191">191</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="191">&#43;isnt(get_focused($tmp), $second_id, &#39;focus changed&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L192">192</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="192"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L193">193</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="193"> ################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L194">194</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="194"> # 8: Show it, move it around, hide it. Verify that the position is retained</pre>
+  </td>
+  </tr>
+
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L195">195</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="195">@@ -274,7 &#43;269,7 @@ cmd &#39;[title=&#34;scratch-match&#34;] scratchpad show&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L196">196</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="196"> $ws = get_ws($tmp);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L197">197</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="197"> is(scalar @{$ws-&gt;{nodes}}, 1, &#39;still precisely one window on current ws&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L198">198</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="198"> is(scalar @{$ws-&gt;{floating_nodes}}, 1, &#39;precisely one floating windows on current ws&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L199">199</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="199">-is($ws-&gt;{floating_nodes}-&gt;[0]-&gt;{scratchpad_state}, &#39;changed&#39;, &#39;scratchpad_state is &#34;changed&#34;&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L200">200</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="200">&#43;is($ws-&gt;{floating_nodes}-&gt;[0]-&gt;{scratchpad_state}, &#39;enabled&#39;, &#39;scratchpad_state is &#34;enabled&#34;&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L201">201</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="201"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L202">202</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="202"> ################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L203">203</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="203"> # 10: on an empty workspace, ensure the &#39;move scratchpad&#39; command does nothing</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+
+</div>
+
+  </body>
+</html>
+

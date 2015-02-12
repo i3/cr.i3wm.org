@@ -1,0 +1,151 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>i3 Patch: Doc update: title right click resizes floating windows</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" media="screen" href="http://i3wm.org/css/style.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="/public/stylesheets/main.css">
+    <link rel="shortcut icon" type="image/png" href="http://i3wm.org/favicon.png">
+    <script src="/public/js/jquery-1.9.0.min.js" type="text/javascript" charset="utf-8"></script>
+	<link href='http://fonts.googleapis.com/css?family=Ubuntu+Mono' rel='stylesheet' type='text/css'>
+    
+    
+      <script src="/public/js/patch.js" type="text/javascript" charset="utf-8"></script>
+    
+  </head>
+  <body>
+
+
+<div id="main">
+	<a href="/"><h1 id="title">i3 - improved tiling WM</h1></a>
+				<ul id="nav">
+						<li><a style="border-bottom: 2px solid #fff" href="/">Reviews</a></li>
+						<li><a href="http://bugs.i3wm.org/">Bugs</a></li>
+				</ul>
+<br style="clear: both">
+
+<div id="content">
+
+<h1>Doc update: title right click resizes floating windows</h1>
+<div style="float: right">
+<p>
+Patch status: merged
+</p>
+<p>
+Patch by Jonas Maaskola
+</p>
+</div>
+
+<p>
+<strong>Long description</strong>:<br>
+<pre>This documentation update describes the change implemented in
+905440d6d1c6d2a872e3bbb0da4c963bedaf5708
+It avoids repetitive usage of the word &#39;also&#39;.
+</pre>
+</p>
+
+
+<p>
+To apply this patch, use:<br>
+<code>curl http://cr.i3wm.org/patch/410/raw.patch | git am</code>
+</p>
+
+
+
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/docs/userguide</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L16">16</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="16">@@ -166,7 &#43;166,8 @@ hint and are opened in floating mode by default.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L17">17</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="17"> You can toggle floating mode for a window by pressing &#43;$mod&#43;Shift&#43;Space&#43;. By</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L18">18</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="18"> dragging the window’s titlebar with your mouse you can move the window</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L19">19</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="19"> around. By grabbing the borders and moving them you can resize the window. You</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L20">20</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="20">-can also do that by using the &lt;&lt;floating_modifier&gt;&gt;.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L21">21</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="21">&#43;can also do that by using the &lt;&lt;floating_modifier&gt;&gt;. Another way to resize</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L22">22</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="22">&#43;floating windows using the mouse is to right-click on the titlebar and drag.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L23">23</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="23"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L24">24</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="24"> For resizing floating windows with your keyboard, see &lt;&lt;resizingconfig&gt;&gt;.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L25">25</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="25"> </pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+
+</div>
+
+  </body>
+</html>
+

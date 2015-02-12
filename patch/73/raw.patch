@@ -1,0 +1,406 @@
+From 2cc0ea8da0021549f305c7f12235360246b9afc5 Mon Sep 17 00:00:00 2001
+From: enkore <public@…>
+Date: Sun, 10 Mar 2013 02:29:19 +0100
+Subject: [PATCH] Add optional bidirectional interface to i3bar. (ver.4)
+
+If the child specifies bidirectional:1 in the protocl header,
+a JSON array will be streamed to it's stdin.
+It consists of maps with at least one key (command).
+
+Such a map is emitted if the user clicks on a status block. i.e.
+{"command":"block_clicked","name":"some_block_name","instance":"optional_instance"}
+
+The basic output format is like the rest of the i3bar protocol (i.e.
+a new line after each element (map in this case))
+
+The second version of this patch mainly introduced a better API for sending
+commands.
+
+The third version of this patch introduced the additional button parameter and thus
+added support for right clicks. Now root window coordinates are passed instead of
+window coordinates.
+
+The fourth version of this patch (re-)added closing of unused pipe fd's.
+Some superfluous whitespace was removed, too.
+---
+ docs/i3bar-protocol           |  35 +++++++++++++-
+ i3bar/include/child.h         |  12 +++++
+ i3bar/include/common.h        |   4 ++
+ i3bar/src/child.c             | 107 ++++++++++++++++++++++++++++++++++++++++--
+ i3bar/src/parse_json_header.c |   5 ++
+ i3bar/src/xcb.c               |  39 ++++++++++++++-
+ 6 files changed, 197 insertions(+), 5 deletions(-)
+
+diff --git a/docs/i3bar-protocol b/docs/i3bar-protocol
+index 2cf6dd0..e95e900 100644
+--- a/docs/i3bar-protocol
++++ b/docs/i3bar-protocol
+@@ -51,7 +51,7 @@ consists of a single JSON hash:
+ 
+ *All features example*:
+ ------------------------------
+-{ "version": 1, "stop_signal": 10, "cont_signal": 12 }
++{ "version": 1, "stop_signal": 10, "cont_signal": 12, "bidirectional": 1 }
+ ------------------------------
+ 
+ (Note that before i3 v4.3 the precise format had to be +{"version":1}+,
+@@ -110,6 +110,9 @@ cont_signal::
+ 	Specify to i3bar the signal (as an integer)to send to continue your
+ 	processing.
+ 	The default value (if none is specified) is SIGCONT.
++bidirectional::
++	If specified and 1 i3bar will write a infinite array (same as above)
++	to your stdin.
+ 
+ === Blocks in detail
+ 
+@@ -183,3 +186,33 @@ An example of a block which uses all possible entries follows:
+  "instance": "eth0"
+ }
+ ------------------------------------------
++
++=== Bidirectional communication
++
++If enabled i3bar will send you notifications about certain events, currently
++only one such notification is implmented: block_clicked.
++It is send if the user clicks on a block and looks like this:
++
++command::
++	Always block_clicked at the moment, but more are maybe added later.
++name::
++	Name of the block, if set
++instance::
++	Instance of the block, if set
++x, y::
++	X11 root window coordinates where the click occured
++button:
++	X11 button ID, either 1 or 3 for left or right mouse button,
++	respectively.
++
++*Example*:
++------------------------------------------
++{
++ "command": "block_clicked",
++ "name": "ethernet",
++ "instance": "eth0",
++ "button": 1,
++ "x": 1320,
++ "y": 1400
++}
++------------------------------------------
+diff --git a/i3bar/include/child.h b/i3bar/include/child.h
+index d1c4689..e84e533 100644
+--- a/i3bar/include/child.h
++++ b/i3bar/include/child.h
+@@ -33,6 +33,12 @@ typedef struct {
+      * The signal requested by the client to inform it of theun hidden state of i3bar
+      */
+     int cont_signal;
++
++    /**
++     * Enable bi-directional communication, i.e. on-click events
++     */
++    bool bidirectional;
++    int bidirectional_init;
+ } i3bar_child;
+ 
+ /*
+@@ -68,4 +74,10 @@ void stop_child(void);
+  */
+ void cont_child(void);
+ 
++/*
++ * ends the block_clicked command to the child
++ *
++ */
++void send_block_clicked(int button, const char *name, const char *instance, int x, int y);
++
+ #endif
+diff --git a/i3bar/include/common.h b/i3bar/include/common.h
+index 05fb5aa..a77def3 100644
+--- a/i3bar/include/common.h
++++ b/i3bar/include/common.h
+@@ -50,6 +50,10 @@ struct status_block {
+     uint32_t x_offset;
+     uint32_t x_append;
+ 
++    /* Optional */
++    char *name;
++    char *instance;
++
+     TAILQ_ENTRY(status_block) blocks;
+ };
+ 
+diff --git a/i3bar/src/child.c b/i3bar/src/child.c
+index bea1d58..141bebd 100644
+--- a/i3bar/src/child.c
++++ b/i3bar/src/child.c
+@@ -21,6 +21,7 @@
+ #include <yajl/yajl_common.h>
+ #include <yajl/yajl_parse.h>
+ #include <yajl/yajl_version.h>
++#include <yajl/yajl_gen.h>
+ 
+ #include "common.h"
+ 
+@@ -35,6 +36,9 @@ ev_child *child_sig;
+ yajl_callbacks callbacks;
+ yajl_handle parser;
+ 
++/* JSON generator for stdout */
++yajl_gen gen;
++
+ typedef struct parser_ctx {
+     /* True if one of the parsed blocks was urgent */
+     bool has_urgent;
+@@ -141,6 +145,18 @@ static int stdin_string(void *context, const unsigned char *val, unsigned int le
+             ctx->block.align = ALIGN_CENTER;
+         }
+     }
++    if (strcasecmp(ctx->last_map_key, "name") == 0) {
++        char *copy = (char*)malloc(len+1);
++        strncpy(copy, (const char *)val, len);
++        copy[len] = 0;
++        ctx->block.name = copy;
++    }
++    if (strcasecmp(ctx->last_map_key, "instance") == 0) {
++        char *copy = (char*)malloc(len+1);
++        strncpy(copy, (const char *)val, len);
++        copy[len] = 0;
++        ctx->block.instance = copy;
++    }
+     return 1;
+ }
+ 
+@@ -322,6 +338,18 @@ void child_sig_cb(struct ev_loop *loop, ev_child *watcher, int revents) {
+     cleanup();
+ }
+ 
++void child_write_output(void) {
++    if(child.bidirectional) {
++        const unsigned char *output;
++        size_t size;
++        yajl_gen_get_buf(gen, &output, &size);
++        fwrite(output, 1, size, stdout);
++        fwrite("\n", 1, 1, stdout);
++        fflush(stdout);
++        yajl_gen_clear(gen);
++    }
++}
++
+ /*
+  * Start a child-process with the specified command and reroute stdin.
+  * We actually start a $SHELL to execute the command so we don't have to care
+@@ -347,10 +375,14 @@ void start_child(char *command) {
+     parser = yajl_alloc(&callbacks, NULL, &parser_context);
+ #endif
+ 
++    gen = yajl_gen_alloc(NULL);
++
+     if (command != NULL) {
+-        int fd[2];
++        int fd[4];
+         if (pipe(fd) == -1)
+             err(EXIT_FAILURE, "pipe(fd)");
++        if (pipe(&fd[2]) == -1)
++            err(EXIT_FAILURE, "pipe(fd)");
+ 
+         child.pid = fork();
+         switch (child.pid) {
+@@ -358,10 +390,13 @@ void start_child(char *command) {
+                 ELOG("Couldn't fork(): %s\n", strerror(errno));
+                 exit(EXIT_FAILURE);
+             case 0:
+-                /* Child-process. Reroute stdout and start shell */
++                /* Child-process. Reroute streams and start shell */
++
+                 close(fd[0]);
++                close(fd[3]);
+ 
+                 dup2(fd[1], STDOUT_FILENO);
++                dup2(fd[2], STDIN_FILENO);
+ 
+                 static const char *shell = NULL;
+ 
+@@ -371,10 +406,13 @@ void start_child(char *command) {
+                 execl(shell, shell, "-c", command, (char*) NULL);
+                 return;
+             default:
+-                /* Parent-process. Rerout stdin */
++                /* Parent-process. Reroute streams */
++
+                 close(fd[1]);
++                close(fd[2]);
+ 
+                 dup2(fd[0], STDIN_FILENO);
++                dup2(fd[3], STDOUT_FILENO);
+ 
+                 break;
+         }
+@@ -396,6 +434,69 @@ void start_child(char *command) {
+ }
+ 
+ /*
++ * Internal helper functions for bidirectional comms
++ *
++ */
++void child_bidi_initialize(void) {
++    if(!child.bidirectional_init) {
++        yajl_gen_array_open(gen);
++        child_write_output();
++        child.bidirectional_init = 1;
++    }
++}
++
++void child_bidi_key(const char *key) {
++    yajl_gen_string(gen, (const unsigned char *)key, strlen(key));
++}
++
++void child_bidi_open(const char *command) {
++    child_bidi_initialize();
++
++    yajl_gen_map_open(gen);
++
++    child_bidi_key("command");
++    yajl_gen_string(gen, (const unsigned char *)command, strlen(command));
++}
++
++void child_bidi_close(void) {
++    yajl_gen_map_close(gen);
++    child_write_output();
++}
++
++/*
++ * sends the block_clicked command to the child
++ *
++ */
++void send_block_clicked(int button, const char *name, const char *instance, int x, int y) {
++    if(child.bidirectional) {
++        child_bidi_open("block_clicked");
++
++        if(name) {
++            child_bidi_key("name");
++            yajl_gen_string(gen, (const unsigned char *)name, strlen(name));
++        }
++
++        if(instance) {
++            child_bidi_key("instance");
++            yajl_gen_string(gen, (const unsigned char *)instance, strlen(instance));
++        }
++
++        child_bidi_key("button");
++        yajl_gen_integer(gen, button);
++
++        child_bidi_key("x");
++        yajl_gen_integer(gen, x);
++
++        child_bidi_key("y");
++        yajl_gen_integer(gen, y);
++
++        yajl_gen_map_close(gen);
++
++        child_write_output();
++    }
++}
++
++/*
+  * kill()s the child-process (if any). Called when exit()ing.
+  *
+  */
+diff --git a/i3bar/src/parse_json_header.c b/i3bar/src/parse_json_header.c
+index 80ec5af..6d9c3d4 100644
+--- a/i3bar/src/parse_json_header.c
++++ b/i3bar/src/parse_json_header.c
+@@ -31,6 +31,7 @@ static enum {
+     KEY_VERSION,
+     KEY_STOP_SIGNAL,
+     KEY_CONT_SIGNAL,
++    KEY_BIDIRECTIONAL,
+     NO_KEY
+ } current_key;
+ 
+@@ -51,6 +52,8 @@ static int header_integer(void *ctx, long val) {
+         case KEY_CONT_SIGNAL:
+             child->cont_signal = val;
+             break;
++        case KEY_BIDIRECTIONAL:
++            child->bidirectional = val;
+         default:
+             break;
+     }
+@@ -71,6 +74,8 @@ static int header_map_key(void *ctx, const unsigned char *stringval, unsigned in
+         current_key = KEY_STOP_SIGNAL;
+     } else if (CHECK_KEY("cont_signal")) {
+         current_key = KEY_CONT_SIGNAL;
++    } else if (CHECK_KEY("bidirectional")) {
++        current_key = KEY_BIDIRECTIONAL;
+     }
+     return 1;
+ }
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index 3a8d8b9..8e64b4d 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -306,12 +306,14 @@ void handle_button(xcb_button_press_event_t *event) {
+     }
+ 
+     int32_t x = event->event_x >= 0 ? event->event_x : 0;
++    int32_t original_x = x;
+ 
+     DLOG("Got Button %d\n", event->detail);
+ 
+     switch (event->detail) {
+         case 1:
+-            /* Left Mousbutton. We determine, which button was clicked
++        case 3:
++            /* Left or right Mousbutton. We determine, which button was clicked
+              * and set cur_ws accordingly */
+             TAILQ_FOREACH(cur_ws, walk->workspaces, tailq) {
+                 DLOG("x = %d\n", x);
+@@ -321,8 +323,43 @@ void handle_button(xcb_button_press_event_t *event) {
+                 x -= cur_ws->name_width + 11;
+             }
+             if (cur_ws == NULL) {
++                /* No workspace button was pressed.
++                 * Check if a status block has been clicked.
++                 * This of course only has an effect,
++                 * if the child reported bidirectional protocol usage. */
++
++                /* First calculate width of tray area */
++                trayclient *trayclient;
++                int tray_width = 0;
++                TAILQ_FOREACH_REVERSE(trayclient, walk->trayclients, tc_head, tailq) {
++                    if (!trayclient->mapped)
++                        continue;
++                    tray_width += (font.height + 2);
++                }
++
++                int block_x = 0, last_block_x;
++                int offset = (walk->rect.w - (statusline_width + tray_width)) - 10;
++
++                x = original_x - offset > 0 ? original_x - offset : 0;
++
++                struct status_block *block;
++
++                TAILQ_FOREACH(block, &statusline_head, blocks) {
++                    last_block_x = block_x;
++                    block_x += block->width + block->x_offset + block->x_append;
++
++                    if(x <= block_x && x >= last_block_x) {
++                        send_block_clicked(event->detail, block->name, block->instance, event->root_x, event->root_y);
++                        return;
++                    }
++                }
+                 return;
+             }
++            if (event->detail == 3)
++                /* Don't actually switch the
++                 * workspace if it was the right mouse button
++                 */
++                return;
+             break;
+         case 4:
+             /* Mouse wheel up. We select the previous ws, if any.
+-- 
+1.8.1.5
+

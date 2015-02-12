@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 105,
+    "Comment": "Please remove the “Expands the given path” bit of this sentence, it’s not accurate. There is no expansion (globbing) going on here.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 145,
+    "Comment": "Please use stat(path, \u0026st) == 0. As I mentioned earlier, we don’t use the convention of inversed comparison.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "Almost there. Please romve the “Third iteration of patch” from the long description, it’s not of interest to anyone reading the git history later.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Kinware AB",
+    "Line": 145,
+    "Comment": "Ah, missed that. Will fix. ",
+    "EmailHash": "19ec62ff64922540d49fc700ef20e12f"
+  },
+  {
+    "Author": "Kinware AB",
+    "Line": 20,
+    "Comment": "Thought it was just a mail body, not part of the commit message. \n\nLets see if I can get it all right this time... :-) ",
+    "EmailHash": "19ec62ff64922540d49fc700ef20e12f"
+  }
+]

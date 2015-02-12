@@ -1,0 +1,4828 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>i3 Patch: Add support for _NET_WM_STATE_DEMANDS_ATTENTION.</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" media="screen" href="http://i3wm.org/css/style.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="/public/stylesheets/main.css">
+    <link rel="shortcut icon" type="image/png" href="http://i3wm.org/favicon.png">
+    <script src="/public/js/jquery-1.9.0.min.js" type="text/javascript" charset="utf-8"></script>
+	<link href='http://fonts.googleapis.com/css?family=Ubuntu+Mono' rel='stylesheet' type='text/css'>
+    
+    
+      <script src="/public/js/patch.js" type="text/javascript" charset="utf-8"></script>
+    
+  </head>
+  <body>
+
+
+<div id="main">
+	<a href="/"><h1 id="title">i3 - improved tiling WM</h1></a>
+				<ul id="nav">
+						<li><a style="border-bottom: 2px solid #fff" href="/">Reviews</a></li>
+						<li><a href="http://bugs.i3wm.org/">Bugs</a></li>
+				</ul>
+<br style="clear: both">
+
+<div id="content">
+
+<h1>Add support for _NET_WM_STATE_DEMANDS_ATTENTION.</h1>
+<div style="float: right">
+<p>
+Patch status: merged
+</p>
+<p>
+Patch by oblique
+</p>
+</div>
+
+<p>
+<strong>Long description</strong>:<br>
+<pre>_NET_WM_STATE_DEMANDS_ATTENTION indicates that some action in or with
+the window happened. It&#39;s a weaker hint than urgency flag of WM_HINTS,
+but some applications and almost all Qt applications use it instead of
+WM_HINTS&#39; urgency flag (one example is Skype).
+</pre>
+</p>
+
+
+<p>
+To apply this patch, use:<br>
+<code>curl http://cr.i3wm.org/patch/65/raw.patch | git am</code>
+</p>
+
+
+
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/docs/hacking-howto</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L23">23</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="23">@@ -28,7 &#43;28,8 @@ In the case of i3, the tasks (and order of them) are the following:</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L24">24</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="24">   the first client of X) and manage them (reparent them, create window</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L25">25</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="25">   decorations, etc.)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L26">26</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="26"> . When new windows are created, manage them</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L27">27</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="27">-. Handle the client’s `_WM_STATE` property, but only the `_WM_STATE_FULLSCREEN`</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L28">28</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="28">&#43;. Handle the client’s `_WM_STATE` property, but only `_WM_STATE_FULLSCREEN` and</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L29">29</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="29">&#43;  `_NET_WM_STATE_DEMANDS_ATTENTION`</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L30">30</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="30"> . Handle the client’s `WM_NAME` property</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L31">31</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="31"> . Handle the client’s size hints to display them proportionally</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L32">32</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="32"> . Handle the client’s urgency hint</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/include/atoms.xmacro</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L37">37</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="37">@@ -2,6 &#43;2,7 @@ xmacro(_NET_SUPPORTED)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L38">38</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="38"> xmacro(_NET_SUPPORTING_WM_CHECK)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L39">39</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="39"> xmacro(_NET_WM_NAME)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L40">40</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="40"> xmacro(_NET_WM_STATE_FULLSCREEN)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L41">41</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="41">&#43;xmacro(_NET_WM_STATE_DEMANDS_ATTENTION)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L42">42</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="42"> xmacro(_NET_WM_STATE)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L43">43</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="43"> xmacro(_NET_WM_WINDOW_TYPE)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L44">44</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="44"> xmacro(_NET_WM_WINDOW_TYPE_DOCK)</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/include/con.h</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L49">49</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="49">@@ -325,6 &#43;325,12 @@ bool con_has_urgent_child(Con *con);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L50">50</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="50"> void con_update_parents_urgency(Con *con);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L51">51</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="51"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L52">52</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="52"> /**</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L53">53</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="53">&#43; * Set urgency flag to the container, all the parent containers and the workspace.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L54">54</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="54">&#43; *</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L55">55</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="55">&#43; */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L56">56</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="56">&#43;void con_set_urgency(Con *con, bool urgent);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L57">57</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="57">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L58">58</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="58">&#43;/**</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L59">59</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="59">  * Create a string representing the subtree under con.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L60">60</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="60">  *</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L61">61</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="61">  */</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/src/con.c</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L66">66</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="66">@@ -1531,6 &#43;1531,45 @@ void con_update_parents_urgency(Con *con) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L67">67</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="67"> }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L68">68</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="68"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L69">69</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="69"> /*</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L70">70</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="70">&#43; * Set urgency flag to the container, all the parent containers and the workspace.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L71">71</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="71">&#43; *</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L72">72</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="72">&#43; */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L73">73</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="73">&#43;void con_set_urgency(Con *con, bool urgent) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L74">74</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="74">&#43;    if (focused == con) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L75">75</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="75">&#43;        DLOG(&#34;Ignoring urgency flag for current client\n&#34;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L76">76</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="76">&#43;        con-&gt;window-&gt;urgent.tv_sec = 0;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L77">77</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="77">&#43;        con-&gt;window-&gt;urgent.tv_usec = 0;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L78">78</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="78">&#43;        return;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L79">79</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="79">&#43;    }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L80">80</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="80">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L81">81</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="81">&#43;    if (con-&gt;urgency_timer == NULL) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L82">82</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="82">&#43;        con-&gt;urgent = urgent;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L83">83</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="83">&#43;    } else</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L84">84</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="84">&#43;        DLOG(&#34;Discarding urgency WM_HINT because timer is running\n&#34;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L85">85</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="85">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L86">86</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="86">&#43;    //CLIENT_LOG(con);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L87">87</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="87">&#43;    if (con-&gt;window) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L88">88</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="88">&#43;        if (con-&gt;urgent) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L89">89</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="89">&#43;            gettimeofday(&amp;con-&gt;window-&gt;urgent, NULL);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L90">90</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="90">&#43;        } else {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L91">91</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="91">&#43;            con-&gt;window-&gt;urgent.tv_sec = 0;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L92">92</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="92">&#43;            con-&gt;window-&gt;urgent.tv_usec = 0;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L93">93</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="93">&#43;        }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L94">94</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="94">&#43;    }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L95">95</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="95">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L96">96</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="96">&#43;    con_update_parents_urgency(con);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L97">97</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="97">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L98">98</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="98">&#43;    if (con-&gt;urgent == urgent)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L99">99</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="99">&#43;        LOG(&#34;Urgency flag changed to %d\n&#34;, con-&gt;urgent);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L100">100</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="100">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L101">101</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="101">&#43;    Con *ws;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L102">102</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="102">&#43;    /* Set the urgency flag on the workspace, if a workspace could be found</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L103">103</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="103">&#43;     * (for dock clients, that is not the case). */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L104">104</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="104">&#43;    if ((ws = con_get_workspace(con)) != NULL)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L105">105</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="105">&#43;        workspace_update_urgent_flag(ws);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L106">106</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="106">&#43;}</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L107">107</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="107">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L108">108</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="108">&#43;/*</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L109">109</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="109">  * Create a string representing the subtree under con.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L110">110</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="110">  *</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L111">111</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="111">  */</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/src/ewmh.c</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L116">116</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="116">@@ -164,5 &#43;164,5 @@ void ewmh_setup_hints(void) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L117">117</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="117">     /* I’m not entirely sure if we need to keep _NET_WM_NAME on root. */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L118">118</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="118">     xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_WM_NAME, A_UTF8_STRING, 8, strlen(&#34;i3&#34;), &#34;i3&#34;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L119">119</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="119"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L120">120</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="120">-    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_SUPPORTED, XCB_ATOM_ATOM, 32, 16, supported_atoms);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L121">121</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="121">&#43;    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_SUPPORTED, XCB_ATOM_ATOM, 32, 19, supported_atoms);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L122">122</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="122"> }</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/src/handlers.c</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L127">127</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="127">@@ -619,10 &#43;619,10 @@ static void handle_client_message(xcb_client_message_event_t *event) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L128">128</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="128"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L129">129</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="129">     LOG(&#34;ClientMessage for window 0x%08x\n&#34;, event-&gt;window);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L130">130</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="130">     if (event-&gt;type == A__NET_WM_STATE) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L131">131</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="131">-        if (event-&gt;format != 32 || event-&gt;data.data32[1] != A__NET_WM_STATE_FULLSCREEN) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L132">132</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="132">-            DLOG(&#34;atom in clientmessage is %d, fullscreen is %d\n&#34;,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L133">133</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="133">-                    event-&gt;data.data32[1], A__NET_WM_STATE_FULLSCREEN);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L134">134</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="134">-            DLOG(&#34;not about fullscreen atom\n&#34;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L135">135</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="135">&#43;        if (event-&gt;format != 32 ||</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L136">136</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="136">&#43;            (event-&gt;data.data32[1] != A__NET_WM_STATE_FULLSCREEN &amp;&amp;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L137">137</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="137">&#43;             event-&gt;data.data32[1] != A__NET_WM_STATE_DEMANDS_ATTENTION)) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L138">138</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="138">&#43;            DLOG(&#34;Unknown atom in clientmessage of type %d\n&#34;, event-&gt;data.data32[1]);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L139">139</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="139">             return;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L140">140</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="140">         }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L141">141</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="141"> </pre>
+  </td>
+  </tr>
+
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L142">142</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="142">@@ -632,15 &#43;632,25 @@ static void handle_client_message(xcb_client_message_event_t *event) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L143">143</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="143">             return;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L144">144</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="144">         }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L145">145</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="145"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L146">146</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="146">-        /* Check if the fullscreen state should be toggled */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L147">147</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="147">-        if ((con-&gt;fullscreen_mode != CF_NONE &amp;&amp;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L148">148</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="148">-             (event-&gt;data.data32[0] == _NET_WM_STATE_REMOVE ||</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L149">149</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="149">-              event-&gt;data.data32[0] == _NET_WM_STATE_TOGGLE)) ||</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L150">150</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="150">-            (con-&gt;fullscreen_mode == CF_NONE &amp;&amp;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L151">151</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="151">-             (event-&gt;data.data32[0] == _NET_WM_STATE_ADD ||</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L152">152</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="152">-              event-&gt;data.data32[0] == _NET_WM_STATE_TOGGLE))) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L153">153</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="153">-            DLOG(&#34;toggling fullscreen\n&#34;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L154">154</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="154">-            con_toggle_fullscreen(con, CF_OUTPUT);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L155">155</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="155">&#43;        if (event-&gt;data.data32[1] == A__NET_WM_STATE_FULLSCREEN) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L156">156</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="156">&#43;            /* Check if the fullscreen state should be toggled */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L157">157</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="157">&#43;            if ((con-&gt;fullscreen_mode != CF_NONE &amp;&amp;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L158">158</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="158">&#43;                 (event-&gt;data.data32[0] == _NET_WM_STATE_REMOVE ||</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L159">159</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="159">&#43;                  event-&gt;data.data32[0] == _NET_WM_STATE_TOGGLE)) ||</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L160">160</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="160">&#43;                (con-&gt;fullscreen_mode == CF_NONE &amp;&amp;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L161">161</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="161">&#43;                 (event-&gt;data.data32[0] == _NET_WM_STATE_ADD ||</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L162">162</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="162">&#43;                  event-&gt;data.data32[0] == _NET_WM_STATE_TOGGLE))) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L163">163</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="163">&#43;                DLOG(&#34;toggling fullscreen\n&#34;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L164">164</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="164">&#43;                con_toggle_fullscreen(con, CF_OUTPUT);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L165">165</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="165">&#43;            }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L166">166</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="166">&#43;        } else if (event-&gt;data.data32[1] == A__NET_WM_STATE_DEMANDS_ATTENTION) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L167">167</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="167">&#43;            /* Check if the urgent flag must be set or not */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L168">168</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="168">&#43;            if (event-&gt;data.data32[0] == _NET_WM_STATE_ADD)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L169">169</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="169">&#43;                con_set_urgency(con, true);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L170">170</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="170">&#43;            else if (event-&gt;data.data32[0] == _NET_WM_STATE_REMOVE)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L171">171</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="171">&#43;                con_set_urgency(con, false);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L172">172</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="172">&#43;            else if (event-&gt;data.data32[0] == _NET_WM_STATE_TOGGLE)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L173">173</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="173">&#43;                con_set_urgency(con, !con-&gt;urgent);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L174">174</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="174">         }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L175">175</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="175"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L176">176</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="176">         tree_render();</pre>
+  </td>
+  </tr>
+
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L177">177</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="177">@@ -833,44 &#43;843,12 @@ static bool handle_hints(void *data, xcb_connection_t *conn, uint8_t state, xcb_</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L178">178</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="178">     if (!xcb_icccm_get_wm_hints_from_reply(&amp;hints, reply))</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L179">179</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="179">         return false;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L180">180</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="180"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L181">181</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="181">-    if (!con-&gt;urgent &amp;&amp; focused == con) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L182">182</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="182">-        DLOG(&#34;Ignoring urgency flag for current client\n&#34;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L183">183</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="183">-        con-&gt;window-&gt;urgent.tv_sec = 0;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L184">184</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="184">-        con-&gt;window-&gt;urgent.tv_usec = 0;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L185">185</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="185">-        goto end;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L186">186</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="186">-    }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L187">187</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="187">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L188">188</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="188">     /* Update the flag on the client directly */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L189">189</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="189">     bool hint_urgent = (xcb_icccm_wm_hints_get_urgency(&amp;hints) != 0);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L190">190</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="190">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L191">191</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="191">-    if (con-&gt;urgency_timer == NULL) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L192">192</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="192">-        con-&gt;urgent = hint_urgent;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L193">193</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="193">-    } else</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L194">194</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="194">-        DLOG(&#34;Discarding urgency WM_HINT because timer is running\n&#34;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L195">195</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="195">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L196">196</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="196">-    //CLIENT_LOG(con);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L197">197</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="197">-    if (con-&gt;window) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L198">198</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="198">-        if (con-&gt;urgent) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L199">199</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="199">-            gettimeofday(&amp;con-&gt;window-&gt;urgent, NULL);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L200">200</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="200">-        } else {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L201">201</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="201">-            con-&gt;window-&gt;urgent.tv_sec = 0;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L202">202</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="202">-            con-&gt;window-&gt;urgent.tv_usec = 0;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L203">203</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="203">-        }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L204">204</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="204">-    }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L205">205</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="205">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L206">206</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="206">-    con_update_parents_urgency(con);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L207">207</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="207">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L208">208</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="208">-    LOG(&#34;Urgency flag changed to %d\n&#34;, con-&gt;urgent);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L209">209</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="209">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L210">210</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="210">-    Con *ws;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L211">211</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="211">-    /* Set the urgency flag on the workspace, if a workspace could be found</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L212">212</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="212">-     * (for dock clients, that is not the case). */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L213">213</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="213">-    if ((ws = con_get_workspace(con)) != NULL)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L214">214</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="214">-        workspace_update_urgent_flag(ws);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L215">215</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="215">&#43;    con_set_urgency(con, hint_urgent);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L216">216</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="216"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L217">217</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="217">     tree_render();</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L218">218</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="218"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L219">219</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="219">-end:</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L220">220</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="220">     if (con-&gt;window)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L221">221</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="221">         window_update_hints(con-&gt;window, reply);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L222">222</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="222">     else free(reply);</pre>
+  </td>
+  </tr>
+
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L223">223</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="223">@@ -1094,7 &#43;1072,7 @@ void handle_event(int type, xcb_generic_event_t *event) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L224">224</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="224"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L225">225</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="225">         /* Client message are sent to the root window. The only interesting</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L226">226</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="226">          * client message for us is _NET_WM_STATE, we honour</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L227">227</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="227">-         * _NET_WM_STATE_FULLSCREEN */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L228">228</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="228">&#43;         * _NET_WM_STATE_FULLSCREEN and _NET_WM_STATE_DEMANDS_ATTENTION */</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L229">229</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="229">         case XCB_CLIENT_MESSAGE:</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L230">230</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="230">             handle_client_message((xcb_client_message_event_t*)event);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L231">231</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="231">             break;</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+<div style="border: 1px solid #ccc; margin: 1em; width: 880px; overflow-x: auto; background-color: #eaeaea; color: #000;">
+<h2 style="margin: 0; padding: .5em; color: #000;">b/testcases/t/113-urgent.t</h2>
+<table class="patch" cellpadding="0" cellspacing="0">
+
+
+  <tr class="linerow">
+  <td class="line-number" id="L236">236</td>
+  <td width="100%" class="line hunk">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="236">@@ -17,239 &#43;17,268 @@</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L237">237</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="237"> use i3test i3_autostart =&gt; 0;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L238">238</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="238"> use List::Util qw(first);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L239">239</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="239"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L240">240</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="240">&#43;my $_NET_WM_STATE_REMOVE = 0;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L241">241</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="241">&#43;my $_NET_WM_STATE_ADD = 1;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L242">242</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="242">&#43;my $_NET_WM_STATE_TOGGLE = 2;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L243">243</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="243">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L244">244</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="244">&#43;sub set_urgency {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L245">245</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="245">&#43;    my ($win, $urgent_flag, $type) = @_;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L246">246</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="246">&#43;    if ($type == 1) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L247">247</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="247">&#43;        $win-&gt;add_hint(&#39;urgency&#39;) if ($urgent_flag);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L248">248</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="248">&#43;        $win-&gt;delete_hint(&#39;urgency&#39;) if (!$urgent_flag);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L249">249</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="249">&#43;    } elsif ($type == 2) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L250">250</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="250">&#43;        my $msg = pack &#34;CCSLLLLLL&#34;,</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L251">251</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="251">&#43;            X11::XCB::CLIENT_MESSAGE, # response_type</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L252">252</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="252">&#43;            32, # format</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L253">253</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="253">&#43;            0, # sequence</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L254">254</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="254">&#43;            $win-&gt;id, # window</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L255">255</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="255">&#43;            $x-&gt;atom(name =&gt; &#39;_NET_WM_STATE&#39;)-&gt;id, # message type</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L256">256</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="256">&#43;            ($urgent_flag ? $_NET_WM_STATE_ADD : $_NET_WM_STATE_REMOVE), # data32[0]</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L257">257</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="257">&#43;            $x-&gt;atom(name =&gt; &#39;_NET_WM_STATE_DEMANDS_ATTENTION&#39;)-&gt;id, # data32[1]</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L258">258</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="258">&#43;            0, # data32[2]</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L259">259</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="259">&#43;            0, # data32[3]</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L260">260</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="260">&#43;            0; # data32[4]</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L261">261</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="261">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L262">262</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="262">&#43;        $x-&gt;send_event(0, $x-&gt;get_root_window(), X11::XCB::EVENT_MASK_SUBSTRUCTURE_REDIRECT, $msg);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L263">263</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="263">&#43;    }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L264">264</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="264">&#43;}</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L265">265</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="265">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L266">266</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="266"> my $config = &lt;&lt;EOT;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L267">267</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="267"> # i3 config file (v4)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L268">268</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="268"> font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L269">269</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="269"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L270">270</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="270"> force_display_urgency_hint 0ms</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L271">271</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="271"> EOT</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L272">272</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="272">-my $pid = launch_with_config($config);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L273">273</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="273"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L274">274</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="274">-my $tmp = fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L275">275</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="275">&#43;my $type;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L276">276</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="276">&#43;for ($type = 1; $type &lt;= 2; $type&#43;&#43;) {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L277">277</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="277">&#43;    my $pid = launch_with_config($config);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L278">278</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="278">&#43;    my $tmp = fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L279">279</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="279"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L280">280</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="280"> #####################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L281">281</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="281"> # Create two windows and put them in stacking mode</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L282">282</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="282"> #####################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L283">283</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="283"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L284">284</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="284">-cmd &#39;split v&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L285">285</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="285">&#43;    cmd &#39;split v&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L286">286</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="286"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L287">287</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="287">-my $top = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L288">288</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="288">-my $bottom = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L289">289</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="289">&#43;    my $top = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L290">290</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="290">&#43;    my $bottom = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L291">291</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="291"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L292">292</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="292">-my @urgent = grep { $_-&gt;{urgent} } @{get_ws_content($tmp)};</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L293">293</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="293">-is(@urgent, 0, &#39;no window got the urgent flag&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L294">294</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="294">&#43;    my @urgent = grep { $_-&gt;{urgent} } @{get_ws_content($tmp)};</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L295">295</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="295">&#43;    is(@urgent, 0, &#39;no window got the urgent flag&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L296">296</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="296"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L297">297</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="297"> # cmd &#39;layout stacking&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L298">298</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="298"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L299">299</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="299"> #####################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L300">300</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="300"> # Add the urgency hint, switch to a different workspace and back again</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L301">301</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="301"> #####################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L302">302</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="302">-$top-&gt;add_hint(&#39;urgency&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L303">303</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="303">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L304">304</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="304">&#43;    set_urgency($top, 1, $type);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L305">305</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="305">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L306">306</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="306"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L307">307</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="307">-my @content = @{get_ws_content($tmp)};</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L308">308</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="308">-@urgent = grep { $_-&gt;{urgent} } @content;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L309">309</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="309">-my $top_info = first { $_-&gt;{window} == $top-&gt;id } @content;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L310">310</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="310">-my $bottom_info = first { $_-&gt;{window} == $bottom-&gt;id } @content;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L311">311</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="311">&#43;    my @content = @{get_ws_content($tmp)};</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L312">312</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="312">&#43;    @urgent = grep { $_-&gt;{urgent} } @content;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L313">313</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="313">&#43;    my $top_info = first { $_-&gt;{window} == $top-&gt;id } @content;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L314">314</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="314">&#43;    my $bottom_info = first { $_-&gt;{window} == $bottom-&gt;id } @content;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L315">315</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="315"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L316">316</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="316">-ok($top_info-&gt;{urgent}, &#39;top window is marked urgent&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L317">317</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="317">-ok(!$bottom_info-&gt;{urgent}, &#39;bottom window is not marked urgent&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L318">318</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="318">-is(@urgent, 1, &#39;exactly one window got the urgent flag&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L319">319</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="319">&#43;    ok($top_info-&gt;{urgent}, &#39;top window is marked urgent&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L320">320</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="320">&#43;    ok(!$bottom_info-&gt;{urgent}, &#39;bottom window is not marked urgent&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L321">321</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="321">&#43;    is(@urgent, 1, &#39;exactly one window got the urgent flag&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L322">322</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="322"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L323">323</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="323">-cmd &#39;[id=&#34;&#39; . $top-&gt;id . &#39;&#34;] focus&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L324">324</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="324">&#43;    cmd &#39;[id=&#34;&#39; . $top-&gt;id . &#39;&#34;] focus&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L325">325</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="325"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L326">326</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="326">-@urgent = grep { $_-&gt;{urgent} } @{get_ws_content($tmp)};</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L327">327</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="327">-is(@urgent, 0, &#39;no window got the urgent flag after focusing&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L328">328</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="328">&#43;    @urgent = grep { $_-&gt;{urgent} } @{get_ws_content($tmp)};</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L329">329</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="329">&#43;    is(@urgent, 0, &#39;no window got the urgent flag after focusing&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L330">330</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="330"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L331">331</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="331">-$top-&gt;add_hint(&#39;urgency&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L332">332</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="332">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L333">333</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="333">&#43;    set_urgency($top, 1, $type);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L334">334</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="334">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L335">335</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="335"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L336">336</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="336">-@urgent = grep { $_-&gt;{urgent} } @{get_ws_content($tmp)};</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L337">337</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="337">-is(@urgent, 0, &#39;no window got the urgent flag after re-setting urgency hint&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L338">338</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="338">&#43;    @urgent = grep { $_-&gt;{urgent} } @{get_ws_content($tmp)};</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L339">339</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="339">&#43;    is(@urgent, 0, &#39;no window got the urgent flag after re-setting urgency hint&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L340">340</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="340"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L341">341</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="341"> #####################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L342">342</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="342"> # Check if the workspace urgency hint gets set/cleared correctly</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L343">343</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="343"> #####################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L344">344</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="344"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L345">345</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="345">-my $ws = get_ws($tmp);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L346">346</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="346">-ok(!$ws-&gt;{urgent}, &#39;urgent flag not set on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L347">347</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="347">&#43;    my $ws = get_ws($tmp);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L348">348</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="348">&#43;    ok(!$ws-&gt;{urgent}, &#39;urgent flag not set on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L349">349</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="349"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L350">350</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="350">-my $otmp = fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L351">351</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="351">&#43;    my $otmp = fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L352">352</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="352"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L353">353</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="353">-$top-&gt;add_hint(&#39;urgency&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L354">354</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="354">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L355">355</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="355">&#43;    set_urgency($top, 1, $type);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L356">356</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="356">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L357">357</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="357"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L358">358</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="358">-$ws = get_ws($tmp);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L359">359</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="359">-ok($ws-&gt;{urgent}, &#39;urgent flag set on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L360">360</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="360">&#43;    $ws = get_ws($tmp);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L361">361</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="361">&#43;    ok($ws-&gt;{urgent}, &#39;urgent flag set on workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L362">362</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="362"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L363">363</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="363">-cmd &#34;workspace $tmp&#34;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L364">364</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="364">&#43;    cmd &#34;workspace $tmp&#34;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L365">365</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="365"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L366">366</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="366">-$ws = get_ws($tmp);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L367">367</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="367">-ok(!$ws-&gt;{urgent}, &#39;urgent flag not set on workspace after switching&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L368">368</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="368">&#43;    $ws = get_ws($tmp);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L369">369</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="369">&#43;    ok(!$ws-&gt;{urgent}, &#39;urgent flag not set on workspace after switching&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L370">370</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="370"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L371">371</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="371"> ################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L372">372</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="372"> # Use the &#39;urgent&#39; criteria to switch to windows which have the urgency hint set.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L373">373</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="373"> ################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L374">374</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="374"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L375">375</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="375"> # Go to a new workspace, open a different window, verify focus is on it.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L376">376</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="376">-$otmp = fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L377">377</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="377">-my $different_window = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L378">378</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="378">-is($x-&gt;input_focus, $different_window-&gt;id, &#39;new window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L379">379</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="379">&#43;    $otmp = fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L380">380</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="380">&#43;    my $different_window = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L381">381</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="381">&#43;    is($x-&gt;input_focus, $different_window-&gt;id, &#39;new window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L382">382</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="382"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L383">383</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="383"> # Add the urgency hint on the other window.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L384">384</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="384">-$top-&gt;add_hint(&#39;urgency&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L385">385</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="385">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L386">386</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="386">&#43;    set_urgency($top, 1, $type);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L387">387</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="387">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L388">388</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="388"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L389">389</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="389"> # Now try to switch to that window and see if focus changes.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L390">390</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="390">-cmd &#39;[urgent=latest] focus&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L391">391</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="391">-isnt($x-&gt;input_focus, $different_window-&gt;id, &#39;window no longer focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L392">392</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="392">-is($x-&gt;input_focus, $top-&gt;id, &#39;urgent window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L393">393</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="393">&#43;    cmd &#39;[urgent=latest] focus&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L394">394</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="394">&#43;    isnt($x-&gt;input_focus, $different_window-&gt;id, &#39;window no longer focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L395">395</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="395">&#43;    is($x-&gt;input_focus, $top-&gt;id, &#39;urgent window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L396">396</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="396"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L397">397</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="397"> ################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L398">398</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="398"> # Same thing, but with multiple windows and using the &#39;urgency=latest&#39; criteria</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L399">399</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="399"> # (verify that it works in the correct order).</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L400">400</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="400"> ################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L401">401</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="401"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L402">402</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="402">-cmd &#34;workspace $otmp&#34;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L403">403</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="403">-is($x-&gt;input_focus, $different_window-&gt;id, &#39;new window focused again&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L404">404</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="404">&#43;    cmd &#34;workspace $otmp&#34;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L405">405</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="405">&#43;    is($x-&gt;input_focus, $different_window-&gt;id, &#39;new window focused again&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L406">406</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="406"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L407">407</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="407">-$top-&gt;add_hint(&#39;urgency&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L408">408</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="408">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L409">409</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="409">&#43;    set_urgency($top, 1, $type);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L410">410</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="410">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L411">411</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="411"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L412">412</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="412">-$bottom-&gt;add_hint(&#39;urgency&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L413">413</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="413">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L414">414</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="414">&#43;    set_urgency($bottom, 1, $type);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L415">415</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="415">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L416">416</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="416"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L417">417</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="417">-cmd &#39;[urgent=latest] focus&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L418">418</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="418">-is($x-&gt;input_focus, $bottom-&gt;id, &#39;latest urgent window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L419">419</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="419">-$bottom-&gt;delete_hint(&#39;urgency&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L420">420</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="420">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L421">421</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="421">&#43;    cmd &#39;[urgent=latest] focus&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L422">422</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="422">&#43;    is($x-&gt;input_focus, $bottom-&gt;id, &#39;latest urgent window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L423">423</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="423">&#43;    set_urgency($bottom, 0, $type);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L424">424</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="424">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L425">425</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="425"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L426">426</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="426">-cmd &#39;[urgent=latest] focus&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L427">427</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="427">-is($x-&gt;input_focus, $top-&gt;id, &#39;second urgent window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L428">428</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="428">-$top-&gt;delete_hint(&#39;urgency&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L429">429</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="429">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L430">430</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="430">&#43;    cmd &#39;[urgent=latest] focus&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L431">431</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="431">&#43;    is($x-&gt;input_focus, $top-&gt;id, &#39;second urgent window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L432">432</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="432">&#43;    set_urgency($top, 0, $type);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L433">433</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="433">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L434">434</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="434"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L435">435</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="435"> ################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L436">436</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="436"> # Same thing, but with multiple windows and using the &#39;urgency=oldest&#39; criteria</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L437">437</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="437"> # (verify that it works in the correct order).</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L438">438</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="438"> ################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L439">439</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="439"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L440">440</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="440">-cmd &#34;workspace $otmp&#34;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L441">441</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="441">-is($x-&gt;input_focus, $different_window-&gt;id, &#39;new window focused again&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L442">442</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="442">&#43;    cmd &#34;workspace $otmp&#34;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L443">443</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="443">&#43;    is($x-&gt;input_focus, $different_window-&gt;id, &#39;new window focused again&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L444">444</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="444"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L445">445</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="445">-$top-&gt;add_hint(&#39;urgency&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L446">446</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="446">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L447">447</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="447">&#43;    set_urgency($top, 1, $type);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L448">448</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="448">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L449">449</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="449"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L450">450</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="450">-$bottom-&gt;add_hint(&#39;urgency&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L451">451</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="451">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L452">452</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="452">&#43;    set_urgency($bottom, 1, $type);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L453">453</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="453">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L454">454</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="454"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L455">455</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="455">-cmd &#39;[urgent=oldest] focus&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L456">456</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="456">-is($x-&gt;input_focus, $top-&gt;id, &#39;oldest urgent window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L457">457</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="457">-$top-&gt;delete_hint(&#39;urgency&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L458">458</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="458">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L459">459</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="459">&#43;    cmd &#39;[urgent=oldest] focus&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L460">460</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="460">&#43;    is($x-&gt;input_focus, $top-&gt;id, &#39;oldest urgent window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L461">461</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="461">&#43;    set_urgency($top, 0, $type);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L462">462</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="462">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L463">463</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="463"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L464">464</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="464">-cmd &#39;[urgent=oldest] focus&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L465">465</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="465">-is($x-&gt;input_focus, $bottom-&gt;id, &#39;oldest urgent window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L466">466</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="466">-$bottom-&gt;delete_hint(&#39;urgency&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L467">467</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="467">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L468">468</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="468">&#43;    cmd &#39;[urgent=oldest] focus&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L469">469</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="469">&#43;    is($x-&gt;input_focus, $bottom-&gt;id, &#39;oldest urgent window focused&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L470">470</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="470">&#43;    set_urgency($bottom, 0, $type);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L471">471</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="471">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L472">472</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="472"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L473">473</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="473"> ################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L474">474</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="474"> # Check if urgent flag gets propagated to parent containers</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L475">475</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="475"> ################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L476">476</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="476"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L477">477</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="477">-cmd &#39;split v&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L478">478</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="478">&#43;    cmd &#39;split v&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L479">479</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="479"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L480">480</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="480"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L481">481</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="481"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L482">482</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="482">-sub count_urgent {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L483">483</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="483">-    my ($con) = @_;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L484">484</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="484">&#43;    sub count_urgent {</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L485">485</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="485">&#43;        my ($con) = @_;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L486">486</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="486"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L487">487</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="487">-    my @children = (@{$con-&gt;{nodes}}, @{$con-&gt;{floating_nodes}});</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L488">488</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="488">-    my $urgent = grep { $_-&gt;{urgent} } @children;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L489">489</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="489">-    $urgent &#43;= count_urgent($_) for @children;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L490">490</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="490">-    return $urgent;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L491">491</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="491">-}</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L492">492</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="492">&#43;        my @children = (@{$con-&gt;{nodes}}, @{$con-&gt;{floating_nodes}});</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L493">493</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="493">&#43;        my $urgent = grep { $_-&gt;{urgent} } @children;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L494">494</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="494">&#43;        $urgent &#43;= count_urgent($_) for @children;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L495">495</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="495">&#43;        return $urgent;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L496">496</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="496">&#43;    }</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L497">497</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="497"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L498">498</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="498">-$tmp = fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L499">499</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="499">&#43;    $tmp = fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L500">500</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="500"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L501">501</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="501">-my $win1 = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L502">502</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="502">-my $win2 = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L503">503</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="503">-cmd &#39;layout stacked&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L504">504</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="504">-cmd &#39;split vertical&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L505">505</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="505">-my $win3 = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L506">506</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="506">-my $win4 = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L507">507</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="507">-cmd &#39;split horizontal&#39; ;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L508">508</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="508">-my $win5 = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L509">509</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="509">-my $win6 = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L510">510</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="510">&#43;    my $win1 = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L511">511</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="511">&#43;    my $win2 = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L512">512</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="512">&#43;    cmd &#39;layout stacked&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L513">513</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="513">&#43;    cmd &#39;split vertical&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L514">514</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="514">&#43;    my $win3 = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L515">515</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="515">&#43;    my $win4 = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L516">516</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="516">&#43;    cmd &#39;split horizontal&#39; ;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L517">517</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="517">&#43;    my $win5 = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L518">518</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="518">&#43;    my $win6 = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L519">519</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="519"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L520">520</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="520">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L521">521</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="521">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L522">522</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="522"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L523">523</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="523"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L524">524</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="524">-my $urgent = count_urgent(get_ws($tmp));</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L525">525</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="525">-is($urgent, 0, &#39;no window got the urgent flag&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L526">526</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="526">&#43;    my $urgent = count_urgent(get_ws($tmp));</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L527">527</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="527">&#43;    is($urgent, 0, &#39;no window got the urgent flag&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L528">528</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="528"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L529">529</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="529">-cmd &#39;[id=&#34;&#39; . $win2-&gt;id . &#39;&#34;] focus&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L530">530</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="530">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L531">531</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="531">-$win5-&gt;add_hint(&#39;urgency&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L532">532</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="532">-$win6-&gt;add_hint(&#39;urgency&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L533">533</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="533">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L534">534</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="534">&#43;    cmd &#39;[id=&#34;&#39; . $win2-&gt;id . &#39;&#34;] focus&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L535">535</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="535">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L536">536</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="536">&#43;    set_urgency($win5, 1, $type);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L537">537</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="537">&#43;    set_urgency($win6, 1, $type);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L538">538</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="538">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L539">539</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="539"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L540">540</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="540"> # we should have 5 urgent cons. win5, win6 and their 3 split parents.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L541">541</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="541"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L542">542</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="542">-$urgent = count_urgent(get_ws($tmp));</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L543">543</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="543">-is($urgent, 5, &#39;2 windows and 3 split containers got the urgent flag&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L544">544</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="544">&#43;    $urgent = count_urgent(get_ws($tmp));</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L545">545</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="545">&#43;    is($urgent, 5, &#39;2 windows and 3 split containers got the urgent flag&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L546">546</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="546"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L547">547</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="547">-cmd &#39;[id=&#34;&#39; . $win5-&gt;id . &#39;&#34;] focus&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L548">548</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="548">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L549">549</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="549">&#43;    cmd &#39;[id=&#34;&#39; . $win5-&gt;id . &#39;&#34;] focus&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L550">550</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="550">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L551">551</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="551"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L552">552</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="552"> # now win5 and still the split parents should be urgent.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L553">553</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="553">-$urgent = count_urgent(get_ws($tmp));</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L554">554</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="554">-is($urgent, 4, &#39;1 window and 3 split containers got the urgent flag&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L555">555</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="555">&#43;    $urgent = count_urgent(get_ws($tmp));</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L556">556</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="556">&#43;    is($urgent, 4, &#39;1 window and 3 split containers got the urgent flag&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L557">557</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="557"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L558">558</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="558">-cmd &#39;[id=&#34;&#39; . $win6-&gt;id . &#39;&#34;] focus&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L559">559</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="559">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L560">560</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="560">&#43;    cmd &#39;[id=&#34;&#39; . $win6-&gt;id . &#39;&#34;] focus&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L561">561</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="561">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L562">562</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="562"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L563">563</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="563"> # now now window should be urgent.</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L564">564</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="564">-$urgent = count_urgent(get_ws($tmp));</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L565">565</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="565">-is($urgent, 0, &#39;All urgent flags got cleared&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L566">566</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="566">&#43;    $urgent = count_urgent(get_ws($tmp));</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L567">567</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="567">&#43;    is($urgent, 0, &#39;All urgent flags got cleared&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L568">568</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="568"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L569">569</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="569"> ################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L570">570</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="570"> # Regression test: Check that urgent floating containers work properly (ticket</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L571">571</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="571"> # #821)</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L572">572</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="572"> ################################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L573">573</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="573"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L574">574</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="574">-$tmp = fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L575">575</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="575">-my $floating_win = open_floating_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L576">576</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="576">&#43;    $tmp = fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L577">577</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="577">&#43;    my $floating_win = open_floating_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L578">578</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="578"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L579">579</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="579"> # switch away</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L580">580</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="580">-fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L581">581</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="581">&#43;    fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L582">582</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="582"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L583">583</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="583">-$floating_win-&gt;add_hint(&#39;urgency&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L584">584</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="584">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L585">585</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="585">&#43;    set_urgency($floating_win, 1, $type);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L586">586</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="586">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L587">587</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="587"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L588">588</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="588">-cmd &#34;workspace $tmp&#34;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L589">589</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="589">&#43;    cmd &#34;workspace $tmp&#34;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L590">590</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="590"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L591">591</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="591">-does_i3_live;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L592">592</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="592">&#43;    does_i3_live;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L593">593</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="593"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L594">594</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="594"> ###############################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L595">595</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="595"> # Check if the urgency hint is still set when the urgent window is killed</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L596">596</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="596"> ###############################################################################</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L597">597</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="597"> </pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L598">598</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="598">-my $ws1 = fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L599">599</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="599">-my $ws2 = fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L600">600</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="600">-cmd &#34;workspace $ws1&#34;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L601">601</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="601">-my $w1 = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L602">602</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="602">-my $w2 = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L603">603</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="603">-cmd &#34;workspace $ws2&#34;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L604">604</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="604">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L605">605</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="605">-$w1-&gt;add_hint(&#39;urgency&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L606">606</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="606">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L607">607</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="607">-cmd &#39;[id=&#34;&#39; . $w1-&gt;id . &#39;&#34;] kill&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L608">608</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="608">-sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L609">609</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="609">-my $w = get_ws($ws1);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L610">610</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="610">-is($w-&gt;{urgent}, 0, &#39;Urgent flag no longer set after killing the window &#39; .</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L611">611</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="611">-    &#39;from another workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L612">612</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="612">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L613">613</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="613">-</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L614">614</td>
+  <td width="100%" class="line del">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="614">-exit_gracefully($pid);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L615">615</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="615">&#43;    my $ws1 = fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L616">616</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="616">&#43;    my $ws2 = fresh_workspace;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L617">617</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="617">&#43;    cmd &#34;workspace $ws1&#34;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L618">618</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="618">&#43;    my $w1 = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L619">619</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="619">&#43;    my $w2 = open_window;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L620">620</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="620">&#43;    cmd &#34;workspace $ws2&#34;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L621">621</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="621">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L622">622</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="622">&#43;    set_urgency($w1, 1, $type);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L623">623</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="623">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L624">624</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="624">&#43;    cmd &#39;[id=&#34;&#39; . $w1-&gt;id . &#39;&#34;] kill&#39;;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L625">625</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="625">&#43;    sync_with_i3;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L626">626</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="626">&#43;    my $w = get_ws($ws1);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L627">627</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="627">&#43;    is($w-&gt;{urgent}, 0, &#39;Urgent flag no longer set after killing the window &#39; .</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L628">628</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="628">&#43;       &#39;from another workspace&#39;);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L629">629</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="629">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L630">630</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="630">&#43;    exit_gracefully($pid);</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L631">631</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="631">&#43;}</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L632">632</td>
+  <td width="100%" class="line add">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="632">&#43;</pre>
+  </td>
+  </tr>
+
+  <tr class="linerow">
+  <td class="line-number" id="L633">633</td>
+  <td width="100%" class="line ">
+	  <b class="add-bubble"></b>
+	  <pre data-nr="633"> done_testing;</pre>
+  </td>
+  </tr>
+
+
+</table>
+</div>
+
+
+</div>
+
+  </body>
+</html>
+

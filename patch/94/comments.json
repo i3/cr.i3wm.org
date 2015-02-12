@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 28,
+    "Comment": "You re-introduce a compilation bug here. Please use git, not the released version.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 28,
+    "Comment": "Arg sorry, I will fix soon",
+    "EmailHash": ""
+  }
+]

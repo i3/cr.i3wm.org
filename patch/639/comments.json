@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 17,
+    "Comment": "Thanks for your patch. However, see http://bugs.i3wm.org/report/ticket/1009 — this has been proposed before and rejected. tl;dr: resize floating windows, then put them into the scratchpad.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 17,
+    "Comment": "Ok thanks for the answer. This still seems to be odd. Because with this patch the behavior keeps the same: If resized floating window is put to scratchpad the size will not change.\nBut it's much more comfortable to just open a window (a.e. a bash) and put it via hotkey from tiling directly into the Scratchpad and have it's size usable.\nInstead now, I've ot open a window, put it to floating, resize it and then can add it to the scratchpad which is much more overhead. Perhaps you could think about your decision again?",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 17,
+    "Comment": "Ok forget it, I've realized that I can do the same with a command chain, like:\nbindsym $mod+Shift+z floating enable; resize grow width 1920 px; resize grow height 500 px; move position center; move scratchpad\n\nThank you !",
+    "EmailHash": ""
+  }
+]

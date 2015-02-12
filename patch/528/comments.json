@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 24,
+    "Comment": "Also fixes another redundant focus race condition with workspace button presses",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

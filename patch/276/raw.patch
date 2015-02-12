@@ -1,0 +1,41 @@
+From 3d3209735aa9783fd91211dd710a81378d45e9d8 Mon Sep 17 00:00:00 2001
+From: oblique <psyberbits@…>
+Date: Thu, 17 Oct 2013 13:35:33 +0300
+Subject: [PATCH] Bug fix: Call clear_input() when the password is wrong.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+clear_input() calls start_clear_indicator_timeout() to clear the
+indicator after 1 second. This had as a result the screen to be cleared
+when the "verifying…" message was showed, so the "wrong!" message didn't
+show up when the password was wrong.
+
+First bad commit: a305e62
+---
+ i3lock.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/i3lock.c b/i3lock.c
+index 7d1f7b3..2d8a580 100644
+--- a/i3lock.c
++++ b/i3lock.c
+@@ -205,6 +205,7 @@ static void auth_failed(void) {
+         fprintf(stderr, "Authentication failure\n");
+ 
+     pam_state = STATE_PAM_WRONG;
++    clear_input();
+     redraw_screen();
+ 
+     /* Clear this state after 2 seconds (unless the user enters another
+@@ -258,7 +259,6 @@ static void input_done(void) {
+     if (cpid == 0) {
+         exit(pam_authenticate(pam_handle, 0) == PAM_SUCCESS);
+     } else if (cpid > 0) {
+-        clear_input();
+         struct ev_child *child_watcher = calloc(sizeof(struct ev_io), 1);
+         ev_child_init(child_watcher, child_cb, cpid, 0);
+         ev_child_set(child_watcher, cpid, 0);
+-- 
+1.8.4
+

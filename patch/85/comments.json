@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Yuxuan Shui",
+    "Line": 30,
+    "Comment": "Should be 'skeleton' ....",
+    "EmailHash": "12a32eec8342026d988eb1893d94f8a1"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 95,
+    "Comment": "same mistake as above.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 18,
+    "Comment": "The patch looks good apart from the spelling error. Please fix this and submit v4 :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

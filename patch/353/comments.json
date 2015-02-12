@@ -1,0 +1,56 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 165,
+    "Comment": "Please use a uint32_t here. While the effect is the same, nr_assignment is defined as a uint32_t, not a size_t.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 139,
+    "Comment": "Please remove the space between (ssize_t) and destpath_size",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 216,
+    "Comment": "see above",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 374,
+    "Comment": "while here, please s/printf/DLOG/",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 38,
+    "Comment": "Patch looks good, just a couple of minor style issues. Thanks!",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Peter Boström",
+    "Line": 139,
+    "Comment": "Done.",
+    "EmailHash": "ff0062902170ec50bc1baf7ed68a2490"
+  },
+  {
+    "Author": "Peter Boström",
+    "Line": 165,
+    "Comment": "Done.",
+    "EmailHash": "ff0062902170ec50bc1baf7ed68a2490"
+  },
+  {
+    "Author": "Peter Boström",
+    "Line": 216,
+    "Comment": "Done.",
+    "EmailHash": "ff0062902170ec50bc1baf7ed68a2490"
+  },
+  {
+    "Author": "Peter Boström",
+    "Line": 374,
+    "Comment": "Done.",
+    "EmailHash": "ff0062902170ec50bc1baf7ed68a2490"
+  }
+]

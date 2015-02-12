@@ -1,0 +1,38 @@
+From ef064414534846da493c40fae733578155aba0a4 Mon Sep 17 00:00:00 2001
+From: oblique <psyberbits@…>
+Date: Mon, 22 Apr 2013 20:23:45 +0300
+Subject: [PATCH] Ignore UnmapNotify if the window wants to enter
+ WithdrawnState.
+
+The first bad commit is db651679c568109b19d2c9bb5270f3359d57fd10.
+
+More info:
+    http://tronche.com/gui/x/icccm/sec-4.html#s-4.1.4
+    http://comments.gmane.org/gmane.comp.misc.suckless/6853
+
+fixes #787
+---
+ src/handlers.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/src/handlers.c b/src/handlers.c
+index f4782ca..fb355ec 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -457,6 +457,13 @@ static void handle_unmap_notify_event(xcb_unmap_notify_event_t *event) {
+         goto ignore_end;
+     }
+ 
++    /* ignore UnmapNotify if the window wants to enter WithdrawnState
++     * more info: http://tronche.com/gui/x/icccm/sec-4.html#s-4.1.4
++     *            http://comments.gmane.org/gmane.comp.misc.suckless/6853
++     * this fix #787 */
++    if (event->from_configure == false && event_is_ignored(event->sequence, -1))
++        goto ignore_end;
++
+     /* See the end of this function. */
+     cookie = xcb_get_input_focus(conn);
+ 
+-- 
+1.8.2
+

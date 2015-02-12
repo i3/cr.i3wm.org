@@ -1,0 +1,72 @@
+From a74920f435ba1c7297a88e2515cdd625d6dde721 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 29 Apr 2014 21:29:17 -0400
+Subject: [PATCH] Delegate click handling to dock clients
+
+Do not handle click events on dock clients because they are not managed
+windows. Dock clients are responsible for sending the message to i3 to
+focus a workspace if that is appropriate. i3bar now sends the message to
+focus the correct workspace when that is appropriate.
+
+Otherwise, it could interfere with the dock clients own click handling,
+which could be an action to focus a different workspace than i3 had
+assumed, such as would be the case with a workspace widget.
+---
+ i3bar/src/xcb.c | 12 ++++++++++++
+ src/click.c     |  8 ++++----
+ 2 files changed, 16 insertions(+), 4 deletions(-)
+
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index 1528bdf..97d13ec 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -393,8 +393,20 @@ void handle_button(xcb_button_press_event_t *event) {
+                 }
+                 x -= cur_ws->name_width + logical_px(11);
+             }
++
++            /* Otherwise, focus our currently visible workspace if it is not
++             * already focused */
++            if (cur_ws == NULL) {
++                TAILQ_FOREACH(cur_ws, walk->workspaces, tailq) {
++                    if (cur_ws->visible && !cur_ws->focused)
++                        break;
++                }
++            }
++
++            /* if there is nothing to focus, we are done */
+             if (cur_ws == NULL)
+                 return;
++
+             break;
+         default:
+             return;
+diff --git a/src/click.c b/src/click.c
+index 22e70b9..91964b9 100644
+--- a/src/click.c
++++ b/src/click.c
+@@ -171,6 +171,10 @@ static int route_click(Con *con, xcb_button_press_event_t *event, const bool mod
+     DLOG("--> OUTCOME = %p\n", con);
+     DLOG("type = %d, name = %s\n", con->type, con->name);
+ 
++    /* don’t handle dockarea cons, they must not be focused */
++    if (con->parent->type == CT_DOCKAREA)
++        goto done;
++
+     /* Any click in a workspace should focus that workspace. If the
+      * workspace is on another output we need to do a workspace_show in
+      * order for i3bar (and others) to notice the change in workspace. */
+@@ -187,10 +191,6 @@ static int route_click(Con *con, xcb_button_press_event_t *event, const bool mod
+         workspace_show(ws);
+     focused_id = XCB_NONE;
+ 
+-    /* don’t handle dockarea cons, they must not be focused */
+-    if (con->parent->type == CT_DOCKAREA)
+-        goto done;
+-
+     /* get the floating con */
+     Con *floatingcon = con_inside_floating(con);
+     const bool proportional = (event->state & BIND_SHIFT);
+-- 
+1.9.2
+

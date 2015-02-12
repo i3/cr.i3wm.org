@@ -1,0 +1,315 @@
+From 61bb59e0946f61ee06efe92a941721e27e4e8104 Mon Sep 17 00:00:00 2001
+From: Anders Aagaard <aagaande@…>
+Date: Fri, 6 Jun 2014 18:52:40 +0200
+Subject: [PATCH] adding window event for urgency
+
+---
+ include/con.h                 |  2 +-
+ include/data.h                |  5 +++++
+ include/ipc.h                 |  5 ++---
+ src/con.c                     |  7 +++++--
+ src/handlers.c                | 34 ++++++++++++++++++++++------------
+ src/ipc.c                     | 25 +++++++++++++++++++------
+ src/manage.c                  |  5 +++--
+ src/x.c                       | 12 ++++++++----
+ testcases/t/205-ipc-windows.t | 10 +++++++++-
+ 9 files changed, 74 insertions(+), 31 deletions(-)
+
+diff --git a/include/con.h b/include/con.h
+index b8fd60a..a124e5a 100644
+--- a/include/con.h
++++ b/include/con.h
+@@ -338,7 +338,7 @@ void con_update_parents_urgency(Con *con);
+  * Set urgency flag to the container, all the parent containers and the workspace.
+  *
+  */
+-void con_set_urgency(Con *con, bool urgent);
++void con_set_urgency(Con *con, bool urgent, const char *reason);
+ 
+ /**
+  * Create a string representing the subtree under con.
+diff --git a/include/data.h b/include/data.h
+index 6ac228e..d98db73 100644
+--- a/include/data.h
++++ b/include/data.h
+@@ -617,3 +617,8 @@ struct Con {
+     /* Depth of the container window */
+     uint16_t depth;
+ };
++
++struct WindowEvent {
++    const char *key;
++    const char *value;
++};
+\ No newline at end of file
+diff --git a/include/ipc.h b/include/ipc.h
+index 418b040..e7beedd 100644
+--- a/include/ipc.h
++++ b/include/ipc.h
+@@ -90,10 +90,9 @@ void dump_node(yajl_gen gen, Con *con, bool inplace_restart);
+ void ipc_send_workspace_focus_event(Con *current, Con *old);
+ 
+ /**
+- * For the window events we send, along the usual "change" field,
+- * also the window container, in "container".
++ * For the window events we send, along with extra properties.
+  */
+-void ipc_send_window_event(const char *property, Con *con);
++void ipc_send_window_event(const struct WindowEvent properties[], Con *con);
+ 
+ /**
+  * For the barconfig update events, we send the serialized barconfig.
+diff --git a/src/con.c b/src/con.c
+index 4b47b18..2156afb 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -621,7 +621,8 @@ void con_toggle_fullscreen(Con *con, int fullscreen_mode) {
+     DLOG("mode now: %d\n", con->fullscreen_mode);
+ 
+     /* Send an ipc window "fullscreen_mode" event */
+-    ipc_send_window_event("fullscreen_mode", con);
++    const struct WindowEvent const windowEvent[] = {{"change", "fullscreen_mode"}, {NULL, NULL}};
++    ipc_send_window_event(windowEvent, con);
+ 
+     /* update _NET_WM_STATE if this container has a window */
+     /* TODO: when a window is assigned to a container which is already
+@@ -1572,7 +1573,7 @@ void con_update_parents_urgency(Con *con) {
+  * Set urgency flag to the container, all the parent containers and the workspace.
+  *
+  */
+-void con_set_urgency(Con *con, bool urgent) {
++void con_set_urgency(Con *con, bool urgent, const char *reason) {
+     if (focused == con) {
+         DLOG("Ignoring urgency flag for current client\n");
+         con->window->urgent.tv_sec = 0;
+@@ -1596,6 +1597,8 @@ void con_set_urgency(Con *con, bool urgent) {
+     }
+ 
+     con_update_parents_urgency(con);
++    const struct WindowEvent const windowEvent[] = {{"change", "urgency"}, {"reason", reason}, {NULL, NULL}};
++    ipc_send_window_event(windowEvent, con);
+ 
+     if (con->urgent == urgent)
+         LOG("Urgency flag changed to %d\n", con->urgent);
+diff --git a/src/handlers.c b/src/handlers.c
+index d6e8891..1b265e4 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -555,8 +555,10 @@ static bool handle_windowname_change(void *data, xcb_connection_t *conn, uint8_t
+ 
+     x_push_changes(croot);
+ 
+-    if (window_name_changed(con->window, old_name))
+-        ipc_send_window_event("title", con);
++    if (window_name_changed(con->window, old_name)) {
++        const struct WindowEvent const windowEvent[] = {{"change", "title"}, {NULL, NULL}};
++        ipc_send_window_event(windowEvent, con);
++    }
+ 
+     FREE(old_name);
+ 
+@@ -580,8 +582,10 @@ static bool handle_windowname_change_legacy(void *data, xcb_connection_t *conn,
+ 
+     x_push_changes(croot);
+ 
+-    if (window_name_changed(con->window, old_name))
+-        ipc_send_window_event("title", con);
++    if (window_name_changed(con->window, old_name)) {
++        const struct WindowEvent const windowEvent[] = {{"change", "title"}, {NULL, NULL}};
++        ipc_send_window_event(windowEvent, con);
++    }
+ 
+     FREE(old_name);
+ 
+@@ -684,12 +688,16 @@ static void handle_client_message(xcb_client_message_event_t *event) {
+             }
+         } else if (event->data.data32[1] == A__NET_WM_STATE_DEMANDS_ATTENTION) {
+             /* Check if the urgent flag must be set or not */
+-            if (event->data.data32[0] == _NET_WM_STATE_ADD)
+-                con_set_urgency(con, true);
+-            else if (event->data.data32[0] == _NET_WM_STATE_REMOVE)
+-                con_set_urgency(con, false);
+-            else if (event->data.data32[0] == _NET_WM_STATE_TOGGLE)
+-                con_set_urgency(con, !con->urgent);
++            if (event->data.data32[0] == _NET_WM_STATE_ADD) {
++                const char *reason = "WM_STATE_ADD";
++                con_set_urgency(con, true, reason);
++            } else if (event->data.data32[0] == _NET_WM_STATE_REMOVE) {
++                const char *reason = "WM_STATE_REMOVED";
++                con_set_urgency(con, false, reason);
++            } else if (event->data.data32[0] == _NET_WM_STATE_TOGGLE) {
++                const char *reason = "WM_STATE_TOGGLE";
++                con_set_urgency(con, !con->urgent, reason);
++            }
+         }
+ 
+         tree_render();
+@@ -733,7 +741,8 @@ static void handle_client_message(xcb_client_message_event_t *event) {
+                 con_focus(con);
+             } else {
+                 DLOG("Request to focus con on a hidden workspace. Setting urgent con = %p\n", con);
+-                con_set_urgency(con, true);
++                const char *reason = "FOCUS_BLOCKED";
++                con_set_urgency(con, true, reason);
+             }
+         }
+ 
+@@ -929,7 +938,8 @@ static bool handle_hints(void *data, xcb_connection_t *conn, uint8_t state, xcb_
+     if (reply == NULL)
+         reply = xcb_get_property_reply(conn, xcb_icccm_get_wm_hints(conn, window), NULL);
+     window_update_hints(con->window, reply, &urgency_hint);
+-    con_set_urgency(con, urgency_hint);
++    const char *reason = "WM_HINTS";
++    con_set_urgency(con, urgency_hint, reason);
+     tree_render();
+ 
+     return true;
+diff --git a/src/ipc.c b/src/ipc.c
+index 0d2c92b..07339e1 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -1080,18 +1080,30 @@ void ipc_send_workspace_focus_event(Con *current, Con *old) {
+  * For the window events we send, along the usual "change" field,
+  * also the window container, in "container".
+  */
+-void ipc_send_window_event(const char *property, Con *con) {
+-    DLOG("Issue IPC window %s event (con = %p, window = 0x%08x)\n",
+-            property, con, (con->window ? con->window->id : XCB_WINDOW_NONE));
++/*void ipc_send_window_event(const char *property, Con *con) {
++    const struct WindowEvent const crap[] = {{"change", property}, {NULL, NULL}};
++    ipc_send_window_eventx(crap, con);
++}*/
++
++
++void ipc_send_window_event(const struct WindowEvent properties[], Con *con) {
++    DLOG("Issue IPC window event (con = %p, window = 0x%08x)\n",
++            con, (con->window ? con->window->id : XCB_WINDOW_NONE));
+ 
+     setlocale(LC_NUMERIC, "C");
+     yajl_gen gen = ygenalloc();
+ 
+     y(map_open);
+ 
+-    ystr("change");
+-    ystr(property);
+-
++    int i = 0;
++    while (properties[i].key != NULL) {
++        if (properties[i].key != NULL && properties[i].value != NULL) {
++            ystr(properties[i].key);
++            ystr(properties[i].value);
++        }
++        i++;
++    }
++    
+     ystr("container");
+     dump_node(gen, con, false);
+ 
+@@ -1106,6 +1118,7 @@ void ipc_send_window_event(const char *property, Con *con) {
+     setlocale(LC_NUMERIC, "");
+ }
+ 
++
+ /**
+  * For the barconfig update events, we send the serialized barconfig.
+  */
+diff --git a/src/manage.c b/src/manage.c
+index 87f7653..804e4b3 100644
+--- a/src/manage.c
++++ b/src/manage.c
+@@ -484,7 +484,8 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+     render_con(croot, false);
+ 
+     /* Send an event about window creation */
+-    ipc_send_window_event("new", nc);
++    const struct WindowEvent const windowEvent[] = {{"change", "new"}, {NULL, NULL}};
++    ipc_send_window_event(windowEvent, nc);
+ 
+     /* Defer setting focus after the 'new' event has been sent to ensure the
+      * proper window event sequence. */
+@@ -497,7 +498,7 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+      * known to do that), so check for that and handle the hint accordingly.
+      * This code needs to be in this part of manage_window() because the window
+      * needs to be on the final workspace first. */
+-    con_set_urgency(nc, urgency_hint);
++    con_set_urgency(nc, urgency_hint, NULL);
+ 
+ geom_out:
+     free(geom);
+diff --git a/src/x.c b/src/x.c
+index 086dbc9..4b81b25 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -1015,8 +1015,10 @@ void x_push_changes(Con *con) {
+ 
+                 ewmh_update_active_window((con_has_managed_window(focused) ? focused->window->id : XCB_WINDOW_NONE));
+ 
+-                if (to_focus != last_focused && is_con_attached(focused))
+-                   ipc_send_window_event("focus", focused);
++                if (to_focus != last_focused && is_con_attached(focused)) {
++                   const struct WindowEvent const windowEvent[] = {{"change", "focus"}, {NULL, NULL}};
++                   ipc_send_window_event(windowEvent, focused);
++                }
+             } else {
+                 DLOG("Updating focus (focused: %p / %s) to X11 window 0x%08x\n", focused, focused->name, to_focus);
+                 /* We remove XCB_EVENT_MASK_FOCUS_CHANGE from the event mask to get
+@@ -1034,8 +1036,10 @@ void x_push_changes(Con *con) {
+ 
+                 ewmh_update_active_window((con_has_managed_window(focused) ? focused->window->id : XCB_WINDOW_NONE));
+ 
+-                if (to_focus != XCB_NONE && to_focus != last_focused && focused->window != NULL && is_con_attached(focused))
+-                   ipc_send_window_event("focus", focused);
++                if (to_focus != XCB_NONE && to_focus != last_focused && focused->window != NULL && is_con_attached(focused)) {
++                   const struct WindowEvent const windowEvent[] = {{"change", "focus"}, {NULL, NULL}};
++                   ipc_send_window_event(windowEvent, focused);
++                }
+             }
+ 
+             focused_id = last_focused = to_focus;
+diff --git a/testcases/t/205-ipc-windows.t b/testcases/t/205-ipc-windows.t
+index 22c11ce..478dd19 100644
+--- a/testcases/t/205-ipc-windows.t
++++ b/testcases/t/205-ipc-windows.t
+@@ -31,6 +31,7 @@ $i3->connect()->recv;
+ 
+ my $new = AnyEvent->condvar;
+ my $focus = AnyEvent->condvar;
++my $urgency = AnyEvent->condvar;
+ $i3->subscribe({
+     window => sub {
+         my ($event) = @_;
+@@ -38,11 +39,16 @@ $i3->subscribe({
+             $new->send($event);
+         } elsif ($event->{change} eq 'focus') {
+             $focus->send($event);
++        } elsif ($event->{change} eq 'urgency') {
++            $urgency->send($event);
+         }
+     }
+ })->recv;
+ 
+-open_window;
++my $first = open_window;
++my $second = open_window;
++$first->delete_hint('urgency');
++$first->add_hint('urgency');
+ 
+ my $t;
+ $t = AnyEvent->timer(
+@@ -50,11 +56,13 @@ $t = AnyEvent->timer(
+     cb => sub {
+         $new->send(0);
+         $focus->send(0);
++        $urgency->send(0);
+     }
+ );
+ 
+ is($new->recv->{container}->{focused}, 0, 'Window "new" event received');
+ is($focus->recv->{container}->{focused}, 1, 'Window "focus" event received');
++is($urgency->recv->{reason}, "WM_HINTS", 'Window "urgency" event received');
+ 
+ }
+ 
+-- 
+1.9.1
+

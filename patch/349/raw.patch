@@ -1,0 +1,26 @@
+From 19225c727175653d2b77ce43d955c97a1b356eb1 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Peter=20Bostr=C3=B6m?= <git@…>
+Date: Sat, 21 Dec 2013 14:32:26 +0100
+Subject: [PATCH] Move the pointer to the resizebar before resizing.
+
+---
+ src/resize.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/resize.c b/src/resize.c
+index 268dc3f..b5c7067 100644
+--- a/src/resize.c
++++ b/src/resize.c
+@@ -89,6 +89,9 @@ int resize_graphical_handler(Con *first, Con *second, orientation_t orientation,
+         new_position = event->root_y;
+     }
+ 
++    /* Move the pointer to the resizebar. */
++    xcb_warp_pointer(conn, XCB_NONE, event->root, 0, 0, 0, 0, event->root_x, event->root_y);
++
+     mask = XCB_CW_BACK_PIXEL;
+     values[0] = config.client.focused.border;
+ 
+-- 
+1.8.5.1
+

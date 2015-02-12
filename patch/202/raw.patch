@@ -1,0 +1,89 @@
+From a5131a87856395d35d53a4f19a29885961eecdad Mon Sep 17 00:00:00 2001
+From: Sebastian Ullrich <sebasti@…>
+Date: Wed, 7 Aug 2013 17:20:22 +0200
+Subject: [PATCH] Respect workspace numbers when looking for a free workspace
+ name
+
+This prevents a ws '1' appearing on a new output when there's
+already a ws '1: www' on an existing output
+---
+ src/workspace.c                    |  9 ++++-----
+ testcases/t/515-create-workspace.t | 40 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 44 insertions(+), 5 deletions(-)
+ create mode 100644 testcases/t/515-create-workspace.t
+
+diff --git a/src/workspace.c b/src/workspace.c
+index af9325f..3f70ced 100644
+--- a/src/workspace.c
++++ b/src/workspace.c
+@@ -197,17 +197,16 @@ Con *create_workspace_on_output(Output *output, Con *content) {
+         while (exists) {
+             c++;
+ 
+-            FREE(ws->name);
+-            sasprintf(&(ws->name), "%d", c);
++            ws->num = c;
+ 
+             current = NULL;
+             TAILQ_FOREACH(out, &(croot->nodes_head), nodes)
+-                GREP_FIRST(current, output_get_content(out), !strcasecmp(child->name, ws->name));
++                GREP_FIRST(current, output_get_content(out), child->num == ws->num);
+             exists = (current != NULL);
+ 
+-            DLOG("result for ws %s / %d: exists = %d\n", ws->name, c, exists);
++            DLOG("result for ws %d: exists = %d\n", c, exists);
+         }
+-        ws->num = c;
++        sasprintf(&(ws->name), "%d", c);
+     }
+     con_attach(ws, content, false);
+ 
+diff --git a/testcases/t/515-create-workspace.t b/testcases/t/515-create-workspace.t
+new file mode 100644
+index 0000000..be790bf
+--- /dev/null
++++ b/testcases/t/515-create-workspace.t
+@@ -0,0 +1,40 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Tests that new workspace names are taken from the config,
++# then from the first free number starting with 1.
++#
++use i3test i3_autostart => 0;
++
++my $config = <<EOT;
++# i3 config file (v4)
++font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
++
++fake-outputs 1024x768+0+0,1024x768+1024+0
++
++bindsym 1 workspace 1: eggs
++EOT
++my $pid = launch_with_config($config);
++
++my $i3 = i3(get_socket_path());
++my $ws = $i3->get_workspaces->recv;
++
++is($ws->[0]->{name}, '1: eggs', 'new workspace uses config name');
++is($ws->[1]->{name}, '2', 'naming continues with next free number');
++
++exit_gracefully($pid);
++
++done_testing;
+-- 
+1.8.3.4
+

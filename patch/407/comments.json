@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 184,
+    "Comment": "Why the different code paths here? AFAICT, the first branch should handle both cases equally well, i.e. you’ll call ewmh_update_client_list() with num_windows == 0.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 26,
+    "Comment": "Can you add a testcase please?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

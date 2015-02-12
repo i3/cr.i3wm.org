@@ -1,0 +1,35 @@
+From 0d571f05827121e389d3881fc1aca4d2fe025c49 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Thu, 26 Jun 2014 15:30:03 -0400
+Subject: [PATCH] Bugfix: _NET_SUPPORTED property corruption
+
+Fix a typing mistake that may cause _NET_SUPPORTED root property to
+become corrupted.
+
+This bug was introduced in:
+
+Implement EWMH number of desktops property
+
+http://code.stapelberg.de/git/i3/commit/?h=next&id=b47f480728a6d053c117e4b99ee4c78d99ba6a71
+
+fixes #1298
+---
+ src/ewmh.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/ewmh.c b/src/ewmh.c
+index da5dba5..2a49e27 100644
+--- a/src/ewmh.c
++++ b/src/ewmh.c
+@@ -229,7 +229,7 @@ void ewmh_setup_hints(void) {
+         NULL);
+     xcb_change_property(conn, XCB_PROP_MODE_REPLACE, child_window, A__NET_SUPPORTING_WM_CHECK, XCB_ATOM_WINDOW, 32, 1, &child_window);
+     xcb_change_property(conn, XCB_PROP_MODE_REPLACE, child_window, A__NET_WM_NAME, A_UTF8_STRING, 8, strlen("i3"), "i3");
+-    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_SUPPORTING_WM_CHECK, XCB_ATOM_WINDOW, 33, 1, &child_window);
++    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_SUPPORTING_WM_CHECK, XCB_ATOM_WINDOW, 32, 1, &child_window);
+ 
+     /* I’m not entirely sure if we need to keep _NET_WM_NAME on root. */
+     xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_WM_NAME, A_UTF8_STRING, 8, strlen("i3"), "i3");
+-- 
+2.0.0
+

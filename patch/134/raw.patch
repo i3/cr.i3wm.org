@@ -1,0 +1,49 @@
+From 6e558bd321118e7faad352bbcea9f636c74a64bb Mon Sep 17 00:00:00 2001
+From: jj <haptix@…>
+Date: Fri, 12 Apr 2013 00:09:40 +0200
+Subject: [PATCH] unhide hidden i3bar when mode is active
+
+A patch of mine just got merged, but I was reported that this does not solve the problem for everyone. 
+
+Because I have set my i3bar modifier to another key than the i3 modifier, I overlooked that the bar could unhide when you release the i3bar modifier key directly after activating a new mode. This happens, e.g., when the mode was activated by pressing the i3bar modifier, which would then be released and would directly hide the bar again   
+
+---
+ i3bar/src/xcb.c |    8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index bfe393b..0a3d653 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -80,6 +80,9 @@ ev_io      *xkb_io;
+ /* The name of current binding mode */
+ static mode binding;
+ 
++/* Indicates whether a new binding mode was recently activated */
++bool activated_mode = false;
++
+ /* The parsed colors */
+ struct xcb_colors_t {
+     uint32_t bar_fg;
+@@ -873,8 +876,10 @@ void xkb_io_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
+ 
+     if (modstate != mod_pressed) {
+         if (modstate == 0) {
+-            DLOGMOD(config.modifier, released, hide_bars);
++            if (!activated_mode)
++                DLOGMOD(config.modifier, released, hide_bars);
+         } else {
++            activated_mode = false;
+             DLOGMOD(config.modifier, pressed, unhide_bars);
+         }
+         mod_pressed = modstate;
+@@ -1752,5 +1757,6 @@ void redraw_bars(void) {
+ void set_current_mode(struct mode *current) {
+     I3STRING_FREE(binding.name);
+     binding = *current;
++    activated_mode = binding.name;
+     return;
+ }
+-- 
+1.7.9.5
+

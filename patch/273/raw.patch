@@ -1,0 +1,143 @@
+From 07d8866bedd0e109fa4ed22721187f8507889588 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sat, 19 Oct 2013 06:19:15 -0400
+Subject: [PATCH] Testcases: Bar modes and states
+
+Add a new testcase to check that the bar will transition correctly
+through its various modes and states. Currently, bar modes are (mostly)
+implemented, and bar states are described in todos.
+---
+ testcases/t/213-bar-mode.t | 121 +++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 121 insertions(+)
+ create mode 100644 testcases/t/213-bar-mode.t
+
+diff --git a/testcases/t/213-bar-mode.t b/testcases/t/213-bar-mode.t
+new file mode 100644
+index 0000000..3de4e81
+--- /dev/null
++++ b/testcases/t/213-bar-mode.t
+@@ -0,0 +1,121 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Checks the bar will transition correctly through its various modes and
++# states.
++#
++# Requires AnyEvent::I3 >= 0.15.
++#
++use i3test i3_autostart => 0;
++
++# Takes a list of containers and counts the i3bars among them
++sub count_bars {
++    my @cons = @_;
++    my $result = 0;
++
++    foreach my $con (@cons) {
++        # TODO: find a better way to find out if something is a bar or not
++        $result += 1 if $con->{name} =~ /^i3bar/;
++    }
++    return $result;
++}
++
++# Waits until the bar shows up on the screen, but only in dock mode. The bar
++# will take longer to be mapped on the screen than i3 itself takes to load.
++# When that happens, IPC emits a `window` event with information about the
++# container of the bar.
++sub wait_for_bar {
++    my $cv = AE::cv;
++    my $i3 = i3(get_socket_path());
++    $i3->_ensure_connection;
++    # TODO: figure out how to unsubscribe from this event
++    $i3->subscribe({
++            window => sub {
++                if ($cv) {
++                    my ($reply) = @_;
++                    $cv->send($reply) if count_bars($reply->{container});
++                }
++            }
++        })->recv;
++    my $t = AE::timer 2, 0, sub { warn "timeout (2 secs)"; $cv->send(0) };
++    my $result = $cv->recv;
++    undef $t;
++    undef $cv;
++}
++
++# Test whether the dock contains a client that is a bar
++sub dock_has_bar { count_bars(get_dock_clients) }
++
++# Convenience function to help readability
++sub dock_doesnt_have_bar { !dock_has_bar }
++
++#####################################################################
++# test that i3bar transitions correctly between modes
++#####################################################################
++
++my $config = <<EOT;
++# i3 config file (v4)
++font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
++
++bar {
++    i3bar_command ../i3bar/i3bar
++}
++EOT
++
++my $pid = launch_with_config($config);
++my $i3 = i3(get_socket_path());
++
++wait_for_bar if dock_doesnt_have_bar;
++
++ok(dock_has_bar, 'i3bar starts in dock mode');
++
++cmd 'bar mode invisible';
++wait_for_unmap if dock_has_bar;
++
++ok(dock_has_bar, 'i3bar goes from dock to invisible mode');
++
++cmd 'bar mode dock';
++wait_for_bar if dock_doesnt_have_bar;
++
++ok(dock_has_bar, 'i3bar goes from invisible to dock mode');
++
++cmd 'bar mode hide';
++wait_for_unmap if dock_has_bar;
++
++ok(dock_doesnt_have_bar, 'i3bar goes from dock to hide mode');
++
++cmd 'bar mode dock';
++wait_for_bar if dock_doesnt_have_bar;
++
++ok(dock_has_bar, 'i3bar goes from hide to dock mode');
++
++# TODO: test that `bar hidden_state show` and `bar hidden_state hide` work in
++# hide mode (difficult because i3 does not manage the bar window in hide mode,
++# so it does not show up in `get_tree`).
++
++# TODO: test that the bar will be revealed when a workspace becomes urgent in
++# hide mode.  
++
++# TODO: test that the bar shows up when the modifier key is pressed in hide
++# mode (difficult because we have to press a key).
++
++# TODO: test that the bar is hidden when the modifier key is released, and will
++# not be revealed again until a workspace newly becomes urgent, even if
++# existing urgent workspaces are urgent on later redraws.
++
++exit_gracefully($pid);
++
++done_testing;
+-- 
+1.8.4.1
+

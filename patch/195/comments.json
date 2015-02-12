@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 47,
+    "Comment": "While I understand your use-case, I say use DPMS for that. It’s not a good idea to have a feature in a screen locker which makes it not a screen locker. The chances of that getting abused are just to high (think of somebody adding alias i3lock='i3lock --nopass' to your shell config).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Travis Cardwell",
+    "Line": 47,
+    "Comment": "Thank you for the quick response!\n\nThat is a good point, but anybody who can modify files on your system can hack you in other ways.  For example, one could replace i3lock with a custom build with a \"backdoor password\" that would be more difficult to notice than \"--nopass\".\n\nNote that Gnome's screensaver implements the feature.  The \"gnome-screensaver-command --activate\" command blanks the screen, while the \"gnome-screensaver-command --lock\" command locks it.\n\nUnfortunately, DPMS is not available in virtual machines (VMware, at least).",
+    "EmailHash": "b8651517e2c03acf45b65581aa1c0add"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 47,
+    "Comment": "Of course there is more than one way to compromise a system, but having the --nopass flag makes it particularly easy, and I don’t want that :).\n\nIf you only run i3 _within_ a virtual machine and not on the host machine, that sounds like the problem you want to fix in the first place :). Also, you could just blank the host’s screen instead of the VM’s screen.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Travis Cardwell",
+    "Line": 47,
+    "Comment": "Indeed.  After running Linux on bare metal for over a 15 years, I purchased a MacBook Pro so that I can use Photoshop+Illustrator alongside my primary environment.  While my graphics work has gone really well, I have been quite dissatisfied with the setup otherwise and look forward to when I can switch back to a 100% open source system on non-Apple hardware. :)",
+    "EmailHash": "b8651517e2c03acf45b65581aa1c0add"
+  }
+]

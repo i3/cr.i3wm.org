@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 104,
+    "Comment": "When using i3_autostart =\u003e 0 and launch_with_config(), you need a corresponding exit_gracefully($pid) at the end of the file.\n\nDo you actually need a custom i3 config? It seems to me like this test could be simplified :).",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 104,
+    "Comment": "The result of missing exit_gracefully() is that the test suite does not run without problems for me, so please fix this.",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  },
+  {
+    "Author": "jj",
+    "Line": 104,
+    "Comment": "Will try to simplify this! I sadly just forgot about the exit_gracefully.",
+    "EmailHash": "2b7ea79fd33d4f8c0bb3ef8a9dc97f64"
+  }
+]

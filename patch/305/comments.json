@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Philippe Virouleau",
+    "Line": 44,
+    "Comment": "As you can see here, using a generic_event instead of a union and casting according to the response type should be right.\nI've looked a bit more into the xcb event type, and it seems that all the data structure are 36 bytes, and some padding is added if needed.",
+    "EmailHash": "73e4ef48030de3c30ccb5a5c05b20e66"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 16,
+    "Comment": "I thought about this again and decided that the current path is not the right way forward. The known bug that we’d introduce is really bothering me.\n\nTherefore, I decided to go ahead and revert koebis original commit and implement\nhttp://code.stapelberg.de/git/i3lock/commit/?id=ac8bbad523c45085061b77ce1bcbc0381306ce8b instead.\n\nThank you nevertheless for the patch submissions, I appreciate your work on this — even if it ultimately only showed us that this approach is not worthwhile. Thanks! :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

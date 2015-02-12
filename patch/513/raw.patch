@@ -1,0 +1,452 @@
+From 07133923cba91f7b65555ba0af134dc9dcbc0077 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sun, 27 Apr 2014 01:33:58 -0400
+Subject: [PATCH] Feature: send complete config on barconfig_update
+
+Send all the options in the bar block on the barconfig_update event.
+
+This will eventually allow for dynamically updating bar colors with the
+`reload` command.
+---
+ docs/ipc         |  18 +---
+ include/config.h |   4 +-
+ include/ipc.h    |   6 ++
+ src/config.c     |  34 +------
+ src/ipc.c        | 278 ++++++++++++++++++++++++++++++-------------------------
+ 5 files changed, 164 insertions(+), 176 deletions(-)
+
+diff --git a/docs/ipc b/docs/ipc
+index 7fb9f1a..80588eb 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -637,7 +637,7 @@ window (3)::
+ 	focus or when a window title has been updated.
+ barconfig_update (4)::
+     Sent when the hidden_state or mode field in the barconfig of any bar
+-    instance was updated.
++    instance was updated and when the config is reloaded.
+ 
+ *Example:*
+ --------------------------------------------------------------------
+@@ -738,20 +738,8 @@ this point get the window title as "urxvt").
+ === barconfig_update event
+ 
+ This event consists of a single serialized map reporting on options from the
+-barconfig of the specified bar_id that were updated in i3. The map always
+-consists of a property +id (string)+, which specifies to which bar instance the
+-sent config update belongs, a property +hidden_state (string)+, which indicates
+-the hidden_state of an i3bar instance, and a property +mode (string)+, which
+-corresponds to the current mode.
+-
+-*Example:*
+----------------------------
+-{
+-    "id": "bar-0",
+-    "hidden_state": "hide"
+-    "mode": "hide"
+-}
+----------------------------
++barconfig of the specified bar_id that were updated in i3. This event is the
++same as a +GET_BAR_CONFIG+ reply for the bar with the given id.
+ 
+ == See also (existing libraries)
+ 
+diff --git a/include/config.h b/include/config.h
+index 0bd68b9..7598241 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -317,9 +317,9 @@ void ungrab_all_keys(xcb_connection_t *conn);
+ 
+ /**
+  * Sends the current bar configuration as an event to all barconfig_update listeners.
+- * This update mechnism currently only includes the hidden_state and the mode in the config.
+  *
+- */void update_barconfig();
++ */
++void update_barconfig();
+ 
+ /**
+  * Kills the configerror i3-nagbar process, if any.
+diff --git a/include/ipc.h b/include/ipc.h
+index 2c25b4e..418b040 100644
+--- a/include/ipc.h
++++ b/include/ipc.h
+@@ -16,6 +16,7 @@
+ 
+ #include "data.h"
+ #include "tree.h"
++#include "config.h"
+ 
+ #include "i3/ipc.h"
+ 
+@@ -93,3 +94,8 @@ void ipc_send_workspace_focus_event(Con *current, Con *old);
+  * also the window container, in "container".
+  */
+ void ipc_send_window_event(const char *property, Con *con);
++
++/**
++ * For the barconfig update events, we send the serialized barconfig.
++ */
++void ipc_send_barconfig_update_event(Barconfig *barconfig);
+diff --git a/src/config.c b/src/config.c
+index bf75856..bbfae9d 100644
+--- a/src/config.c
++++ b/src/config.c
+@@ -32,44 +32,12 @@ void ungrab_all_keys(xcb_connection_t *conn) {
+ 
+ /*
+  * Sends the current bar configuration as an event to all barconfig_update listeners.
+- * This update mechnism currently only includes the hidden_state and the mode in the config.
+  *
+  */
+ void update_barconfig() {
+     Barconfig *current;
+     TAILQ_FOREACH(current, &barconfigs, configs) {
+-        /* Build json message */
+-        char *hidden_state;
+-        switch (current->hidden_state) {
+-            case S_SHOW:
+-                hidden_state ="show";
+-                break;
+-            case S_HIDE:
+-            default:
+-                hidden_state = "hide";
+-                break;
+-        }
+-
+-        char *mode;
+-        switch (current->mode) {
+-            case M_HIDE:
+-                mode ="hide";
+-                break;
+-            case M_INVISIBLE:
+-                mode ="invisible";
+-                break;
+-            case M_DOCK:
+-            default:
+-                mode = "dock";
+-                break;
+-        }
+-
+-        /* Send an event to all barconfig listeners*/
+-        char *event_msg;
+-        sasprintf(&event_msg, "{ \"id\":\"%s\", \"hidden_state\":\"%s\", \"mode\":\"%s\" }", current->id, hidden_state, mode);
+-
+-        ipc_send_event("barconfig_update", I3_IPC_EVENT_BARCONFIG_UPDATE, event_msg);
+-        FREE(event_msg);
++        ipc_send_barconfig_update_event(current);
+     }
+ }
+ 
+diff --git a/src/ipc.c b/src/ipc.c
+index 82ab142..5a69575 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -423,6 +423,135 @@ void dump_node(yajl_gen gen, struct Con *con, bool inplace_restart) {
+     y(map_close);
+ }
+ 
++static void dump_bar_config(yajl_gen gen, Barconfig *config) {
++    y(map_open);
++
++    ystr("id");
++    ystr(config->id);
++
++    if (config->num_outputs > 0) {
++        ystr("outputs");
++        y(array_open);
++        for (int c = 0; c < config->num_outputs; c++)
++            ystr(config->outputs[c]);
++        y(array_close);
++    }
++
++#define YSTR_IF_SET(name) \
++    do { \
++        if (config->name) { \
++            ystr( # name); \
++            ystr(config->name); \
++        } \
++    } while (0)
++
++    YSTR_IF_SET(tray_output);
++    YSTR_IF_SET(socket_path);
++
++    ystr("mode");
++    switch (config->mode) {
++        case M_HIDE:
++            ystr("hide");
++            break;
++        case M_INVISIBLE:
++            ystr("invisible");
++            break;
++        case M_DOCK:
++        default:
++            ystr("dock");
++            break;
++    }
++
++    ystr("hidden_state");
++    switch (config->hidden_state) {
++        case S_SHOW:
++            ystr("show");
++            break;
++        case S_HIDE:
++        default:
++            ystr("hide");
++            break;
++    }
++
++    ystr("modifier");
++    switch (config->modifier) {
++        case M_CONTROL:
++            ystr("ctrl");
++            break;
++        case M_SHIFT:
++            ystr("shift");
++            break;
++        case M_MOD1:
++            ystr("Mod1");
++            break;
++        case M_MOD2:
++            ystr("Mod2");
++            break;
++        case M_MOD3:
++            ystr("Mod3");
++            break;
++            /*
++               case M_MOD4:
++               ystr("Mod4");
++               break;
++               */
++        case M_MOD5:
++            ystr("Mod5");
++            break;
++        default:
++            ystr("Mod4");
++            break;
++    }
++
++    ystr("position");
++    if (config->position == P_BOTTOM)
++        ystr("bottom");
++    else ystr("top");
++
++    YSTR_IF_SET(status_command);
++    YSTR_IF_SET(font);
++
++    ystr("workspace_buttons");
++    y(bool, !config->hide_workspace_buttons);
++
++    ystr("binding_mode_indicator");
++    y(bool, !config->hide_binding_mode_indicator);
++
++    ystr("verbose");
++    y(bool, config->verbose);
++
++#undef YSTR_IF_SET
++#define YSTR_IF_SET(name) \
++    do { \
++        if (config->colors.name) { \
++            ystr( # name); \
++            ystr(config->colors.name); \
++        } \
++    } while (0)
++
++    ystr("colors");
++    y(map_open);
++    YSTR_IF_SET(background);
++    YSTR_IF_SET(statusline);
++    YSTR_IF_SET(separator);
++    YSTR_IF_SET(focused_workspace_border);
++    YSTR_IF_SET(focused_workspace_bg);
++    YSTR_IF_SET(focused_workspace_text);
++    YSTR_IF_SET(active_workspace_border);
++    YSTR_IF_SET(active_workspace_bg);
++    YSTR_IF_SET(active_workspace_text);
++    YSTR_IF_SET(inactive_workspace_border);
++    YSTR_IF_SET(inactive_workspace_bg);
++    YSTR_IF_SET(inactive_workspace_text);
++    YSTR_IF_SET(urgent_workspace_border);
++    YSTR_IF_SET(urgent_workspace_bg);
++    YSTR_IF_SET(urgent_workspace_text);
++    y(map_close);
++
++    y(map_close);
++#undef YSTR_IF_SET
++}
++
+ IPC_HANDLER(tree) {
+     setlocale(LC_NUMERIC, "C");
+     yajl_gen gen = ygenalloc();
+@@ -651,141 +780,19 @@ IPC_HANDLER(get_bar_config) {
+         break;
+     }
+ 
+-    y(map_open);
+-
+     if (!config) {
+         /* If we did not find a config for the given ID, the reply will contain
+          * a null 'id' field. */
++        y(map_open);
++
+         ystr("id");
+         y(null);
+-    } else {
+-        ystr("id");
+-        ystr(config->id);
+-
+-        if (config->num_outputs > 0) {
+-            ystr("outputs");
+-            y(array_open);
+-            for (int c = 0; c < config->num_outputs; c++)
+-                ystr(config->outputs[c]);
+-            y(array_close);
+-        }
+-
+-#define YSTR_IF_SET(name) \
+-        do { \
+-            if (config->name) { \
+-                ystr( # name); \
+-                ystr(config->name); \
+-            } \
+-        } while (0)
+-
+-        YSTR_IF_SET(tray_output);
+-        YSTR_IF_SET(socket_path);
+-
+-        ystr("mode");
+-        switch (config->mode) {
+-            case M_HIDE:
+-                ystr("hide");
+-                break;
+-            case M_INVISIBLE:
+-                ystr("invisible");
+-                break;
+-            case M_DOCK:
+-            default:
+-                ystr("dock");
+-                break;
+-        }
+-
+-        ystr("hidden_state");
+-        switch (config->hidden_state) {
+-            case S_SHOW:
+-                ystr("show");
+-                break;
+-            case S_HIDE:
+-            default:
+-                ystr("hide");
+-                break;
+-        }
+-
+-        ystr("modifier");
+-        switch (config->modifier) {
+-            case M_CONTROL:
+-                ystr("ctrl");
+-                break;
+-            case M_SHIFT:
+-                ystr("shift");
+-                break;
+-            case M_MOD1:
+-                ystr("Mod1");
+-                break;
+-            case M_MOD2:
+-                ystr("Mod2");
+-                break;
+-            case M_MOD3:
+-                ystr("Mod3");
+-                break;
+-            /*
+-            case M_MOD4:
+-                ystr("Mod4");
+-                break;
+-            */
+-            case M_MOD5:
+-                ystr("Mod5");
+-                break;
+-            default:
+-                ystr("Mod4");
+-                break;
+-        }
+-
+-        ystr("position");
+-        if (config->position == P_BOTTOM)
+-            ystr("bottom");
+-        else ystr("top");
+-
+-        YSTR_IF_SET(status_command);
+-        YSTR_IF_SET(font);
+-
+-        ystr("workspace_buttons");
+-        y(bool, !config->hide_workspace_buttons);
+-
+-        ystr("binding_mode_indicator");
+-        y(bool, !config->hide_binding_mode_indicator);
+-
+-        ystr("verbose");
+-        y(bool, config->verbose);
+ 
+-#undef YSTR_IF_SET
+-#define YSTR_IF_SET(name) \
+-        do { \
+-            if (config->colors.name) { \
+-                ystr( # name); \
+-                ystr(config->colors.name); \
+-            } \
+-        } while (0)
+-
+-        ystr("colors");
+-        y(map_open);
+-        YSTR_IF_SET(background);
+-        YSTR_IF_SET(statusline);
+-        YSTR_IF_SET(separator);
+-        YSTR_IF_SET(focused_workspace_border);
+-        YSTR_IF_SET(focused_workspace_bg);
+-        YSTR_IF_SET(focused_workspace_text);
+-        YSTR_IF_SET(active_workspace_border);
+-        YSTR_IF_SET(active_workspace_bg);
+-        YSTR_IF_SET(active_workspace_text);
+-        YSTR_IF_SET(inactive_workspace_border);
+-        YSTR_IF_SET(inactive_workspace_bg);
+-        YSTR_IF_SET(inactive_workspace_text);
+-        YSTR_IF_SET(urgent_workspace_border);
+-        YSTR_IF_SET(urgent_workspace_bg);
+-        YSTR_IF_SET(urgent_workspace_text);
+         y(map_close);
+-
+-#undef YSTR_IF_SET
++    } else {
++        dump_bar_config(gen, config);
+     }
+ 
+-    y(map_close);
+-
+     const unsigned char *payload;
+     ylength length;
+     y(get_buf, &payload, &length);
+@@ -1090,3 +1097,22 @@ void ipc_send_window_event(const char *property, Con *con) {
+     y(free);
+     setlocale(LC_NUMERIC, "");
+ }
++
++/**
++ * For the barconfig update events, we send the serialized barconfig.
++ */
++void ipc_send_barconfig_update_event(Barconfig *barconfig) {
++    DLOG("Issue barconfig_update event for id = %s\n", barconfig->id);
++    setlocale(LC_NUMERIC, "C");
++    yajl_gen gen = ygenalloc();
++
++    dump_bar_config(gen, barconfig);
++
++    const unsigned char *payload;
++    ylength length;
++    y(get_buf, &payload, &length);
++
++    ipc_send_event("barconfig_update", I3_IPC_EVENT_BARCONFIG_UPDATE, (const char *)payload);
++    y(free);
++    setlocale(LC_NUMERIC, "");
++}
+-- 
+1.9.2
+

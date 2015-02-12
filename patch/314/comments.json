@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 25,
+    "Comment": "AFAICT, this changes the default. Please fix.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Gereon Kremer",
+    "Line": 25,
+    "Comment": "Okay, then we should define the desired behaviour. Currently, it is not possible to have a percentage sign in the config strings, hence something like \"0%\" is impossible. (which would maintain the current behaviour).\nI can add this feature (possibility to use \"%%\"). Should then the format also be \"%volume%%\" (and format_muted \"0%%\")? This would make i3status behave differently for the same config...",
+    "EmailHash": "1aea85683c755df0f9d600a09d498b8e"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 25,
+    "Comment": "Yeah, making percentage signs work sounds like a good idea. Why would i3status behave differently when the default format_muted is 0%%?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Gereon Kremer",
+    "Line": 25,
+    "Comment": "I'd consider it consistent to change the format to \"%volume%%\" (and make %volume not print the percentage sign). The \"old default\" config would then output the volume without a percentage sign.",
+    "EmailHash": "1aea85683c755df0f9d600a09d498b8e"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 25,
+    "Comment": "In this case, not breaking backwards compatibility is more important than consistency. Please leave %volume as is and introduce format_muted as “♪: 0%%”",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Gereon Kremer",
+    "Line": 25,
+    "Comment": "Okay, see http://cr.i3wm.org/patch/316",
+    "EmailHash": "1aea85683c755df0f9d600a09d498b8e"
+  }
+]

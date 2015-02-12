@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 62,
+    "Comment": "It seems like this change is unnecessary? Why are you changing the ordering of the cases? :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 54,
+    "Comment": "Please make the name of this variable more descriptive, e.g. ignore_empty_password",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 37,
+    "Comment": "See below, I think ignore-empty-password is better than no-empty-password",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 41,
+    "Comment": "While the description is technically correct, I would read it and think “what is this good for?”. That information is only present in the code review  / commit message. Can you at least mention it with a short sentence? :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Vincent Bernat",
+    "Line": 62,
+    "Comment": "I started from the previous patch. I'll fix that.",
+    "EmailHash": "2c0bde3f5628f35390c42fe505b79da4"
+  }
+]

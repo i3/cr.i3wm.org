@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 137,
+    "Comment": "This line looks weird. Is it a left-over? If not, can you add a comment describing the new logic?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 137,
+    "Comment": "This is not at all. The point is to hit the \"return;\" if no workspace button was hit.\nThe other way of doing it is \"if (cur_ws != NULL) break;\". Any preferred way?",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 137,
+    "Comment": "Rather than relying on fall-through vs. not falling through, I’d find it much clearer to just use “if (cur_ws == NULL) return;” (with a newline).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 32,
+    "Comment": "Forgot \"fixes #832\", sorry.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 32,
+    "Comment": "I tried to document this very thoroughly because information on this hint is so hard to come by.\n\nI tested this patch with Eclipse (splash screen and crappy overlays) and Steam (Wine version, which specifies no title bar for the main window) which both behave much better now.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 32,
+    "Comment": "There is an issue here with Chromium, which uses this when the \"Use system title bar and borders\" option, but should definitely be opened tiling.\n\nSo this needs a revision...",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

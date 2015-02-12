@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 39,
+    "Comment": "This doesn’t even compile :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 51,
+    "Comment": "coding style: spaces between if and parenthesis",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 58,
+    "Comment": "The idea of toggling this variable seems fragile to me. Did you verify that this still works correctly when the bar gets force-shown due to the urgency hint?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 22,
+    "Comment": "Your patch is missing documentation updates.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 22,
+    "Comment": "Also, please use the syntax “fixes #833” in the long description",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 39,
+    "Comment": "I realized that this morning, it must have been cut off right before I created the patch, while doing lots of commit --amend, how embarrassing!\n\nI'm working on a different implementation of this issue now.",
+    "EmailHash": ""
+  }
+]

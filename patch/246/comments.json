@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 15,
+    "Comment": "s/Fixes #1088./fixes #1088/ in the description please.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "Why are you implementing this here and not in src/manage.c where the window is actually placed on the workspace (line 281)?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "Please use a better debug log message. I suggest something like “Window assigned to non-visible workspace, marking it urgent”. Which brings me to: please verify the workspace is non-visible (think of multi-monitor setups).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 15,
+    "Comment": "Also, add a testcase please.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 19,
+    "Comment": "The description of run_assignments is \"Checks the list of assignments for the given window and runs all matching ones (unless they have already been run for this specific window).\" so moving this code to manage.c might be misleading. However, since assignments are one-shot and manage.c calls run_assignments, it shouldn't make a difference so it's up to you. I could try to refactor the related code out of manage.c if you like.\n",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "I’d prefer if you could just move the code to manage.c for now.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

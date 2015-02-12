@@ -1,0 +1,62 @@
+From 2ad378ca615c10647fa0e16766484f972e1be3d5 Mon Sep 17 00:00:00 2001
+From: "M. Kory Woods" <kory@…>
+Date: Sun, 7 Jul 2013 10:54:50 -0500
+Subject: [PATCH] allow load to be a float
+
+---
+ i3status.c         | 4 ++--
+ include/i3status.h | 2 +-
+ src/print_load.c   | 2 +-
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index ded5799..e99e627 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -261,7 +261,7 @@ int main(int argc, char *argv[]) {
+ 
+         cfg_opt_t load_opts[] = {
+                 CFG_STR("format", "%1min %5min %15min", CFGF_NONE),
+-                CFG_INT("max_threshold", 5, CFGF_NONE),
++                CFG_FLOAT("max_threshold", 5, CFGF_NONE),
+                 CFG_CUSTOM_COLOR_OPTS,
+                 CFG_END()
+         };
+@@ -488,7 +488,7 @@ int main(int argc, char *argv[]) {
+ 
+                         CASE_SEC("load") {
+                                 SEC_OPEN_MAP("load");
+-                                print_load(json_gen, buffer, cfg_getstr(sec, "format"), cfg_getint(sec, "max_threshold"));
++                                print_load(json_gen, buffer, cfg_getstr(sec, "format"), cfg_getfloat(sec, "max_threshold"));
+                                 SEC_CLOSE_MAP;
+                         }
+ 
+diff --git a/include/i3status.h b/include/i3status.h
+index 8185d38..5d8d27b 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -152,7 +152,7 @@ void print_run_watch(yajl_gen json_gen, char *buffer, const char *title, const c
+ void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const char *path, const char *format, int);
+ void print_cpu_usage(yajl_gen json_gen, char *buffer, const char *format);
+ void print_eth_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
+-void print_load(yajl_gen json_gen, char *buffer, const char *format, const int max_threshold);
++void print_load(yajl_gen json_gen, char *buffer, const char *format, const float max_threshold);
+ void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *device, const char *mixer, int mixer_idx);
+ bool process_runs(const char *path);
+ 
+diff --git a/src/print_load.c b/src/print_load.c
+index 4e026cc..6e61ae6 100644
+--- a/src/print_load.c
++++ b/src/print_load.c
+@@ -6,7 +6,7 @@
+ #include <yajl/yajl_gen.h>
+ #include <yajl/yajl_version.h>
+ 
+-void print_load(yajl_gen json_gen, char *buffer, const char *format, const int max_threshold) {
++void print_load(yajl_gen json_gen, char *buffer, const char *format, const float max_threshold) {
+         char *outwalk = buffer;
+         /* Get load */
+ 
+-- 
+1.8.3.2
+

@@ -1,0 +1,41 @@
+From a7aa00ea8744b194e0b5b2d0cbf1099778a5cd89 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Thu, 19 Jun 2014 08:17:37 -0400
+Subject: [PATCH] default config: add mouse bindings
+
+By default, i3 is configured to close a window when the titlebar is
+middle clicked (which is well-known behavior from web browsers)
+
+Right click is configured to toggle floating / tiling (this would
+normally open a context menu, but i3 will never have these).
+---
+ i3.config | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/i3.config b/i3.config
+index 30b3f6a..613f25c 100644
+--- a/i3.config
++++ b/i3.config
+@@ -37,6 +37,9 @@ bindsym Mod1+Return exec i3-sensible-terminal
+ # kill focused window
+ bindsym Mod1+Shift+q kill
+ 
++# kill focused window when the titlebar is middle clicked
++bindsym button2 kill
++
+ # start dmenu (a program launcher)
+ bindsym Mod1+d exec dmenu_run
+ # There also is the (new) i3-dmenu-desktop which only displays applications
+@@ -85,6 +88,9 @@ bindsym Mod1+e layout toggle split
+ # toggle tiling / floating
+ bindsym Mod1+Shift+space floating toggle
+ 
++# toggle tiling / floating when the titlebar is right clicked
++bindsym button3 floating toggle
++
+ # change focus between tiling / floating windows
+ bindsym Mod1+space focus mode_toggle
+ 
+-- 
+2.0.0
+

@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 35,
+    "Comment": "double space, please remove",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 56,
+    "Comment": "here and elsewhere, s/struct Rect/Rect/ is enough",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 96,
+    "Comment": "double space, please remove",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 182,
+    "Comment": "Please place the xcb_flush(conn); after the two ungrabs. Flushing ensures that the ungrab requests are not buffered in the XCB connection buffers. In the worst case, that would make the grab stay active and block all further user input.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 164,
+    "Comment": "If only it was that easy :). On my ThinkPad, I have remapped the Escape key to be next to the “1” key, so keycode 49 is Escape for me.\n\nWe can now chose to either:\n\n1) Abort the resize on any key press. Certainly the easiest solution that will work with all the edge cases, too.\n2) Resolve the “Escape” keysym to a number of keycodes and check if the pressed keycode is one of them. This still has some edge cases that I won’t cover now, but should be good enough.\n\nI’d prefer option 1.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 202,
+    "Comment": "I know I pointed you to the network-manager code which reads the scan results, but when testing your patch, I noticed that the signal quality only rarely changes — I think only when a new scan for wireless networks is done.\n\nInstead, I propose that we use the quality information in the NL80211_CMD_GET_STATION reply (which you already parse), see http://sources.debian.net/src/network-manager/0.9.10.0-4/src/platform/wifi/wifi-utils-nl80211.c/?hl=520#L520\n\nSorry for the misleading pointer, I only quickly glanced at the n-m code and didn’t realize it had two places where it deals with signal quality.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Alexander Monakov",
+    "Line": 202,
+    "Comment": "I wrote this based on netlink documentation, kernel and iw tool's sources, actually, not NM.\n\nAre you sure the current behavior is bad?  I'd view a constantly fluctuating %quality more a distraction than a useful stat, similar to %bitrate.\n\nDo you request this change only for %quality, or %signal as well?  I use %signal, and I'd hate to make this change; but if you use %quality, I don't mind.\n\nNote that GET_SCAN call cannot go away, since you need the BSSID to make the GET_STATION call, and you obtain the bssid from GET_SCAN.",
+    "EmailHash": "16414e3fe37df64231d46cda4bcda47a"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 202,
+    "Comment": "The fluctuation of %quality is a good point, but this level is the wrong level to address it. In case people are bothered by the stats updating too often, they should set a higher interval so that i3status updates less often. All other stats are updated in real time, and we should keep that consistent — both with the current behavior and with the other stats. So, yeah, please make %quality be real-time and not based on the last scan.\n\nThe change should also be done for the other stats, yes.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

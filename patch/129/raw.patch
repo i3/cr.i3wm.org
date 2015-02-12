@@ -1,0 +1,33 @@
+From 8dd2174285f23ce382dd0ed3d32e2e21ef6999ce Mon Sep 17 00:00:00 2001
+From: "Eric S. Raymond" <esr@…>
+Date: Sun, 7 Apr 2013 17:02:28 -0400
+Subject: [PATCH 2/2] Document fixes and workarounds for test failures.
+
+---
+ docs/testsuite | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/docs/testsuite b/docs/testsuite
+index 9b7485b..6c3a36d 100644
+--- a/docs/testsuite
++++ b/docs/testsuite
+@@ -143,6 +143,16 @@ Result: PASS
+ $ less latest/i3-log-for-04-floating.t
+ ----------------------------------------
+ 
++If your attempt to run the tests with a bare call to ./complete-run.pl fails, try this:
++
++---------------------------------------------------
++$ ./complete-run.pl --parallel=1 --keep-xdummy-output
++---------------------------------------------------
++
++One common cause of failures is not having the X dummy server module
++installed.  Under Debian and Ubuntu this is the package
+++xserver-xorg-video-dummy+.
++
+ ==== IPC interface
+ 
+ The testsuite makes extensive use of the IPC (Inter-Process Communication)
+-- 
+1.8.0.1.g2b06c9a
+

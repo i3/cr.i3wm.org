@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 105,
+    "Comment": "I wish this was boolean",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 74,
+    "Comment": "The two lines above need to be changed.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

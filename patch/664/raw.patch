@@ -1,0 +1,181 @@
+From d98e6bbeb36e04bf909a204d9eea377be63bd81d Mon Sep 17 00:00:00 2001
+From: Christoph Hoopmann <choopm@…>
+Date: Wed, 29 Oct 2014 14:02:08 +0100
+Subject: [PATCH] i3status: external command support
+
+---
+ i3status.c           | 14 ++++++++++++++
+ i3status.conf        |  6 ++++++
+ include/i3status.h   |  1 +
+ man/i3status.man     | 16 ++++++++++++++++
+ src/print_external.c | 42 ++++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 79 insertions(+)
+ create mode 100644 src/print_external.c
+
+diff --git a/i3status.c b/i3status.c
+index fc16c49..cda8123 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -289,6 +289,13 @@ int main(int argc, char *argv[]) {
+                 CFG_END()
+         };
+ 
++        cfg_opt_t external_opts[] = {
++                CFG_STR("command", NULL, CFGF_NONE),
++                CFG_STR("format", "%title: %status", CFGF_NONE),
++                CFG_CUSTOM_COLOR_OPTS,
++                CFG_END()
++        };
++
+         cfg_opt_t wireless_opts[] = {
+                 CFG_STR("format_up", "W: (%quality at %essid, %bitrate) %ip", CFGF_NONE),
+                 CFG_STR("format_down", "W: down", CFGF_NONE),
+@@ -410,6 +417,7 @@ int main(int argc, char *argv[]) {
+                 CFG_SEC("general", general_opts, CFGF_NONE),
+                 CFG_SEC("run_watch", run_watch_opts, CFGF_TITLE | CFGF_MULTI),
+                 CFG_SEC("path_exists", path_exists_opts, CFGF_TITLE | CFGF_MULTI),
++                CFG_SEC("external", external_opts, CFGF_TITLE | CFGF_MULTI),
+                 CFG_SEC("wireless", wireless_opts, CFGF_TITLE | CFGF_MULTI),
+                 CFG_SEC("ethernet", ethernet_opts, CFGF_TITLE | CFGF_MULTI),
+                 CFG_SEC("battery", battery_opts, CFGF_TITLE | CFGF_MULTI),
+@@ -604,6 +612,12 @@ int main(int argc, char *argv[]) {
+                                 SEC_CLOSE_MAP;
+                         }
+ 
++                        CASE_SEC_TITLE("external") {
++                                SEC_OPEN_MAP("external");
++                                print_external(json_gen, buffer, title, cfg_getstr(sec, "command"), cfg_getstr(sec, "format"));
++                                SEC_CLOSE_MAP;
++                        }
++
+                         CASE_SEC_TITLE("disk") {
+                                 SEC_OPEN_MAP("disk_info");
+                                 print_disk_info(json_gen, buffer, title, cfg_getstr(sec, "format"), cfg_getstr(sec, "prefix_type"), cfg_getstr(sec, "threshold_type"), cfg_getfloat(sec, "low_threshold"));
+diff --git a/i3status.conf b/i3status.conf
+index 01c182c..8ab762e 100644
+--- a/i3status.conf
++++ b/i3status.conf
+@@ -15,6 +15,7 @@ order += "ipv6"
+ order += "disk /"
+ order += "run_watch DHCP"
+ order += "run_watch VPN"
++order += "external krel"
+ order += "wireless wlan0"
+ order += "ethernet eth0"
+ order += "battery 0"
+@@ -44,6 +45,11 @@ run_watch VPN {
+         pidfile = "/var/run/vpnc/pid"
+ }
+ 
++external krel {
++        command = "uname -r"
++        format = "%title: %status"
++}
++
+ tztime local {
+         format = "%Y-%m-%d %H:%M:%S"
+ }
+diff --git a/include/i3status.h b/include/i3status.h
+index d816f0a..0cbc595 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -179,6 +179,7 @@ const char *get_ip_addr();
+ void print_wireless_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
+ void print_run_watch(yajl_gen json_gen, char *buffer, const char *title, const char *pidfile, const char *format);
+ void print_path_exists(yajl_gen json_gen, char *buffer, const char *title, const char *path, const char *format);
++void print_external(yajl_gen json_gen, char *buffer, const char *title, const char *command, const char *format);
+ void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const char *path, const char *format, int);
+ void print_cpu_usage(yajl_gen json_gen, char *buffer, const char *format);
+ void print_eth_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
+diff --git a/man/i3status.man b/man/i3status.man
+index 504cf16..7c0be1b 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -52,6 +52,7 @@ order += "disk /"
+ order += "run_watch DHCP"
+ order += "run_watch VPNC"
+ order += "path_exists VPN"
++order += "external krel"
+ order += "wireless wlan0"
+ order += "ethernet eth0"
+ order += "battery 0"
+@@ -95,6 +96,11 @@ path_exists VPN {
+         path = "/proc/sys/net/ipv4/conf/tun0"
+ }
+ 
++external krel {
++        command = "uname -r"
++        format = "%title: %status"
++}
++
+ tztime local {
+         format = "%Y-%m-%d %H:%M:%S"
+ }
+@@ -268,6 +274,16 @@ something is active, like for example a VPN tunnel managed by NetworkManager.
+ 
+ *Example format*: +%title: %status+
+ 
++=== External
++
++Executes the given command and returns the first line of output.
++
++*Example order*: +external krel+
++
++*Example command*: +uname -r+
++
++*Example format*: +%title: %status+
++
+ === Wireless
+ 
+ Gets the link quality and ESSID of the given wireless network interface. You
+diff --git a/src/print_external.c b/src/print_external.c
+new file mode 100644
+index 0000000..89ea050
+--- /dev/null
++++ b/src/print_external.c
+@@ -0,0 +1,42 @@
++#include <stdio.h>
++#include <string.h>
++#include <yajl/yajl_gen.h>
++#include <yajl/yajl_version.h>
++#include <sys/stat.h>
++#include "i3status.h"
++
++void print_external(yajl_gen json_gen, char *buffer, const char *title, const char *command, const char *format) {
++        const char *walk;
++        char *outwalk = buffer;
++        char pbuffer[1024] = "\0";
++        FILE *fp;
++
++        INSTANCE(title);
++
++        fp = popen(command, "r");
++        if (!fp) {
++            strcpy(pbuffer, "Failed");
++        } else {
++            if (fgets(pbuffer, sizeof(pbuffer)-1, fp))
++                pbuffer[strlen(pbuffer) - 1] = '\0';
++            pclose(fp);
++        }
++            
++        for (walk = format; *walk != '\0'; walk++) {
++                if (*walk != '%') {
++                        *(outwalk++) = *walk;
++                        continue;
++                }
++
++                if (strncmp(walk+1, "title", strlen("title")) == 0) {
++                        outwalk += sprintf(outwalk, "%s", title);
++                        walk += strlen("title");
++                } else if (strncmp(walk+1, "status", strlen("status")) == 0) {
++                        outwalk += sprintf(outwalk, "%s", pbuffer);
++                        walk += strlen("status");
++                }
++        }
++
++        END_COLOR;
++        OUTPUT_FULL_TEXT(buffer);
++}
+-- 
+2.1.2
+

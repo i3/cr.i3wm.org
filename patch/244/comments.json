@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Philippe Virouleau",
+    "Line": 135,
+    "Comment": "This uses gcc builtins atomic operations (also implemented in clang), so if you mind using them I can provide an implementation with pthread mutexes.",
+    "EmailHash": "73e4ef48030de3c30ccb5a5c05b20e66"
+  },
+  {
+    "Author": "Philippe Virouleau",
+    "Line": 225,
+    "Comment": "This is to avoid too many thread creation, I fixed the max_waiting_authentication to 4 since you should be very fast to mistype your password 4 times in 2s.\nIf you actually reach this point, you just have to hit enter again and again until one thread leaves the critical section.",
+    "EmailHash": "73e4ef48030de3c30ccb5a5c05b20e66"
+  },
+  {
+    "Author": "Philippe Virouleau",
+    "Line": 234,
+    "Comment": "Looks like I forgot to lock the memory to prevent it from being swapped... I will update this after your review (same for pam_password).",
+    "EmailHash": "73e4ef48030de3c30ccb5a5c05b20e66"
+  },
+  {
+    "Author": "Philippe Virouleau",
+    "Line": 145,
+    "Comment": "I meant sizeof(password)...",
+    "EmailHash": "73e4ef48030de3c30ccb5a5c05b20e66"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 16,
+    "Comment": "Sorry for taking so long to get back to this. I am not very keen on adding threads to i3lock. Can you coordinate with koebi (on IRC), who is/was also working on this, and try to come up with a patch that does not use pthreads please?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Philippe Virouleau",
+    "Line": 16,
+    "Comment": "Ok, I'm leaving for holidays until the end of next week, I'll get back to that then.",
+    "EmailHash": "73e4ef48030de3c30ccb5a5c05b20e66"
+  }
+]

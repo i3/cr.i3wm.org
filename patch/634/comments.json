@@ -1,0 +1,50 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 25,
+    "Comment": "I agree that the problem you address should be fixed, but I don’t see why you refactor the code like that at the same time.\n\nCan you please submit a version of this patch which only fixes the problem at hand, i.e. the wrong width/height values for the right/lower edges?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 80,
+    "Comment": "Regardless of the code above, why are you refactoring the code here? The if/else cases are exclusive, so there will always be precisely one rectangle in the array (as you also realized because you limit the array to one element). So what’s the benefit?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 25,
+    "Comment": "To be clear, I’d prefer it if you could keep using “br” instead of querying “border_width” separately and using that.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Mats",
+    "Line": 25,
+    "Comment": "Will do. In general, would you accept a patch refactoring this segment like this?",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  },
+  {
+    "Author": "Mats",
+    "Line": 25,
+    "Comment": "Is there anything wrong with using con-\u003ecurrent_border_width directly, instead of deriving it from con_border_style_rect in a more or less obfuscating way:\n\nleft   : br.x\nright  : br.x + br.width\ntop    : br.y\nbottom : br.y + br.height\n\nIs it because current_border_width could be \u003c 0? I thought about this but learned that the border widths are always explicitly set to the defaults when the window becomes managed [1]. By the way, wouldn't this render this very first check in con_border_style_rect redundant [2]?\n\nOr should \"br\" rather be used to reflect the possibly hidden edges? Which, however, already happens here in x_draw_decoration before calling the individual xcb_poly_fill_rectangle functions...\n\nAnd you accepted my other patch [3] that uses current_border_width while it could have resorted to con_border_style_rect as well :)\n\nI'd only like to know why the less clear way is more preferable here?\n\n[1] http://c.i3wm.org/6bf7f8ef\n[2] http://code.stapelberg.de/git/i3/tree/src/con.c?h=next#n1077\n[3] http://cr.i3wm.org/patch/633",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  },
+  {
+    "Author": "Mats",
+    "Line": 80,
+    "Comment": "You're right. This doesn't really make sense in this context. Maybe I should have mentioned that I was experimenting with this code to fix bug #1067. That's why I stumbled across this in the first place...",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 25,
+    "Comment": "Actually, the border widths for the edges are:\n\nleft   :   br.x\nright  : -(br.x + br.width)\ntop    :   br.y\nbottom : -(br.y + br.heigh)",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 25,
+    "Comment": "The reason to use con_border_style_rect() is to respect the result of con_border_style(), i.e. whether the window is in normal, stacked or tabbed mode.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

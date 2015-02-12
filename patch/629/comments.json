@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Luke Heberling",
+    "Line": 19,
+    "Comment": "Wondering if this sort of thing hasn't been proposed before... :)\n\nIf this module's OK, I have a little contrib script to add that runs mplayer against a playlist file and drops any of current song/cache fill/bitrate in a file intended for consumption by this module.",
+    "EmailHash": "31903b7aebcc7bc185b237d2ab888d21"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "It has indeed been proposed, see http://cr.i3wm.org/patch/393\n\nI’ll reject this patch in the same spirit as the referenced one was rejected: with the fear of scope creep, i.e. people saying (somewhat rightly so) “you have the file_contents module, now you need to add this option to make that actually useful” and before we know it, we have a text processing language implemented in i3status.\n\nAdding arbitrary lines of content to i3status can be done with a wrapper, and if you already have a contrib script that prepares some information, it should be simple to make that an i3status wrapper.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

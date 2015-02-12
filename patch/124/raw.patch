@@ -1,0 +1,26 @@
+From 31b0338bf9d0030868c871691e483dbcf61f1cfd Mon Sep 17 00:00:00 2001
+From: Sebastian Rachuj <rachus@…>
+Date: Fri, 5 Apr 2013 00:57:48 +0200
+Subject: [PATCH] Fixed the i3-nagbar commandline to call the script instead of
+ another i3-nagbar.
+
+---
+ i3-nagbar/main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/i3-nagbar/main.c b/i3-nagbar/main.c
+index 2243aa7..ea53dfe 100644
+--- a/i3-nagbar/main.c
++++ b/i3-nagbar/main.c
+@@ -165,7 +165,7 @@ static void handle_button_release(xcb_connection_t *conn, xcb_button_release_eve
+     fclose(script);
+ 
+     char *terminal_cmd;
+-    sasprintf(&terminal_cmd, "i3-sensible-terminal -e %s", argv0);
++    sasprintf(&terminal_cmd, "i3-sensible-terminal -e %s", script_path);
+     printf("argv0 = %s\n", argv0);
+     printf("terminal_cmd = %s\n", terminal_cmd);
+ 
+-- 
+1.8.2
+

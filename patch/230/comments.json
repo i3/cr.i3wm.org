@@ -1,0 +1,62 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 243,
+    "Comment": "(x ? true : false) is a noop, please remove by just x :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 263,
+    "Comment": "This looks odd. Why workspaces? :) Given that TAILQ_END(x) is always NULL, you might just use NULL here.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 269,
+    "Comment": "Please add a DLOG statement here that reveals the pointer contents of 'first' and 'second'",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 242,
+    "Comment": "You can make these two variables const, since they never change.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 161,
+    "Comment": "Please rename this to 'direction' for consistency with the other function.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 136,
+    "Comment": "I think you have left out this check, which includes a LOG message, in your refactoring. Can you please take care of that?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 17,
+    "Comment": "Can you please use “fixes #1084” and “fixes #1085” on separate lines? I am not sure if the trac hook supports having multiple numbers on the same line, also it would make grepping through the commits easier.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "jj",
+    "Line": 136,
+    "Comment": "Regarding this check, it was and will actually never be true. We only reach this point when search_orientation == con_orientation(current-\u003eparent). The search_orientation is set depending on the value of the variable direction. Thus, this if clause tests whether search_orientation != con_orientation(current-\u003eparent).",
+    "EmailHash": "2b7ea79fd33d4f8c0bb3ef8a9dc97f64"
+  },
+  {
+    "Author": "jj",
+    "Line": 243,
+    "Comment": "hehe thanks. I do not remember how this statement made it into the patch :)",
+    "EmailHash": "2b7ea79fd33d4f8c0bb3ef8a9dc97f64"
+  },
+  {
+    "Author": "jj",
+    "Line": 161,
+    "Comment": "Then I would need to rename the parameter direction, which would be inconsistent with the other resize functions in this file.",
+    "EmailHash": "2b7ea79fd33d4f8c0bb3ef8a9dc97f64"
+  }
+]

@@ -1,0 +1,27 @@
+From e4e9bf5bb2991df7189caa1fa593c54464434a73 Mon Sep 17 00:00:00 2001
+From: Adrien Schildknecht <adrien+dev@…>
+Date: Sat, 16 Mar 2013 05:35:29 +0100
+Subject: [PATCH] fix a focus problem when hiding a scratchpad
+
+When a scratchpad becomes hidden, i3 tries to focus a floating windows instead
+of the last focused.
+---
+ src/con.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/con.c b/src/con.c
+index 559c137..51f37e7 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -855,7 +855,7 @@ Con *con_next_focused(Con *con) {
+     Con *next;
+     /* floating containers are attached to a workspace, so we focus either the
+      * next floating container (if any) or the workspace itself. */
+-    if (con->type == CT_FLOATING_CON) {
++    if (con->type == CT_FLOATING_CON && con->scratchpad_state == SCRATCHPAD_NONE) {
+         DLOG("selecting next for CT_FLOATING_CON\n");
+         next = TAILQ_NEXT(con, floating_windows);
+         DLOG("next = %p\n", next);
+-- 
+1.8.1.1
+

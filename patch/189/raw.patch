@@ -1,0 +1,65 @@
+From 2aef5cddb0830765c5375a4cbd85c5fb64b423ca Mon Sep 17 00:00:00 2001
+From: Franck Michea <franck.michea@…>
+Date: Wed, 10 Jul 2013 22:18:18 +0200
+Subject: [PATCH] bugfix: Resize and center a scratchpad even when a criteria
+ is used.
+
+---
+ src/scratchpad.c                      |  4 ++++
+ testcases/t/202-scratchpad-criteria.t | 18 ++++++++++++++++++
+ 2 files changed, 22 insertions(+)
+
+diff --git a/src/scratchpad.c b/src/scratchpad.c
+index d6c1a09..fe0ea4f 100644
+--- a/src/scratchpad.c
++++ b/src/scratchpad.c
+@@ -175,6 +175,10 @@ void scratchpad_show(Con *con) {
+             LOG("Use 'move scratchpad' to move a window to the scratchpad.\n");
+             return;
+         }
++    } else {
++        /* We used a constraint, so we need to do what follows (moving,
++         * resizing) on the floating parent. */
++        con = con_inside_floating(con);
+     }
+ 
+     /* 1: Move the window from __i3_scratch to the current workspace. */
+diff --git a/testcases/t/202-scratchpad-criteria.t b/testcases/t/202-scratchpad-criteria.t
+index 5ba8bfd..162b989 100644
+--- a/testcases/t/202-scratchpad-criteria.t
++++ b/testcases/t/202-scratchpad-criteria.t
+@@ -17,6 +17,8 @@
+ # Verifies that using criteria to address scratchpad windows works.
+ use i3test;
+ 
++my $i3 = i3(get_socket_path());
++
+ #####################################################################
+ # Verify that using scratchpad show with criteria works as expected:
+ # - When matching a scratchpad window which is visible,
+@@ -51,6 +53,22 @@ cmd '[title="scratch-match"] scratchpad show';
+ my $scratch_focus = get_focused($tmp);
+ isnt($scratch_focus, $old_focus, 'matching criteria works');
+ 
++# Check that the window was centered and resized too.
++my $tree = $i3->get_tree->recv;
++my $ws = get_ws($tmp);
++my $scratchrect = $ws->{floating_nodes}->[0]->{rect};
++my $output = $tree->{nodes}->[1];
++my $outputrect = $output->{rect};
++
++is($scratchrect->{width}, $outputrect->{width} * 0.5, 'scratch width is 50%');
++is($scratchrect->{height}, $outputrect->{height} * 0.75, 'scratch height is 75%');
++is($scratchrect->{x},
++   ($outputrect->{width} / 2) - ($scratchrect->{width} / 2),
++   'scratch window centered horizontally');
++is($scratchrect->{y},
++   ($outputrect->{height} / 2 ) - ($scratchrect->{height} / 2),
++   'scratch window centered vertically');
++
+ cmd '[title="scratch-match"] scratchpad show';
+ 
+ isnt(get_focused($tmp), $scratch_focus, 'matching criteria works');
+-- 
+1.8.3.2
+

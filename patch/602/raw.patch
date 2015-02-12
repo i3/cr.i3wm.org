@@ -1,0 +1,141 @@
+From e372fb473bed46c0224ed2d5534f206edafde461 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sun, 22 Jun 2014 12:24:26 -0400
+Subject: [PATCH] Workspace command number selection
+
+If a `workspace {N}` or `move to workspace {N}` command is given with N
+as a plain number, the workspace of this number is selected for the
+context of the command if one exists and there is no workspace with a
+name that exactly matches N.
+---
+ src/commands.c                                   | 47 ++++++++++++++++++++-
+ testcases/t/232-cmd-workspace-number-selection.t | 52 ++++++++++++++++++++++++
+ 2 files changed, 97 insertions(+), 2 deletions(-)
+ create mode 100644 testcases/t/232-cmd-workspace-number-selection.t
+
+diff --git a/src/commands.c b/src/commands.c
+index b9c130d..59ddd37 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -513,7 +513,27 @@ void cmd_move_con_to_workspace_name(I3_CMD, char *name) {
+ 
+     LOG("should move window to workspace %s\n", name);
+     /* get the workspace */
+-    Con *ws = workspace_get(name, NULL);
++    Con *ws = NULL;
++    Con *output = NULL;
++
++    /* first look for a workspace with this name */
++    TAILQ_FOREACH(output, &(croot->nodes_head), nodes) {
++        GREP_FIRST(ws, output_get_content(output), !strcasecmp(child->name, name));
++    }
++
++    /* if the name is plain digits, we interpret this as a "workspace number"
++     * command */
++    if (!ws && name_is_digits(name)) {
++        long parsed_num = ws_name_to_number(name);
++        TAILQ_FOREACH(output, &(croot->nodes_head), nodes) {
++            GREP_FIRST(ws, output_get_content(output),
++                    child->num == parsed_num);
++        }
++    }
++
++    /* if no workspace was found, make a new one */
++    if (!ws)
++        ws = workspace_get(name, NULL);
+ 
+     ws = maybe_auto_back_and_forth_workspace(ws);
+ 
+@@ -1013,7 +1033,30 @@ void cmd_workspace_name(I3_CMD, char *name) {
+     DLOG("should switch to workspace %s\n", name);
+     if (maybe_back_and_forth(cmd_output, name))
+         return;
+-    workspace_show_by_name(name);
++
++    Con *ws = NULL;
++    Con *output = NULL;
++
++    /* first look for a workspace with this name */
++    TAILQ_FOREACH(output, &(croot->nodes_head), nodes) {
++        GREP_FIRST(ws, output_get_content(output), !strcasecmp(child->name, name));
++    }
++
++    /* if the name is only digits, we interpret this as a "workspace number"
++     * command */
++    if (!ws && name_is_digits(name)) {
++        long parsed_num = ws_name_to_number(name);
++        TAILQ_FOREACH(output, &(croot->nodes_head), nodes) {
++            GREP_FIRST(ws, output_get_content(output),
++                    child->num == parsed_num);
++        }
++    }
++
++    /* if no workspace was found, make a new one */
++    if (!ws)
++        ws = workspace_get(name, NULL);
++
++    workspace_show(ws);
+ 
+     cmd_output->needs_tree_render = true;
+     // XXX: default reply for now, make this a better reply
+diff --git a/testcases/t/232-cmd-workspace-number-selection.t b/testcases/t/232-cmd-workspace-number-selection.t
+new file mode 100644
+index 0000000..bda0564
+--- /dev/null
++++ b/testcases/t/232-cmd-workspace-number-selection.t
+@@ -0,0 +1,52 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Test that `workspace {N}` acts like `workspace number {N}` when N is a plain
++# digit, and likewise for `move to workspace {N}`.
++# Ticket: #1238
++# Bug still in: 4.8-16-g3f5a0f0
++use i3test;
++
++cmd 'workspace 5:foo';
++open_window;
++fresh_workspace;
++cmd 'workspace 5';
++
++is(focused_ws, '5:foo',
++    'a command to switch to a workspace with a bare number should switch to a workspace of that number');
++
++fresh_workspace;
++my $win = open_window;
++cmd '[id="' . $win->{id} . '"] move to workspace 5';
++
++is(@{get_ws('5:foo')->{nodes}}, 2,
++    'a command to move a container to a workspace with a bare number should move that container to a workspace of that number');
++
++fresh_workspace;
++cmd 'workspace 7';
++open_window;
++cmd 'workspace 7:foo';
++$win = open_window;
++
++cmd 'workspace 7';
++is(focused_ws, '7',
++    'a workspace with a name that is a matching plain number should be preferred when switching');
++
++cmd '[id="' . $win->{id} . '"] move to workspace 7';
++is(@{get_ws('7')->{nodes}}, 2,
++    'a workspace with a name that is a matching plain number should be preferred when moving');
++
++done_testing;
+-- 
+2.0.0
+

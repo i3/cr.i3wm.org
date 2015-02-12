@@ -1,0 +1,26 @@
+From 87f9e63d168553f3e3c26001e6b5cfa70ea6cb05 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sun, 15 Jun 2014 00:01:45 -0400
+Subject: [PATCH] default config: bar position top
+
+Using `position top` within the bar block will prevent new users from
+accidently scrolling on i3bar and changing the workspace.
+---
+ i3.config | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/i3.config b/i3.config
+index 30b3f6a..1609d90 100644
+--- a/i3.config
++++ b/i3.config
+@@ -162,6 +162,7 @@ bindsym Mod1+r mode "resize"
+ # finds out, if available)
+ bar {
+         status_command i3status
++        position top
+ }
+ 
+ #######################################################################
+-- 
+2.0.0
+

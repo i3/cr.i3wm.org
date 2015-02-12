@@ -1,0 +1,82 @@
+From de2aa0be299ad2c1dd354ab11901e1aa651d4ef5 Mon Sep 17 00:00:00 2001
+From: Ari Edelkind <edelkind+git@…>
+Date: Thu, 1 May 2014 00:20:29 -0400
+Subject: [PATCH 1/2] Ignore KeyRelease events without KeyPress
+
+When switching modes, i3 completely reconfigures the key bindings.
+There's a bug, such that if a mode is set up with the likes of:
+
+mode "new" {
+    bindsym --release $mykey mode "busted"
+}
+bindsym $mykey mode "new"
+
+then i3 would switch to mode "new" when $mykey is pressed, and then to
+"busted" when $mykey is released.
+
+This patch fixes the bug by ensuring that, before a KeyRelease event
+will be acknowledged, a key has been pressed since the key bindings have
+been reconfigured.
+---
+ src/bindings.c | 24 +++++++++++++++++++++++-
+ 1 file changed, 23 insertions(+), 1 deletion(-)
+
+diff --git a/src/bindings.c b/src/bindings.c
+index 3d3dbd9..5728a24 100644
+--- a/src/bindings.c
++++ b/src/bindings.c
+@@ -15,6 +15,12 @@
+ const char *DEFAULT_BINDING_MODE = "default";
+ 
+ /*
++ * Whether a key has been pressed since reconfiguring keybindings
++ *
++ */
++static bool key_pressed_in_bind_config;
++
++/*
+  * Returns the mode specified by `name` or creates a new mode and adds it to
+  * the list of modes.
+  *
+@@ -104,6 +110,7 @@ static void grab_keycode_for_binding(xcb_connection_t *conn, Binding *bind, uint
+  */
+ void grab_all_keys(xcb_connection_t *conn, bool bind_mode_switch) {
+     Binding *bind;
++    key_pressed_in_bind_config = 0;
+     TAILQ_FOREACH(bind, bindings, bindings) {
+         if (bind->input_type != B_KEYBOARD ||
+                 (bind_mode_switch && (bind->mods & BIND_MODE_SWITCH) == 0) ||
+@@ -131,6 +138,7 @@ Binding *get_keyboard_binding(uint16_t modifiers, bool key_release, xcb_keycode_
+     Binding *bind;
+ 
+     if (!key_release) {
++        key_pressed_in_bind_config = 1;
+         /* On a KeyPress event, we first reset all
+          * B_UPON_KEYRELEASE_IGNORE_MODS bindings back to B_UPON_KEYRELEASE */
+         TAILQ_FOREACH(bind, bindings, bindings) {
+@@ -181,7 +189,21 @@ Binding *get_keyboard_binding(uint16_t modifiers, bool key_release, xcb_keycode_
+         break;
+     }
+ 
+-    return (bind == TAILQ_END(bindings) ? NULL : bind);
++    if (bind == TAILQ_END(bindings))
++        return NULL;
++
++    if (key_release) {
++        /* If we see a KeyRelease event without a KeyPress event, that means
++         * we've reconfigured our keybindings (e.g. switched modes), and a new
++         * keybinding was created with the same key combination as the one that
++         * triggered the change. */
++        if (!key_pressed_in_bind_config) {
++            DLOG("Ignored KeyRelease for key not pressed in this binding configuration\n");
++            return NULL;
++        }
++    }
++
++    return bind;
+ }
+ 
+ /*
+-- 
+1.9.2
+

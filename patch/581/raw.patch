@@ -1,0 +1,26 @@
+From 27d4f7f275eee9b50be69496df07bb0b58e146d3 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Mon, 16 Jun 2014 02:31:03 -0400
+Subject: [PATCH] bugfix: unneeded render on unmap
+
+tree_render() will call x_push_changes(), so calling it afterward is not
+needed.
+---
+ src/handlers.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/src/handlers.c b/src/handlers.c
+index c217cbb..4f93ab1 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -487,7 +487,6 @@ static void handle_unmap_notify_event(xcb_unmap_notify_event_t *event) {
+ 
+     tree_close(con, DONT_KILL_WINDOW, false, false);
+     tree_render();
+-    x_push_changes(croot);
+ 
+ ignore_end:
+     /* If the client (as opposed to i3) destroyed or unmapped a window, an
+-- 
+2.0.0
+

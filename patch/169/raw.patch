@@ -1,0 +1,169 @@
+From 9e0d47c72b8c8cddf760b6640bb5f618b159d746 Mon Sep 17 00:00:00 2001
+From: jj <haptix@…>
+Date: Wed, 29 May 2013 18:02:46 +0200
+Subject: [PATCH] Fix wrong placement of i3bar when connecting/disconnecting
+ outputs
+
+When connecting or disconnecting an output, i3bar reconfigures its
+windows. This also included an unmapping of the bars, and a remapping of
+all docked bars. Thus, the bars were misplaced when a monitor was
+disconnected.
+
+This commit assures that the remapping of the bars only takes place,
+when the mode has actually changed. This patch also takes care of an
+inconsistency when pressing the bar_modifier while switching the mode.
+Also, the xkbDisplay is now closed correctly, when deregestering the xkb
+keyevents.
+---
+ i3bar/include/xcb.h |    2 +-
+ i3bar/src/ipc.c     |    4 ++--
+ i3bar/src/xcb.c     |   55 +++++++++++++++++++++++++++------------------------
+ 3 files changed, 32 insertions(+), 29 deletions(-)
+
+diff --git a/i3bar/include/xcb.h b/i3bar/include/xcb.h
+index d8d0c09..e1654a3 100644
+--- a/i3bar/include/xcb.h
++++ b/i3bar/include/xcb.h
+@@ -114,7 +114,7 @@ void realloc_sl_buffer(void);
+  * Reconfigure all bars and create new for newly activated outputs
+  *
+  */
+-void reconfig_windows(void);
++void reconfig_windows(bool redraw_bars);
+ 
+ /*
+  * Render the bars, with buttons and statusline
+diff --git a/i3bar/src/ipc.c b/i3bar/src/ipc.c
+index ca5b404..3536b7d 100644
+--- a/i3bar/src/ipc.c
++++ b/i3bar/src/ipc.c
+@@ -64,7 +64,7 @@ void got_output_reply(char *reply) {
+     parse_outputs_json(reply);
+     DLOG("Reconfiguring Windows...\n");
+     realloc_sl_buffer();
+-    reconfig_windows();
++    reconfig_windows(false);
+ 
+     i3_output *o_walk;
+     SLIST_FOREACH(o_walk, outputs, slist) {
+@@ -167,7 +167,7 @@ void got_bar_config_update(char *event) {
+     int old_mode = config.hide_on_modifier;
+     parse_config_json(event);
+     if (old_mode != config.hide_on_modifier) {
+-        reconfig_windows();
++        reconfig_windows(true);
+     }
+ 
+     draw_bars(false);
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index a4f75e6..79d55e5 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -198,7 +198,7 @@ void refresh_statusline(void) {
+  *
+  */
+ void hide_bars(void) {
+-    if ((config.hide_on_modifier == M_DOCK) || (config.hidden_state == S_SHOW)) {
++    if ((config.hide_on_modifier == M_DOCK) || (config.hidden_state == S_SHOW && config.hide_on_modifier == M_HIDE)) {
+         return;
+     }
+ 
+@@ -1041,9 +1041,10 @@ void register_xkb_keyevents() {
+ void deregister_xkb_keyevents() {
+     if (xkb_dpy != NULL) {
+         ev_io_stop (main_loop, xkb_io);
++        XCloseDisplay(xkb_dpy);
+         close(xkb_io->fd);
+         FREE(xkb_io);
+-        FREE(xkb_dpy);
++        xkb_dpy = NULL;
+     }
+ }
+ 
+@@ -1367,7 +1368,7 @@ void realloc_sl_buffer(void) {
+  * Reconfigure all bars and create new bars for recently activated outputs
+  *
+  */
+-void reconfig_windows(void) {
++void reconfig_windows(bool redraw_bars) {
+     uint32_t mask;
+     uint32_t values[5];
+     static bool tray_configured = false;
+@@ -1570,27 +1571,31 @@ void reconfig_windows(void) {
+                                                                     walk->rect.w,
+                                                                     walk->rect.h);
+ 
+-            /* Unmap the window, and draw it again when in dock mode */
+-            xcb_void_cookie_t umap_cookie = xcb_unmap_window_checked(xcb_connection, walk->bar);
+-            xcb_void_cookie_t map_cookie;
+-            if (config.hide_on_modifier == M_DOCK) {
+-                cont_child();
+-                map_cookie = xcb_map_window_checked(xcb_connection, walk->bar);
+-            }
++            xcb_void_cookie_t map_cookie, umap_cookie;
++            if (redraw_bars) {
++                /* Unmap the window, and draw it again when in dock mode */
++                umap_cookie = xcb_unmap_window_checked(xcb_connection, walk->bar);
++                if (config.hide_on_modifier == M_DOCK) {
++                    cont_child();
++                    map_cookie = xcb_map_window_checked(xcb_connection, walk->bar);
++                } else {
++                    stop_child();
++                }
+ 
+-            if (config.hide_on_modifier == M_HIDE) {
+-                /* Switching to hide mode, register for keyevents */
+-                register_xkb_keyevents();
+-            } else {
+-                /* Switching to dock/invisible mode, deregister from keyevents */
+-                deregister_xkb_keyevents();
++                if (config.hide_on_modifier == M_HIDE) {
++                    /* Switching to hide mode, register for keyevents */
++                    register_xkb_keyevents();
++                } else {
++                    /* Switching to dock/invisible mode, deregister from keyevents */
++                    deregister_xkb_keyevents();
++                }
+             }
+ 
+             if (xcb_request_failed(cfg_cookie, "Could not reconfigure window") ||
+                 xcb_request_failed(chg_cookie, "Could not change window") ||
+                 xcb_request_failed(pm_cookie,  "Could not create pixmap") ||
+-                xcb_request_failed(umap_cookie,  "Could not unmap window") ||
+-                ((config.hide_on_modifier == M_DOCK) && xcb_request_failed(map_cookie, "Could not map window"))) {
++                (redraw_bars && (xcb_request_failed(umap_cookie,  "Could not unmap window") ||
++                (config.hide_on_modifier == M_DOCK && xcb_request_failed(map_cookie, "Could not map window"))))) {
+                 exit(EXIT_FAILURE);
+             }
+         }
+@@ -1618,7 +1623,7 @@ void draw_bars(bool unhide) {
+         }
+         if (outputs_walk->bar == XCB_NONE) {
+             /* Oh shit, an active output without an own bar. Create it now! */
+-            reconfig_windows();
++            reconfig_windows(false);
+         }
+         /* First things first: clear the backbuffer */
+         uint32_t color = colors.bar_bg;
+@@ -1768,13 +1773,11 @@ void draw_bars(bool unhide) {
+     bool should_unhide = (config.hidden_state == S_SHOW || (unhide && config.hidden_state == S_HIDE));
+     bool should_hide = (config.hide_on_modifier == M_INVISIBLE);
+ 
+-    if (!mod_pressed) {
+-        if ((unhide || should_unhide) && !should_hide) {
+-            unhide_bars();
+-        } else if (walks_away || should_hide) {
+-            FREE(last_urgent_ws);
+-            hide_bars();
+-        }
++    if (mod_pressed || (should_unhide && !should_hide)) {
++        unhide_bars();
++    } else if (!mod_pressed && (walks_away || should_hide)) {
++        FREE(last_urgent_ws);
++        hide_bars();
+     }
+ 
+     redraw_bars();
+-- 
+1.7.9.5
+

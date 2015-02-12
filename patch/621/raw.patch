@@ -1,0 +1,25 @@
+From 1b3ad196683469f245e63dc0fbd1240ddf923fc9 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sat, 5 Jul 2014 10:38:46 -0400
+Subject: [PATCH] Add link to git repository in hacking docs
+
+---
+ docs/hacking-howto | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/docs/hacking-howto b/docs/hacking-howto
+index f4e3f03..aca6e92 100644
+--- a/docs/hacking-howto
++++ b/docs/hacking-howto
+@@ -951,6 +951,8 @@ For a short introduction into using git, see
+ http://web.archive.org/web/20121024222556/http://www.spheredev.org/wiki/Git_for_the_lazy
+ or, for more documentation, see http://git-scm.com/documentation
+ 
++You can view the git repository online at http://code.i3wm.org.
++
+ Please talk to us before working on new features to see whether they will be
+ accepted. There are a few things which we don’t want to see in i3, e.g. a
+ command which will focus windows in an alt+tab like way.
+-- 
+2.0.1
+

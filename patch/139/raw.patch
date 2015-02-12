@@ -1,0 +1,537 @@
+From a2797e782c526f007d9126e21ac1934cde4340a1 Mon Sep 17 00:00:00 2001
+From: jj <haptix@…>
+Date: Mon, 15 Apr 2013 14:07:54 +0200
+Subject: [PATCH] introduced i3 command for showing/hiding/toggling i3bar
+
+The state of each i3bar instance can now be controlled from within i3.
+Therefore, a new i3 command was introduced, which only affects bars in mode "hide":
+    bar [<bar_id>] show|hide|forcehide|toggle
+
+    show: always show the bar
+    hide: normal hide mode
+    forcehide: always hide the bar
+    toggle: toggle between show and hide (individually for each bar)
+
+This patch introduces a state ("state hide|show|forcehide") in the barconfig, which
+indicates the current state of each i3bar instance. In order to change the state of the
+bar from i3, a barconfig-update event was introduced, for which a bar can subsribe and
+the bar then gets notified about a state change in its barconfig.
+
+For convenience, an id field ("id <bar_id>") was added to the barconfig, where one can
+set the desired id for the corresponding bar. If the id is not specified, i3 will
+deterministically choose an id; otherwise, with the previous random approach for finding
+a new id, which is actually not shared with i3bar, as it would determine its id on
+startup, the event-subscription would be destroyed on reload. Still, this issue remains
+when manually changing the bar_id in the config and then reloading.
+
+append: immediately hide i3bar by all means when set to forcehide
+
+fixes #833
+---
+ i3bar/include/config.h      |   12 ++++++++
+ i3bar/src/config.c          |    8 ++++++
+ i3bar/src/ipc.c             |   21 ++++++++++++--
+ i3bar/src/xcb.c             |   13 +++++----
+ include/commands.h          |    6 ++++
+ include/config.h            |   27 ++++++++++++++++++
+ include/config_directives.h |    2 ++
+ include/i3/ipc.h            |    3 ++
+ parser-specs/commands.spec  |   12 ++++++++
+ parser-specs/config.spec    |   10 +++++++
+ src/commands.c              |   51 +++++++++++++++++++++++++++++++++
+ src/config.c                |   65 +++++++++++++++++++++++++++++++++++++++++++
+ src/config_directives.c     |   23 +++++++++------
+ src/ipc.c                   |   16 +++++++++++
+ 14 files changed, 253 insertions(+), 16 deletions(-)
+
+diff --git a/i3bar/include/config.h b/i3bar/include/config.h
+index 4f6e885..c219fcc 100644
+--- a/i3bar/include/config.h
++++ b/i3bar/include/config.h
+@@ -31,6 +31,18 @@ typedef struct config_t {
+     char         *tray_output;
+     int          num_outputs;
+     char         **outputs;
++
++    /* The current state of the bar, which indicates whether it is hidden/shown/forcehidden */
++    enum {
++        /* bar is hidden, but can be unhidden by the bar modifier or urgency hints, etc. */
++        S_HIDE = 0,
++
++        /* always show the bar */
++        S_SHOW = 1,
++
++        /* always hide the bar */
++        S_FORCEHIDE = 2,
++    } state;
+ } config_t;
+ 
+ config_t config;
+diff --git a/i3bar/src/config.c b/i3bar/src/config.c
+index 6c7286c..3e2208a 100644
+--- a/i3bar/src/config.c
++++ b/i3bar/src/config.c
+@@ -77,6 +77,14 @@ static int config_string_cb(void *params_, const unsigned char *val, unsigned in
+         return 1;
+     }
+ 
++    if (!strcmp(cur_key, "state")) {
++        DLOG("state = %.*s, len = %d\n", len, val, len);
++        config.state = (len == 4 && !strncmp((const char*)val, "hide", strlen("hide")) ? S_HIDE
++                        : (len == 4 && !strncmp((const char*)val, "show", strlen("show")) ? S_SHOW
++                            : S_FORCEHIDE));
++        return 1;
++    }
++
+     if (!strcmp(cur_key, "modifier")) {
+         DLOG("modifier = %.*s\n", len, val);
+         if (len == 5 && !strncmp((const char*)val, "shift", strlen("shift"))) {
+diff --git a/i3bar/src/ipc.c b/i3bar/src/ipc.c
+index faab8e1..f71f8df 100644
+--- a/i3bar/src/ipc.c
++++ b/i3bar/src/ipc.c
+@@ -107,6 +107,16 @@ void got_bar_config(char *reply) {
+     FREE(config.command);
+ }
+ 
++/*
++ * Called when we get a configuration update for our bar instance
++ *
++ */
++void got_bar_config_update(char *reply) {
++    DLOG("Received bar config update \"%s\"\n", reply);
++    parse_config_json(reply);
++    draw_bars(false);
++}
++
+ /* Data-structure to easily call the reply-handlers later */
+ handler_t reply_handlers[] = {
+     &got_command_reply,
+@@ -154,7 +164,9 @@ void got_mode_event(char *event) {
+ handler_t event_handlers[] = {
+     &got_workspace_event,
+     &got_output_event,
+-    &got_mode_event
++    &got_mode_event,
++    NULL,
++    &got_bar_config_update,
+ };
+ 
+ /*
+@@ -309,9 +321,12 @@ void destroy_connection(void) {
+  *
+  */
+ void subscribe_events(void) {
++    char *events;
+     if (config.disable_ws) {
+-        i3_send_msg(I3_IPC_MESSAGE_TYPE_SUBSCRIBE, "[ \"output\", \"mode\" ]");
++        sasprintf(&events, "[ \"output\", \"mode\", \"barconfig_update_%s\" ]", config.bar_id);
+     } else {
+-        i3_send_msg(I3_IPC_MESSAGE_TYPE_SUBSCRIBE, "[ \"workspace\", \"output\", \"mode\" ]");
++        sasprintf(&events, "[ \"workspace\", \"output\", \"mode\", \"barconfig_update_%s\" ]", config.bar_id);
+     }
++
++    i3_send_msg(I3_IPC_MESSAGE_TYPE_SUBSCRIBE, events);
+ }
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index 1f39be7..6c46269 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -198,7 +198,7 @@ void refresh_statusline(void) {
+  *
+  */
+ void hide_bars(void) {
+-    if (!config.hide_on_modifier) {
++    if (!config.hide_on_modifier || config.state == S_SHOW) {
+         return;
+     }
+ 
+@@ -217,7 +217,7 @@ void hide_bars(void) {
+  *
+  */
+ void unhide_bars(void) {
+-    if (!config.hide_on_modifier) {
++    if (!config.hide_on_modifier || config.state == S_FORCEHIDE) {
+         return;
+     }
+ 
+@@ -1716,11 +1716,14 @@ void draw_bars(bool unhide) {
+         i = 0;
+     }
+ 
++    /* Assure the bar is hidden/unhidden according to the specified state */
++    bool state_unhide = config.state == S_SHOW || (unhide && config.state == S_HIDE);
++    bool state_hide = config.state == S_FORCEHIDE;
++
+     if (!mod_pressed) {
+-        if (unhide) {
+-            /* The urgent-hint should get noticed, so we unhide the bars shortly */
++        if ((unhide && !state_hide) || state_unhide) {
+             unhide_bars();
+-        } else if (walks_away) {
++        } else if (walks_away || state_hide) {
+             FREE(last_urgent_ws);
+             hide_bars();
+         }
+diff --git a/include/commands.h b/include/commands.h
+index a517d83..6eae096 100644
+--- a/include/commands.h
++++ b/include/commands.h
+@@ -265,4 +265,10 @@ void cmd_scratchpad_show(I3_CMD);
+  */
+ void cmd_rename_workspace(I3_CMD, char *old_name, char *new_name);
+ 
++/**
++ * Implementation of 'bar [<bar_id>] hide|show|forcehide'
++ *
++ */
++void cmd_bar(I3_CMD, char* bar_id, char *state_str);
++
+ #endif
+diff --git a/include/config.h b/include/config.h
+index 7056af8..b887c7e 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -199,6 +199,9 @@ struct Config {
+         /* just ignore the popup, that is, don’t map it */
+         PDF_IGNORE = 2,
+     } popup_during_fullscreen;
++
++    /* The number of currently parsed barconfigs */
++    int number_barconfigs;
+ };
+ 
+ /**
+@@ -229,6 +232,18 @@ struct Barconfig {
+     /** Bar display mode (hide unless modifier is pressed or show in dock mode) */
+     enum { M_DOCK = 0, M_HIDE = 1 } mode;
+ 
++    /* The current state of the bar, which indicates whether it is hidden/shown/forcehidden */
++    enum {
++        /* bar is hidden, but can be unhidden by the bar modifier or urgency hints, etc. */
++        S_HIDE = 0,
++
++        /* always show the bar */
++        S_SHOW = 1,
++
++        /* always hide the bar */
++        S_FORCEHIDE = 2,
++    } state;
++
+     /** Bar modifier (to show bar when in hide mode). */
+     enum {
+         M_NONE = 0,
+@@ -323,6 +338,18 @@ void grab_all_keys(xcb_connection_t *conn, bool bind_mode_switch);
+  */
+ void switch_mode(const char *new_mode);
+ 
++/*
++ * Sends a bar state update to the barconfig listener with the corresponding bar_id
++ *
++ */
++void update_barconfig_state(char* bar_id);
++
++/*
++ * Sends a bar state update to all barconfig listeners
++ *
++ */
++void update_barconfig_state_all();
++
+ /**
+  * Returns a pointer to the Binding with the specified modifiers and keycode
+  * or NULL if no such binding exists.
+diff --git a/include/config_directives.h b/include/config_directives.h
+index 1faaa97..a6f9cf6 100644
+--- a/include/config_directives.h
++++ b/include/config_directives.h
+@@ -62,6 +62,8 @@ CFGFUN(mode_binding, const char *bindtype, const char *modifiers, const char *ke
+ 
+ CFGFUN(bar_font, const char *font);
+ CFGFUN(bar_mode, const char *mode);
++CFGFUN(bar_state, const char *state);
++CFGFUN(bar_id, const char *bar_id);
+ CFGFUN(bar_output, const char *output);
+ CFGFUN(bar_verbose, const char *verbose);
+ CFGFUN(bar_modifier, const char *modifier);
+diff --git a/include/i3/ipc.h b/include/i3/ipc.h
+index 2a3321b..6a50ccc 100644
+--- a/include/i3/ipc.h
++++ b/include/i3/ipc.h
+@@ -99,4 +99,7 @@ typedef struct i3_ipc_header {
+ /* The window event will be triggered upon window changes */
+ #define I3_IPC_EVENT_WINDOW                     (I3_IPC_EVENT_MASK | 3)
+ 
++/** Bar config update will be triggered to update the bar config */
++#define I3_IPC_EVENT_BARCONFIG_UPDATE           (I3_IPC_EVENT_MASK | 4)
++
+ #endif
+diff --git a/parser-specs/commands.spec b/parser-specs/commands.spec
+index a4a01a8..b3c61ce 100644
+--- a/parser-specs/commands.spec
++++ b/parser-specs/commands.spec
+@@ -35,6 +35,7 @@ state INITIAL:
+   'nop' -> NOP
+   'scratchpad' -> SCRATCHPAD
+   'mode' -> MODE
++  'bar' -> BAR
+ 
+ state CRITERIA:
+   ctype = 'class' -> CRITERION
+@@ -319,3 +320,14 @@ state NOP:
+ state SCRATCHPAD:
+   'show'
+       -> call cmd_scratchpad_show()
++
++# bar [<bar_id>] hide|show|forcehide|toggle
++state BAR:
++  bar_state = 'hide', 'show', 'forcehide', 'toggle'
++      -> call cmd_bar(NULL, $bar_state)
++  bar_id = word
++      -> BAR_W_ID
++
++state BAR_W_ID:
++  bar_state = 'hide', 'show', 'forcehide', 'toggle'
++      -> call cmd_bar($bar_id, $bar_state)
+diff --git a/parser-specs/config.spec b/parser-specs/config.spec
+index c6328a0..ec7002d 100644
+--- a/parser-specs/config.spec
++++ b/parser-specs/config.spec
+@@ -349,6 +349,8 @@ state BAR:
+   'status_command'    -> BAR_STATUS_COMMAND
+   'socket_path'       -> BAR_SOCKET_PATH
+   'mode'              -> BAR_MODE
++  'state'             -> BAR_STATE
++  'id'                -> BAR_ID
+   'modifier'          -> BAR_MODIFIER
+   'position'          -> BAR_POSITION
+   'output'            -> BAR_OUTPUT
+@@ -381,6 +383,14 @@ state BAR_MODE:
+   mode = 'dock', 'hide'
+       -> call cfg_bar_mode($mode); BAR
+ 
++state BAR_STATE:
++  state = 'hide', 'show', 'forcehide'
++      -> call cfg_bar_state($state); BAR
++
++state BAR_ID:
++  bar_id = word
++      -> call cfg_bar_id($bar_id); BAR
++
+ state BAR_MODIFIER:
+   modifier = 'Mod1', 'Mod2', 'Mod3', 'Mod4', 'Mod5', 'Control', 'Ctrl', 'Shift'
+       -> call cfg_bar_modifier($modifier); BAR
+diff --git a/src/commands.c b/src/commands.c
+index 2404a81..aa5443f 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -1898,3 +1898,54 @@ void cmd_rename_workspace(I3_CMD, char *old_name, char *new_name) {
+ 
+     ipc_send_event("workspace", I3_IPC_EVENT_WORKSPACE, "{\"change\":\"rename\"}");
+ }
++
++/*
++ * Implementation of 'bar [<bar_id>] hide|show|forcehide|toggle'
++ *
++ */
++void cmd_bar(I3_CMD, char* bar_id, char *state_str) {
++    int state;
++    bool toggle = false;
++    if (strcmp(state_str, "hide") == 0)
++        state = S_HIDE;
++    else if (strcmp(state_str, "show") == 0)
++        state = S_SHOW;
++    else if (strcmp(state_str, "forcehide") == 0)
++        state = S_FORCEHIDE;
++    else if (strcmp(state_str, "toggle") == 0)
++        toggle = true;
++    else {
++        ELOG("Unknown bar state \"%s\", this is a mismatch between code and parser spec.\n", state_str);
++        return;
++    }
++
++    bool changed_state = false;
++    Barconfig *current = NULL;
++    TAILQ_FOREACH(current, &barconfigs, configs) {
++        if (bar_id && strcmp(current->id, bar_id) != 0)
++            continue;
++
++        if (toggle)
++            state = (current->state + 1) % 2;
++
++        DLOG("Changing bar state of bar_id %s to %s (%d)\n", bar_id, state_str, state);
++        current->state = state;
++        changed_state = true;
++
++        if (bar_id)
++             break;
++    }
++
++    if (bar_id && !changed_state) {
++        DLOG("Changing bar state of bar_id %s failed, bar_id not found.\n", bar_id);
++        ysuccess(false);
++        return;
++    }
++
++    ysuccess(true);
++
++    if (bar_id)
++        update_barconfig_state(bar_id);
++    else
++        update_barconfig_state_all();
++}
+diff --git a/src/config.c b/src/config.c
+index 595aa43..7fc6cda 100644
+--- a/src/config.c
++++ b/src/config.c
+@@ -211,6 +211,71 @@ void switch_mode(const char *new_mode) {
+ }
+ 
+ /*
++ * Sends a bar state update to a specific barconfig listener
++ *
++ */
++void update_barconfig_state_on_config(Barconfig* config) {
++    /* Build json message */
++    char *state;
++    switch (config->state) {
++        case S_SHOW:
++            state ="show";
++            break;
++        case S_FORCEHIDE:
++            state ="forcehide";
++            break;
++        case S_HIDE:
++        default:
++            state = "hide";
++            break;
++    }
++
++    char *event_msg;
++    sasprintf(&event_msg, "{\"state\":\"%s\"}", state);
++
++    /* Send event to the bar with the specified bar_id */
++    char *event_id;
++    sasprintf(&event_id, "barconfig_update_%s", config->id);
++
++    ipc_send_event(event_id, I3_IPC_EVENT_BARCONFIG_UPDATE, event_msg);
++}
++
++/*
++ * Sends a bar state update to the barconfig listener with the corresponding bar_id
++ *
++ */
++void update_barconfig_state(char* bar_id) {
++    /* Get the corresponding barconfig */
++    Barconfig *current, *config;
++    TAILQ_FOREACH(current, &barconfigs, configs) {
++        if (strcmp(current->id, bar_id) != 0)
++            continue;
++
++        config = current;
++        break;
++    }
++
++    if (!config) {
++        /* We could not find a barconfig for the specified bar_id */
++        DLOG("Sending bar state update failed, specified bar_id %s not found.\n", bar_id);
++        return;
++    }
++
++    update_barconfig_state_on_config(config);
++}
++
++/*
++ * Sends a bar state update to all barconfig listeners
++ *
++ */
++void update_barconfig_state_all() {
++    Barconfig *current;
++    TAILQ_FOREACH(current, &barconfigs, configs) {
++        update_barconfig_state_on_config(current);
++    }
++}
++
++/*
+  * Get the path of the first configuration file found. If override_configpath
+  * is specified, that path is returned and saved for further calls. Otherwise,
+  * checks the home directory first, then the system directory first, always
+diff --git a/src/config_directives.c b/src/config_directives.c
+index a7fa350..7a39e4c 100644
+--- a/src/config_directives.c
++++ b/src/config_directives.c
+@@ -455,6 +455,14 @@ CFGFUN(bar_mode, const char *mode) {
+     current_bar.mode = (strcmp(mode, "hide") == 0 ? M_HIDE : M_DOCK);
+ }
+ 
++CFGFUN(bar_state, const char *state) {
++    current_bar.state = (strcmp(state, "hide") == 0 ? S_HIDE : (strcmp(state, "show") == 0 ? S_SHOW : S_FORCEHIDE));
++}
++
++CFGFUN(bar_id, const char *bar_id) {
++    current_bar.id = sstrdup(bar_id);
++}
++
+ CFGFUN(bar_output, const char *output) {
+     int new_outputs = current_bar.num_outputs + 1;
+     current_bar.outputs = srealloc(current_bar.outputs, sizeof(char*) * new_outputs);
+@@ -548,16 +556,15 @@ CFGFUN(bar_workspace_buttons, const char *value) {
+ 
+ CFGFUN(bar_finish) {
+     DLOG("\t new bar configuration finished, saving.\n");
+-    /* Generate a unique ID for this bar */
+-    current_bar.id = sstrdup("bar-XXXXXX");
+-    /* This works similar to mktemp in that it replaces the last six X with
+-     * random letters, but without the restriction that the given buffer
+-     * has to contain a valid path name. */
+-    char *x = current_bar.id + strlen("bar-");
+-    while (*x != '\0') {
+-        *(x++) = (rand() % 26) + 'a';
++    /* Generate a unique ID for this bar if not already configured */
++    if (!current_bar.id) {
++        char* buf;
++        sasprintf(&buf, "bar-%d", config.number_barconfigs);
++        current_bar.id = sstrdup(buf);
+     }
+ 
++    config.number_barconfigs++;
++
+     /* If no font was explicitly set, we use the i3 font as default */
+     if (!current_bar.font && font_pattern)
+         current_bar.font = sstrdup(font_pattern);
+diff --git a/src/ipc.c b/src/ipc.c
+index 8161b1d..3fb7502 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -625,6 +625,20 @@ IPC_HANDLER(get_bar_config) {
+             ystr("hide");
+         else ystr("dock");
+ 
++        ystr("state");
++        switch (config->state) {
++            case S_SHOW:
++                ystr("show");
++                break;
++            case S_FORCEHIDE:
++                ystr("forcehide");
++                break;
++            case S_HIDE:
++            default:
++                ystr("hide");
++                break;
++        }
++
+         ystr("modifier");
+         switch (config->modifier) {
+             case M_CONTROL:
+@@ -710,6 +724,8 @@ IPC_HANDLER(get_bar_config) {
+     y(free);
+ }
+ 
++#undef YSTR_WRITE_STATE
++
+ /*
+  * Callback for the YAJL parser (will be called when a string is parsed).
+  *
+-- 
+1.7.9.5
+

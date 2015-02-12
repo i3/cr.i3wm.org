@@ -1,0 +1,68 @@
+From 41376ae742eeacd17d05ab907b0d52f201f87496 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sun, 28 Sep 2014 21:11:26 -0400
+Subject: [PATCH] test 510: Use workspace assignments
+
+Use workspace assignments to ensure that the workspace appears on the
+correct output in the course of the test.
+
+This change is done so the test works with Xephyr.
+---
+ testcases/t/510-focus-across-outputs.t | 17 +++++++++++++----
+ 1 file changed, 13 insertions(+), 4 deletions(-)
+
+diff --git a/testcases/t/510-focus-across-outputs.t b/testcases/t/510-focus-across-outputs.t
+index afa0dde..47b0c92 100644
+--- a/testcases/t/510-focus-across-outputs.t
++++ b/testcases/t/510-focus-across-outputs.t
+@@ -28,10 +28,16 @@ my $config = <<EOT;
+ font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
+ 
+ fake-outputs 1024x768+0+0,1024x768+1024+0,1024x768+0+768,1024x768+1024+768
++
++workspace s0 output fake-0
++workspace s1 output fake-1
++workspace s2 output fake-2
++workspace s3 output fake-3
+ EOT
+ my $pid = launch_with_config($config);
+ 
+-my $s0_ws = fresh_workspace;
++my $s0_ws = "s0";
++cmd "workspace $s0_ws";
+ my $first = open_window;
+ my $second = open_window;
+ my $third = open_window;
+@@ -41,7 +47,8 @@ cmd 'floating toggle';
+ sync_with_i3;
+ $x->root->warp_pointer(1025, 0);
+ sync_with_i3;
+-my $s1_ws = fresh_workspace;
++my $s1_ws = "s1";
++cmd "workspace $s1_ws";
+ 
+ my $fourth = open_window;
+ 
+@@ -49,7 +56,8 @@ my $fourth = open_window;
+ sync_with_i3;
+ $x->root->warp_pointer(0, 769);
+ sync_with_i3;
+-my $s2_ws = fresh_workspace;
++my $s2_ws = "s2";
++cmd "workspace $s2_ws";
+ 
+ my $fifth = open_window;
+ 
+@@ -57,7 +65,8 @@ my $fifth = open_window;
+ sync_with_i3;
+ $x->root->warp_pointer(1025, 769);
+ sync_with_i3;
+-my $s3_ws = fresh_workspace;
++my $s3_ws = "s3";
++cmd "workspace $s3_ws";
+ 
+ my $sixth = open_window;
+ my $seventh = open_window;
+-- 
+2.1.1
+

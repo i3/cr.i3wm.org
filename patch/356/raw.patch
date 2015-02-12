@@ -1,0 +1,1327 @@
+From d4b3baf51790c1a15204700c7d889eaa1fc95951 Mon Sep 17 00:00:00 2001
+From: Alexander Kedrik <alkedr@…>
+Date: Sun, 29 Dec 2013 06:11:50 +0400
+Subject: [PATCH] Use #pragma once
+
+ #pragma once is safer and simpler. According to Wikipedia it's supported by all major compilers.
+---
+ i3-config-wizard/xcb.h            | 5 +----
+ i3-input/i3-input.h               | 5 +----
+ i3-nagbar/i3-nagbar.h             | 5 +----
+ i3bar/include/child.h             | 5 +----
+ i3bar/include/common.h            | 5 +----
+ i3bar/include/config.h            | 5 +----
+ i3bar/include/ipc.h               | 5 +----
+ i3bar/include/mode.h              | 5 +----
+ i3bar/include/outputs.h           | 5 +----
+ i3bar/include/parse_json_header.h | 5 +----
+ i3bar/include/trayclients.h       | 5 +----
+ i3bar/include/util.h              | 5 +----
+ i3bar/include/workspaces.h        | 5 +----
+ i3bar/include/xcb.h               | 5 +----
+ include/assignments.h             | 5 +----
+ include/click.h                   | 5 +----
+ include/cmdparse.h                | 5 +----
+ include/commands.h                | 5 +----
+ include/commands_parser.h         | 5 +----
+ include/con.h                     | 5 +----
+ include/config.h                  | 5 +----
+ include/config_directives.h       | 5 +----
+ include/config_parser.h           | 5 +----
+ include/data.h                    | 5 +----
+ include/debug.h                   | 5 +----
+ include/display_version.h         | 5 +----
+ include/ewmh.h                    | 5 +----
+ include/fake_outputs.h            | 5 +----
+ include/floating.h                | 5 +----
+ include/handlers.h                | 5 +----
+ include/i3.h                      | 5 +----
+ include/i3/ipc.h                  | 5 +----
+ include/ipc.h                     | 5 +----
+ include/key_press.h               | 5 +----
+ include/libi3.h                   | 5 +----
+ include/load_layout.h             | 5 +----
+ include/log.h                     | 5 +----
+ include/main.h                    | 5 +----
+ include/manage.h                  | 4 +---
+ include/match.h                   | 5 +----
+ include/move.h                    | 5 +----
+ include/output.h                  | 5 +----
+ include/queue.h                   | 5 +----
+ include/randr.h                   | 5 +----
+ include/regex.h                   | 5 +----
+ include/render.h                  | 5 +----
+ include/resize.h                  | 5 +----
+ include/restore_layout.h          | 5 +----
+ include/scratchpad.h              | 5 +----
+ include/sd-daemon.h               | 5 +----
+ include/shmlog.h                  | 5 +----
+ include/sighandler.h              | 5 +----
+ include/startup.h                 | 5 +----
+ include/tree.h                    | 5 +----
+ include/util.h                    | 5 +----
+ include/window.h                  | 5 +----
+ include/workspace.h               | 4 +---
+ include/x.h                       | 5 +----
+ include/xcb.h                     | 5 +----
+ include/xcb_compat.h              | 5 +----
+ include/xcursor.h                 | 5 +----
+ include/xinerama.h                | 5 +----
+ include/yajl_utils.h              | 5 +----
+ tests/queue.h                     | 5 +----
+ 64 files changed, 64 insertions(+), 254 deletions(-)
+
+diff --git a/i3-config-wizard/xcb.h b/i3-config-wizard/xcb.h
+index 372ed16..d51f979 100644
+--- a/i3-config-wizard/xcb.h
++++ b/i3-config-wizard/xcb.h
+@@ -1,5 +1,4 @@
+-#ifndef I3_XCB_H
+-#define I3_XCB_H
++#pragma once
+ 
+ /* from X11/keysymdef.h */
+ #define XCB_NUM_LOCK                    0xff7f
+@@ -7,5 +6,3 @@
+ #define xmacro(atom) xcb_atom_t A_ ## atom;
+ #include "atoms.xmacro"
+ #undef xmacro
+-
+-#endif
+diff --git a/i3-input/i3-input.h b/i3-input/i3-input.h
+index f1d5f07..104296c 100644
+--- a/i3-input/i3-input.h
++++ b/i3-input/i3-input.h
+@@ -1,5 +1,4 @@
+-#ifndef I3_INPUT
+-#define I3_INPUT
++#pragma once
+ 
+ #include <err.h>
+ 
+@@ -13,5 +12,3 @@
+ while (0)
+ 
+ extern xcb_window_t root;
+-
+-#endif
+diff --git a/i3-nagbar/i3-nagbar.h b/i3-nagbar/i3-nagbar.h
+index 379a7f6..9aac709 100644
+--- a/i3-nagbar/i3-nagbar.h
++++ b/i3-nagbar/i3-nagbar.h
+@@ -1,5 +1,4 @@
+-#ifndef I3_NAGBAR
+-#define I3_NAGBAR
++#pragma once
+ 
+ #include <err.h>
+ 
+@@ -17,5 +16,3 @@ while (0)
+ #undef xmacro
+ 
+ extern xcb_window_t root;
+-
+-#endif
+diff --git a/i3bar/include/child.h b/i3bar/include/child.h
+index dc244be..4932926 100644
+--- a/i3bar/include/child.h
++++ b/i3bar/include/child.h
+@@ -7,8 +7,7 @@
+  * child.c: Getting Input for the statusline
+  *
+  */
+-#ifndef CHILD_H_
+-#define CHILD_H_
++#pragma once
+ 
+ #include <stdbool.h>
+ 
+@@ -79,5 +78,3 @@ void cont_child(void);
+  *
+  */
+ void send_block_clicked(int button, const char *name, const char *instance, int x, int y);
+-
+-#endif
+diff --git a/i3bar/include/common.h b/i3bar/include/common.h
+index cb55e0d..d63780d 100644
+--- a/i3bar/include/common.h
++++ b/i3bar/include/common.h
+@@ -5,8 +5,7 @@
+  * © 2010-2011 Axel Wagner and contributors (see also: LICENSE)
+  *
+  */
+-#ifndef COMMON_H_
+-#define COMMON_H_
++#pragma once
+ 
+ #include <stdbool.h>
+ #include <xcb/xcb.h>
+@@ -74,5 +73,3 @@ TAILQ_HEAD(statusline_head, status_block) statusline_head;
+ #include "config.h"
+ #include "libi3.h"
+ #include "parse_json_header.h"
+-
+-#endif
+diff --git a/i3bar/include/config.h b/i3bar/include/config.h
+index c648671..3d2a854 100644
+--- a/i3bar/include/config.h
++++ b/i3bar/include/config.h
+@@ -7,8 +7,7 @@
+  * config.c: Parses the configuration (received from i3).
+  *
+  */
+-#ifndef CONFIG_H_
+-#define CONFIG_H_
++#pragma once
+ 
+ #include "common.h"
+ 
+@@ -52,5 +51,3 @@ void parse_config_json(char *json);
+  *
+  */
+ void free_colors(struct xcb_color_strings_t *colors);
+-
+-#endif
+diff --git a/i3bar/include/ipc.h b/i3bar/include/ipc.h
+index f20d45f..5de2387 100644
+--- a/i3bar/include/ipc.h
++++ b/i3bar/include/ipc.h
+@@ -7,8 +7,7 @@
+  * ipc.c: Communicating with i3
+  *
+  */
+-#ifndef IPC_H_
+-#define IPC_H_
++#pragma once
+ 
+ #include <stdint.h>
+ 
+@@ -37,5 +36,3 @@ int i3_send_msg(uint32_t type, const char* payload);
+  *
+  */
+ void subscribe_events(void);
+-
+-#endif
+diff --git a/i3bar/include/mode.h b/i3bar/include/mode.h
+index a8491aa..6c3833f 100644
+--- a/i3bar/include/mode.h
++++ b/i3bar/include/mode.h
+@@ -7,8 +7,7 @@
+  * mode.c: Handle mode-event and show current binding mode in the bar
+  *
+  */
+-#ifndef MODE_H_
+-#define MODE_H_
++#pragma once
+ 
+ #include <xcb/xproto.h>
+ 
+@@ -27,5 +26,3 @@ typedef struct mode mode;
+  *
+  */
+ void parse_mode_json(char *json);
+-
+-#endif
+diff --git a/i3bar/include/outputs.h b/i3bar/include/outputs.h
+index ad24978..9f6add1 100644
+--- a/i3bar/include/outputs.h
++++ b/i3bar/include/outputs.h
+@@ -7,8 +7,7 @@
+  * outputs.c: Maintaining the output-list
+  *
+  */
+-#ifndef OUTPUTS_H_
+-#define OUTPUTS_H_
++#pragma once
+ 
+ #include <xcb/xcb.h>
+ 
+@@ -53,5 +52,3 @@ struct i3_output {
+ 
+     SLIST_ENTRY(i3_output) slist; /* Pointer for the SLIST-Macro */
+ };
+-
+-#endif
+diff --git a/i3bar/include/parse_json_header.h b/i3bar/include/parse_json_header.h
+index 79efddc..ef13cf7 100644
+--- a/i3bar/include/parse_json_header.h
++++ b/i3bar/include/parse_json_header.h
+@@ -8,8 +8,7 @@
+  *                      protocol version and features.
+  *
+  */
+-#ifndef PARSE_JSON_HEADER_H_
+-#define PARSE_JSON_HEADER_H_
++#pragma once
+ 
+ #include <stdint.h>
+ 
+@@ -22,5 +21,3 @@
+  *
+  */
+ void parse_json_header(i3bar_child *child, const unsigned char *buffer, int length, unsigned int *consumed);
+-
+-#endif
+diff --git a/i3bar/include/trayclients.h b/i3bar/include/trayclients.h
+index e1e795f..7a7e537 100644
+--- a/i3bar/include/trayclients.h
++++ b/i3bar/include/trayclients.h
+@@ -5,8 +5,7 @@
+  * © 2010-2011 Axel Wagner and contributors (see also: LICENSE)
+  *
+  */
+-#ifndef TRAYCLIENT_H_
+-#define TRAYCLIENT_H_
++#pragma once
+ 
+ #include "common.h"
+ 
+@@ -21,5 +20,3 @@ struct trayclient {
+ 
+     TAILQ_ENTRY(trayclient) tailq;  /* Pointer for the TAILQ-Macro */
+ };
+-
+-#endif
+diff --git a/i3bar/include/util.h b/i3bar/include/util.h
+index 468eff3..9ffd446 100644
+--- a/i3bar/include/util.h
++++ b/i3bar/include/util.h
+@@ -5,8 +5,7 @@
+  * © 2009-2011 Michael Stapelberg and contributors (see also: LICENSE)
+  *
+  */
+-#ifndef UTIL_H_
+-#define UTIL_H_
++#pragma once
+ 
+ #include "queue.h"
+ 
+@@ -36,8 +35,6 @@
+     } \
+ } while (0)
+ 
+-#endif
+-
+ /* Securely fee tail-queues */
+ #define FREE_TAILQ(l, type) do { \
+     type *walk = TAILQ_FIRST(l); \
+diff --git a/i3bar/include/workspaces.h b/i3bar/include/workspaces.h
+index 5fe1ba1..9e9ecbb 100644
+--- a/i3bar/include/workspaces.h
++++ b/i3bar/include/workspaces.h
+@@ -7,8 +7,7 @@
+  * workspaces.c: Maintaining the workspace-lists
+  *
+  */
+-#ifndef WORKSPACES_H_
+-#define WORKSPACES_H_
++#pragma once
+ 
+ #include <xcb/xproto.h>
+ 
+@@ -42,5 +41,3 @@ struct i3_ws {
+ 
+     TAILQ_ENTRY(i3_ws) tailq;       /* Pointer for the TAILQ-Macro */
+ };
+-
+-#endif
+diff --git a/i3bar/include/xcb.h b/i3bar/include/xcb.h
+index e1654a3..2740f33 100644
+--- a/i3bar/include/xcb.h
++++ b/i3bar/include/xcb.h
+@@ -7,8 +7,7 @@
+  * xcb.c: Communicating with X
+  *
+  */
+-#ifndef XCB_H_
+-#define XCB_H_
++#pragma once
+ 
+ #include <stdint.h>
+ //#include "outputs.h"
+@@ -133,5 +132,3 @@ void redraw_bars(void);
+  *
+  */
+ void set_current_mode(struct mode *mode);
+-
+-#endif
+diff --git a/include/assignments.h b/include/assignments.h
+index 570375c..b83ee03 100644
+--- a/include/assignments.h
++++ b/include/assignments.h
+@@ -7,8 +7,7 @@
+  * assignments.c: Assignments for specific windows (for_window).
+  *
+  */
+-#ifndef I3_ASSIGNMENTS_H
+-#define I3_ASSIGNMENTS_H
++#pragma once
+ 
+ /**
+  * Checks the list of assignments for the given window and runs all matching
+@@ -22,5 +21,3 @@ void run_assignments(i3Window *window);
+  *
+  */
+ Assignment *assignment_for(i3Window *window, int type);
+-
+-#endif
+diff --git a/include/click.h b/include/click.h
+index 3c4d528..c63672a 100644
+--- a/include/click.h
++++ b/include/click.h
+@@ -7,8 +7,7 @@
+  * click.c: Button press (mouse click) events.
+  *
+  */
+-#ifndef I3_CLICK_H
+-#define I3_CLICK_H
++#pragma once
+ 
+ /**
+  * The button press X callback. This function determines whether the floating
+@@ -19,5 +18,3 @@
+  *
+  */
+ int handle_button_press(xcb_button_press_event_t *event);
+-
+-#endif
+diff --git a/include/cmdparse.h b/include/cmdparse.h
+index 4a87c39..263801f 100644
+--- a/include/cmdparse.h
++++ b/include/cmdparse.h
+@@ -7,9 +7,6 @@
+  * cmdparse.y: the parser for commands you send to i3 (or bind on keys)
+  *
+  */
+-#ifndef I3_CMDPARSE_H
+-#define I3_CMDPARSE_H
++#pragma once
+ 
+ char *parse_cmd(const char *new);
+-
+-#endif
+diff --git a/include/commands.h b/include/commands.h
+index bbf45ba..e7d2781 100644
+--- a/include/commands.h
++++ b/include/commands.h
+@@ -7,8 +7,7 @@
+  * commands.c: all command functions (see commands_parser.c)
+  *
+  */
+-#ifndef I3_COMMANDS_H
+-#define I3_COMMANDS_H
++#pragma once
+ 
+ #include "commands_parser.h"
+ 
+@@ -288,5 +287,3 @@ void cmd_shmlog(I3_CMD, char *argument);
+  *
+  */
+ void cmd_debuglog(I3_CMD, char *argument);
+-
+-#endif
+diff --git a/include/commands_parser.h b/include/commands_parser.h
+index 37c4d4b..059237f 100644
+--- a/include/commands_parser.h
++++ b/include/commands_parser.h
+@@ -7,8 +7,7 @@
+  * commands.c: all command functions (see commands_parser.c)
+  *
+  */
+-#ifndef I3_COMMANDS_PARSER_H
+-#define I3_COMMANDS_PARSER_H
++#pragma once
+ 
+ #include <yajl/yajl_gen.h>
+ 
+@@ -35,5 +34,3 @@ struct CommandResult {
+ };
+ 
+ struct CommandResult *parse_command(const char *input);
+-
+-#endif
+diff --git a/include/con.h b/include/con.h
+index ec4ae35..49ee97f 100644
+--- a/include/con.h
++++ b/include/con.h
+@@ -9,8 +9,7 @@
+  *        …).
+  *
+  */
+-#ifndef I3_CON_H
+-#define I3_CON_H
++#pragma once
+ 
+ /**
+  * Create a new container (and attach it to the given parent, if not NULL).
+@@ -340,5 +339,3 @@ void con_set_urgency(Con *con, bool urgent);
+  *
+  */
+ char *con_get_tree_representation(Con *con);
+-
+-#endif
+diff --git a/include/config.h b/include/config.h
+index bff8e63..b625999 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -10,8 +10,7 @@
+  * bindings mode).
+  *
+  */
+-#ifndef I3_CONFIG_H
+-#define I3_CONFIG_H
++#pragma once
+ 
+ #include <stdbool.h>
+ #include "queue.h"
+@@ -357,5 +356,3 @@ Binding *get_binding(uint16_t modifiers, bool key_release, xcb_keycode_t keycode
+  *
+  */
+ void kill_configerror_nagbar(bool wait_for_it);
+-
+-#endif
+diff --git a/include/config_directives.h b/include/config_directives.h
+index 9569a7b..e6b792c 100644
+--- a/include/config_directives.h
++++ b/include/config_directives.h
+@@ -7,8 +7,7 @@
+  * config_directives.h: all config storing functions (see config_parser.c)
+  *
+  */
+-#ifndef I3_CONFIG_DIRECTIVES_H
+-#define I3_CONFIG_DIRECTIVES_H
++#pragma once
+ 
+ #include "config_parser.h"
+ 
+@@ -77,5 +76,3 @@ CFGFUN(bar_status_command, const char *command);
+ CFGFUN(bar_binding_mode_indicator, const char *value);
+ CFGFUN(bar_workspace_buttons, const char *value);
+ CFGFUN(bar_finish);
+-
+-#endif
+diff --git a/include/config_parser.h b/include/config_parser.h
+index fb863f3..6f1b531 100644
+--- a/include/config_parser.h
++++ b/include/config_parser.h
+@@ -7,8 +7,7 @@
+  * config_parser.h: config parser-related definitions
+  *
+  */
+-#ifndef I3_CONFIG_PARSER_H
+-#define I3_CONFIG_PARSER_H
++#pragma once
+ 
+ #include <yajl/yajl_gen.h>
+ 
+@@ -37,5 +36,3 @@ struct ConfigResult *parse_config(const char *input, struct context *context);
+  *
+  */
+ void parse_file(const char *f);
+-
+-#endif
+diff --git a/include/data.h b/include/data.h
+index e3f2888..659a362 100644
+--- a/include/data.h
++++ b/include/data.h
+@@ -7,8 +7,7 @@
+  * include/data.h: This file defines all data structures used by i3
+  *
+  */
+-#ifndef I3_DATA_H
+-#define I3_DATA_H
++#pragma once
+ 
+ #define SN_API_NOT_YET_FROZEN 1
+ #include <libsn/sn-launcher.h>
+@@ -595,5 +594,3 @@ struct Con {
+     /* Depth of the container window */
+     uint16_t depth;
+ };
+-
+-#endif
+diff --git a/include/debug.h b/include/debug.h
+index 44c95c6..3e65c35 100644
+--- a/include/debug.h
++++ b/include/debug.h
+@@ -8,9 +8,6 @@
+  *          events.  This code is from xcb-util.
+  *
+  */
+-#ifndef I3_DEBUG_H
+-#define I3_DEBUG_H
++#pragma once
+ 
+ int handle_event(void *ignored, xcb_connection_t *c, xcb_generic_event_t *e);
+-
+-#endif
+diff --git a/include/display_version.h b/include/display_version.h
+index 88a1abc..6f88ae9 100644
+--- a/include/display_version.h
++++ b/include/display_version.h
+@@ -7,8 +7,7 @@
+  * display_version.c: displays the running i3 version, runs as part of
+  *                    i3 --moreversion.
+  */
+-#ifndef I3_DISPLAY_VERSION_H
+-#define I3_DISPLAY_VERSION_H
++#pragma once
+ 
+ /**
+  * Connects to i3 to find out the currently running version. Useful since it
+@@ -23,5 +22,3 @@
+  *
+  */
+ void display_running_version(void);
+-
+-#endif
+diff --git a/include/ewmh.h b/include/ewmh.h
+index c36eaeb..9cc589d 100644
+--- a/include/ewmh.h
++++ b/include/ewmh.h
+@@ -7,8 +7,7 @@
+  * ewmh.c: Get/set certain EWMH properties easily.
+  *
+  */
+-#ifndef I3_EWMH_C
+-#define I3_EWMH_C
++#pragma once
+ 
+ /**
+  * Updates _NET_CURRENT_DESKTOP with the current desktop number.
+@@ -62,5 +61,3 @@ void ewmh_setup_hints(void);
+  *
+  */
+ void ewmh_update_workarea(void);
+-
+-#endif
+diff --git a/include/fake_outputs.h b/include/fake_outputs.h
+index bfeba29..75ef77b 100644
+--- a/include/fake_outputs.h
++++ b/include/fake_outputs.h
+@@ -8,8 +8,7 @@
+  * which don’t support multi-monitor in a useful way) and for our testsuite.
+  *
+  */
+-#ifndef I3_FAKE_OUTPUTS_H
+-#define I3_FAKE_OUTPUTS_H
++#pragma once
+ 
+ /**
+  * Creates outputs according to the given specification.
+@@ -19,5 +18,3 @@
+  *
+  */
+ void fake_outputs_init(const char *output_spec);
+-
+-#endif
+diff --git a/include/floating.h b/include/floating.h
+index 4360018..fa3bdcc 100644
+--- a/include/floating.h
++++ b/include/floating.h
+@@ -7,8 +7,7 @@
+  * floating.c: Floating windows.
+  *
+  */
+-#ifndef I3_FLOATING_H
+-#define I3_FLOATING_H
++#pragma once
+ 
+ #include "tree.h"
+ 
+@@ -183,5 +182,3 @@ void floating_reposition(Con *con, Rect newrect);
+  *
+  */
+ void floating_fix_coordinates(Con *con, Rect *old_rect, Rect *new_rect);
+-
+-#endif
+diff --git a/include/handlers.h b/include/handlers.h
+index b2e7ce2..db7d06b 100644
+--- a/include/handlers.h
++++ b/include/handlers.h
+@@ -8,8 +8,7 @@
+  *             …).
+  *
+  */
+-#ifndef I3_HANDLERS_H
+-#define I3_HANDLERS_H
++#pragma once
+ 
+ #include <xcb/randr.h>
+ 
+@@ -63,5 +62,3 @@ int handle_window_type(void *data, xcb_connection_t *conn, uint8_t state,
+                        xcb_window_t window, xcb_atom_t atom,
+                        xcb_get_property_reply_t *property);
+ #endif
+-
+-#endif
+diff --git a/include/i3.h b/include/i3.h
+index 1bc8b55..4ed0d8d 100644
+--- a/include/i3.h
++++ b/include/i3.h
+@@ -7,8 +7,7 @@
+  * i3.h: global variables that are used all over i3.
+  *
+  */
+-#ifndef I3_I3_H
+-#define I3_I3_H
++#pragma once
+ 
+ #include <sys/time.h>
+ #include <sys/resource.h>
+@@ -62,5 +61,3 @@ extern bool xcursor_supported, xkb_supported;
+ extern xcb_window_t root;
+ extern struct ev_loop *main_loop;
+ extern bool only_check_config;
+-
+-#endif
+diff --git a/include/i3/ipc.h b/include/i3/ipc.h
+index 6a50ccc..94a3990 100644
+--- a/include/i3/ipc.h
++++ b/include/i3/ipc.h
+@@ -8,8 +8,7 @@
+  * for the IPC interface to i3 (see docs/ipc for more information).
+  *
+  */
+-#ifndef I3_I3_IPC_H
+-#define I3_I3_IPC_H
++#pragma once
+ 
+ #include <stdint.h>
+ 
+@@ -101,5 +100,3 @@ typedef struct i3_ipc_header {
+ 
+ /** Bar config update will be triggered to update the bar config */
+ #define I3_IPC_EVENT_BARCONFIG_UPDATE           (I3_IPC_EVENT_MASK | 4)
+-
+-#endif
+diff --git a/include/ipc.h b/include/ipc.h
+index ef50ba8..24014c2 100644
+--- a/include/ipc.h
++++ b/include/ipc.h
+@@ -7,8 +7,7 @@
+  * ipc.c: UNIX domain socket IPC (initialization, client handling, protocol).
+  *
+  */
+-#ifndef I3_IPC_H
+-#define I3_IPC_H
++#pragma once
+ 
+ #include <ev.h>
+ #include <stdbool.h>
+@@ -81,5 +80,3 @@ void ipc_send_event(const char *event, uint32_t message_type, const char *payloa
+ void ipc_shutdown(void);
+ 
+ void dump_node(yajl_gen gen, Con *con, bool inplace_restart);
+-
+-#endif
+diff --git a/include/key_press.h b/include/key_press.h
+index b231b8f..89199ce 100644
+--- a/include/key_press.h
++++ b/include/key_press.h
+@@ -7,8 +7,7 @@
+  * key_press.c: key press handler
+  *
+  */
+-#ifndef I3_KEY_PRESS_H
+-#define I3_KEY_PRESS_H
++#pragma once
+ 
+ extern pid_t command_error_nagbar_pid;
+ 
+@@ -30,5 +29,3 @@ void handle_key_press(xcb_key_press_event_t *event);
+  *
+  */
+ void kill_commanderror_nagbar(bool wait_for_it);
+-
+-#endif
+diff --git a/include/libi3.h b/include/libi3.h
+index 8c580da..3815777 100644
+--- a/include/libi3.h
++++ b/include/libi3.h
+@@ -8,8 +8,7 @@
+  * as i3-msg, i3-config-wizard, …
+  *
+  */
+-#ifndef I3_LIBI3_H
+-#define I3_LIBI3_H
++#pragma once
+ 
+ #include <stdbool.h>
+ #include <stdarg.h>
+@@ -382,5 +381,3 @@ char *get_process_filename(const char *prefix);
+  * Returned value must be freed by the caller.
+  */
+ char *get_exe_path(const char *argv0);
+-
+-#endif
+diff --git a/include/load_layout.h b/include/load_layout.h
+index 282512b..2458736 100644
+--- a/include/load_layout.h
++++ b/include/load_layout.h
+@@ -8,9 +8,6 @@
+  *                restart.
+  *
+  */
+-#ifndef I3_LOAD_LAYOUT_H
+-#define I3_LOAD_LAYOUT_H
++#pragma once
+ 
+ void tree_append_json(const char *filename);
+-
+-#endif
+diff --git a/include/log.h b/include/log.h
+index ef4dbd3..2400092 100644
+--- a/include/log.h
++++ b/include/log.h
+@@ -7,8 +7,7 @@
+  * log.c: Logging functions.
+  *
+  */
+-#ifndef I3_LOG_H
+-#define I3_LOG_H
++#pragma once
+ 
+ #include <stdarg.h>
+ #include <stdbool.h>
+@@ -102,5 +101,3 @@ void verboselog(char *fmt, ...)
+  * failures. This function is invoked automatically when exiting.
+  */
+ void purge_zerobyte_logfile(void);
+-
+-#endif
+diff --git a/include/main.h b/include/main.h
+index 9261a5d..18c6e37 100644
+--- a/include/main.h
++++ b/include/main.h
+@@ -7,8 +7,7 @@
+  * main.c: Initialization, main loop
+  *
+  */
+-#ifndef I3_MAIN_H
+-#define I3_MAIN_H
++#pragma once
+ 
+ /**
+  * Enable or disable the main X11 event handling function.
+@@ -17,5 +16,3 @@
+  *
+  */
+ void main_set_x11_cb(bool enable);
+-
+-#endif
+diff --git a/include/manage.h b/include/manage.h
+index d50f64d..bd1a14f 100644
+--- a/include/manage.h
++++ b/include/manage.h
+@@ -7,8 +7,7 @@
+  * manage.c: Initially managing new windows (or existing ones on restart).
+  *
+  */
+-#ifndef I3_MANAGE_H
+-#define I3_MANAGE_H
++#pragma once
+ 
+ #include "data.h"
+ 
+@@ -52,4 +51,3 @@ void reparent_window(xcb_connection_t *conn, xcb_window_t child,
+                      uint32_t border_width);
+ 
+ #endif
+-#endif
+diff --git a/include/match.h b/include/match.h
+index e1d2590..09975ca 100644
+--- a/include/match.h
++++ b/include/match.h
+@@ -11,8 +11,7 @@
+  * match_matches_window() to find the windows affected by this command.
+  *
+  */
+-#ifndef I3_MATCH_H
+-#define I3_MATCH_H
++#pragma once
+ 
+ /*
+  * Initializes the Match data structure. This function is necessary because the
+@@ -46,5 +45,3 @@ bool match_matches_window(Match *match, i3Window *window);
+  *
+  */
+ void match_free(Match *match);
+-
+-#endif
+diff --git a/include/move.h b/include/move.h
+index d45e676..5c8a7d2 100644
+--- a/include/move.h
++++ b/include/move.h
+@@ -7,8 +7,7 @@
+  * move.c: Moving containers into some direction.
+  *
+  */
+-#ifndef I3_MOVE_H
+-#define I3_MOVE_H
++#pragma once
+ 
+ /**
+  * Moves the current container in the given direction (TOK_LEFT, TOK_RIGHT,
+@@ -16,5 +15,3 @@
+  *
+  */
+ void tree_move(int direction);
+-
+-#endif
+diff --git a/include/output.h b/include/output.h
+index e87da22..10ee7d1 100644
+--- a/include/output.h
++++ b/include/output.h
+@@ -7,13 +7,10 @@
+  * output.c: Output (monitor) related functions.
+  *
+  */
+-#ifndef I3_OUTPUT_H
+-#define I3_OUTPUT_H
++#pragma once
+ 
+ /**
+  * Returns the output container below the given output container.
+  *
+  */
+ Con *output_get_content(Con *output);
+-
+-#endif
+diff --git a/include/queue.h b/include/queue.h
+index 0c68521..2307149 100644
+--- a/include/queue.h
++++ b/include/queue.h
+@@ -32,8 +32,7 @@
+  *	@(#)queue.h	8.5 (Berkeley) 8/20/94
+  */
+ 
+-#ifndef	_SYS_QUEUE_H_
+-#define	_SYS_QUEUE_H_
++#pragma once
+ 
+ /*
+  * This file defines five types of data structures: singly-linked lists,
+@@ -536,5 +535,3 @@ struct {								\
+ 	_Q_INVALIDATE((elm)->field.cqe_prev);				\
+ 	_Q_INVALIDATE((elm)->field.cqe_next);				\
+ } while (0)
+-
+-#endif	/* !_SYS_QUEUE_H_ */
+diff --git a/include/randr.h b/include/randr.h
+index dadcfd6..75c899c 100644
+--- a/include/randr.h
++++ b/include/randr.h
+@@ -9,8 +9,7 @@
+  * (take your time to read it completely, it answers all questions).
+  *
+  */
+-#ifndef I3_RANDR_H
+-#define I3_RANDR_H
++#pragma once
+ 
+ #include "data.h"
+ #include <xcb/randr.h>
+@@ -121,5 +120,3 @@ Output *get_output_next(direction_t direction, Output *current, output_close_far
+  *
+  */
+ Output *get_output_next_wrap(direction_t direction, Output *current);
+-
+-#endif
+diff --git a/include/regex.h b/include/regex.h
+index 7403abe..e11d377 100644
+--- a/include/regex.h
++++ b/include/regex.h
+@@ -7,8 +7,7 @@
+  * regex.c: Interface to libPCRE (perl compatible regular expressions).
+  *
+  */
+-#ifndef I3_REGEX_H
+-#define I3_REGEX_H
++#pragma once
+ 
+ /**
+  * Creates a new 'regex' struct containing the given pattern and a PCRE
+@@ -35,5 +34,3 @@ void regex_free(struct regex *regex);
+  *
+  */
+ bool regex_matches(struct regex *regex, const char *input);
+-
+-#endif
+diff --git a/include/render.h b/include/render.h
+index a0eca01..1794b51 100644
+--- a/include/render.h
++++ b/include/render.h
+@@ -8,8 +8,7 @@
+  *           various rects. Needs to be pushed to X11 (see x.c) to be visible.
+  *
+  */
+-#ifndef I3_RENDER_H
+-#define I3_RENDER_H
++#pragma once
+ 
+ /**
+  * "Renders" the given container (and its children), meaning that all rects are
+@@ -25,5 +24,3 @@ void render_con(Con *con, bool render_fullscreen);
+  * Returns the height for the decorations
+  */
+ int render_deco_height(void);
+-
+-#endif
+diff --git a/include/resize.h b/include/resize.h
+index ae26ee9..5c79504 100644
+--- a/include/resize.h
++++ b/include/resize.h
+@@ -7,11 +7,8 @@
+  * resize.c: Interactive resizing.
+  *
+  */
+-#ifndef I3_RESIZE_H
+-#define I3_RESIZE_H
++#pragma once
+ 
+ bool resize_find_tiling_participants(Con **current, Con **other, direction_t direction);
+ 
+ int resize_graphical_handler(Con *first, Con *second, orientation_t orientation, const xcb_button_press_event_t *event);
+-
+-#endif
+diff --git a/include/restore_layout.h b/include/restore_layout.h
+index 7561741..3f0229d 100644
+--- a/include/restore_layout.h
++++ b/include/restore_layout.h
+@@ -8,8 +8,7 @@
+  *                   parsing (which can be found in load_layout.c).
+  *
+  */
+-#ifndef I3_RESTORE_LAYOUT_H
+-#define I3_RESTORE_LAYOUT_H
++#pragma once
+ 
+ /**
+  * Opens a separate connection to X11 for placeholder windows when restoring
+@@ -37,5 +36,3 @@ void restore_open_placeholder_windows(Con *con);
+  *
+  */
+ bool restore_kill_placeholder(xcb_window_t placeholder);
+-
+-#endif
+diff --git a/include/scratchpad.h b/include/scratchpad.h
+index c615705..1aca73b 100644
+--- a/include/scratchpad.h
++++ b/include/scratchpad.h
+@@ -7,8 +7,7 @@
+  * scratchpad.c: Scratchpad functions (TODO: more description)
+  *
+  */
+-#ifndef I3_SCRATCHPAD_H
+-#define I3_SCRATCHPAD_H
++#pragma once
+ 
+ /**
+  * Moves the specified window to the __i3_scratch workspace, making it floating
+@@ -39,5 +38,3 @@ void scratchpad_show(Con *con);
+  *
+  */
+ void scratchpad_fix_resolution(void);
+-
+-#endif
+diff --git a/include/sd-daemon.h b/include/sd-daemon.h
+index 4b853a1..8746a3a 100644
+--- a/include/sd-daemon.h
++++ b/include/sd-daemon.h
+@@ -1,7 +1,6 @@
+ /*-*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*-*/
+ 
+-#ifndef foosddaemonhfoo
+-#define foosddaemonhfoo
++#pragma once
+ 
+ /***
+   Copyright 2010 Lennart Poettering
+@@ -261,5 +260,3 @@ int sd_booted(void) _sd_hidden_;
+ #ifdef __cplusplus
+ }
+ #endif
+-
+-#endif
+diff --git a/include/shmlog.h b/include/shmlog.h
+index 94da2bd..5af697e 100644
+--- a/include/shmlog.h
++++ b/include/shmlog.h
+@@ -8,8 +8,7 @@
+  * default (ringbuffer for storing the debug log).
+  *
+  */
+-#ifndef I3_I3_SHMLOG_H
+-#define I3_I3_SHMLOG_H
++#pragma once
+ 
+ #include <stdint.h>
+ #include <pthread.h>
+@@ -43,5 +42,3 @@ typedef struct i3_shmlog_header {
+      * tail -f) in an efficient way. */
+     pthread_cond_t condvar;
+ } i3_shmlog_header;
+-
+-#endif
+diff --git a/include/sighandler.h b/include/sighandler.h
+index 25d3385..184db73 100644
+--- a/include/sighandler.h
++++ b/include/sighandler.h
+@@ -9,13 +9,10 @@
+  *               to restart inplace).
+  *
+  */
+-#ifndef I3_SIGHANDLER_H
+-#define I3_SIGHANDLER_H
++#pragma once
+ 
+ /**
+  * Setup signal handlers to safely handle SIGSEGV and SIGFPE
+  *
+  */
+ void setup_signal_handler(void);
+-
+-#endif
+diff --git a/include/startup.h b/include/startup.h
+index e39fe63..fb01710 100644
+--- a/include/startup.h
++++ b/include/startup.h
+@@ -10,8 +10,7 @@
+  *            the appropriate workspace.
+  *
+  */
+-#ifndef I3_STARTUP_H
+-#define I3_STARTUP_H
++#pragma once
+ 
+ #define SN_API_NOT_YET_FROZEN 1
+ #include <libsn/sn-monitor.h>
+@@ -62,5 +61,3 @@ struct Startup_Sequence *startup_sequence_get(i3Window *cwindow,
+  *
+  */
+ char *startup_workspace_for_window(i3Window *cwindow, xcb_get_property_reply_t *startup_id_reply);
+-
+-#endif
+diff --git a/include/tree.h b/include/tree.h
+index 2799afe..b3c2a51 100644
+--- a/include/tree.h
++++ b/include/tree.h
+@@ -7,8 +7,7 @@
+  * tree.c: Everything that primarily modifies the layout tree data structure.
+  *
+  */
+-#ifndef I3_TREE_H
+-#define I3_TREE_H
++#pragma once
+ 
+ extern Con *croot;
+ /* TODO: i am not sure yet how much access to the focused container should
+@@ -105,5 +104,3 @@ bool tree_restore(const char *path, xcb_get_geometry_reply_t *geometry);
+  *
+  */
+ void tree_flatten(Con *child);
+-
+-#endif
+diff --git a/include/util.h b/include/util.h
+index 61a38f3..53ea68e 100644
+--- a/include/util.h
++++ b/include/util.h
+@@ -8,8 +8,7 @@
+  *         also libi3).
+  *
+  */
+-#ifndef I3_UTIL_H
+-#define I3_UTIL_H
++#pragma once
+ 
+ #include <err.h>
+ 
+@@ -141,5 +140,3 @@ void start_nagbar(pid_t *nagbar_pid, char *argv[]);
+  *
+  */
+ void kill_nagbar(pid_t *nagbar_pid, bool wait_for_it);
+-
+-#endif
+diff --git a/include/window.h b/include/window.h
+index abc27d6..23a8d69 100644
+--- a/include/window.h
++++ b/include/window.h
+@@ -7,8 +7,7 @@
+  * window.c: Updates window attributes (X11 hints/properties).
+  *
+  */
+-#ifndef I3_WINDOW_H
+-#define I3_WINDOW_H
++#pragma once
+ 
+ /**
+  * Updates the WM_CLASS (consisting of the class and instance) for the
+@@ -62,5 +61,3 @@ void window_update_role(i3Window *win, xcb_get_property_reply_t *prop, bool befo
+  *
+  */
+ void window_update_hints(i3Window *win, xcb_get_property_reply_t *prop, bool *urgency_hint);
+-
+-#endif
+diff --git a/include/workspace.h b/include/workspace.h
+index 907e959..463ccf1 100644
+--- a/include/workspace.h
++++ b/include/workspace.h
+@@ -8,8 +8,7 @@
+  *              workspaces.
+  *
+  */
+-#ifndef I3_WORKSPACE_H
+-#define I3_WORKSPACE_H
++#pragma once
+ 
+ #include "data.h"
+ #include "tree.h"
+@@ -181,4 +180,3 @@ Con *workspace_attach_to(Con *ws);
+  * The container inherits the layout from the workspace.
+  */
+ Con *workspace_encapsulate(Con *ws);
+-#endif
+diff --git a/include/x.h b/include/x.h
+index f1fa7e6..07f8a72 100644
+--- a/include/x.h
++++ b/include/x.h
+@@ -8,8 +8,7 @@
+  *      render.c). Basically a big state machine.
+  *
+  */
+-#ifndef I3_X_H
+-#define I3_X_H
++#pragma once
+ 
+ /** Stores the X11 window ID of the currently focused window */
+ extern xcb_window_t focused_id;
+@@ -130,5 +129,3 @@ void x_set_warp_to(Rect *rect);
+  *
+  */
+ void x_mask_event_mask(uint32_t mask);
+-
+-#endif
+diff --git a/include/xcb.h b/include/xcb.h
+index 5401356..848fe29 100644
+--- a/include/xcb.h
++++ b/include/xcb.h
+@@ -7,8 +7,7 @@
+  * xcb.c: Helper functions for easier usage of XCB
+  *
+  */
+-#ifndef I3_XCB_H
+-#define I3_XCB_H
++#pragma once
+ 
+ #include "data.h"
+ #include "xcursor.h"
+@@ -137,5 +136,3 @@ uint16_t get_visual_depth(xcb_visualid_t visual_id);
+  *
+  */
+ xcb_visualid_t get_visualid_by_depth(uint16_t depth);
+-
+-#endif
+diff --git a/include/xcb_compat.h b/include/xcb_compat.h
+index fc09a25..8803456 100644
+--- a/include/xcb_compat.h
++++ b/include/xcb_compat.h
+@@ -9,8 +9,7 @@
+  *               older versions.
+  *
+  */
+-#ifndef I3_XCB_COMPAT_H
+-#define I3_XCB_COMPAT_H
++#pragma once
+ 
+ #define xcb_icccm_get_wm_protocols_reply_t xcb_get_wm_protocols_reply_t
+ #define xcb_icccm_get_wm_protocols xcb_get_wm_protocols
+@@ -43,5 +42,3 @@
+ #define XCB_ATOM_ATOM ATOM
+ #define XCB_ATOM_WM_NORMAL_HINTS WM_NORMAL_HINTS
+ #define XCB_ATOM_STRING STRING
+-
+-#endif
+diff --git a/include/xcursor.h b/include/xcursor.h
+index 868fee7..bb329e4 100644
+--- a/include/xcursor.h
++++ b/include/xcursor.h
+@@ -7,8 +7,7 @@
+  * xcursor.c: libXcursor support for themed cursors.
+  *
+  */
+-#ifndef I3_XCURSOR_CURSOR_H
+-#define I3_XCURSOR_CURSOR_H
++#pragma once
+ 
+ #include <xcb/xcb_cursor.h>
+ 
+@@ -41,5 +40,3 @@ int xcursor_get_xcb_cursor(enum xcursor_cursor_t c);
+  *
+  */
+ void xcursor_set_root_cursor(int cursor_id);
+-
+-#endif
+diff --git a/include/xinerama.h b/include/xinerama.h
+index ca7c2ab..46c2a63 100644
+--- a/include/xinerama.h
++++ b/include/xinerama.h
+@@ -9,8 +9,7 @@
+  * driver which does not support RandR in 2011 *sigh*.
+  *
+  */
+-#ifndef I3_XINERAMA_H
+-#define I3_XINERAMA_H
++#pragma once
+ 
+ #include "data.h"
+ 
+@@ -20,5 +19,3 @@
+  *
+  */
+ void xinerama_init(void);
+-
+-#endif
+diff --git a/include/yajl_utils.h b/include/yajl_utils.h
+index d8a53d3..cf96307 100644
+--- a/include/yajl_utils.h
++++ b/include/yajl_utils.h
+@@ -7,8 +7,7 @@
+  * yajl_utils.h
+  *
+  */
+-#ifndef I3_YAJL_UTILS_H
+-#define I3_YAJL_UTILS_H
++#pragma once
+ 
+ #include <yajl/yajl_gen.h>
+ #include <yajl/yajl_parse.h>
+@@ -27,5 +26,3 @@ typedef size_t ylength;
+ #define yalloc(callbacks, client) yajl_alloc(callbacks, NULL, NULL, client)
+ typedef unsigned int ylength;
+ #endif
+-
+-#endif
+diff --git a/tests/queue.h b/tests/queue.h
+index 75bb957..cc129da 100644
+--- a/tests/queue.h
++++ b/tests/queue.h
+@@ -32,8 +32,7 @@
+  *	@(#)queue.h	8.5 (Berkeley) 8/20/94
+  */
+ 
+-#ifndef	_SYS_QUEUE_H_
+-#define	_SYS_QUEUE_H_
++#pragma once
+ 
+ /*
+  * This file defines five types of data structures: singly-linked lists,
+@@ -523,5 +522,3 @@ struct {								\
+ 	_Q_INVALIDATE((elm)->field.cqe_prev);				\
+ 	_Q_INVALIDATE((elm)->field.cqe_next);				\
+ } while (0)
+-
+-#endif	/* !_SYS_QUEUE_H_ */
+-- 
+1.8.5.2
+

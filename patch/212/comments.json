@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 64,
+    "Comment": "Can you add a reference to that section here? The syntax is \u003c\u003cthing\u003e\u003e AFAIR.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 70,
+    "Comment": "Can you make the dashes longer please? They should be as long as your example, otherwise proper formatting is not guaranteed.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 75,
+    "Comment": "See comment above",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 92,
+    "Comment": "I wonder why this is an int here. Can you make it a bool? I see that the disable_ws is also an int, but that might be just as wrong.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 254,
+    "Comment": "Useless empty line? Can you remove it please?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

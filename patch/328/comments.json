@@ -1,0 +1,44 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 34,
+    "Comment": "The following is taken directly from the spec, posted here for your convenience:\n\nThe protocol ends in one of three ways:\n\n    1. The embedder can unmap the client and reparent the client window to the root window. If the client receives an ReparentNotify event, it should check the parent field of the XReparentEvent structure. If this is the root window of the window's screen, then the protocol is finished and there is no further interaction. If it is a window other than the root window, then the protocol continues with the new parent acting as the embedder window.\n\n    2. The client can reparent its window out of the embedder window. If the embedder receives a ReparentNotify signal with the window field being the current client and the parent field being a different window, this indicates the end of the protocol.\n\n    [ GTK+ doesn't currently handle this; but it seems useful to allow the protocol to be ended in a non-destructive fashion from either end. ]\n\n    3. The client can destroy its window. ",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 34,
+    "Comment": "Executive summary:\n\nThe list of tray clients represents those clients with which we are engaged in the XEmbed protocol. To remove a client from this list is to end our interaction with the tray client.\n\nWe can end the protocol by reparenting the tray client to the root window (already handled elsewhere)\n\nThe client can end the protocol by reparenting itself to a different window or destroying its window.\n\nMy tests indicate that under normal circumstances, the tray client will destroy its window when the parent application terminates. It will take the non-destructive reparenting approach when it detects another window is managing the tray.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 36,
+    "Comment": "This is essentially copy/pasted from the current contents of the UnmapNotify handler.\n\nNotice that the XEmbed protocol does *not* specify that an UnmapNotify event may be used to determine that the protocol has ended.\n\nMy tests indicate tray clients will sometimes try to hide themselves briefly by unmapping their window with the intention of remapping their window, usually immediately after the unmap (I can only speculate as to why). This is usually brought about by the addition of a new tray client, or the removal of an old tray client.\n\nEnding the protocol on UnmapNotify, as the current implementation does, is a misinterpretation of the XEmbed specification. This is essentially the cause of the i3bar's incompatibility with the new qt5 tray icon class, as documented in issue #1110.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 24,
+    "Comment": "This patch is part of a series of patches to fix issue #1110.\n\nOur goal is for i3bar to be compatible with the qt5 tray client class, and any present or future implementation of an application's tray client given that this application follows the XEmbed protocol.\n\nWe will go about achieving this goal by carefully revising i3bar's present implementation of the XEmbed protocol, paying close attention to the details of the specification.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 24,
+    "Comment": "This patch itself is not intended to make any changes to the behavior of i3bar.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 36,
+    "Comment": "Therefore, the first step we will take is to give the DestroyNotify handler the job of ending the protocol with departing tray clients.\n\nThis is done with the intention of changing the job done by the UnmapNotify handler. We will now interpret the UnmapNotify event as a request to hide the tray client. This can be implemented in a future patch.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 24,
+    "Comment": "All your comments here sound good, please go ahead and submit the next patch of the series, I’ll then merge them.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

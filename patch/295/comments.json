@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 27,
+    "Comment": "I don't know how to test this, but I can already tell the tray is a lot more stable. The tray client for Spotify (qt4) would never survive a bar reload before, but now I can hold down the reload button and it is fine.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 27,
+    "Comment": "It looks like there are a couple of fixes in this patch. Please split them up into smaller commits that are more easily understandable and re-submit.\n\nI.e., submit one patch for the “XEMBED_EMBEDDED_NOTIFY gets sent at the wrong time” problem, one for the different handling of UnmapNotify events, etc. Ideally each of these patches should not break the tray, but I value clarity over breakage in this case.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 27,
+    "Comment": "That was actually my comment, sorry for posting anonymously.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 242,
+    "Comment": "Also I don’t like this. What’s up with that code? If it’s not necessary anymore, then delete it.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "s/constraint/criterion/",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "Fixed it for you in the merge.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

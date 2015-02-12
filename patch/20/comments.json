@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 36,
+    "Comment": "coding style: we use “} else {”",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 41,
+    "Comment": "was your code tested with 1pixel (or more generally n pixel) borders?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Marius Muja",
+    "Line": 41,
+    "Comment": "Yes, I tested it with different border types and it seems to work fine. I've also  been using i3 with this patch applied for the last 3 weeks and I didn't see any suspect behaviour (I have several windows configured with 1pixel borders). ",
+    "EmailHash": "41ddde3ed2d0583206403f9fa1ac1cd5"
+  }
+]

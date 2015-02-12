@@ -1,0 +1,27 @@
+From 1e2cbe7549266a5cae279c255c87eb444dd5e4a7 Mon Sep 17 00:00:00 2001
+From: Bas Pape <baspape@…>
+Date: Tue, 30 Jul 2013 20:03:19 +0200
+Subject: [PATCH] Use cairo_status_to_string for descriptive errors.
+
+---
+ i3lock.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/i3lock.c b/i3lock.c
+index 5a87999..e5654d6 100644
+--- a/i3lock.c
++++ b/i3lock.c
+@@ -657,8 +657,8 @@ int main(int argc, char *argv[]) {
+         img = cairo_image_surface_create_from_png(image_path);
+         /* In case loading failed, we just pretend no -i was specified. */
+         if (cairo_surface_status(img) != CAIRO_STATUS_SUCCESS) {
+-            fprintf(stderr, "Could not load image \"%s\": cairo surface status %d\n",
+-                    image_path, cairo_surface_status(img));
++            fprintf(stderr, "Could not load image \"%s\": %s\n",
++                    image_path, cairo_status_to_string(cairo_surface_status(img)));
+             img = NULL;
+         }
+     }
+-- 
+1.8.3.4
+

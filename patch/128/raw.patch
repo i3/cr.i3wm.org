@@ -1,0 +1,136 @@
+From 195391e51da469a6203e86899ba3d0c17075acde Mon Sep 17 00:00:00 2001
+From: "Eric S. Raymond" <esr@…>
+Date: Sun, 7 Apr 2013 10:56:20 -0400
+Subject: [PATCH] Typo and usage fixes in documentation and comments.
+
+---
+ docs/hacking-howto    |  8 ++++----
+ docs/userguide        | 23 ++++++++++++-----------
+ src/commands_parser.c |  2 +-
+ 3 files changed, 17 insertions(+), 16 deletions(-)
+
+diff --git a/docs/hacking-howto b/docs/hacking-howto
+index c601bf9..73f8e88 100644
+--- a/docs/hacking-howto
++++ b/docs/hacking-howto
+@@ -57,7 +57,7 @@ all, most users sooner or later tend to lay out their windows in a way which
+ corresponds to tiling or stacking mode in i3. Therefore, why not let i3 do this
+ for you? Certainly, it’s faster than you could ever do it.
+ 
+-The problem with most tiling window managers is that they are too unflexible.
++The problem with most tiling window managers is that they are too inflexible.
+ In my opinion, a window manager is just another tool, and similar to vim which
+ can edit all kinds of text files (like source code, HTML, …) and is not limited
+ to a specific file type, a window manager should not limit itself to a certain
+@@ -361,7 +361,7 @@ managed at all:
+  * The override_redirect must not be set. Windows with override_redirect shall
+    not be managed by a window manager
+ 
+-Afterwards, i3 gets the intial geometry and reparents the window (see
++Afterwards, i3 gets the initial geometry and reparents the window (see
+ `reparent_window()`) if it wasn’t already managed.
+ 
+ Reparenting means that for each window which is reparented, a new window,
+@@ -383,7 +383,7 @@ target workspace is not visible, the window will not be mapped.
+ 
+ == What happens when an application is started?
+ 
+-i3 does not care for applications. All it notices is when new windows are
++i3 does not care about applications. All it notices is when new windows are
+ mapped (see `src/handlers.c`, `handle_map_request()`). The window is then
+ reparented (see section "Manage windows").
+ 
+@@ -534,7 +534,7 @@ position/size is different: They are placed next to each other on a single line
+ 
+ ==== Dock area layout
+ 
+-This is a special case. Users cannot chose the dock area layout, but it will be
++This is a special case. Users cannot choose the dock area layout, but it will be
+ set for the dock area containers. In the dockarea layout (at the moment!),
+ windows will be placed above each other.
+ 
+diff --git a/docs/userguide b/docs/userguide
+index befdb36..0b1a5d9 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -26,8 +26,8 @@ are your homerow.
+ == Using i3
+ 
+ Throughout this guide, the keyword +$mod+ will be used to refer to the
+-configured modifier. This is the Alt key (Mod1) by default, with windows (Mod4)
+-being a popular alternative.
++configured modifier. This is the Alt key (Mod1) by default, with the Windows 
++key (Mod4) being a popular alternative.
+ 
+ === Opening terminals and moving around
+ 
+@@ -147,7 +147,7 @@ columns/rows with your keyboard.
+ 
+ === Restarting i3 inplace
+ 
+-To restart i3 inplace (and thus get into a clean state if there is a bug, or
++To restart i3 in place (and thus get into a clean state if there is a bug, or
+ to upgrade to a newer version of i3) you can use +$mod+Shift+r+.
+ 
+ === Exiting i3
+@@ -156,11 +156,12 @@ To cleanly exit i3 without killing your X server, you can use +$mod+Shift+e+.
+ 
+ === Floating
+ 
+-Floating mode is the opposite of tiling mode. The position and size of a window
+-are not managed by i3, but by you. Using this mode violates the tiling
+-paradigm but can be useful for some corner cases like "Save as" dialog
+-windows, or toolbar windows (GIMP or similar). Those windows usually set the
+-appropriate hint and are opened in floating mode by default.
++Floating mode is the opposite of tiling mode. The position and size of
++a window are not managed automatically by i3, but manually by
++you. Using this mode violates the tiling paradigm but can be useful
++for some corner cases like "Save as" dialog windows, or toolbar
++windows (GIMP or similar). Those windows usually set the appropriate
++hint and are opened in floating mode by default.
+ 
+ You can toggle floating mode for a window by pressing +$mod+Shift+Space+. By
+ dragging the window’s titlebar with your mouse you can move the window
+@@ -259,7 +260,7 @@ other one being the terminal window you moved down.
+ [[configuring]]
+ == Configuring i3
+ 
+-This is where the real fun begins ;-). Most things are very dependant on your
++This is where the real fun begins ;-). Most things are very dependent on your
+ ideal working environment so we can’t make reasonable defaults for them.
+ 
+ While not using a programming language for the configuration, i3 stays
+@@ -761,7 +762,7 @@ from single windows outside of a split container.
+ 
+ === Interprocess communication
+ 
+-i3 uses unix sockets to provide an IPC interface. This allows third-party
++i3 uses Unix sockets to provide an IPC interface. This allows third-party
+ programs to get information from i3, such as the current workspaces
+ (to display a workspace bar), and to control i3.
+ 
+@@ -1223,7 +1224,7 @@ bindsym $mod+x move container to workspace 3; workspace 3
+ 
+ [[command_criteria]]
+ 
+-Furthermore, you can change the scope of a command, that is, which containers
++Furthermore, you can change the scope of a command - that is, which containers
+ should be affected by that command, by using various criteria. These are
+ prefixed in square brackets to every command. If you want to kill all windows
+ which have the class Firefox, use:
+diff --git a/src/commands_parser.c b/src/commands_parser.c
+index 93ee388..4f04501 100644
+--- a/src/commands_parser.c
++++ b/src/commands_parser.c
+@@ -13,7 +13,7 @@
+  * We use a hand-written parser instead of lex/yacc because our commands are
+  * easy for humans, not for computers. Thus, it’s quite hard to specify a
+  * context-free grammar for the commands. A PEG grammar would be easier, but
+- * there’s downsides to every PEG parser generator I have come accross so far.
++ * there’s downsides to every PEG parser generator I have come across so far.
+  *
+  * This parser is basically a state machine which looks for literals or strings
+  * and can push either on a stack. After identifying a literal or string, it
+-- 
+1.8.0.1.g2b06c9a
+

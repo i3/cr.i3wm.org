@@ -1,0 +1,83 @@
+From f2ddc7dc3fc76b8643071656f593243444619c1c Mon Sep 17 00:00:00 2001
+From: Yuriy Taraday <yorik.sar@…>
+Date: Thu, 20 Feb 2014 14:01:32 +0400
+Subject: [PATCH] Fix workspaces' and window's urgency on window move
+
+- window keeps urgent flag if it's moved to another workspace;
+- old workspace's urgent flag is unset if it was the only urgent window
+  in this workspace;
+- target workspace's urgent flag is set if the window is urgent.
+
+Fixes bug #1187
+---
+ src/con.c                | 15 ++++++++++++++-
+ testcases/t/113-urgent.t | 16 ++++++++++++++++
+ 2 files changed, 30 insertions(+), 1 deletion(-)
+
+diff --git a/src/con.c b/src/con.c
+index 5a3c88d..57b5360 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -765,11 +765,21 @@ void con_move_to_workspace(Con *con, Con *workspace, bool fix_coordinates, bool
+          * new workspace is hidden and it's necessary to immediately switch
+          * back to the originally-focused workspace. */
+         Con *old_focus = TAILQ_FIRST(&(output_get_content(dest_output)->focus_head));
++        /* We need to keep urgency flag in case we're not planning to keep
++         * focus on this container. */
++        bool con_urgent = con->urgent;
+         con_focus(con_descend_focused(con));
+ 
+         /* Restore focus if the output's focused workspace has changed. */
+-        if (con_get_workspace(focused) != old_focus)
++        if (con_get_workspace(focused) != old_focus) {
+             con_focus(old_focus);
++            /* If the container was urgent we should reraise urgency flag */
++            if (con_urgent) {
++                con->urgent = true;
++                con_update_parents_urgency(con);
++                workspace_update_urgent_flag(workspace);
++            }
++        }
+     }
+ 
+     /* 8: when moving to another workspace, we leave the focus on the current
+@@ -818,6 +828,9 @@ void con_move_to_workspace(Con *con, Con *workspace, bool fix_coordinates, bool
+     }
+ 
+     CALL(parent, on_remove_child);
++    /* This would clear urgency flag from workspace if we just moved the only
++     * urgent container out of it. */
++    workspace_update_urgent_flag(current_ws);
+ }
+ 
+ /*
+diff --git a/testcases/t/113-urgent.t b/testcases/t/113-urgent.t
+index bb91381..7135de9 100644
+--- a/testcases/t/113-urgent.t
++++ b/testcases/t/113-urgent.t
+@@ -307,6 +307,22 @@ for ($type = 1; $type <= 2; $type++) {
+     my $ws = get_ws($tmp);
+     ok(!$ws->{urgent}, 'urgent flag not set on workspace');
+ 
++##############################################################################
++# Check if urgent flag migrates with a window to a new workspace
++##############################################################################
++    my $ws1 = fresh_workspace;
++    my $ws2 = fresh_workspace;
++    cmd "workspace $ws1";
++    my $w1 = open_window;
++    my $w2 = open_window;
++    set_urgency($w1, 1, $type);
++    sync_with_i3;
++    cmd '[id="' . $w1->id . '"] move to workspace ' . $ws2;
++    my $w = get_ws($ws1);
++    ok(!$w->{urgent}, 'Workspace we migrated window from is not urgent anymore');
++    my $w = get_ws($ws2);
++    ok($w->{urgent}, 'Workspace we migrated window to is now urgent');
++
+     exit_gracefully($pid);
+ }
+ 
+-- 
+1.8.3.2
+

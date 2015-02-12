@@ -1,0 +1,56 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 21,
+    "Comment": "The flag also needs to be listed in the SYNOPSIS section above",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 69,
+    "Comment": "The flag is not present in the --help output.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 110,
+    "Comment": "Replace the magic number 4 by sizeof(buf).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 52,
+    "Comment": "Consider renaming this to --show-failed-attempts which I consider more descriptive :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 113,
+    "Comment": "Why 5? According to http://www.cairographics.org/manual/cairo-cairo-t.html#cairo-set-source-rgb, the range is 0 to 1 for each of these parameters.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "koebi",
+    "Line": 113,
+    "Comment": "I guessed numbers, and it worked, so…",
+    "EmailHash": "47d3165a20fd385f7c75cdacd6f2b477"
+  },
+  {
+    "Author": "koebi",
+    "Line": 113,
+    "Comment": "I guessed numbers, and it worked, so…",
+    "EmailHash": "47d3165a20fd385f7c75cdacd6f2b477"
+  },
+  {
+    "Author": "koebi",
+    "Line": 113,
+    "Comment": "I guessed numbers, and it worked, so…",
+    "EmailHash": "47d3165a20fd385f7c75cdacd6f2b477"
+  },
+  {
+    "Author": "koebi",
+    "Line": 113,
+    "Comment": "I guessed numbers, and it worked, so…",
+    "EmailHash": "47d3165a20fd385f7c75cdacd6f2b477"
+  }
+]

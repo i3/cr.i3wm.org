@@ -1,0 +1,249 @@
+From dc3930a68322946f110c7b67407b3c9a5ab8ad6d Mon Sep 17 00:00:00 2001
+From: Artem Shinkarov <artyom.shinkaroff@…>
+Date: Sun, 27 Jan 2013 20:27:21 +0000
+Subject: [PATCH] Separator color in config; disable separator via ipc
+
+This patch adds the following features:
+1) Configure a color of the separator via config.  It is done like
+   bar {
+      colors {
+         separator #000000
+      }
+   }
+2) A block can have an entry "separator", which being set to "off"
+   disables drawing of the separating line.
+---
+ docs/i3bar-protocol      |  5 ++++-
+ docs/ipc                 |  2 ++
+ docs/userguide           |  4 ++++
+ i3bar/include/common.h   |  1 +
+ i3bar/include/xcb.h      |  1 +
+ i3bar/src/child.c        |  5 +++++
+ i3bar/src/config.c       |  2 ++
+ i3bar/src/xcb.c          | 13 +++++++++----
+ include/config.h         |  1 +
+ parser-specs/config.spec |  2 +-
+ src/config_directives.c  |  5 ++++-
+ src/ipc.c                |  1 +
+ 12 files changed, 35 insertions(+), 7 deletions(-)
+
+diff --git a/docs/i3bar-protocol b/docs/i3bar-protocol
+index 2cf6dd0..d0c62d8 100644
+--- a/docs/i3bar-protocol
++++ b/docs/i3bar-protocol
+@@ -154,7 +154,10 @@ urgent::
+ 	A boolean which specifies whether the current value is urgent. Examples
+ 	are battery charge values below 1 percent or no more available disk
+ 	space (for non-root users). The presentation of urgency is up to i3bar.
+-
++separator::
++	The value "off" disables drawing of a separating line after the block.
++	Keep in mind that it reduces the gap between the blocks from 9 pixels 
++	to 3.
+ If you want to put in your own entries into a block, prefix the key with an
+ underscore (_). i3bar will ignore all keys it doesn’t understand, and prefixing
+ them with an underscore makes it clear in every script that they are not part
+diff --git a/docs/ipc b/docs/ipc
+index c32c59e..e1a1fc5 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -507,6 +507,8 @@ background::
+ 	Background color of the bar.
+ statusline::
+ 	Text color to be used for the statusline.
++separator::
++	Text color to be used for the separator.
+ focused_workspace_text/focused_workspace_bg::
+ 	Text color/background color for a workspace button when the workspace
+ 	has focus.
+diff --git a/docs/userguide b/docs/userguide
+index 52571bd..985634f 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -1154,6 +1154,8 @@ background::
+ 	Background color of the bar.
+ statusline::
+ 	Text color to be used for the statusline.
++separator::	
++	Text color to be used for the separator.
+ focused_workspace::
+ 	Border, background and text color for a workspace button when the workspace
+ 	has focus.
+@@ -1175,6 +1177,7 @@ urgent_workspace::
+ colors {
+     background <color>
+     statusline <color>
++    separator <color>
+ 
+     colorclass <border> <background> <text>
+ }
+@@ -1186,6 +1189,7 @@ bar {
+     colors {
+         background #000000
+         statusline #ffffff
++        separator #666666
+ 
+         focused_workspace  #4c7899 #285577 #ffffff
+         active_workspace   #333333 #5f676a #ffffff
+diff --git a/i3bar/include/common.h b/i3bar/include/common.h
+index 05fb5aa..64d41ca 100644
+--- a/i3bar/include/common.h
++++ b/i3bar/include/common.h
+@@ -43,6 +43,7 @@ struct status_block {
+     blockalign_t align;
+ 
+     bool urgent;
++    bool no_separator;
+ 
+     /* The amount of pixels necessary to render this block. These variables are
+      * only temporarily used in refresh_statusline(). */
+diff --git a/i3bar/include/xcb.h b/i3bar/include/xcb.h
+index 6944053..d8d0c09 100644
+--- a/i3bar/include/xcb.h
++++ b/i3bar/include/xcb.h
+@@ -28,6 +28,7 @@
+ struct xcb_color_strings_t {
+     char *bar_fg;
+     char *bar_bg;
++    char *sep_fg;
+     char *active_ws_fg;
+     char *active_ws_bg;
+     char *active_ws_border;
+diff --git a/i3bar/src/child.c b/i3bar/src/child.c
+index bea1d58..cbbd370 100644
+--- a/i3bar/src/child.c
++++ b/i3bar/src/child.c
+@@ -132,6 +132,11 @@ static int stdin_string(void *context, const unsigned char *val, unsigned int le
+     if (strcasecmp(ctx->last_map_key, "color") == 0) {
+         sasprintf(&(ctx->block.color), "%.*s", len, val);
+     }
++    if (strcasecmp(ctx->last_map_key, "separator") == 0) {
++        if (len == strlen("off")
++            && !strncmp((const char*)val, "off", strlen("off")))
++            ctx->block.no_separator = true;
++    }
+     if (strcasecmp(ctx->last_map_key, "align") == 0) {
+         if (len == strlen("left") && !strncmp((const char*)val, "left", strlen("left"))) {
+             ctx->block.align = ALIGN_LEFT;
+diff --git a/i3bar/src/config.c b/i3bar/src/config.c
+index 69355b6..6c7286c 100644
+--- a/i3bar/src/config.c
++++ b/i3bar/src/config.c
+@@ -161,6 +161,7 @@ static int config_string_cb(void *params_, const unsigned char *val, unsigned in
+ 
+     COLOR(statusline, bar_fg);
+     COLOR(background, bar_bg);
++    COLOR(separator, sep_fg);
+     COLOR(focused_workspace_border, focus_ws_border);
+     COLOR(focused_workspace_bg, focus_ws_bg);
+     COLOR(focused_workspace_text, focus_ws_fg);
+@@ -260,6 +261,7 @@ void free_colors(struct xcb_color_strings_t *colors) {
+     } while (0)
+     FREE_COLOR(bar_fg);
+     FREE_COLOR(bar_bg);
++    FREE_COLOR(sep_fg);
+     FREE_COLOR(active_ws_fg);
+     FREE_COLOR(active_ws_bg);
+     FREE_COLOR(active_ws_border);
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index 7133117..cf39bca 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -84,6 +84,7 @@ static mode binding;
+ struct xcb_colors_t {
+     uint32_t bar_fg;
+     uint32_t bar_bg;
++    uint32_t sep_fg;
+     uint32_t active_ws_fg;
+     uint32_t active_ws_bg;
+     uint32_t active_ws_border;
+@@ -148,8 +149,11 @@ void refresh_statusline(void) {
+         }
+ 
+         /* If this is not the last block, add some pixels for a separator. */
+-        if (TAILQ_NEXT(block, blocks) != NULL)
+-            block->width += 9;
++        if (TAILQ_NEXT(block, blocks) != NULL) {
++            /* If a block comes with no_separator, use 3 pixels to avoid
++               text of the block sticking to the content of the next block.  */
++            block->width += block->no_separator ? 3 : 9;
++        }
+         statusline_width += block->width + block->x_offset + block->x_append;
+     }
+ 
+@@ -174,9 +178,9 @@ void refresh_statusline(void) {
+         draw_text(block->full_text, statusline_pm, statusline_ctx, x + block->x_offset, 1, block->width);
+         x += block->width + block->x_offset + block->x_append;
+ 
+-        if (TAILQ_NEXT(block, blocks) != NULL) {
++        if (TAILQ_NEXT(block, blocks) != NULL && !block->no_separator) {
+             /* This is not the last block, draw a separator. */
+-            set_font_colors(statusline_ctx, get_colorpixel("#666666"), colors.bar_bg);
++            set_font_colors(statusline_ctx, colors.sep_fg, colors.bar_bg);
+             xcb_poly_line(xcb_connection, XCB_COORD_MODE_ORIGIN, statusline_pm,
+                           statusline_ctx, 2,
+                           (xcb_point_t[]){ { x - 5, 2 }, { x - 5, font.height - 2 } });
+@@ -259,6 +263,7 @@ void init_colors(const struct xcb_color_strings_t *new_colors) {
+     } while  (0)
+     PARSE_COLOR(bar_fg, "#FFFFFF");
+     PARSE_COLOR(bar_bg, "#000000");
++    PARSE_COLOR(sep_fg, "#666666");
+     PARSE_COLOR(active_ws_fg, "#FFFFFF");
+     PARSE_COLOR(active_ws_bg, "#333333");
+     PARSE_COLOR(active_ws_border, "#333333");
+diff --git a/include/config.h b/include/config.h
+index 4a95d43..7056af8 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -267,6 +267,7 @@ struct Barconfig {
+     struct bar_colors {
+         char *background;
+         char *statusline;
++        char *separator;
+ 
+         char *focused_workspace_border;
+         char *focused_workspace_bg;
+diff --git a/parser-specs/config.spec b/parser-specs/config.spec
+index 7538bf3..9a4bf55 100644
+--- a/parser-specs/config.spec
++++ b/parser-specs/config.spec
+@@ -419,7 +419,7 @@ state BAR_COLORS:
+   end ->
+   '#' -> BAR_COLORS_IGNORE_LINE
+   'set' -> BAR_COLORS_IGNORE_LINE
+-  colorclass = 'background', 'statusline'
++  colorclass = 'background', 'statusline', 'separator'
+       -> BAR_COLORS_SINGLE
+   colorclass = 'focused_workspace', 'active_workspace', 'inactive_workspace', 'urgent_workspace'
+       -> BAR_COLORS_BORDER
+diff --git a/src/config_directives.c b/src/config_directives.c
+index 8b636c0..0a83d46 100644
+--- a/src/config_directives.c
++++ b/src/config_directives.c
+@@ -526,7 +526,10 @@ CFGFUN(bar_tray_output, const char *output) {
+ CFGFUN(bar_color_single, const char *colorclass, const char *color) {
+     if (strcmp(colorclass, "background") == 0)
+         current_bar.colors.background = sstrdup(color);
+-    else current_bar.colors.statusline = sstrdup(color);
++    else if (strcmp(colorclass, "separator") == 0)
++        current_bar.colors.separator = sstrdup(color);
++    else
++        current_bar.colors.statusline = sstrdup(color);
+ }
+ 
+ CFGFUN(bar_status_command, const char *command) {
+diff --git a/src/ipc.c b/src/ipc.c
+index 2379ba5..cf25357 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -677,6 +677,7 @@ IPC_HANDLER(get_bar_config) {
+         y(map_open);
+         YSTR_IF_SET(background);
+         YSTR_IF_SET(statusline);
++        YSTR_IF_SET(separator);
+         YSTR_IF_SET(focused_workspace_border);
+         YSTR_IF_SET(focused_workspace_bg);
+         YSTR_IF_SET(focused_workspace_text);
+-- 
+1.8.1.1
+

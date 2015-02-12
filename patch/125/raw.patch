@@ -1,0 +1,41 @@
+From 7d5266f6752f48d1ad9c9cc9969f9d7fabb866cf Mon Sep 17 00:00:00 2001
+From: jj <haptix@…>
+Date: Sat, 6 Apr 2013 14:50:46 +0200
+Subject: [PATCH] restore i3bar compatibility with libyajl version 1
+
+fixes #1004
+---
+ i3bar/src/child.c |    6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/i3bar/src/child.c b/i3bar/src/child.c
+index ad93681..a13534f 100644
+--- a/i3bar/src/child.c
++++ b/i3bar/src/child.c
+@@ -359,7 +359,7 @@ void child_sig_cb(struct ev_loop *loop, ev_child *watcher, int revents) {
+ void child_write_output(void) {
+     if (child.click_events) {
+         const unsigned char *output;
+-        size_t size;
++        unsigned int size;
+         yajl_gen_get_buf(gen, &output, &size);
+         write(child_stdin, output, size);
+         write(child_stdin, "\n", 1);
+@@ -388,11 +388,13 @@ void start_child(char *command) {
+     yajl_parser_config parse_conf = { 0, 0 };
+ 
+     parser = yajl_alloc(&callbacks, &parse_conf, NULL, (void*)&parser_context);
++    
++    gen = yajl_gen_alloc(NULL, NULL);
+ #else
+     parser = yajl_alloc(&callbacks, NULL, &parser_context);
+-#endif
+ 
+     gen = yajl_gen_alloc(NULL);
++#endif
+ 
+     if (command != NULL) {
+         int pipe_in[2]; /* pipe we read from */
+-- 
+1.7.9.5
+

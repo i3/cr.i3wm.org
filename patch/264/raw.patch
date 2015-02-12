@@ -1,0 +1,49 @@
+From c2fe81dc4c7a3bdc54ecf9738de66cf05f197375 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 11 Oct 2013 23:15:19 -0400
+Subject: [PATCH] Prevent an infinite loop when an output is disabled
+
+When looping over workspaces to reassign them from the output being
+disabled, be sure to remove them from the loop. Do not rely on
+tree_close to do this, because tree_close refuses to close a workspace
+that is visible.
+
+fixes #1103.
+---
+ src/randr.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/src/randr.c b/src/randr.c
+index 1aef9c9..10805fe 100644
+--- a/src/randr.c
++++ b/src/randr.c
+@@ -716,13 +716,8 @@ void randr_query_outputs(void) {
+                 Con *current;
+                 Con *old_content = output_get_content(output->con);
+                 while (!TAILQ_EMPTY(&(old_content->nodes_head))) {
++                    /* make sure the workspace is re-assigned first to avoid an infinite loop */
+                     current = TAILQ_FIRST(&(old_content->nodes_head));
+-                    if (current != next && TAILQ_EMPTY(&(current->focus_head))) {
+-                        /* the workspace is empty and not focused, get rid of it */
+-                        DLOG("Getting rid of current = %p / %s (empty, unfocused)\n", current, current->name);
+-                        tree_close(current, DONT_KILL_WINDOW, false, false);
+-                        continue;
+-                    }
+                     DLOG("Detaching current = %p / %s\n", current, current->name);
+                     con_detach(current);
+                     DLOG("Re-attaching current = %p / %s\n", current, current->name);
+@@ -731,6 +726,11 @@ void randr_query_outputs(void) {
+                     Con *floating_con;
+                     TAILQ_FOREACH(floating_con, &(current->floating_head), floating_windows)
+                         floating_fix_coordinates(floating_con, &(output->con->rect), &(first->con->rect));
++                    if (current != next && TAILQ_EMPTY(&(current->focus_head))) {
++                        /* the workspace is empty and not focused, get rid of it */
++                        DLOG("Getting rid of current = %p / %s (empty, unfocused)\n", current, current->name);
++                        tree_close(current, DONT_KILL_WINDOW, false, false);
++                    }
+                     DLOG("Done, next\n");
+                 }
+                 DLOG("re-attached all workspaces\n");
+-- 
+1.8.4
+

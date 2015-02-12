@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Luke Heberling",
+    "Line": 24,
+    "Comment": "Please mark this patch \"superseded\".\nI renamed \"file\" to \"path\" for consistency with e.g. path_exists and cpu_temperature, but in separate local commits and didn't properly grok git-rebase.",
+    "EmailHash": "31903b7aebcc7bc185b237d2ab888d21"
+  },
+  {
+    "Author": "Luke Heberling",
+    "Line": 25,
+    "Comment": "Please mark this patch \"superseded\".\nI added the min_width align opts for i3bar output, but in separate local commits and didn't properly grok git-rebase.",
+    "EmailHash": "31903b7aebcc7bc185b237d2ab888d21"
+  },
+  {
+    "Author": "Luke Heberling",
+    "Line": 23,
+    "Comment": "Please mark this patch \"superseded\".\nI added the min_width align opts for i3bar output, but in separate local commits and didn't properly grok git-rebase.",
+    "EmailHash": "31903b7aebcc7bc185b237d2ab888d21"
+  },
+  {
+    "Author": "Luke Heberling",
+    "Line": 24,
+    "Comment": "Please mark this patch \"superseded\".\nI added the min_width align opts for i3bar output, but in separate local commits and didn't properly grok git-rebase.",
+    "EmailHash": "31903b7aebcc7bc185b237d2ab888d21"
+  }
+]

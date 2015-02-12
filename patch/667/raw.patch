@@ -1,0 +1,35 @@
+From 9459925014fcf61145c1262bc571d83b821eda8a Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Thu, 6 Nov 2014 19:16:22 -0500
+Subject: [PATCH] Bugfix: reset last_timestamp for each event
+
+Reset last_timestamp to XCB_CURRENT_TIME whenever a new event comes in.
+This should be set to the value of the timestamp for the incoming event
+for any event that contains a timestamp during event handling. For
+events that do not contain a timestamp, this avoids using an old
+timestamp when rendering which can lead to focus problems when a
+timestamp is used multiple times for handling different events.
+
+fixes #1383
+---
+ src/handlers.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/handlers.c b/src/handlers.c
+index 06878f5..14310d6 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -1232,6 +1232,10 @@ void handle_event(int type, xcb_generic_event_t *event) {
+         return;
+     }
+ 
++    /* reset last_timestamp to avoid using an old value for events that do not
++     * have a timestamp */
++    last_timestamp = XCB_CURRENT_TIME;
++
+     switch (type) {
+         case XCB_KEY_PRESS:
+         case XCB_KEY_RELEASE:
+-- 
+2.1.3
+

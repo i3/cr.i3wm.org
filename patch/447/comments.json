@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 65,
+    "Comment": "Use strcasecmp() please so that all spellings are okay.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 96,
+    "Comment": "Please specify an explicit type instead of assigning to *(void**), see above.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 66,
+    "Comment": "Here and below, please split these long strings over multiple lines. See the die() call in get_config_path() for an example.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 93,
+    "Comment": "nitpick, but it decreases memory usage:\n\n/* num is preferred, but if it’s 0 (i.e. not valid),\n   store and use the raw string value */\nif (num == 0)\n    parsed-\u003estr = sstrdup(value);",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 29,
+    "Comment": "Almost there :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 29,
+    "Comment": "Your patience and guidance is much appreciated!",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  }
+]

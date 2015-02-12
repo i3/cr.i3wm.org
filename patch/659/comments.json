@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Mats",
+    "Line": 15,
+    "Comment": "Without those cpanm fails...",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  },
+  {
+    "Author": "Mats",
+    "Line": 15,
+    "Comment": "Superseded by patch #660 and #661.",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  }
+]

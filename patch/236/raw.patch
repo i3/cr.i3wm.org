@@ -1,0 +1,39 @@
+From 058cd39d8676f73d43ce84c96b118fc15b059b79 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 24 Sep 2013 20:58:17 -0400
+Subject: [PATCH 4/4] Implement drag cancel for resizing tiled windows
+
+Hi, I am a new developer and this is my first code submission to a
+project. If I do anything wrong, please let me know.
+
+The patches I've submitted implement #1074 "Add ability to escape
+out of a mouse-resize operation".
+---
+ src/resize.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/src/resize.c b/src/resize.c
+index 268dc3f..e9f1ad1 100644
+--- a/src/resize.c
++++ b/src/resize.c
+@@ -106,12 +106,16 @@ int resize_graphical_handler(Con *first, Con *second, orientation_t orientation,
+ 
+     const struct callback_params params = { orientation, output, helpwin, &new_position };
+ 
+-    drag_pointer(NULL, event, grabwin, BORDER_TOP, 0, resize_callback, &params);
++    int drag_result = drag_pointer(NULL, event, grabwin, BORDER_TOP, 0, resize_callback, &params);
+ 
+     xcb_destroy_window(conn, helpwin);
+     xcb_destroy_window(conn, grabwin);
+     xcb_flush(conn);
+ 
++    // User cancelled the drag so no action should be taken.
++    if (drag_result == 1)
++        return 0;
++
+     int pixels;
+     if (orientation == HORIZ)
+         pixels = (new_position - event->root_x);
+-- 
+1.8.4
+

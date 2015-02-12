@@ -1,0 +1,24 @@
+From 5562431d0b5d074e9cbaa3b94854c65cee855cb3 Mon Sep 17 00:00:00 2001
+From: cornerman <cornerman@…>
+Date: Sun, 16 Nov 2014 22:05:51 +0100
+Subject: [PATCH] add deco_rect property to con in ipc response
+
+---
+ src/ipc.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/ipc.c b/src/ipc.c
+index 4c39a04..c70ec32 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -347,6 +347,7 @@ void dump_node(yajl_gen gen, struct Con *con, bool inplace_restart) {
+     y(integer, con->current_border_width);
+ 
+     dump_rect(gen, "rect", con->rect);
++    dump_rect(gen, "deco_rect", con->deco_rect);
+     dump_rect(gen, "window_rect", con->window_rect);
+     dump_rect(gen, "geometry", con->geometry);
+ 
+-- 
+2.1.0
+

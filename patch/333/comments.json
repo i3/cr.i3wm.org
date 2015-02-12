@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 21,
+    "Comment": "You meant xcb_get_property_unchecked here.\n\nAnyway, I thought about this a bit more. I think it’d be cleaner to introduce a variable called content_max_words. That will allow us to remove the explanation (since we are not using bytes anymore) plus the duplicated division by 4.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 47,
+    "Comment": "After using content_max_words, you can just use content_max_words += ceil(prop_reply-\u003ebytes_after / 4.0);",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 41,
+    "Comment": "Please remove the content_size variable. It has no purpose, since you only assign it precisely once and get it precisely once.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 41,
+    "Comment": "I see that you may have wanted to optimize away one extra function call, but I’d argue that not using a variable increases clarity and such low-level optimizations should be performed by the compiler, not in the code.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

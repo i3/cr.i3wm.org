@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 16,
+    "Comment": "Your patch might fix the issue, but with the wrong description :). The code path from which you removed the clear_input() is not in the forked process, but in the master (since cpid \u003e 0). So, what your patch really changes is _when_ clear_input() is called, not from which process.\n\nPlease resubmit with the proper explanation.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

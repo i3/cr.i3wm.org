@@ -1,0 +1,130 @@
+From 138c646422997251ce1f2a402e29e18d89dd964b Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sun, 16 Nov 2014 21:10:48 -0500
+Subject: [PATCH] Handle _NET_CLOSE_WINDOW client message requests
+
+> Pagers wanting to close a window MUST send a _NET_CLOSE_WINDOW client
+> message request to the root window.
+
+We interpret this message as a request to close the con for the given
+window.
+
+See: http://standards.freedesktop.org/wm-spec/wm-spec-latest.html#idm140200472668896
+---
+ include/atoms.xmacro                       |  1 +
+ src/ewmh.c                                 |  2 +-
+ src/handlers.c                             | 18 +++++++++++
+ testcases/t/239-net-close-window-request.t | 49 ++++++++++++++++++++++++++++++
+ 4 files changed, 69 insertions(+), 1 deletion(-)
+ create mode 100644 testcases/t/239-net-close-window-request.t
+
+diff --git a/include/atoms.xmacro b/include/atoms.xmacro
+index 6366547..2755d6c 100644
+--- a/include/atoms.xmacro
++++ b/include/atoms.xmacro
+@@ -20,6 +20,7 @@ xmacro(_NET_NUMBER_OF_DESKTOPS)
+ xmacro(_NET_DESKTOP_NAMES)
+ xmacro(_NET_DESKTOP_VIEWPORT)
+ xmacro(_NET_ACTIVE_WINDOW)
++xmacro(_NET_CLOSE_WINDOW)
+ xmacro(_NET_STARTUP_ID)
+ xmacro(_NET_WORKAREA)
+ xmacro(WM_PROTOCOLS)
+diff --git a/src/ewmh.c b/src/ewmh.c
+index 1c4ac3d..0746a5e 100644
+--- a/src/ewmh.c
++++ b/src/ewmh.c
+@@ -234,5 +234,5 @@ void ewmh_setup_hints(void) {
+     /* I’m not entirely sure if we need to keep _NET_WM_NAME on root. */
+     xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_WM_NAME, A_UTF8_STRING, 8, strlen("i3"), "i3");
+ 
+-    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_SUPPORTED, XCB_ATOM_ATOM, 32, 22, supported_atoms);
++    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_SUPPORTED, XCB_ATOM_ATOM, 32, 23, supported_atoms);
+ }
+diff --git a/src/handlers.c b/src/handlers.c
+index 06878f5..569a8ec 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -838,6 +838,24 @@ static void handle_client_message(xcb_client_message_event_t *event) {
+                 ++idx;
+             }
+         }
++    } else if (event->type == A__NET_CLOSE_WINDOW) {
++        /*
++         * Pagers wanting to close a window MUST send a _NET_CLOSE_WINDOW
++         * client message request to the root window.
++         * http://standards.freedesktop.org/wm-spec/wm-spec-latest.html#idm140200472668896
++         */
++        Con *con = con_by_window_id(event->window);
++        if (con) {
++            DLOG("Handling _NET_CLOSE_WINDOW request (con = %p)\n", con);
++
++            if (event->data.data32[0])
++                last_timestamp = event->data.data32[0];
++
++            tree_close(con, KILL_WINDOW, false, false);
++            tree_render();
++        } else {
++            DLOG("Couldn't find con for _NET_CLOSE_WINDOW request. (window = %d)\n", event->window);
++        }
+     } else {
+         DLOG("unhandled clientmessage\n");
+         return;
+diff --git a/testcases/t/239-net-close-window-request.t b/testcases/t/239-net-close-window-request.t
+new file mode 100644
+index 0000000..20c3f84
+--- /dev/null
++++ b/testcases/t/239-net-close-window-request.t
+@@ -0,0 +1,49 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Test _NET_CLOSE_WINDOW requests to close a window.
++# See http://standards.freedesktop.org/wm-spec/wm-spec-latest.html#idm140200472668896
++# Ticket: #1396
++# Bug still in: 4.8-116-gbb1f857
++use i3test;
++
++sub send_close_window_request {
++    my ($win) = @_;
++
++    my $msg = pack "CCSLLLLLL",
++        X11::XCB::CLIENT_MESSAGE, # response_type
++        32, # format
++        0, # sequence
++        $win->id, # window
++        $x->atom(name => '_NET_CLOSE_WINDOW')->id, # message type
++        0, # data32[0]
++        0, # data32[1]
++        0, # data32[2]
++        0, # data32[3]
++        0; # data32[4]
++
++    $x->send_event(0, $x->get_root_window(), X11::XCB::EVENT_MASK_SUBSTRUCTURE_REDIRECT, $msg);
++}
++
++my $ws = fresh_workspace;
++my $win = open_window;
++
++send_close_window_request($win);
++sync_with_i3;
++
++is(@{get_ws($ws)->{nodes}}, 0, 'When a pager sends a _NET_CLOSE_WINDOW request for a window, the container should be closed');
++
++done_testing;
+-- 
+2.1.3
+

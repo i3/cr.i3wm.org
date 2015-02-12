@@ -1,0 +1,44 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 17,
+    "Comment": "Why do you remove the variable here instead of just initializing it to false?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 33,
+    "Comment": "Your indentation is wrong.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 28,
+    "Comment": "It occurs to me that colorful_output should be reset to false after calling END_COLOR. Could you also fix that please?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 17,
+    "Comment": "My intent was to move it closer to where it's used.  I can init it here if you prefer.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 17,
+    "Comment": "Yes please. I don’t want every code path to have its own “inner” definition of the same variable :). Please submit your new patch directly at http://cr.i3wm.org",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 33,
+    "Comment": "FYI, I double-checked, and my line is is the only one indented with spaces.  The surrounding code uses tabs despite the vim modeline.  :)",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Emil Mikulic",
+    "Line": 17,
+    "Comment": "10-4.\nhttp://cr.i3wm.org/patch/25",
+    "EmailHash": "dce73ce6fdc8f512ad557eb19e65480c"
+  }
+]

@@ -1,0 +1,44 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 24,
+    "Comment": "So if you have a function that cannot run under certain conditions (like in this case), where do you prefer the check?\n\nBefore the call seems to clarify the control flow. Within the call seems to reduce complexity.\n\nIn this case there is a function that can be called outside that we would have to give access to a global, which seems to favor checking within the call.\n\nI decided to do kind of a mix of both here, but I really don't know what I'm doing.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 66,
+    "Comment": "I don’t see why you change the code like this. Checking for the selection owner is not necessary, since acquiring the selection will fail if there is another selection owner. Also, acquiring the selection is the only race-condition-free way of acquiring a selection (another application could acquire the tray ownership between i3bar checking and setting the selection).\n\nCan you explain?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 131,
+    "Comment": "output-\u003etrayclients will be empty if i3bar does not have the tray selection, right? I don’t see what improvements this change (and the other has_tray_selection checks) brings.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 66,
+    "Comment": "In all my tests, acquiring the selection in this way forcibly reassigns the selection when there is another owner.\n\nhttp://www.x.org/releases/X11R7.7/doc/xorg-docs/icccm/icccm.html#Manager_Selections\n\nThird paragraph: \"Before a manager takes ownership of a manager selection, it should use the GetSelectionOwner request to check whether the selection is already owned by another client, and, where appropriate, it should ask the user if the new manager should replace the old one. If so, it may then take ownership of the selection.\"\n\nSo with two bars, they will always fight over the selection and the last one to ask wins. Then they both think they have the tray and will do things like kick the tray clients off the other bar, or tell the tray clients there is a new selection owner when there really is not one.\n\nAs far as I can tell here, setting the owner will be done right after we get the current selection owner because there is only a call to `xcb_generate_id` and `init_tray_colors` between, although that could be improved.\n\nAll the changes in this function are required to support multiple bar directives in the config. Without it, tray icons will appear on both bars, and one of those  bars will not have the manager selection. It also requires tray clients to have very robust error handling, which many do not. Without these changes, the Spotify qt4 tray client, for example, will die on i3 restarts with a probability of about 0.5 when multiple bars are in the config.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 131,
+    "Comment": "I'm trying to remove the assumption that the bar has the selection so i3bar can be used with other applications that can manage the tray, such as other instances of i3bar. My config starts two instances of i3bar, one for each output, because I configure each bar independently. Others may want to use an entirely different application to manage their tray.\n\nThe way `output-\u003etrayclients` is described in the comments is \"the tray clients on this output\" which is not necessarily equivalent to \"the tray clients on this bar\" because there may be another application on that output that is managing the tray. When this is the case, we should certainly not kick their tray clients.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 66,
+    "Comment": "So there are multiple things to address here:\n\n1) In SetSelectionOwner, the timestamp should be set to the timestamp provided by the GetSelectionOwner reply in order to avoid any race conditions. Please fix that.\n\n2) Also, I think i3bar should watch the tray selection and become active once it receives a SelectionClear event.\n\n3) In addition, in i3 itself, the bar config blocks could be sanity-checked, since there can only really be one tray manager, so tray_output directives in more than one bar block don’t make sense.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 131,
+    "Comment": "Tray management is not per output, but per X11 display (and there is precisely one display in a modern RandR setup). So output-\u003etrayclients must be empty unless i3bar has the tray selection. Improvements to the comments are always welcome ;)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

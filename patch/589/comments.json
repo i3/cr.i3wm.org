@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 111,
+    "Comment": "Remove this line please.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 30,
+    "Comment": "Not sure why you do this. It could change control flow, e.g. it’s not obvious to me that con_update_parents_urgency() which is called later is not necessary to call, even when the container’s urgency stays the same. Same for the timers.\n\nIf you really want to have this change, i suggest putting it into a separate patch and focusing on the window::urgent event in this patch :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 18,
+    "Comment": "you’re missing a docs/ipc update, right?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 18,
+    "Comment": "yeah",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 30,
+    "Comment": "it's an issue with multimonitor and sending two events when the con becomes not urgent. I think there is an issue this solves with multimonitor where the con loses urgency but is never focused. I'll look that a little more.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

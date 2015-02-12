@@ -1,0 +1,50 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 22,
+    "Comment": "I think by merely moving the code, the case where con_is_floating() (see below in the code) is not handled properly, because the recursive call to tree_close now leads to different code being executed.\n\n_Maybe_ (haven’t tested this), it’s enough to change con_next_focused() to also handle con_is_floating() == true containers, not just con-\u003etype == CT_FLOATING_CON.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 22,
+    "Comment": "Oh, I totally missed the recursive nature!\n\nAre there tests that cover these situations? Is gcov and lcov the way to go regarding code coverage testing?\n",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 22,
+    "Comment": "I’m not entirely sure if there are tests that cover this code. Certainly, having branch coverage (!) for this code would be awesome. Improvements to the test suite are very welcome.\n\nWe have “make coverage” to generate a coverage report, but I’m not sure how well that is working nowadays, I have not used it in a long time.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 22,
+    "Comment": "I was not aware that code coverage is already supported by the build system! After I figured out how to enable it, it seems to be working just fine.\n\n'force_set_focus' seems to be the only condition that is not fully covered in said function ;)",
+    "EmailHash": "22f8904ca7bfa6dea52dc3cd733b4645"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 22,
+    "Comment": "Correction. It's only with my changes that the coverage report shows one code path that is not covered. All tests still pass, but I don't know whether the tests cover all cases related to focus switching upon window close.\n\nWould you be open to a rewrite of tree_close() that does not use recursion, but uses a list to store the children that must be closed?",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 22,
+    "Comment": "Did you verify that you have branch (!) coverage, not just line coverage?\n\nIn general, I’d like to avoid big changes to tree_close() since it’s a rather brittle function that affects a lot of users.\n\nIn case you really want to change it, you’ll need to have strong evidence (i.e. branch coverage would be sufficient) that you didn’t break anything :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 22,
+    "Comment": "The coverage reports says the function has full branch coverage, which is good, but only an indicator and I still have to check whether the test suite does indeed verify all conditions before I can start coding.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 22,
+    "Comment": "Here's another case that in IMHO is currently not handled perfectly:\n\nIf the last window in a workspace gets closed, the input focus is \"set\" to the root window, instead of the workspace. No IPC event is generated in such a case, but IMHO it should (to get notified that the workspace is now empty).\n\n",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  }
+]

@@ -1,0 +1,121 @@
+From 95a7f4acbd21d4b6bb7b8d875bf35901a15e2d98 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sun, 6 Jul 2014 17:26:16 -0400
+Subject: [PATCH] Add testcase for EWMH desktop viewport
+
+Test that the EWMH specified property _NET_DESKTOP_VIEWPORT is updated
+properly on the root window. We interpret this as a list of x/y
+coordinate pairs for the upper left corner of the respective outputs of
+the workspaces.
+
+This test is for this commit:
+
+feature: implement ewmh desktop viewport property
+
+4205973135f28a0ab0e25a63dbc8c6fff0d3539e
+---
+ testcases/t/521-ewmh-desktop-viewport.t | 92 +++++++++++++++++++++++++++++++++
+ 1 file changed, 92 insertions(+)
+ create mode 100644 testcases/t/521-ewmh-desktop-viewport.t
+
+diff --git a/testcases/t/521-ewmh-desktop-viewport.t b/testcases/t/521-ewmh-desktop-viewport.t
+new file mode 100644
+index 0000000..07034cd
+--- /dev/null
++++ b/testcases/t/521-ewmh-desktop-viewport.t
+@@ -0,0 +1,92 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Test that the EWMH specified property _NET_DESKTOP_VIEWPORT is updated
++# properly on the root window. We interpret this as a list of x/y coordinate
++# pairs for the upper left corner of the respective outputs of the workspaces
++# Ticket: #1241
++use i3test i3_autostart => 0;
++
++my $config = <<EOT;
++# i3 config file (v4)
++font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
++
++workspace 0 output fake-0
++workspace 1 output fake-1
++
++fake-outputs 1024x768+0+0,1024x768+1024+0
++EOT
++
++my $pid = launch_with_config($config);
++
++sub get_desktop_viewport {
++    my $cookie = $x->get_property(
++        0,
++        $x->get_root_window(),
++        $x->atom(name => '_NET_DESKTOP_VIEWPORT')->id,
++        $x->atom(name => 'CARDINAL')->id,
++        0,
++        4096
++    );
++
++    my $reply = $x->get_property_reply($cookie->{sequence});
++
++    return 0 if $reply->{value_len} == 0;
++
++    my $len = $reply->{length};
++
++    return unpack ("L$len", $reply->{value});
++}
++
++# initialize the workspaces
++cmd 'workspace 1';
++cmd 'workspace 0';
++
++my @expected_viewport = (0, 0, 1024, 0);
++my @desktop_viewport = get_desktop_viewport;
++
++is_deeply(\@desktop_viewport, \@expected_viewport,
++    '_NET_DESKTOP_VIEWPORT should be an array of x/y coordinate pairs for the upper left corner of the respective outputs of the workspaces');
++
++cmd 'workspace 0';
++open_window;
++cmd 'workspace 3';
++
++@expected_viewport = (0, 0, 0, 0, 1024, 0);
++@desktop_viewport = get_desktop_viewport;
++
++is_deeply(\@desktop_viewport, \@expected_viewport,
++    'it should be updated when a new workspace appears');
++
++cmd 'rename workspace 3 to 2';
++
++@expected_viewport = (0, 0, 0, 0, 1024, 0);
++@desktop_viewport = get_desktop_viewport;
++
++is_deeply(\@desktop_viewport, \@expected_viewport,
++    'it should stay up to date when a workspace is renamed');
++
++cmd 'workspace 0';
++
++@expected_viewport = (0, 0, 1024, 0);
++@desktop_viewport = get_desktop_viewport;
++
++is_deeply(\@desktop_viewport, \@expected_viewport,
++    'it should be updated when a workspace is emptied');
++
++exit_gracefully($pid);
++
++done_testing;
+-- 
+2.0.1
+

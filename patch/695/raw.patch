@@ -1,0 +1,51 @@
+From d48a83c0c95c6511065bdbf5b5c7df36a6d648c6 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sat, 20 Dec 2014 19:17:14 -0500
+Subject: [PATCH] Fix start_application() doc about which shell is used
+
+Since this commit:
+
+f691a55923850a4d315450925fc98733d07b69c9
+
+the shell that is used is the system's bourne shell (/bin/sh) and the
+env variable SHELL is not considered.
+
+No logic changes.
+---
+ include/startup.h | 4 ++--
+ src/startup.c     | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/include/startup.h b/include/startup.h
+index 9cbdf17..2f28baa 100644
+--- a/include/startup.h
++++ b/include/startup.h
+@@ -21,8 +21,8 @@
+  * (immediately), the application is reparented to init (process-id 1), which
+  * correctly handles childs, so we don’t have to do it :-).
+  *
+- * The shell is determined by looking for the SHELL environment variable. If
+- * it does not exist, /bin/sh is used.
++ * The shell used to start applications is the system's bourne shell (i.e.,
++ * /bin/sh).
+  *
+  * The no_startup_id flag determines whether a startup notification context
+  * (and ID) should be created, which is the default and encouraged behavior.
+diff --git a/src/startup.c b/src/startup.c
+index d6fe6d4..ebe8c1d 100644
+--- a/src/startup.c
++++ b/src/startup.c
+@@ -123,8 +123,8 @@ void startup_sequence_delete(struct Startup_Sequence *sequence) {
+  * the application is reparented to init (process-id 1), which correctly handles
+  * childs, so we don’t have to do it :-).
+  *
+- * The shell is determined by looking for the SHELL environment variable. If it
+- * does not exist, /bin/sh is used.
++ * The shell used to start applications is the system's bourne shell (i.e.,
++ * /bin/sh).
+  *
+  * The no_startup_id flag determines whether a startup notification context
+  * (and ID) should be created, which is the default and encouraged behavior.
+-- 
+2.2.1
+

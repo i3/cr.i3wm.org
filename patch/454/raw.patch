@@ -1,0 +1,49 @@
+From 979bff44b458d1049fcc2e804497886d5c9d1328 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sun, 9 Mar 2014 21:33:26 -0400
+Subject: [PATCH] Update ipc library list documentation
+
+Add a link to the new JavaScript, Python, and Lua ipc libraries.
+
+Add notice that the older Python libraries are not maintained.
+
+Sort the list alphabetically.
+---
+ docs/ipc | 22 ++++++++++++++--------
+ 1 file changed, 14 insertions(+), 8 deletions(-)
+
+diff --git a/docs/ipc b/docs/ipc
+index 2f3ea7e..7fb9f1a 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -763,13 +763,19 @@ know):
+ 
+ C::
+ 	i3 includes a headerfile +i3/ipc.h+ which provides you all constants.
+-	https://github.com/acrisci/i3-ipc (not yet ready for production use)
+-Ruby::
+-	http://github.com/badboy/i3-ipc
+-Perl::
+-	https://metacpan.org/module/AnyEvent::I3
+-Python::
+-	* https://github.com/whitelynx/i3ipc
+-	* https://github.com/ziberna/i3-py (includes higher-level features)
++
++	https://github.com/acrisci/i3ipc-glib
+ Go::
+ 	* https://github.com/proxypoke/i3ipc
++JavaScript::
++	* https://github.com/acrisci/i3ipc-gjs
++Lua::
++	* https:/github.com/acrisci/i3ipc-lua
++Perl::
++	* https://metacpan.org/module/AnyEvent::I3
++Python::
++	* https://github.com/acrisci/i3ipc-python
++	* https://github.com/whitelynx/i3ipc (not maintained)
++	* https://github.com/ziberna/i3-py (not maintained)
++Ruby::
++	http://github.com/badboy/i3-ipc
+-- 
+1.9.0
+

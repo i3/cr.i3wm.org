@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 30,
+    "Comment": "Independenly of my comment above, I think a “else nc-\u003erect.y = 0;” would make sense here, right?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 28,
+    "Comment": "Actually, x and y are signed, but we don’t declare them as such to avoid gazillions of type casts. See the comment in include/data.h. I think this is the wrong place to fix the issue.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 30,
+    "Comment": "yeah that makes sense",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

@@ -1,0 +1,85 @@
+From 2033681ef8a2e1f09641d733c5c71f2b4de9876b Mon Sep 17 00:00:00 2001
+From: Mats <d912e3@…>
+Date: Thu, 24 Jan 2013 17:10:02 +0100
+Subject: [PATCH 1/2] Bugfix: Handle nested transient popups properly
+
+During smart popup fullscreen handling, display all transient popups
+that belong to the respective fullscreen application. A popup window
+belongs to another window if the latter is reachable via the path
+induced by the WM_TRANSIENT_FOR hints.
+
+fixes #881
+---
+ src/manage.c | 17 +++++++++++++----
+ src/render.c | 20 +++++++++++++++-----
+ 2 files changed, 28 insertions(+), 9 deletions(-)
+
+diff --git a/src/manage.c b/src/manage.c
+index ff7fdc6..7f7280c 100644
+--- a/src/manage.c
++++ b/src/manage.c
+@@ -353,10 +353,19 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+             con_toggle_fullscreen(fs, CF_OUTPUT);
+         } else if (config.popup_during_fullscreen == PDF_SMART &&
+                    fs != NULL &&
+-                   fs->window != NULL &&
+-                   fs->window->id == cwindow->transient_for) {
+-            LOG("This floating window belongs to the fullscreen window (popup_during_fullscreen == smart)\n");
+-            con_focus(nc);
++                   fs->window != NULL) {
++            i3Window *transient_win = cwindow;
++            while (transient_win != NULL &&
++                   transient_win->transient_for != XCB_NONE) {
++                if (transient_win->transient_for == fs->window->id) {
++                    LOG("This floating window belongs to the fullscreen window (popup_during_fullscreen == smart)\n");
++                    con_focus(nc);
++                    break;
++                }
++                Con *next_transient = con_by_window_id(transient_win->transient_for);
++                if (next_transient != NULL)
++                    transient_win = next_transient->window;
++            }
+         }
+     }
+ 
+diff --git a/src/render.c b/src/render.c
+index 476d1ca..10661c9 100644
+--- a/src/render.c
++++ b/src/render.c
+@@ -252,18 +252,28 @@ void render_con(Con *con, bool render_fullscreen) {
+                 /* Don’t render floating windows when there is a fullscreen window
+                  * on that workspace. Necessary to make floating fullscreen work
+                  * correctly (ticket #564). */
+-                if (fullscreen != NULL) {
++                if (fullscreen != NULL && fullscreen->window != NULL) {
+                     Con *floating_child = con_descend_focused(child);
++                    Con *transient_con = floating_child;
++                    bool is_transient_for = false;
+                     /* Exception to the above rule: smart
+                      * popup_during_fullscreen handling (popups belonging to
+                      * the fullscreen app will be rendered). */
+-                    if (floating_child->window == NULL ||
+-                        fullscreen->window == NULL ||
+-                        floating_child->window->transient_for != fullscreen->window->id)
++                    while (transient_con != NULL &&
++                           transient_con->window != NULL &&
++                           transient_con->window->transient_for != XCB_NONE) {
++                        if (transient_con->window->transient_for == fullscreen->window->id) {
++                            is_transient_for = true;
++                            break;
++                        }
++                        transient_con = con_by_window_id(transient_con->window->transient_for);
++                    }
++
++                    if (!is_transient_for)
+                         continue;
+                     else {
+                         DLOG("Rendering floating child even though in fullscreen mode: "
+-                             "floating->transient_for (0x%08x) == fullscreen->id (0x%08x)\n",
++                             "floating->transient_for (0x%08x) --> fullscreen->id (0x%08x)\n",
+                              floating_child->window->transient_for, fullscreen->window->id);
+                     }
+                 }
+-- 
+1.8.1.1
+

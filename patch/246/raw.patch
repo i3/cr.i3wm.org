@@ -1,0 +1,43 @@
+From 1b898e9786511d4959c6904311dfe34f7a1257d2 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Wed, 2 Oct 2013 15:34:27 -0400
+Subject: [PATCH] Set urgency hint on windows assigned to workspace
+
+Fixes #1088.
+---
+ src/assignments.c | 4 ++++
+ src/manage.c      | 3 ++-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/src/assignments.c b/src/assignments.c
+index 655816a..aaffdfe 100644
+--- a/src/assignments.c
++++ b/src/assignments.c
+@@ -52,6 +52,10 @@ void run_assignments(i3Window *window) {
+                 needs_tree_render = true;
+ 
+             yajl_gen_free(command_output->json_gen);
++        } else if (current->type == A_TO_WORKSPACE) {
++            DLOG("send to workspace: %s\n", current->dest.workspace);
++            Con *con = con_by_window_id(window->id);
++            con_set_urgency(con, true);
+         }
+ 
+         /* Store that we ran this assignment to not execute it again */
+diff --git a/src/manage.c b/src/manage.c
+index 892ac4d..a7b292d 100644
+--- a/src/manage.c
++++ b/src/manage.c
+@@ -477,7 +477,8 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+      * known to do that), so check for that and handle the hint accordingly.
+      * This code needs to be in this part of manage_window() because the window
+      * needs to be on the final workspace first. */
+-    con_set_urgency(nc, urgency_hint);
++    if (urgency_hint)
++        con_set_urgency(nc, true);
+ 
+ geom_out:
+     free(geom);
+-- 
+1.8.4
+

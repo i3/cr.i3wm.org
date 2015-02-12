@@ -1,0 +1,111 @@
+From b2d084d8b459d2afdbf5f06c76f8abe7feaa8cfd Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 2 May 2014 16:54:34 -0400
+Subject: [PATCH] Dont include dock clients in ewmh lists
+
+http://standards.freedesktop.org/wm-spec/latest/ar01s03.html#idm140251368149456
+
+The _NET_CLIENT_LIST property of the root window:
+
+> These arrays contain all X Windows managed by the Window Manager.
+
+Dock clients are not managed windows, so they should not be included in
+_NET_CLIENT_LIST or _NET_CLIENT_LIST_STACKING.
+---
+ include/con.h                     |  6 ++++++
+ src/con.c                         | 11 +++++++++++
+ src/x.c                           |  6 +++---
+ testcases/t/223-net-client-list.t |  9 +++++++++
+ 4 files changed, 29 insertions(+), 3 deletions(-)
+
+diff --git a/include/con.h b/include/con.h
+index 0205dfc..b8fd60a 100644
+--- a/include/con.h
++++ b/include/con.h
+@@ -37,6 +37,12 @@ void con_focus(Con *con);
+  */
+ bool con_is_leaf(Con *con);
+ 
++/**
++ * Returns true when this con is a leaf node with a managed X11 window (e.g.,
++ * excluding dock containers)
++ */
++bool con_has_managed_window(Con *con);
++
+ /*
+  * Returns true if a container should be considered split.
+  *
+diff --git a/src/con.c b/src/con.c
+index 6918d64..66c9db6 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -241,6 +241,17 @@ bool con_is_leaf(Con *con) {
+     return TAILQ_EMPTY(&(con->nodes_head));
+ }
+ 
++/*
++ * Returns true when this con is a leaf node with a managed X11 window (e.g.,
++ * excluding dock containers)
++ */
++bool con_has_managed_window(Con *con) {
++    return (con != NULL
++            && con->window != NULL
++            && con->window->id != XCB_WINDOW_NONE
++            && con_get_workspace(con) != NULL);
++}
++
+ /**
+  * Returns true if this node has regular or floating children.
+  *
+diff --git a/src/x.c b/src/x.c
+index 02fc338..8e7a710 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -908,7 +908,7 @@ void x_push_changes(Con *con) {
+      * stack afterwards */
+     int cnt = 0;
+     CIRCLEQ_FOREACH_REVERSE(state, &state_head, state)
+-        if (state->con && state->con->window)
++        if (con_has_managed_window(state->con))
+             cnt++;
+ 
+     /* The bottom-to-top window stack of all windows which are managed by i3.
+@@ -925,7 +925,7 @@ void x_push_changes(Con *con) {
+ 
+     /* X11 correctly represents the stack if we push it from bottom to top */
+     CIRCLEQ_FOREACH_REVERSE(state, &state_head, state) {
+-        if (state->con && state->con->window)
++        if (con_has_managed_window(state->con))
+             memcpy(walk++, &(state->con->window->id), sizeof(xcb_window_t));
+ 
+         //DLOG("stack: 0x%08x\n", state->id);
+@@ -956,7 +956,7 @@ void x_push_changes(Con *con) {
+ 
+         /* reorder by initial mapping */
+         TAILQ_FOREACH(state, &initial_mapping_head, initial_mapping_order) {
+-            if (state->con && state->con->window)
++            if (con_has_managed_window(state->con))
+                 *walk++ = state->con->window->id;
+         }
+ 
+diff --git a/testcases/t/223-net-client-list.t b/testcases/t/223-net-client-list.t
+index 74bd2cd..82855ad 100644
+--- a/testcases/t/223-net-client-list.t
++++ b/testcases/t/223-net-client-list.t
+@@ -96,4 +96,13 @@ wait_for_unmap($win3);
+ @clients = get_client_list;
+ is(@clients, 0, 'Removed unmapped client from list (0)');
+ 
++# Dock clients should not be included in this list
++
++my $dock_win = open_window({
++        window_type => $x->atom(name => '_NET_WM_WINDOW_TYPE_DOCK'),
++    });
++
++@clients = get_client_list;
++is(@clients, 0, 'Dock clients are not included in the list');
++
+ done_testing;
+-- 
+1.9.2
+

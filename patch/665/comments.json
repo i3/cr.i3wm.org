@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 25,
+    "Comment": "I think this code should go into a PAM module instead of a specific screen locker.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

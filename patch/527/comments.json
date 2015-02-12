@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "anonymous",
+    "Line": 0,
+    "Comment": "s/prefered/preferred/",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 31,
+    "Comment": "s/prefered/preferred/, in the commit msg before merging, please.",
+    "EmailHash": ""
+  }
+]

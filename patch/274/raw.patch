@@ -1,0 +1,179 @@
+From 730bd4b5f6de1e70b928ab7cc8dd29192a286968 Mon Sep 17 00:00:00 2001
+From: Paul Grove <paul.grove@…>
+Date: Sat, 19 Oct 2013 23:00:38 +0100
+Subject: [PATCH] IPC: Custom 'event' command
+
+---
+ include/commands.h                |  6 +++++
+ include/i3/ipc.h                  |  3 +++
+ parser-specs/commands.spec        | 10 ++++++++
+ src/commands.c                    | 30 ++++++++++++++++++++++
+ testcases/t/187-commands-parser.t |  2 +-
+ testcases/t/212-cmd_event.t       | 52 +++++++++++++++++++++++++++++++++++++++
+ 6 files changed, 102 insertions(+), 1 deletion(-)
+ create mode 100644 testcases/t/212-cmd_event.t
+
+diff --git a/include/commands.h b/include/commands.h
+index bbf45ba..be96c6f 100644
+--- a/include/commands.h
++++ b/include/commands.h
+@@ -289,4 +289,10 @@ void cmd_shmlog(I3_CMD, char *argument);
+  */
+ void cmd_debuglog(I3_CMD, char *argument);
+ 
++/**
++ * Implementation of 'event <name> [data]'.
++ *
++ */
++void cmd_event(I3_CMD, char *event, char *payload);
++
+ #endif
+diff --git a/include/i3/ipc.h b/include/i3/ipc.h
+index 6a50ccc..09387a4 100644
+--- a/include/i3/ipc.h
++++ b/include/i3/ipc.h
+@@ -102,4 +102,7 @@ typedef struct i3_ipc_header {
+ /** Bar config update will be triggered to update the bar config */
+ #define I3_IPC_EVENT_BARCONFIG_UPDATE           (I3_IPC_EVENT_MASK | 4)
+ 
++/** Custom event channel for events send via the event command */
++#define I3_IPC_EVENT_CUSTOM                     (I3_IPC_EVENT_MASK | 5)
++
+ #endif
+diff --git a/parser-specs/commands.spec b/parser-specs/commands.spec
+index e3da62c..6c18df7 100644
+--- a/parser-specs/commands.spec
++++ b/parser-specs/commands.spec
+@@ -39,6 +39,7 @@ state INITIAL:
+   'scratchpad' -> SCRATCHPAD
+   'mode' -> MODE
+   'bar' -> BAR
++  'event' -> EVENT
+ 
+ state CRITERIA:
+   ctype = 'class' -> CRITERION
+@@ -362,3 +363,12 @@ state BAR_W_ID:
+       ->
+   end
+       -> call cmd_bar($bar_type, $bar_value, $bar_id)
++
++# event <event> [payload]
++state EVENT:
++  event = word
++      -> EVENT_PAYLOAD
++
++state EVENT_PAYLOAD:
++  payload = string
++      -> call cmd_event($event, $payload)
+diff --git a/src/commands.c b/src/commands.c
+index 9631923..63e1d8f 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -2044,3 +2044,33 @@ void cmd_debuglog(I3_CMD, char *argument) {
+     // XXX: default reply for now, make this a better reply
+     ysuccess(true);
+ }
++
++/*
++ * Implementation of 'event <event_name> [event_data]'.
++ *
++ */
++void cmd_event (I3_CMD, char *event, char *payload) {
++    const unsigned char *payload_json;
++#if YAJL_MAJOR >= 2
++    size_t length;
++    yajl_gen gen = yajl_gen_alloc(NULL);
++#else
++    unsigned int length;
++    yajl_gen gen = yajl_gen_alloc(NULL, NULL);
++#endif
++
++    yajl_gen_map_open(gen);
++    yajl_gen_string(gen, (unsigned char*)"event", strlen("event"));
++    yajl_gen_string(gen, (unsigned char*)event, strlen(event));
++    yajl_gen_string(gen, (unsigned char*)"payload", strlen("payload"));
++    yajl_gen_string(gen, (unsigned char*)payload, strlen(payload));
++    yajl_gen_map_close(gen);
++    yajl_gen_get_buf(gen, &payload_json, &length);
++
++    ipc_send_event(event, I3_IPC_EVENT_CUSTOM, (const char *)payload_json);
++
++    yajl_gen_free(gen);
++
++    ysuccess(true);
++}
++
+diff --git a/testcases/t/187-commands-parser.t b/testcases/t/187-commands-parser.t
+index 5ee94f8..e01f9f8 100644
+--- a/testcases/t/187-commands-parser.t
++++ b/testcases/t/187-commands-parser.t
+@@ -144,7 +144,7 @@ is(parser_calls("\nworkspace test"),
+ ################################################################################
+ 
+ is(parser_calls('unknown_literal'),
+-   "ERROR: Expected one of these tokens: <end>, '[', 'move', 'exec', 'exit', 'restart', 'reload', 'shmlog', 'debuglog', 'border', 'layout', 'append_layout', 'workspace', 'focus', 'kill', 'open', 'fullscreen', 'split', 'floating', 'mark', 'unmark', 'resize', 'rename', 'nop', 'scratchpad', 'mode', 'bar'\n" .
++   "ERROR: Expected one of these tokens: <end>, '[', 'move', 'exec', 'exit', 'restart', 'reload', 'shmlog', 'debuglog', 'border', 'layout', 'append_layout', 'workspace', 'focus', 'kill', 'open', 'fullscreen', 'split', 'floating', 'mark', 'unmark', 'resize', 'rename', 'nop', 'scratchpad', 'mode', 'bar', 'event'\n" .
+    "ERROR: Your command: unknown_literal\n" .
+    "ERROR:               ^^^^^^^^^^^^^^^",
+    'error for unknown literal ok');
+diff --git a/testcases/t/212-cmd_event.t b/testcases/t/212-cmd_event.t
+new file mode 100644
+index 0000000..17ba1c9
+--- /dev/null
++++ b/testcases/t/212-cmd_event.t
+@@ -0,0 +1,52 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++
++use i3test;
++
++use Data::Dumper;
++
++SKIP: {
++	
++	skip "AnyEvent::I3 too old (need >= 0.16)", 1 if $AnyEvent::I3::VERSION < 0.16;
++
++	my $i3 = i3(get_socket_path());
++	$i3->connect()->recv;
++	
++	########
++	# cmd_event
++	########
++	
++	my $condvar = AnyEvent->condvar;
++
++	my $event_name = "testevent";
++	my $event_payload = "Test Text";
++
++	$i3->subscribe({
++		$event_name => sub {
++			my ($event) = @_;
++			$condvar->send($event->{event} eq $event_name
++				&& $event->{payload} eq $event_payload);
++		}
++	})->recv;
++
++	cmd "event $event_name \"$event_payload\"";
++	
++	my $t; $t = AnyEvent->timer(after => 0.5, cb => sub {$condvar->send(0)});
++
++	ok($condvar->recv, "Receive custom event");
++
++}
++done_testing;
+-- 
+1.8.4.1
+

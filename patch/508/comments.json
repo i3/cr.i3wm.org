@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 45,
+    "Comment": "There is not a way to test this in the testcases currently. I've been doing manual testing.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 41,
+    "Comment": "docs/ipc update is missing.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 45,
+    "Comment": "Yeah. Could you look into using XTEST for simulating keyboard input from the testsuite? If it’s not too much effort, adding that would be great.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

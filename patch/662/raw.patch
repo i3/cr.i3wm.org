@@ -1,0 +1,26 @@
+From 5de3f57a65192bb5264d11ccdec06e4db20c009e Mon Sep 17 00:00:00 2001
+From: Han Boetes <han@…>
+Date: Fri, 24 Oct 2014 19:26:03 +0200
+Subject: [PATCH] Add one more sensible terminal: x-terminal-emulator, it is
+ provided by  default on all debian-like systems.
+
+---
+ i3-sensible-terminal | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/i3-sensible-terminal b/i3-sensible-terminal
+index 485fc16..a66b5b8 100755
+--- a/i3-sensible-terminal
++++ b/i3-sensible-terminal
+@@ -8,7 +8,7 @@
+ # Distributions/packagers should enhance this script with a
+ # distribution-specific mechanism to find the preferred terminal emulator. On
+ # Debian, there is the x-terminal-emulator symlink for example.
+-for terminal in $TERMINAL urxvt rxvt terminator Eterm aterm xterm gnome-terminal roxterm xfce4-terminal; do
++for terminal in $TERMINAL x-terminal-emulator urxvt rxvt terminator Eterm aterm xterm gnome-terminal roxterm xfce4-terminal; do
+     if command -v $terminal > /dev/null 2>&1; then
+         exec $terminal "$@"
+     fi
+-- 
+2.1.1
+

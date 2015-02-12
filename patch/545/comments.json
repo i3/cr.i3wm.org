@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 43,
+    "Comment": "You can make this a pure function, see http://lwn.net/Articles/285332/\n\nAt the very least, use const char *name? :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 23,
+    "Comment": "Looks good apart from making the function pure.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

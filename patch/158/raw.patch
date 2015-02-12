@@ -1,0 +1,26 @@
+From 72fe043e644fbc80b7fb5eb8e3284d005a6c37b0 Mon Sep 17 00:00:00 2001
+From: Diego Ongaro <ongardie@…>
+Date: Tue, 30 Apr 2013 22:12:33 -0700
+Subject: [PATCH] contrib/dump-asy.pl: Fix $ and & in window titles
+
+These would produce asy/LaTeX parse errors before.
+---
+ contrib/dump-asy.pl |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/contrib/dump-asy.pl b/contrib/dump-asy.pl
+index 47239f2..c75dfcd 100755
+--- a/contrib/dump-asy.pl
++++ b/contrib/dump-asy.pl
+@@ -32,6 +32,8 @@ sub dump_node {
+     my $w = (defined($n->{window}) ? $n->{window} : "N");
+     my $na = $n->{name};
+     $na =~ s/#/\\#/g;
++    $na =~ s/\$/\\\$/g;
++    $na =~ s/&/\\&/g;
+     $na =~ s/_/\\_/g;
+     $na =~ s/~/\\textasciitilde{}/g;
+     my $type = 'leaf';
+-- 
+1.7.10.4
+

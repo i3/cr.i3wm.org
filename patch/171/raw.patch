@@ -1,0 +1,24 @@
+From b7b25fca72717af37332aa2e34638864acc72248 Mon Sep 17 00:00:00 2001
+From: Simon Wesp <cassmodiah@…>
+Date: Wed, 12 Jun 2013 18:58:48 +0200
+Subject: [PATCH] Add 'NoDisplay=true' to i3.application.desktop
+
+---
+ i3.applications.desktop |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/i3.applications.desktop b/i3.applications.desktop
+index 31d6704..e40689d 100644
+--- a/i3.applications.desktop
++++ b/i3.applications.desktop
+@@ -1,6 +1,7 @@
+ [Desktop Entry]
+ Type=Application
+ Name=i3
++NoDisplay=true
+ Comment=improved dynamic tiling window manager
+ Exec=i3
+ X-GNOME-WMName=i3
+-- 
+1.7.1
+

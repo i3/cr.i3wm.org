@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 95,
+    "Comment": "You are always calculating this value even though it is not necessarily used (i.e. if threshold_type != “percentage”). Could you move that calculation to a place where it is only evaluated if necessary?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 104,
+    "Comment": "The body of the “else if” branch is exactly the same as the “if” branch. Could you change the code so that you don’t repeat yourself (DRY)? :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 69,
+    "Comment": "As somebody remarked in the bugtracker, it’d be cool if threshold_type was figured out by i3status depending on the suffix of low_threshold.\n\nThat is, when low_threshold ends in a percentage sign (and strip trailing whitespace first), set threshold_type to percentage, otherwise set it to bytes.\n\nAlso, it’d be cool if one could use suffixes such as KiB, MiB, GiB and TiB for byte values.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Raphael Michel",
+    "Line": 69,
+    "Comment": "I think this exceeds my C skills and - at the moment my time, too (Abitur in a few weeks, some bigger projects, the usual stuff). But I will keep it on my todo list until I eventually find some time to look deeper into it.",
+    "EmailHash": "5ee428b02c6a945a5942d2aee744cf4c"
+  }
+]

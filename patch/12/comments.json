@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 38,
+    "Comment": "This is an endless loop if next_transient == NULL, isn’t it?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "Sorry for replying late.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Mats",
+    "Line": 38,
+    "Comment": "You're right. Instead of testing if next_transient is *not* NULL and setting transient_win accordingly, this should rather break if next_transient is NULL and set transient_win outside the if statement.",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  }
+]

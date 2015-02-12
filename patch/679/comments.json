@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 18,
+    "Comment": "I don’t think it’s clear that these colors are appropriate for all situations. As an example, when you are working with a laptop and you’re not at your desk, your battery will always be discharging. Why should that be color_degraded? It’s perfectly fine and normal that your battery discharges when you’re using it :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 22,
+    "Comment": "Same question here. Why is it good that your battery is charging? Maybe you have your computer configured so that it will not start charging if the charge level is still above 75%, but it’s still charging at the moment. That would certainly not be good, so I don’t think we should provide that hint to users.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 18,
+    "Comment": "I just wanted some kind of colour code to indicate the status of the battery. I chose those colours because they were already defined. More than once, I thought my battery was charging, but the plug actually wasn't working and I didn't notice until it hit critical and the colour changed to red. This way, I can easily tell if it's on battery or not.",
+    "EmailHash": ""
+  }
+]

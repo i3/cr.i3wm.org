@@ -1,0 +1,31 @@
+From c33e37a6e82dfbbfffeef14de9d162bb9097cee2 Mon Sep 17 00:00:00 2001
+From: Alexander Neumann <alexander@…>
+Date: Sun, 13 Oct 2013 15:18:20 +0200
+Subject: [PATCH] Add quoting for sample command
+
+The user's guide talks about renaming workspaces, for example to
+"2: mail", and a sample key binding for use with i3-input is supplied.
+However, this example lacks proper quoting for the format string, so
+that when workspace name with a space in it, like "2: mail", is given,
+the current workspace is renamed to "2:". This patch adds proper
+quoting.
+---
+ docs/userguide | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/docs/userguide b/docs/userguide
+index 0cc147c..25ea5d5 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -1590,7 +1590,7 @@ i3-msg 'rename workspace 5 to 6'
+ i3-msg 'rename workspace 1 to "1: www"'
+ i3-msg 'rename workspace "1: www" to "10: www"'
+ i3-msg 'rename workspace to "2: mail"
+-bindsym $mod+r exec i3-input -F 'rename workspace to %s' -P 'New name: '
++bindsym $mod+r exec i3-input -F 'rename workspace to "%s"' -P 'New name: '
+ --------------------------------------------------------------------------
+ 
+ === Moving workspaces to a different screen
+-- 
+1.8.4
+

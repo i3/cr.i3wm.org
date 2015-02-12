@@ -1,0 +1,26 @@
+From 7f6440a02b48dbcbf8acdd370eaf6dbea0331da8 Mon Sep 17 00:00:00 2001
+From: James Baumgarten <jebaum@…>
+Date: Sun, 8 Sep 2013 19:30:39 -0700
+Subject: [PATCH] Clarify userguide description of urgent_workspace
+ configuration
+
+---
+ docs/userguide | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/docs/userguide b/docs/userguide
+index 76ac73a..ae3bda2 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -1211,7 +1211,7 @@ inactive_workspace::
+ 	will be the case for most workspaces.
+ urgent_workspace::
+ 	Border, background and text color for a workspace button when the workspace
+-	window with the urgency hint set.
++	contains a window with the urgency hint set. Also applies to +mode+ indicators.
+ 
+ *Syntax*:
+ ----------------------------------------
+-- 
+1.8.4
+

@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 69,
+    "Comment": "This breaks in-place restarts into a new version of i3, doesn’t it?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 69,
+    "Comment": "Hi Michael,\n\nWhat do you mean by \"in-place restarts\"?",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 69,
+    "Comment": "This patch is now obsolete because of another patch fixing the issue described in paragraph 1 of the commit message.\n\nBut paragraph 2 and 3 are still worth having a look. Basically, moving the resizing code to the scratchpad_move() function could avoid checking the state on every scratchpad_show() call and thus, make the SCRATCHPAD_FRESH state obsolete. Please give me your view on this.\n\n-- Vivien",
+    "EmailHash": ""
+  }
+]

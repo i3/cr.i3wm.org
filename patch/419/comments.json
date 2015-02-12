@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "S0lll0s",
+    "Line": 20,
+    "Comment": "This doesn't seem to make sense without background color support, but with that, it is important to preserve a good look of the bar. If you have a bar at the top and at the bottom of the screen for example, it will look unbalanced as there are 4px borders below both, but the one on the top is towards the center of the screen and the one at the bottom away from the center.",
+    "EmailHash": "ef53c93c26539d42ee6d6b21c78bfcfe"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "I think centering depends on the font, i.e. some fonts are centered with the current code, some are with your code.\n\nIn general, I am very wary of commits that change the current look, as people are used to it and will complain.\n\nI am not entirely sure what a good path to get this commit in would be. Maybe you can post a comparison of old and new look (zoomed in for convenience) with a couple of popular fonts, so that we have some data on how the look changes?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

@@ -1,0 +1,27 @@
+From ec0f87328ce878670134da8f462c14250a8c6a5b Mon Sep 17 00:00:00 2001
+From: Alexander Berntsen <alexander@…>
+Date: Mon, 28 Apr 2014 00:56:55 +0200
+Subject: [PATCH 3/3] Disallow using reserved wspace namespace in config
+
+---
+ src/workspace.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/workspace.c b/src/workspace.c
+index 670322a..033b1ee 100644
+--- a/src/workspace.c
++++ b/src/workspace.c
+@@ -142,6 +142,10 @@ Con *create_workspace_on_output(Output *output, Con *content) {
+             continue;
+         if (*target == '"')
+             target++;
++        if (strncasecmp(target, "__", strlen("__")) == 0) {
++            LOG("You cannot switch to the i3 internal workspaces.\n");
++            continue;
++        }
+         FREE(ws->name);
+         ws->name = strdup(target);
+         if (ws->name[strlen(ws->name)-1] == '"')
+-- 
+1.8.3.2
+

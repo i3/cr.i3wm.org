@@ -1,0 +1,145 @@
+From 5519814ba205befed3027caa23d668de7c619b39 Mon Sep 17 00:00:00 2001
+From: Atte Peltomaki <atte.peltomaki@…>
+Date: Mon, 24 Mar 2014 19:03:05 +0200
+Subject: [PATCH] Add configuration option for disabling mouse warping
+
+This patch fixes ticket #780 by adding a new configuration option
+"mouse_warping [yes|no]".
+
+When mouse warping is disabled, mouse cursor does not jump to middle of current
+screen when changing workspaces on multiple monitors. This introduces a
+"special" cursor state, where focus is in one window and cursor on another.
+Useful for eg. scrolling a web page with mouse wheel while typing into another
+window on keyboard.
+---
+ include/config.h                |  7 +++++++
+ include/config_directives.h     |  1 +
+ parser-specs/config.spec        |  6 ++++++
+ src/config_directives.c         |  4 ++++
+ src/x.c                         |  2 +-
+ testcases/t/201-config-parser.t | 20 +++++++++++++++++++-
+ 6 files changed, 38 insertions(+), 2 deletions(-)
+
+diff --git a/include/config.h b/include/config.h
+index 0c3e25d..d9aefe2 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -108,6 +108,13 @@ struct Config {
+      * It is not planned to add any different focus models. */
+     bool disable_focus_follows_mouse;
+ 
++    /** By default, mouse cursor is placed on middle of current screen/workspace
++     * when switching workspaces with multiple monitors, along with focus. This
++     * option disables mouse warping and introduces a new "special" state: keyboard
++     * focus moves to new workspace, but cursor remains on old workspace and is
++     * usable, eg. scroll web pages with mouse wheel. */
++    bool disable_mouse_warping;
++
+     /** Remove borders if they are adjacent to the screen edge.
+      * This is useful if you are reaching scrollbar on the edge of the
+      * screen or do not want to waste a single pixel of displayspace.
+diff --git a/include/config_directives.h b/include/config_directives.h
+index a95a647..a45f138 100644
+--- a/include/config_directives.h
++++ b/include/config_directives.h
+@@ -46,6 +46,7 @@ CFGFUN(default_orientation, const char *orientation);
+ CFGFUN(workspace_layout, const char *layout);
+ CFGFUN(workspace_back_and_forth, const char *value);
+ CFGFUN(focus_follows_mouse, const char *value);
++CFGFUN(mouse_warping, const char *value);
+ CFGFUN(force_focus_wrapping, const char *value);
+ CFGFUN(force_xinerama, const char *value);
+ CFGFUN(fake_outputs, const char *outputs);
+diff --git a/parser-specs/config.spec b/parser-specs/config.spec
+index dfd6401..0c8298f 100644
+--- a/parser-specs/config.spec
++++ b/parser-specs/config.spec
+@@ -32,6 +32,7 @@ state INITIAL:
+   'for_window'                             -> FOR_WINDOW
+   'assign'                                 -> ASSIGN
+   'focus_follows_mouse'                    -> FOCUS_FOLLOWS_MOUSE
++  'mouse_warping'			   -> MOUSE_WARPING
+   'force_focus_wrapping'                   -> FORCE_FOCUS_WRAPPING
+   'force_xinerama', 'force-xinerama'       -> FORCE_XINERAMA
+   'workspace_auto_back_and_forth'          -> WORKSPACE_BACK_AND_FORTH
+@@ -172,6 +173,11 @@ state FOCUS_FOLLOWS_MOUSE:
+   value = word
+       -> call cfg_focus_follows_mouse($value)
+ 
++# mouse_warping bool
++state MOUSE_WARPING:
++  value = word
++      -> call cfg_mouse_warping($value)
++
+ # force_focus_wrapping
+ state FORCE_FOCUS_WRAPPING:
+   value = word
+diff --git a/src/config_directives.c b/src/config_directives.c
+index f5a592f..420dc1b 100644
+--- a/src/config_directives.c
++++ b/src/config_directives.c
+@@ -299,6 +299,10 @@ CFGFUN(focus_follows_mouse, const char *value) {
+     config.disable_focus_follows_mouse = !eval_boolstr(value);
+ }
+ 
++CFGFUN(mouse_warping, const char *value) {
++    config.disable_mouse_warping = !eval_boolstr(value);
++}
++
+ CFGFUN(force_xinerama, const char *value) {
+     config.force_xinerama = eval_boolstr(value);
+ }
+diff --git a/src/x.c b/src/x.c
+index cd36a28..da1f6cb 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -1127,7 +1127,7 @@ void x_set_i3_atoms(void) {
+  */
+ void x_set_warp_to(Rect *rect)
+ {
+-    if (!config.disable_focus_follows_mouse)
++    if (!config.disable_focus_follows_mouse && !config.disable_mouse_warping)
+         warp_to = rect;
+ }
+ 
+diff --git a/testcases/t/201-config-parser.t b/testcases/t/201-config-parser.t
+index 55239c6..ba7eb93 100644
+--- a/testcases/t/201-config-parser.t
++++ b/testcases/t/201-config-parser.t
+@@ -310,6 +310,24 @@ is(parser_calls($config),
+    'focus_follows_mouse ok');
+ 
+ ################################################################################
++# mouse_warping
++################################################################################
++
++$config = <<'EOT';
++mouse_warping yes
++mouse_warping no
++EOT
++
++$expected = <<'EOT';
++cfg_mouse_warping(yes)
++cfg_mouse_warping(no)
++EOT
++
++is(parser_calls($config),
++   $expected,
++   'mouse_warping ok');
++
++################################################################################
+ # force_display_urgency_hint
+ ################################################################################
+ 
+@@ -413,7 +431,7 @@ client.focused          #4c7899 #285577 #ffffff #2e9ef4
+ EOT
+ 
+ my $expected_all_tokens = <<'EOT';
+-ERROR: CONFIG: Expected one of these tokens: <end>, '#', 'set', 'bindsym', 'bindcode', 'bind', 'bar', 'font', 'mode', 'floating_minimum_size', 'floating_maximum_size', 'floating_modifier', 'default_orientation', 'workspace_layout', 'new_window', 'new_float', 'hide_edge_borders', 'for_window', 'assign', 'focus_follows_mouse', 'force_focus_wrapping', 'force_xinerama', 'force-xinerama', 'workspace_auto_back_and_forth', 'fake_outputs', 'fake-outputs', 'force_display_urgency_hint', 'workspace', 'ipc_socket', 'ipc-socket', 'restart_state', 'popup_during_fullscreen', 'exec_always', 'exec', 'client.background', 'client.focused_inactive', 'client.focused', 'client.unfocused', 'client.urgent'
++ERROR: CONFIG: Expected one of these tokens: <end>, '#', 'set', 'bindsym', 'bindcode', 'bind', 'bar', 'font', 'mode', 'floating_minimum_size', 'floating_maximum_size', 'floating_modifier', 'default_orientation', 'workspace_layout', 'new_window', 'new_float', 'hide_edge_borders', 'for_window', 'assign', 'focus_follows_mouse', 'mouse_warping', 'force_focus_wrapping', 'force_xinerama', 'force-xinerama', 'workspace_auto_back_and_forth', 'fake_outputs', 'fake-outputs', 'force_display_urgency_hint', 'workspace', 'ipc_socket', 'ipc-socket', 'restart_state', 'popup_during_fullscreen', 'exec_always', 'exec', 'client.background', 'client.focused_inactive', 'client.focused', 'client.unfocused', 'client.urgent'
+ EOT
+ 
+ my $expected_end = <<'EOT';
+-- 
+1.9.0
+

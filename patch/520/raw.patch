@@ -1,0 +1,30 @@
+From 15b1da3eccf7d27149d5e136b1e26c15bdaaba2d Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Mon, 28 Apr 2014 18:21:29 -0400
+Subject: [PATCH] Bugfix: ipc window event crash with no window
+
+The log message at the top of ipc_send_window_event would segfault when
+no xcb window is present, such as for a split container.
+
+The log now shows the con id which is more relevant anyway.
+---
+ src/ipc.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/ipc.c b/src/ipc.c
+index 82ab142..5f668b1 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -1067,7 +1067,8 @@ void ipc_send_workspace_focus_event(Con *current, Con *old) {
+  * also the window container, in "container".
+  */
+ void ipc_send_window_event(const char *property, Con *con) {
+-    DLOG("Issue IPC window %s event for X11 window 0x%08x\n", property, con->window->id);
++    DLOG("Issue IPC window %s event (con = %p, window = 0x%08x)\n",
++            property, con, (con->window ? con->window->id : XCB_WINDOW_NONE));
+ 
+     setlocale(LC_NUMERIC, "C");
+     yajl_gen gen = ygenalloc();
+-- 
+1.9.2
+

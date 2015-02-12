@@ -1,0 +1,676 @@
+From a2ff7402f80533871b251fb403c1bd0ccfdc104f Mon Sep 17 00:00:00 2001
+From: Klemens Baum <klemensbaum@…>
+Date: Thu, 28 Feb 2013 00:51:19 +0100
+Subject: [PATCH] Allow configuration of colors with alpha channel
+
+This commit comprises the following changes:
+
+  Properly validate color strings with optional alpha channel
+    For example #DDE83030 and #E83030 are both allowed
+  Use a 32-bit visual for i3bar if available
+    Note: We cannot just use the root visual because some graphics
+    drivers (e.g. fglrx) do not support setting a 32-bit root visual.
+  Pass the current visual to draw_text (needed for Pango)
+---
+ i3-config-wizard/main.c |  4 ++-
+ i3-input/main.c         |  6 ++--
+ i3-nagbar/main.c        |  7 ++--
+ i3bar/src/xcb.c         | 91 +++++++++++++++++++++++++++++++++++--------------
+ include/libi3.h         | 19 ++++++++---
+ libi3/font.c            | 14 ++++----
+ libi3/get_colorpixel.c  | 72 +++++++++++++++++++++++++++++++++-----
+ src/config_directives.c | 26 ++++++++++----
+ src/sighandler.c        |  4 ++-
+ src/x.c                 | 15 ++++++--
+ 10 files changed, 195 insertions(+), 63 deletions(-)
+
+diff --git a/i3-config-wizard/main.c b/i3-config-wizard/main.c
+index 54c8e02..a6606a8 100644
+--- a/i3-config-wizard/main.c
++++ b/i3-config-wizard/main.c
+@@ -72,6 +72,7 @@ static uint32_t xcb_numlock_mask;
+ xcb_connection_t *conn;
+ static xcb_key_symbols_t *keysyms;
+ xcb_screen_t *root_screen;
++static xcb_visualtype_t* visual_type;
+ static xcb_get_modifier_mapping_reply_t *modmap_reply;
+ static i3Font font;
+ static i3Font bold_font;
+@@ -484,7 +485,7 @@ static int handle_expose() {
+     set_font(&font);
+ 
+ #define txt(x, row, text) \
+-    draw_text_ascii(text, pixmap, pixmap_gc,\
++    draw_text_ascii(text, pixmap, visual_type, pixmap_gc,\
+             x, (row - 1) * font.height + 4, 300 - x * 2)
+ 
+     if (current_step == STEP_WELCOME) {
+@@ -814,6 +815,7 @@ int main(int argc, char *argv[]) {
+     #undef xmacro
+ 
+     root_screen = xcb_aux_get_screen(conn, screens);
++    visual_type = get_visualtype(root_screen);
+     root = root_screen->root;
+ 
+     if (!(modmap_reply = xcb_get_modifier_mapping_reply(conn, modmap_cookie, NULL)))
+diff --git a/i3-input/main.c b/i3-input/main.c
+index 49db4df..8576f60 100644
+--- a/i3-input/main.c
++++ b/i3-input/main.c
+@@ -43,6 +43,7 @@ static xcb_key_symbols_t *symbols;
+ static bool modeswitch_active = false;
+ static xcb_window_t win;
+ static xcb_pixmap_t pixmap;
++static xcb_visualtype_t* visual_type;
+ static xcb_gcontext_t pixmap_gc;
+ static xcb_char2b_t glyphs_ucs[512];
+ static char *glyphs_utf8[512];
+@@ -137,13 +138,13 @@ static int handle_expose(void *data, xcb_connection_t *conn, xcb_expose_event_t
+ 
+     /* draw the prompt … */
+     if (prompt != NULL) {
+-        draw_text(prompt, pixmap, pixmap_gc, 4, 4, 492);
++        draw_text(prompt, pixmap, visual_type, pixmap_gc, 4, 4, 492);
+     }
+     /* … and the text */
+     if (input_position > 0)
+     {
+         i3String *input = i3string_from_ucs2(glyphs_ucs, input_position);
+-        draw_text(input, pixmap, pixmap_gc, prompt_offset + 4, 4, 492);
++        draw_text(input, pixmap, visual_type, pixmap_gc, prompt_offset + 4, 4, 492);
+         i3string_free(input);
+     }
+ 
+@@ -385,6 +386,7 @@ int main(int argc, char *argv[]) {
+     focus_cookie = xcb_get_input_focus(conn);
+ 
+     root_screen = xcb_aux_get_screen(conn, screens);
++    visual_type = get_visualtype(root_screen);
+     root = root_screen->root;
+ 
+     symbols = xcb_key_symbols_alloc(conn);
+diff --git a/i3-nagbar/main.c b/i3-nagbar/main.c
+index 2243aa7..3c21b90 100644
+--- a/i3-nagbar/main.c
++++ b/i3-nagbar/main.c
+@@ -41,6 +41,7 @@ typedef struct {
+ 
+ static xcb_window_t win;
+ static xcb_pixmap_t pixmap;
++static xcb_visualtype_t* visual_type;
+ static xcb_gcontext_t pixmap_gc;
+ static xcb_rectangle_t rect = { 0, 0, 600, 20 };
+ static i3Font font;
+@@ -191,7 +192,7 @@ static int handle_expose(xcb_connection_t *conn, xcb_expose_event_t *event) {
+ 
+     /* restore font color */
+     set_font_colors(pixmap_gc, color_text, color_background);
+-    draw_text(prompt, pixmap, pixmap_gc,
++    draw_text(prompt, pixmap, visual_type, pixmap_gc,
+             4 + 4, 4 + 4, rect.width - 4 - 4);
+ 
+     /* render close button */
+@@ -218,7 +219,7 @@ static int handle_expose(xcb_connection_t *conn, xcb_expose_event_t *event) {
+ 
+     values[0] = 1;
+     set_font_colors(pixmap_gc, color_text, color_button_background);
+-    draw_text_ascii("X", pixmap, pixmap_gc, y - w - line_width + w / 2 - 4,
++    draw_text_ascii("X", pixmap, visual_type, pixmap_gc, y - w - line_width + w / 2 - 4,
+             4 + 4 - 1, rect.width - y + w + line_width - w / 2 + 4);
+     y -= w;
+ 
+@@ -249,7 +250,7 @@ static int handle_expose(xcb_connection_t *conn, xcb_expose_event_t *event) {
+         values[0] = color_text;
+         values[1] = color_button_background;
+         set_font_colors(pixmap_gc, color_text, color_button_background);
+-        draw_text(buttons[c].label, pixmap, pixmap_gc,
++        draw_text(buttons[c].label, pixmap, visual_type, pixmap_gc,
+                 y - w - line_width + 6, 4 + 3, rect.width - y + w + line_width - 6);
+ 
+         y -= w;
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index d5d4eb8..642a6d0 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -48,6 +48,9 @@ xcb_connection_t *xcb_connection;
+ int              screen;
+ xcb_screen_t     *root_screen;
+ xcb_window_t     xcb_root;
++xcb_visualtype_t *visual_type;
++uint8_t          depth;
++xcb_colormap_t   colormap;
+ 
+ /* selection window for tray support */
+ static xcb_window_t selwin = XCB_NONE;
+@@ -173,7 +176,8 @@ void refresh_statusline(void) {
+ 
+         uint32_t colorpixel = (block->color ? get_colorpixel(block->color) : colors.bar_fg);
+         set_font_colors(statusline_ctx, colorpixel, colors.bar_bg);
+-        draw_text(block->full_text, statusline_pm, statusline_ctx, x + block->x_offset, 1, block->width);
++        draw_text(block->full_text, statusline_pm, visual_type,
++                statusline_ctx, x + block->x_offset, 1, block->width);
+         x += block->width + block->x_offset + block->x_append;
+ 
+         if (TAILQ_NEXT(block, blocks) != NULL && !block->no_separator && block->sep_block_width > 0) {
+@@ -261,7 +265,16 @@ void unhide_bars(void) {
+ void init_colors(const struct xcb_color_strings_t *new_colors) {
+ #define PARSE_COLOR(name, def) \
+     do { \
+-        colors.name = get_colorpixel(new_colors->name ? new_colors->name : def); \
++        const char* color = def; \
++        const char* user_color = new_colors->name; \
++        if (user_color) { \
++            if (valid_colorpixel(user_color)) { \
++                color = user_color; \
++            } else { \
++                ELOG("Invalid color specified for %s: %s", #name, user_color); \
++            } \
++        } \
++        colors.name = get_colorpixel(color); \
+     } while  (0)
+     PARSE_COLOR(bar_fg, "#FFFFFF");
+     PARSE_COLOR(bar_bg, "#000000");
+@@ -872,34 +885,55 @@ char *init_xcb_early() {
+     root_screen = xcb_aux_get_screen(xcb_connection, screen);
+     xcb_root = root_screen->root;
+ 
++    depth = root_screen->root_depth;
++    colormap = root_screen->default_colormap;
++
++    visual_type = xcb_aux_find_visual_by_attrs(root_screen, -1, 32);
++    if (visual_type) {
++        depth = xcb_aux_get_depth_of_visual(root_screen, visual_type->visual_id);
++
++        colormap = xcb_generate_id(xcb_connection);
++        xcb_void_cookie_t cm_cookie = xcb_create_colormap_checked(xcb_connection,
++                                                                  XCB_COLORMAP_ALLOC_NONE,
++                                                                  colormap,
++                                                                  xcb_root,
++                                                                  visual_type->visual_id);
++        if (xcb_request_failed(cm_cookie, "Could not allocate colormap")) {
++            exit(EXIT_FAILURE);
++        }
++    } else {
++        visual_type = get_visualtype(root_screen);
++    }
++
+     /* We draw the statusline to a seperate pixmap, because it looks the same on all bars and
+      * this way, we can choose to crop it */
+     uint32_t mask = XCB_GC_FOREGROUND;
+     uint32_t vals[] = { colors.bar_bg, colors.bar_bg };
+ 
++    statusline_pm = xcb_generate_id(xcb_connection);
++    xcb_void_cookie_t sl_pm_cookie = xcb_create_pixmap_checked(xcb_connection,
++                                                               depth,
++                                                               statusline_pm,
++                                                               xcb_root,
++                                                               root_screen->width_in_pixels,
++                                                               root_screen->height_in_pixels);
++
+     statusline_clear = xcb_generate_id(xcb_connection);
+     xcb_void_cookie_t clear_ctx_cookie = xcb_create_gc_checked(xcb_connection,
+                                                                statusline_clear,
+-                                                               xcb_root,
++                                                               statusline_pm,
+                                                                mask,
+                                                                vals);
+ 
++    mask |= XCB_GC_BACKGROUND;
++    vals[0] = colors.bar_fg;
+     statusline_ctx = xcb_generate_id(xcb_connection);
+     xcb_void_cookie_t sl_ctx_cookie = xcb_create_gc_checked(xcb_connection,
+                                                             statusline_ctx,
+-                                                            xcb_root,
++                                                            statusline_pm,
+                                                             0,
+                                                             NULL);
+ 
+-    statusline_pm = xcb_generate_id(xcb_connection);
+-    xcb_void_cookie_t sl_pm_cookie = xcb_create_pixmap_checked(xcb_connection,
+-                                                               root_screen->root_depth,
+-                                                               statusline_pm,
+-                                                               xcb_root,
+-                                                               root_screen->width_in_pixels,
+-                                                               root_screen->height_in_pixels);
+-
+-
+     /* The various Watchers to communicate with xcb */
+     xcb_io = smalloc(sizeof(ev_io));
+     xcb_prep = smalloc(sizeof(ev_prepare));
+@@ -1267,7 +1301,7 @@ void realloc_sl_buffer(void) {
+     xcb_free_pixmap(xcb_connection, statusline_pm);
+     statusline_pm = xcb_generate_id(xcb_connection);
+     xcb_void_cookie_t sl_pm_cookie = xcb_create_pixmap_checked(xcb_connection,
+-                                                               root_screen->root_depth,
++                                                               depth,
+                                                                statusline_pm,
+                                                                xcb_root,
+                                                                MAX(root_screen->width_in_pixels, statusline_width),
+@@ -1279,7 +1313,7 @@ void realloc_sl_buffer(void) {
+     statusline_clear = xcb_generate_id(xcb_connection);
+     xcb_void_cookie_t clear_ctx_cookie = xcb_create_gc_checked(xcb_connection,
+                                                                statusline_clear,
+-                                                               xcb_root,
++                                                               statusline_pm,
+                                                                mask,
+                                                                vals);
+ 
+@@ -1289,7 +1323,7 @@ void realloc_sl_buffer(void) {
+     xcb_free_gc(xcb_connection, statusline_ctx);
+     xcb_void_cookie_t sl_ctx_cookie = xcb_create_gc_checked(xcb_connection,
+                                                             statusline_ctx,
+-                                                            xcb_root,
++                                                            statusline_pm,
+                                                             mask,
+                                                             vals);
+ 
+@@ -1324,37 +1358,42 @@ void reconfig_windows(void) {
+ 
+             walk->bar = xcb_generate_id(xcb_connection);
+             walk->buffer = xcb_generate_id(xcb_connection);
+-            mask = XCB_CW_BACK_PIXEL | XCB_CW_OVERRIDE_REDIRECT | XCB_CW_EVENT_MASK;
++            mask = XCB_CW_BACK_PIXEL | XCB_CW_BORDER_PIXEL | XCB_CW_OVERRIDE_REDIRECT
++                | XCB_CW_EVENT_MASK | XCB_CW_COLORMAP;
+             /* Black background */
+             values[0] = colors.bar_bg;
++            /* Border */
++            values[1] = root_screen->black_pixel;
+             /* If hide_on_modifier is set, i3 is not supposed to manage our bar-windows */
+-            values[1] = config.hide_on_modifier;
++            values[2] = config.hide_on_modifier;
+             /* We enable the following EventMask fields:
+              * EXPOSURE, to get expose events (we have to re-draw then)
+              * SUBSTRUCTURE_REDIRECT, to get ConfigureRequests when the tray
+              *                        child windows use ConfigureWindow
+              * BUTTON_PRESS, to handle clicks on the workspace buttons
+              * */
+-            values[2] = XCB_EVENT_MASK_EXPOSURE |
++            values[3] = XCB_EVENT_MASK_EXPOSURE |
+                         XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT;
+             if (!config.disable_ws) {
+-                values[2] |= XCB_EVENT_MASK_BUTTON_PRESS;
++                values[3] |= XCB_EVENT_MASK_BUTTON_PRESS;
+             }
++            /* Colormap */
++            values[4] = colormap;
+             xcb_void_cookie_t win_cookie = xcb_create_window_checked(xcb_connection,
+-                                                                     root_screen->root_depth,
++                                                                     depth,
+                                                                      walk->bar,
+                                                                      xcb_root,
+                                                                      walk->rect.x, walk->rect.y + walk->rect.h - font.height - 6,
+                                                                      walk->rect.w, font.height + 6,
+                                                                      0,
+                                                                      XCB_WINDOW_CLASS_INPUT_OUTPUT,
+-                                                                     root_screen->root_visual,
++                                                                     visual_type->visual_id,
+                                                                      mask,
+                                                                      values);
+ 
+             /* The double-buffer we use to render stuff off-screen */
+             xcb_void_cookie_t pm_cookie = xcb_create_pixmap_checked(xcb_connection,
+-                                                                    root_screen->root_depth,
++                                                                    depth,
+                                                                     walk->buffer,
+                                                                     walk->bar,
+                                                                     walk->rect.w,
+@@ -1494,7 +1533,7 @@ void reconfig_windows(void) {
+ 
+             DLOG("Recreating buffer for output %s\n", walk->name);
+             xcb_void_cookie_t pm_cookie = xcb_create_pixmap_checked(xcb_connection,
+-                                                                    root_screen->root_depth,
++                                                                    depth,
+                                                                     walk->buffer,
+                                                                     walk->bar,
+                                                                     walk->rect.w,
+@@ -1633,7 +1672,7 @@ void draw_bars(bool unhide) {
+                                     1,
+                                     &rect);
+             set_font_colors(outputs_walk->bargc, fg_color, bg_color);
+-            draw_text(ws_walk->name, outputs_walk->buffer, outputs_walk->bargc, i + 5, 3, ws_walk->name_width);
++            draw_text(ws_walk->name, outputs_walk->buffer, visual_type, outputs_walk->bargc, i + 5, 3, ws_walk->name_width);
+             i += 10 + ws_walk->name_width + 1;
+ 
+         }
+@@ -1669,7 +1708,7 @@ void draw_bars(bool unhide) {
+                                     &rect);
+ 
+             set_font_colors(outputs_walk->bargc, fg_color, bg_color);
+-            draw_text(binding.name, outputs_walk->buffer, outputs_walk->bargc, i + 5, 3, binding.width);
++            draw_text(binding.name, outputs_walk->buffer, visual_type, outputs_walk->bargc, i + 5, 3, binding.width);
+         }
+ 
+         i = 0;
+diff --git a/include/libi3.h b/include/libi3.h
+index 53f3383..9aec0d7 100644
+--- a/include/libi3.h
++++ b/include/libi3.h
+@@ -231,14 +231,25 @@ int ipc_recv_message(int sockfd, uint32_t *message_type,
+ void fake_configure_notify(xcb_connection_t *conn, xcb_rectangle_t r, xcb_window_t window, int border_width);
+ 
+ /**
++ * Checks whether the given string denotes a valid color.
++ *
++ * Color strings start with # followed by two hexadecimal digits for each
++ * component.
++ *
++ * RGB components must be specified while alpha is optional,
++ * i.e. all valid colors are of the form #RRGGBB or #AARRGGBB.
++ */
++bool valid_colorpixel(const char* hex);
++
++/**
+  * Returns the colorpixel to use for the given hex color (think of HTML). Only
+  * works for true-color (vast majority of cases) at the moment, avoiding a
+  * roundtrip to X11.
+  *
+- * The hex_color has to start with #, for example #FF00FF.
++ * See valid_colorpixel() for a description of the color format.
+  *
+  * NOTE that get_colorpixel() does _NOT_ check the given color code for validity.
+- * This has to be done by the caller.
++ * The caller should use valid_colorpixel() to sanitize user input.
+  *
+  * NOTE that this function may in the future rely on a global xcb_connection_t
+  * variable called 'conn' to be present.
+@@ -328,14 +339,14 @@ void set_font_colors(xcb_gcontext_t gc, uint32_t foreground, uint32_t background
+  * Text must be specified as an i3String.
+  *
+  */
+-void draw_text(i3String *text, xcb_drawable_t drawable,
++void draw_text(i3String *text, xcb_drawable_t drawable, xcb_visualtype_t* visual,
+         xcb_gcontext_t gc, int x, int y, int max_width);
+ 
+ /**
+  * ASCII version of draw_text to print static strings.
+  *
+  */
+-void draw_text_ascii(const char *text, xcb_drawable_t drawable,
++void draw_text_ascii(const char *text, xcb_drawable_t drawable, xcb_visualtype_t* visual,
+         xcb_gcontext_t gc, int x, int y, int max_width);
+ 
+ /**
+diff --git a/libi3/font.c b/libi3/font.c
+index 8239b1f..381b8e4 100644
+--- a/libi3/font.c
++++ b/libi3/font.c
+@@ -79,11 +79,11 @@ static bool load_pango_font(i3Font *font, const char *desc) {
+  *
+  */
+ static void draw_text_pango(const char *text, size_t text_len,
+-        xcb_drawable_t drawable, int x, int y, int max_width) {
++        xcb_drawable_t drawable, xcb_visualtype_t* visual, int x, int y, int max_width) {
+     /* Create the Pango layout */
+     /* root_visual_type is cached in load_pango_font */
+     cairo_surface_t *surface = cairo_xcb_surface_create(conn, drawable,
+-            root_visual_type, x + max_width, y + savedFont->height);
++            visual, x + max_width, y + savedFont->height);
+     cairo_t *cr = cairo_create(surface);
+     PangoLayout *layout = pango_cairo_create_layout(cr);
+     pango_layout_set_font_description(layout, savedFont->specific.pango_desc);
+@@ -322,7 +322,7 @@ static void draw_text_xcb(const xcb_char2b_t *text, size_t text_len, xcb_drawabl
+  * Text must be specified as an i3String.
+  *
+  */
+-void draw_text(i3String *text, xcb_drawable_t drawable,
++void draw_text(i3String *text, xcb_drawable_t drawable, xcb_visualtype_t* visual,
+                xcb_gcontext_t gc, int x, int y, int max_width) {
+     assert(savedFont != NULL);
+ 
+@@ -338,7 +338,7 @@ void draw_text(i3String *text, xcb_drawable_t drawable,
+         case FONT_TYPE_PANGO:
+             /* Render the text using Pango */
+             draw_text_pango(i3string_as_utf8(text), i3string_get_num_bytes(text),
+-                            drawable, x, y, max_width);
++                            drawable, visual, x, y, max_width);
+             return;
+ #endif
+         default:
+@@ -350,7 +350,7 @@ void draw_text(i3String *text, xcb_drawable_t drawable,
+  * ASCII version of draw_text to print static strings.
+  *
+  */
+-void draw_text_ascii(const char *text, xcb_drawable_t drawable,
++void draw_text_ascii(const char *text, xcb_drawable_t drawable, xcb_visualtype_t* visual,
+                xcb_gcontext_t gc, int x, int y, int max_width) {
+     assert(savedFont != NULL);
+ 
+@@ -364,7 +364,7 @@ void draw_text_ascii(const char *text, xcb_drawable_t drawable,
+             if (text_len > 255) {
+                 /* The text is too long to draw it directly to X */
+                 i3String *str = i3string_from_utf8(text);
+-                draw_text(str, drawable, gc, x, y, max_width);
++                draw_text(str, drawable, visual, gc, x, y, max_width);
+                 i3string_free(str);
+             } else {
+                 /* X11 coordinates for fonts start at the baseline */
+@@ -378,7 +378,7 @@ void draw_text_ascii(const char *text, xcb_drawable_t drawable,
+         case FONT_TYPE_PANGO:
+             /* Render the text using Pango */
+             draw_text_pango(text, strlen(text),
+-                            drawable, x, y, max_width);
++                            drawable, visual, x, y, max_width);
+             return;
+ #endif
+         default:
+diff --git a/libi3/get_colorpixel.c b/libi3/get_colorpixel.c
+index b093594..a82fe0c 100644
+--- a/libi3/get_colorpixel.c
++++ b/libi3/get_colorpixel.c
+@@ -7,9 +7,54 @@
+  */
+ #include <stdlib.h>
+ #include <stdint.h>
++#include <string.h>
++#include <assert.h>
+ 
+ #include "libi3.h"
+ 
++bool has_alpha(const char* hex) {
++    assert(strlen(hex) >= 7);
++
++    return hex[7] != '\0';
++}
++
++bool in_range(char val, char lower, char upper) {
++    return lower <= val && val <= upper;
++}
++
++bool is_hex(char c) {
++    return in_range(c, '0', '9')
++        || in_range(c, 'A', 'F')
++        || in_range(c, 'a', 'f');
++}
++
++bool valid_colorpixel(const char* hex) {
++    if (hex[0] != '#') {
++        return false;
++    }
++
++    size_t len = strlen(hex);
++    if (len < 7) {
++        return false;
++    }
++
++    if (has_alpha(hex)) {
++        if (len != 9) {
++            return false;
++        }
++    } else if (len != 7) {
++        return false;
++    }
++
++    while (*++hex) {
++        if (!is_hex(*hex)) {
++            return false;
++        }
++    }
++
++    return true;
++}
++
+ /*
+  * Returns the colorpixel to use for the given hex color (think of HTML). Only
+  * works for true-color (vast majority of cases) at the moment, avoiding a
+@@ -25,14 +70,23 @@
+  *
+  */
+ uint32_t get_colorpixel(const char *hex) {
+-    char strgroups[3][3] = {{hex[1], hex[2], '\0'},
+-                            {hex[3], hex[4], '\0'},
+-                            {hex[5], hex[6], '\0'}};
+-    uint8_t r = strtol(strgroups[0], NULL, 16);
+-    uint8_t g = strtol(strgroups[1], NULL, 16);
+-    uint8_t b = strtol(strgroups[2], NULL, 16);
+-
+-    /* We set the first 8 bits high to have 100% opacity in case of a 32 bit
++    assert(valid_colorpixel(hex));
++
++    /* If specified without alpha, assume 100% opacity in case of a 32 bit
+      * color depth visual. */
+-    return (0xFF << 24) | (r << 16 | g << 8 | b);
++    char strgroups[4][3] = {{'F', 'F', '\0'}};
++
++    size_t first_component = has_alpha(hex) ? 0 : 1;
++    for (size_t i = first_component; i < 4; ++i) {
++        strgroups[i][0] = *++hex;
++        strgroups[i][1] = *++hex;
++        strgroups[i][2] = '\0';
++    }
++
++    uint8_t a = strtol(strgroups[0], NULL, 16);
++    uint8_t r = strtol(strgroups[1], NULL, 16);
++    uint8_t g = strtol(strgroups[2], NULL, 16);
++    uint8_t b = strtol(strgroups[3], NULL, 16);
++
++    return (a << 24 | r << 16 | g << 8 | b);
+ }
+diff --git a/src/config_directives.c b/src/config_directives.c
+index a7fa350..2a6d9af 100644
+--- a/src/config_directives.c
++++ b/src/config_directives.c
+@@ -24,6 +24,18 @@
+     y(map_close); \
+ } while (0)
+ 
++// Macro to sanitize user-provided color strings
++#define APPLY_COLOR(classname, value) \
++    do { \
++        if (value) { \
++            if (valid_colorpixel(value)) { \
++                config.client.classname = get_colorpixel(value); \
++            } else { \
++                ELOG("Invalid color specified for %s: %s", #classname, value); \
++            } \
++        } \
++    } while  (0)
++
+ /*******************************************************************************
+  * Criteria functions.
+  ******************************************************************************/
+@@ -403,19 +415,19 @@ CFGFUN(popup_during_fullscreen, const char *value) {
+ 
+ CFGFUN(color_single, const char *colorclass, const char *color) {
+     /* used for client.background only currently */
+-    config.client.background = get_colorpixel(color);
++    if (strcmp(colorclass, "client.background") == 0) {
++        APPLY_COLOR(background, color);
++    }
+ }
+ 
+ CFGFUN(color, const char *colorclass, const char *border, const char *background, const char *text, const char *indicator) {
+ #define APPLY_COLORS(classname) \
+     do { \
+         if (strcmp(colorclass, "client." #classname) == 0) { \
+-            config.client.classname.border = get_colorpixel(border); \
+-            config.client.classname.background = get_colorpixel(background); \
+-            config.client.classname.text = get_colorpixel(text); \
+-            if (indicator != NULL) { \
+-                config.client. classname .indicator = get_colorpixel(indicator); \
+-            } \
++            APPLY_COLOR(classname.border, border); \
++            APPLY_COLOR(classname.background, background); \
++            APPLY_COLOR(classname.text, text); \
++            APPLY_COLOR(classname.indicator, indicator); \
+         } \
+     } while (0)
+ 
+diff --git a/src/sighandler.c b/src/sighandler.c
+index a458b4a..20efe77 100644
+--- a/src/sighandler.c
++++ b/src/sighandler.c
+@@ -24,6 +24,8 @@
+ 
+ static void open_popups(void);
+ 
++extern xcb_visualtype_t* visual_type;
++
+ static xcb_gcontext_t pixmap_gc;
+ static xcb_pixmap_t pixmap;
+ static int raised_signal;
+@@ -150,7 +152,7 @@ static int sig_draw_window(xcb_window_t win, int width, int height, int font_hei
+         if (i == backtrace_string_index)
+             set_font_colors(pixmap_gc, get_colorpixel(bt_colour), get_colorpixel("#000000"));
+ 
+-        draw_text(crash_text_i3strings[i], pixmap, pixmap_gc,
++        draw_text(crash_text_i3strings[i], pixmap, visual_type, pixmap_gc,
+                 8, 5 + i * font_height, width - 16);
+ 
+         /* and reset the colour again for other lines */
+diff --git a/src/x.c b/src/x.c
+index fcb63c3..503b59d 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -15,6 +15,8 @@
+ /* Stores the X11 window ID of the currently focused window */
+ xcb_window_t focused_id = XCB_NONE;
+ 
++xcb_visualtype_t* visual_type;
++
+ /* The bottom-to-top window stack of all windows which are managed by i3.
+  * Used for x_get_window_stack(). */
+ static xcb_window_t *btt_stack;
+@@ -99,7 +101,10 @@ void x_con_init(Con *con, uint16_t depth) {
+     if (depth != root_depth && depth != XCB_COPY_FROM_PARENT) {
+         /* For custom visuals, we need to create a colormap before creating
+          * this window. It will be freed directly after creating the window. */
+-        visual = get_visualid_by_depth(depth);
++        visual_type = xcb_aux_find_visual_by_attrs(root_screen, -1, depth);
++        if (visual_type) {
++            visual = visual_type->visual_id;
++        }
+         win_colormap = xcb_generate_id(conn);
+         xcb_create_colormap_checked(conn, XCB_COLORMAP_ALLOC_NONE, win_colormap, root, visual);
+ 
+@@ -136,6 +141,10 @@ void x_con_init(Con *con, uint16_t depth) {
+         values[2] = colormap;
+     }
+ 
++    if (!visual_type) {
++        visual_type = get_visualtype(root_screen);
++    }
++
+     Rect dims = { -15, -15, 10, 10 };
+     con->frame = create_window(conn, dims, depth, visual, XCB_WINDOW_CLASS_INPUT_OUTPUT, XCURSOR_CURSOR_POINTER, false, mask, values);
+ 
+@@ -500,7 +509,7 @@ void x_draw_decoration(Con *con) {
+         free(tree);
+ 
+         draw_text_ascii(title,
+-                parent->pixmap, parent->pm_gc,
++                parent->pixmap, visual_type, parent->pm_gc,
+                 con->deco_rect.x + 2, con->deco_rect.y + text_offset_y,
+                 con->deco_rect.width - 2);
+         free(title);
+@@ -529,7 +538,7 @@ void x_draw_decoration(Con *con) {
+     int indent_px = (indent_level * 5) * indent_mult;
+ 
+     draw_text(win->name,
+-            parent->pixmap, parent->pm_gc,
++            parent->pixmap, visual_type, parent->pm_gc,
+             con->deco_rect.x + 2 + indent_px, con->deco_rect.y + text_offset_y,
+             con->deco_rect.width - 2 - indent_px);
+ 
+-- 
+1.7.12.4
+

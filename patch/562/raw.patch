@@ -1,0 +1,224 @@
+From 6fae1fded8cbcf33ef19519e4c8e1a7184349aad Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sat, 31 May 2014 11:00:02 -0400
+Subject: [PATCH] Add abstraction for running a binding
+
+Add run_binding function to bindings.h.
+
+> Runs the given binding and handles parse errors. Returns a
+> CommandResult for running the binding's command. Caller should render
+> tree if needs_tree_render is true. Free with command_result_free().
+---
+ include/bindings.h  | 10 ++++++
+ include/key_press.h |  2 --
+ src/bindings.c      | 41 +++++++++++++++++++++++++
+ src/key_press.c     | 87 +----------------------------------------------------
+ 4 files changed, 52 insertions(+), 88 deletions(-)
+
+diff --git a/include/bindings.h b/include/bindings.h
+index 52105d3..e51f5e9 100644
+--- a/include/bindings.h
++++ b/include/bindings.h
+@@ -9,6 +9,8 @@
+  */
+ #pragma once
+ 
++extern pid_t command_error_nagbar_pid;
++
+ /**
+  * The name of the default mode.
+  *
+@@ -57,3 +59,11 @@ void switch_mode(const char *new_mode);
+  *
+  */
+ void check_for_duplicate_bindings(struct context *context);
++
++/**
++ * Runs the given binding and handles parse errors. Returns a CommandResult for
++ * running the binding's command. Caller should render tree if
++ * needs_tree_render is true. Free with command_result_free().
++ *
++ */
++CommandResult *run_binding(Binding *bind);
+diff --git a/include/key_press.h b/include/key_press.h
+index 89199ce..9712e8b 100644
+--- a/include/key_press.h
++++ b/include/key_press.h
+@@ -9,8 +9,6 @@
+  */
+ #pragma once
+ 
+-extern pid_t command_error_nagbar_pid;
+-
+ /**
+  * There was a key press. We compare this key code with our bindings table and pass
+  * the bound action to parse_command().
+diff --git a/src/bindings.c b/src/bindings.c
+index 50644d9..c6695b3 100644
+--- a/src/bindings.c
++++ b/src/bindings.c
+@@ -8,6 +8,8 @@
+  */
+ #include "all.h"
+ 
++pid_t command_error_nagbar_pid = -1;
++
+ /*
+  * The name of the default mode.
+  *
+@@ -379,3 +381,42 @@ void check_for_duplicate_bindings(struct context *context) {
+         }
+     }
+ }
++
++/*
++ * Runs the given binding and handles parse errors. Returns a CommandResult for
++ * running the binding's command. Caller should render tree if
++ * needs_tree_render is true. Free with command_result_free().
++ *
++ */
++CommandResult *run_binding(Binding *bind) {
++    char *command_copy = sstrdup(bind->command);
++    CommandResult *result = parse_command(command_copy, NULL);
++    free(command_copy);
++
++    if (result->needs_tree_render)
++        tree_render();
++
++    if (result->parse_error) {
++        char *pageraction;
++        sasprintf(&pageraction, "i3-sensible-pager \"%s\"\n", errorfilename);
++        char *argv[] = {
++            NULL, /* will be replaced by the executable path */
++            "-f",
++            config.font.pattern,
++            "-t",
++            "error",
++            "-m",
++            "The configured command for this shortcut could not be run successfully.",
++            "-b",
++            "show errors",
++            pageraction,
++            NULL
++        };
++        start_nagbar(&command_error_nagbar_pid, argv);
++        free(pageraction);
++    }
++
++    /* TODO: emit event for running a binding */
++
++    return result;
++}
+diff --git a/src/key_press.c b/src/key_press.c
+index 5335610..56021da 100644
+--- a/src/key_press.c
++++ b/src/key_press.c
+@@ -9,50 +9,8 @@
+  * key_press.c: key press handler
+  *
+  */
+-#include <sys/types.h>
+-#include <sys/stat.h>
+-#include <sys/wait.h>
+-#include <fcntl.h>
+ #include "all.h"
+ 
+-static int current_nesting_level;
+-static bool parse_error_key;
+-static bool command_failed;
+-
+-pid_t command_error_nagbar_pid = -1;
+-
+-static int json_boolean(void *ctx, int boolval) {
+-    DLOG("Got bool: %d, parse_error_key %d, nesting_level %d\n", boolval, parse_error_key, current_nesting_level);
+-
+-    if (parse_error_key && current_nesting_level == 1 && boolval)
+-        command_failed = true;
+-
+-    return 1;
+-}
+-
+-static int json_map_key(void *ctx, const unsigned char *stringval, size_t stringlen) {
+-    parse_error_key = (stringlen >= strlen("parse_error") &&
+-                       strncmp((const char*)stringval, "parse_error", strlen("parse_error")) == 0);
+-    return 1;
+-}
+-
+-static int json_start_map(void *ctx) {
+-    current_nesting_level++;
+-    return 1;
+-}
+-
+-static int json_end_map(void *ctx) {
+-    current_nesting_level--;
+-    return 1;
+-}
+-
+-static yajl_callbacks command_error_callbacks = {
+-    .yajl_boolean = json_boolean,
+-    .yajl_start_map = json_start_map,
+-    .yajl_map_key = json_map_key,
+-    .yajl_end_map = json_end_map,
+-};
+-
+ /*
+  * There was a KeyPress or KeyRelease (both events have the same fields). We
+  * compare this key code with our bindings table and pass the bound action to
+@@ -72,53 +30,10 @@ void handle_key_press(xcb_key_press_event_t *event) {
+     if (bind == NULL)
+         return;
+ 
+-    yajl_gen gen = yajl_gen_alloc(NULL);
+-
+-    char *command_copy = sstrdup(bind->command);
+-    CommandResult *result = parse_command(command_copy, gen);
+-    free(command_copy);
++    CommandResult *result = run_binding(bind);
+ 
+     if (result->needs_tree_render)
+         tree_render();
+ 
+     command_result_free(result);
+-
+-    /* We parse the JSON reply to figure out whether there was an error
+-     * ("success" being false in on of the returned dictionaries). */
+-    const unsigned char *reply;
+-    size_t length;
+-    yajl_handle handle = yajl_alloc(&command_error_callbacks, NULL, NULL);
+-    yajl_gen_get_buf(gen, &reply, &length);
+-
+-    current_nesting_level = 0;
+-    parse_error_key = false;
+-    command_failed = false;
+-    yajl_status state = yajl_parse(handle, reply, length);
+-    if (state != yajl_status_ok) {
+-        ELOG("Could not parse my own reply. That's weird. reply is %.*s\n", (int)length, reply);
+-    } else {
+-        if (command_failed) {
+-            char *pageraction;
+-            sasprintf(&pageraction, "i3-sensible-pager \"%s\"\n", errorfilename);
+-            char *argv[] = {
+-                NULL, /* will be replaced by the executable path */
+-                "-f",
+-                config.font.pattern,
+-                "-t",
+-                "error",
+-                "-m",
+-                "The configured command for this shortcut could not be run successfully.",
+-                "-b",
+-                "show errors",
+-                pageraction,
+-                NULL
+-            };
+-            start_nagbar(&command_error_nagbar_pid, argv);
+-            free(pageraction);
+-        }
+-    }
+-
+-    yajl_free(handle);
+-
+-    yajl_gen_free(gen);
+ }
+-- 
+1.9.3
+

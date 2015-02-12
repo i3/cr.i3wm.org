@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 21,
+    "Comment": "While this is a technically accurate description of what happens, I still find that it could be clearer. How about this?\n\n“Show the next scratchpad window. When pressed on a scratchpad window, hide it again. In case there are multiple windows in the scratchpad, this command cycles through them.”\n\nI’m not 100% happy with it, but it clearly points out the cycling through windows instead of referring to an implementation detail (bottom of the list). Also note that it is written in the imperative form, i.e. “show” instead of “shows”.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

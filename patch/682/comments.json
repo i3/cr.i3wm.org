@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Ingo Bürk",
+    "Line": 14,
+    "Comment": "For reference, this is a minimal patch for http://bugs.i3wm.org/report/ticket/969.\n\nI think it's not the best idea to reuse the color settings for urgent_workspace and either introduce a new setting or rename it, but in the bug report it was said the patch should be minimal for now and reuse it.",
+    "EmailHash": "b6308596489b8c826a3d5212abd7518d"
+  },
+  {
+    "Author": "Ingo Bürk",
+    "Line": 14,
+    "Comment": "@Michael Since you changed my patch quite a bit before merging: did you deliberately remove the handling of block-\u003ex_offset and block-\u003ex_append when drawing the background?",
+    "EmailHash": "b6308596489b8c826a3d5212abd7518d"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 14,
+    "Comment": "It's weird that the border is drawn around the text and not around the block. If this isn't fixed, I hope that this feature will become disableable.\n\nHere an example: http://i.imgur.com/Ye9oHBX.png",
+    "EmailHash": ""
+  }
+]

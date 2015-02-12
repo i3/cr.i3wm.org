@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 15,
+    "Comment": "Thanks for your patch, but we strictly reject all advanced graphics features in i3lock, see also:\n\nhttp://bugs.i3wm.org/report/ticket/1031\nhttps://faq.i3wm.org/question/33/how-can-i-specify-the-image-position-in-i3lock/",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Richard Leitner",
+    "Line": 15,
+    "Comment": "Hi,\nthanks for your quick response!\n\nI'm sorry,  but I have some questions/statements on this:\nThe only functions I use are cairo_image_surface_get_{width,height} to calculate the offsets.\nAre these really \"advanced graphics features\" in your eyes?\nIn my opinion these aren't real graphic operations at all...\nThe patch is only placing the image somewhere else than 0/0 (no resizing or other stuff is used).\nI know that you can use a graphic editor to resize the image to your needs, but in my opinion if i3lock supports tiling it should also support centering.\n\nOf course I understand that you want to keep it simple, but this small, really simple feature (which is about 20 LoC) wouldn't let i3lock explode with complexity. :-)\n\nregards,\nRichard\n",
+    "EmailHash": "909fffef14b49a9f4bd0546e929ec601"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 15,
+    "Comment": "The concern is not about the specific amount of code or which functions you use, it’s about the feature set of i3lock. If we allow _any_ feature like this into the code base, we’d need to accept _all_ other similar features as well. After all, why would your centering be more important than some other user’s tinting? Both are simple, so following your logic, we should have them. And then some other user comes with transparency. And then rounded corners. And then…\n\nSee also https://faq.i3wm.org/question/778/why-is-patch-not-merged-and-made-optional/",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

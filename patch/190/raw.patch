@@ -1,0 +1,135 @@
+From 9019b55b89f37766d4ff6dbbac544ac8ddee9f5f Mon Sep 17 00:00:00 2001
+From: koebi <koebischnell@…>
+Date: Tue, 16 Jul 2013 00:33:14 +0200
+Subject: [PATCH] add command to remove marks
+
+---
+ docs/userguide                    |    7 ++++---
+ include/commands.h                |    6 ++++++
+ parser-specs/commands.spec        |    8 ++++++++
+ src/commands.c                    |   27 +++++++++++++++++++++++++++
+ testcases/t/187-commands-parser.t |    2 +-
+ 5 files changed, 46 insertions(+), 4 deletions(-)
+
+diff --git a/docs/userguide b/docs/userguide
+index aafea44..f402050 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -1679,9 +1679,10 @@ bindsym $mod+a [class="urxvt" title="VIM"] focus
+ This feature is like the jump feature: It allows you to directly jump to a
+ specific window (this means switching to the appropriate workspace and setting
+ focus to the windows). However, you can directly mark a specific window with
+-an arbitrary label and use it afterwards.  You do not need to ensure that your
+-windows have unique classes or titles, and you do not need to change your
+-configuration file.
++an arbitrary label and use it afterwards. You can unmark the label in the same
++way, using the unmark command. If you don't specify a label, unmark removes all
++marks. You do not need to ensure that your windows have unique classes or 
++titles, and you do not need to change your configuration file.
+ 
+ As the command needs to include the label with which you want to mark the
+ window, you cannot simply bind it to a key.  +i3-input+ is a tool created
+diff --git a/include/commands.h b/include/commands.h
+index 21f2238..bbf45ba 100644
+--- a/include/commands.h
++++ b/include/commands.h
+@@ -116,6 +116,12 @@ void cmd_workspace_name(I3_CMD, char *name);
+ void cmd_mark(I3_CMD, char *mark);
+ 
+ /**
++ * Implementation of 'unmark [mark]'
++ *
++ */
++void cmd_unmark(I3_CMD, char *mark);
++
++/**
+  * Implementation of 'mode <string>'.
+  *
+  */
+diff --git a/parser-specs/commands.spec b/parser-specs/commands.spec
+index 88fbfe6..2c640c6 100644
+--- a/parser-specs/commands.spec
++++ b/parser-specs/commands.spec
+@@ -32,6 +32,7 @@ state INITIAL:
+   'split' -> SPLIT
+   'floating' -> FLOATING
+   'mark' -> MARK
++  'unmark' -> UNMARK
+   'resize' -> RESIZE
+   'rename' -> RENAME
+   'nop' -> NOP
+@@ -177,6 +178,13 @@ state MARK:
+   mark = string
+       -> call cmd_mark($mark)
+ 
++# unmark [mark]
++state UNMARK:
++  end
++      -> call cmd_unmark($mark)
++  mark = string
++      -> call cmd_unmark($mark)
++
+ # resize
+ state RESIZE:
+   way = 'grow', 'shrink'
+diff --git a/src/commands.c b/src/commands.c
+index 07af140..ab825bf 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -1007,6 +1007,7 @@ void cmd_workspace_name(I3_CMD, char *name) {
+  * Implementation of 'mark <mark>'
+  *
+  */
++
+ void cmd_mark(I3_CMD, char *mark) {
+     DLOG("Clearing all windows which have that mark first\n");
+ 
+@@ -1032,6 +1033,32 @@ void cmd_mark(I3_CMD, char *mark) {
+ }
+ 
+ /*
++ * Implementation of 'unmark [mark]'
++ *
++ */ 
++
++void cmd_unmark(I3_CMD, char *mark) {
++   if ( mark == NULL ){
++       Con *con;
++       TAILQ_FOREACH(con, &all_cons, all_cons) {
++           FREE(con->mark);
++       }
++       DLOG("removed all window marks");
++   } else {
++       Con *con;
++       TAILQ_FOREACH(con, &all_cons, all_cons) {
++           if (con->mark && strcmp(con->mark, mark) == 0)
++               FREE(con->mark);
++           }
++       DLOG("removed window mark %s\n", mark);
++    }
++    
++    cmd_output->needs_tree_render = true;
++    // XXX: default reply for now, make this a better reply
++    ysuccess(true);
++}
++
++/*
+  * Implementation of 'mode <string>'.
+  *
+  */
+diff --git a/testcases/t/187-commands-parser.t b/testcases/t/187-commands-parser.t
+index 3e97699..c0d6fdb 100644
+--- a/testcases/t/187-commands-parser.t
++++ b/testcases/t/187-commands-parser.t
+@@ -144,7 +144,7 @@ is(parser_calls("\nworkspace test"),
+ ################################################################################
+ 
+ is(parser_calls('unknown_literal'),
+-   "ERROR: Expected one of these tokens: <end>, '[', 'move', 'exec', 'exit', 'restart', 'reload', 'shmlog', 'debuglog', 'border', 'layout', 'append_layout', 'workspace', 'focus', 'kill', 'open', 'fullscreen', 'split', 'floating', 'mark', 'resize', 'rename', 'nop', 'scratchpad', 'mode', 'bar'\n" .
++   "ERROR: Expected one of these tokens: <end>, '[', 'move', 'exec', 'exit', 'restart', 'reload', 'border', 'layout', 'append_layout', 'workspace', 'focus', 'kill', 'open', 'fullscreen', 'split', 'floating', 'mark', 'unmark', 'resize', 'rename', 'nop', 'scratchpad', 'mode', 'bar'\n" .
+    "ERROR: Your command: unknown_literal\n" .
+    "ERROR:               ^^^^^^^^^^^^^^^",
+    'error for unknown literal ok');
+-- 
+1.7.10.4
+

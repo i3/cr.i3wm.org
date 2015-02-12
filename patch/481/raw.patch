@@ -1,0 +1,27 @@
+From 7f33c1b279caadc83626dc0aa0f46fce07ad2555 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Wed, 19 Mar 2014 04:34:42 -0400
+Subject: [PATCH] Free match after criteria initialization
+
+This memory leak is associated with matching by a criteria that uses a
+regular expression. Without freeing a regex before calling match_init,
+it will definitely be lost.
+---
+ src/commands.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/commands.c b/src/commands.c
+index c0f1d18..f05d975 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -257,6 +257,7 @@ void cmd_criteria_init(I3_CMD) {
+     owindow *ow;
+ 
+     DLOG("Initializing criteria, current_match = %p\n", current_match);
++    match_free(current_match);
+     match_init(current_match);
+     while (!TAILQ_EMPTY(&owindows)) {
+         ow = TAILQ_FIRST(&owindows);
+-- 
+1.9.0
+

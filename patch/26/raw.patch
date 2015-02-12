@@ -1,0 +1,82 @@
+From 8f71c9ceb5dc20aefa2c9e83c71687097d376820 Mon Sep 17 00:00:00 2001
+From: Sascha Kruse <knopwob@…>
+Date: Mon, 28 Jan 2013 10:11:53 +0100
+Subject: [PATCH] scratchpad_show focus unfocused scratchpad window
+
+When there's an unfocused scratchpad window on the current workspace
+scratchpad_show will focus that scratchpad window.
+---
+ src/scratchpad.c             | 21 +++++++++++++++++++--
+ testcases/t/185-scratchpad.t | 22 ++++++++++++++++++++++
+ 2 files changed, 41 insertions(+), 2 deletions(-)
+
+diff --git a/src/scratchpad.c b/src/scratchpad.c
+index bf43d40..8b96521 100644
+--- a/src/scratchpad.c
++++ b/src/scratchpad.c
+@@ -89,10 +89,27 @@ void scratchpad_show(Con *con) {
+     }
+ 
+     /* If this was 'scratchpad show' without criteria, we check if there is a
+-     * visible scratchpad window on another workspace. In this case we move it
+-     * to the current workspace. */
++     * unfocused scratchpad on the current workspace and focus it */
+     Con *walk_con;
+     Con *focused_ws = con_get_workspace(focused);
++    TAILQ_FOREACH(walk_con, &(focused_ws->floating_head), floating_windows) {
++        if ((floating = con_inside_floating(walk_con)) &&
++            floating->scratchpad_state != SCRATCHPAD_NONE &&
++            floating != con_inside_floating(focused)) {
++                DLOG("Found an unfocused scratchpad window on this workspace\n");
++                DLOG("Focusing it: %p\n", walk_con);
++                /* use con_descend_tiling_focused to get the last focused
++                 * window inside this scratch container in order to
++                 * keep the focus the same within this container */
++                con_focus(con_descend_tiling_focused(walk_con));
++                return;
++            }
++    }
++
++    /* If this was 'scratchpad show' without criteria, we check if there is a
++     * visible scratchpad window on another workspace. In this case we move it
++     * to the current workspace. */
++    focused_ws = con_get_workspace(focused);
+     TAILQ_FOREACH(walk_con, &all_cons, all_cons) {
+         Con *walk_ws = con_get_workspace(walk_con);
+         if (walk_ws &&
+diff --git a/testcases/t/185-scratchpad.t b/testcases/t/185-scratchpad.t
+index 598f2b3..d399430 100644
+--- a/testcases/t/185-scratchpad.t
++++ b/testcases/t/185-scratchpad.t
+@@ -400,6 +400,28 @@ $second = fresh_workspace;
+ verify_scratchpad_move_with_visible_scratch_con($first, $second, 0);
+ does_i3_live;
+ 
++
++################################################################################
++# 13: Test whether scratchpad show moves focus to the scratchpad window
++# when another window on the same workspace has focus
++################################################################################
++
++clear_scratchpad;
++my $ws = fresh_workspace;
++
++open_window;
++my $scratch = get_focused($ws);
++cmd 'move scratchpad';
++cmd 'scratchpad show';
++
++open_window;
++my $not_scratch = get_focused($ws);
++is(get_focused($ws), $not_scratch, 'not scratch window has focus');
++
++cmd 'scratchpad show';
++
++is(get_focused($ws), $scratch, 'scratchpad is focused');
++
+ # TODO: make i3bar display *something* when a window on the scratchpad has the urgency hint
+ 
+ done_testing;
+-- 
+1.8.1.1
+

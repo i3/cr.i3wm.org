@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Mats",
+    "Line": 14,
+    "Comment": "This is probably a rather crude fix -- but should be good enough as long as no one plans on moving popups away from the global fullscreen's workspace and expects the popups to appear on the currently active output...",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  },
+  {
+    "Author": "Mats",
+    "Line": 14,
+    "Comment": "Is there a way to test this behavior? I couldn't find a test for the non-global fullscreen case and those tests that I wrote using 'open_window' with 'dont_map' and setting 'transient_for' afterwards didn't really work as expected...",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 14,
+    "Comment": "You’re right about this being a crude fix :). What I dislike about your proposal is that it duplicates the code path where floating windows are rendered.\n\nInstead, I’ve opted to fix this problem with http://c.i3wm.org/8b96bb02\n\nThanks for the patch, though! :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

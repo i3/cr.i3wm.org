@@ -1,0 +1,62 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 153,
+    "Comment": "Unnecessary style change. Please undo to make the patch as minimal as possible.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 28,
+    "Comment": "Lines removed by mistake?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 21,
+    "Comment": "For the patch title, change “add command to remove marks” to “implement unmark command”, so that people looking for it can spot the commit faster.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 45,
+    "Comment": "Trailing whitespace ;)",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 118,
+    "Comment": "Trailing whitespace",
+    "EmailHash": ""
+  },
+  {
+    "Author": "koebi",
+    "Line": 28,
+    "Comment": "no. when setting a new mark, it is checked if there is a container that has the same mark. if so, the mark is removed. Therefore, marks are unique.",
+    "EmailHash": "47d3165a20fd385f7c75cdacd6f2b477"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 134,
+    "Comment": "Trailing whitespace",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 240,
+    "Comment": "Trailing whitespace",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 28,
+    "Comment": "Then please mention that in the docs :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 28,
+    "Comment": "To clarify: mention that marks are unique.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

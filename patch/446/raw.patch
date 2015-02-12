@@ -1,0 +1,103 @@
+From 60df5e994a2b2a8b5de9b7112192fb6be0e5e291 Mon Sep 17 00:00:00 2001
+From: Kim Svensson ks6g10 <ks@…>
+Date: Sun, 2 Mar 2014 12:15:06 +0000
+Subject: [PATCH] Reduce calls to strncmp in print_battery_info.c.
+
+Just some tweaks which reduces the number of calls to strncmp in print_battery_info.c.
+
+1. In the for loop around line 67, added a check on walk, if walk point to the null char '\0' then break, as this prevents it from parsing past the information given by slurp. Before it always ran 1024(buf size).
+
+2. Added a check on each line which checks if the variable have
+ already been set, if so no need to do the strncmp and just jump to next
+ branch.
+
+3. Also changed the last strncmp branch from: 
+if (!BEGINS_WITH(last,"POWER_SUPPLY_ENERGY_FULL") &&                                    
+ !BEGINS_WITH(last, "POWER_SUPPLY_CHARGE_FULL"))
+
+to
+
+if (!BEGINS_WITH(last,"POWER_SUPPLY_ENERGY_FULL=") &&                                    
+ !BEGINS_WITH(last, "POWER_SUPPLY_CHARGE_FULL="))
+
+Reason is that it is not mutually exclusive with the line below
+
+if (!BEGINS_WITH(last, "POWER_SUPPLY_CHARGE_FULL_DESIGN") &&
+    !BEGINS_WITH(last, "POWER_SUPPLY_ENERGY_FULL_DESIGN"))
+
+hence full_design = atoi(walk+1); is set twice.
+
+If 2 is accepted, 3 have to be accepted as well, else the battery will not show the correct information as the first time full_design is set,  it is for the wrong value if one have last_full_capacity enabled.
+
+---
+ src/print_battery_info.c | 24 ++++++++++++------------
+ 1 file changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/src/print_battery_info.c b/src/print_battery_info.c
+index bd3ff5c..13a11ba 100644
+--- a/src/print_battery_info.c
++++ b/src/print_battery_info.c
+@@ -65,7 +65,7 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+                 return;
+         }
+ 
+-        for (walk = buf, last = buf; (walk-buf) < 1024; walk++) {
++        for (walk = buf, last = buf; (walk-buf) < 1024 && *walk != '\0'; walk++) {
+                 if (*walk == '\n') {
+                         last = walk+1;
+                         continue;
+@@ -74,40 +74,40 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+                 if (*walk != '=')
+                         continue;
+ 
+-                if (BEGINS_WITH(last, "POWER_SUPPLY_ENERGY_NOW")) {
++                if (remaining == -1 && BEGINS_WITH(last, "POWER_SUPPLY_ENERGY_NOW")) {
+                         watt_as_unit = true;
+                         remaining = atoi(walk+1);
+                 }
+-                else if (BEGINS_WITH(last, "POWER_SUPPLY_CHARGE_NOW")) {
++                else if (remaining == -1 && BEGINS_WITH(last, "POWER_SUPPLY_CHARGE_NOW")) {
+                         watt_as_unit = false;
+                         remaining = atoi(walk+1);
+                 }
+-                else if (BEGINS_WITH(last, "POWER_SUPPLY_CURRENT_NOW"))
++                else if ( present_rate == -1 &&  BEGINS_WITH(last, "POWER_SUPPLY_CURRENT_NOW"))
+                         present_rate = atoi(walk+1);
+-                else if (BEGINS_WITH(last, "POWER_SUPPLY_VOLTAGE_NOW"))
++                else if ( voltage == -1 &&  BEGINS_WITH(last, "POWER_SUPPLY_VOLTAGE_NOW"))
+                         voltage = atoi(walk+1);
+                 /* on some systems POWER_SUPPLY_POWER_NOW does not exist, but actually
+                  * it is the same as POWER_SUPPLY_CURRENT_NOW but with μWh as
+                  * unit instead of μAh. We will calculate it as we need it
+                  * later. */
+-                else if (BEGINS_WITH(last, "POWER_SUPPLY_POWER_NOW"))
++                else if ( present_rate == -1 &&  BEGINS_WITH(last, "POWER_SUPPLY_POWER_NOW"))
+                         present_rate = atoi(walk+1);
+-                else if (BEGINS_WITH(last, "POWER_SUPPLY_STATUS=Charging"))
++                else if ( status == CS_DISCHARGING &&  BEGINS_WITH(last, "POWER_SUPPLY_STATUS=Charging"))
+                         status = CS_CHARGING;
+-                else if (BEGINS_WITH(last, "POWER_SUPPLY_STATUS=Full"))
++                else if (status == CS_DISCHARGING && BEGINS_WITH(last, "POWER_SUPPLY_STATUS=Full")) {
+                         status = CS_FULL;
+-                else {
++		}
++                else if(full_design == -1){
+                         /* The only thing left is the full capacity */
+                         if (last_full_capacity) {
+-                                if (!BEGINS_WITH(last, "POWER_SUPPLY_ENERGY_FULL") &&
+-                                    !BEGINS_WITH(last, "POWER_SUPPLY_CHARGE_FULL"))
++                                if (!BEGINS_WITH(last, "POWER_SUPPLY_ENERGY_FULL=") &&
++                                    !BEGINS_WITH(last, "POWER_SUPPLY_CHARGE_FULL="))
+                                         continue;
+                         } else {
+                                 if (!BEGINS_WITH(last, "POWER_SUPPLY_CHARGE_FULL_DESIGN") &&
+                                     !BEGINS_WITH(last, "POWER_SUPPLY_ENERGY_FULL_DESIGN"))
+                                         continue;
+                         }
+-
+                         full_design = atoi(walk+1);
+                 }
+         }
+-- 
+1.9.0
+

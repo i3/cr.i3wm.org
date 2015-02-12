@@ -1,0 +1,85 @@
+From c4c22bab908934863bd89eea1dfd280037d449f9 Mon Sep 17 00:00:00 2001
+From: Lukas K <lu@…>
+Date: Sun, 18 Jan 2015 15:07:42 +0100
+Subject: [PATCH 1/1] Suppport _NET_WM_MOVERESIZE
+
+fixes #1432
+---
+ include/atoms.xmacro |  1 +
+ src/handlers.c       | 41 +++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 42 insertions(+)
+
+diff --git a/include/atoms.xmacro b/include/atoms.xmacro
+index 2755d6c..1f28c01 100644
+--- a/include/atoms.xmacro
++++ b/include/atoms.xmacro
+@@ -1,6 +1,7 @@
+ xmacro(_NET_SUPPORTED)
+ xmacro(_NET_SUPPORTING_WM_CHECK)
+ xmacro(_NET_WM_NAME)
++xmacro(_NET_WM_MOVERESIZE)
+ xmacro(_NET_WM_STATE_FULLSCREEN)
+ xmacro(_NET_WM_STATE_DEMANDS_ATTENTION)
+ xmacro(_NET_WM_STATE_MODAL)
+diff --git a/src/handlers.c b/src/handlers.c
+index 569a8ec..b045593 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -651,6 +651,20 @@ static void handle_expose_event(xcb_expose_event_t *event) {
+     return;
+ }
+ 
++
++#define _NET_WM_MOVERESIZE_SIZE_TOPLEFT      0
++#define _NET_WM_MOVERESIZE_SIZE_TOP          1
++#define _NET_WM_MOVERESIZE_SIZE_TOPRIGHT     2
++#define _NET_WM_MOVERESIZE_SIZE_RIGHT        3
++#define _NET_WM_MOVERESIZE_SIZE_BOTTOMRIGHT  4
++#define _NET_WM_MOVERESIZE_SIZE_BOTTOM       5
++#define _NET_WM_MOVERESIZE_SIZE_BOTTOMLEFT   6
++#define _NET_WM_MOVERESIZE_SIZE_LEFT         7
++#define _NET_WM_MOVERESIZE_MOVE              8   /* movement only */
++#define _NET_WM_MOVERESIZE_SIZE_KEYBOARD     9   /* size via keyboard */
++#define _NET_WM_MOVERESIZE_MOVE_KEYBOARD    10   /* move via keyboard */
++#define _NET_WM_MOVERESIZE_CANCEL           11   /* cancel operation */
++
+ /*
+  * Handle client messages (EWMH)
+  *
+@@ -856,6 +870,33 @@ static void handle_client_message(xcb_client_message_event_t *event) {
+         } else {
+             DLOG("Couldn't find con for _NET_CLOSE_WINDOW request. (window = %d)\n", event->window);
+         }
++    }
++    else if (event->type == A__NET_WM_MOVERESIZE) {
++        /*
++         * Client-side decorated Gtk3 windows emit this signal when being
++         * dragged by their GtkHeaderBar
++         */
++         Con *con = con_by_window_id(event->window);
++         if (con && con_is_floating(con)) {
++             DLOG("Handling _NET_WM_MOVERESIZE request (con = %p)\n", con);
++             uint32_t direction = event->data.data32[2];
++             uint32_t x_root = event->data.data32[0];
++             uint32_t y_root = event->data.data32[1];
++             if(direction == _NET_WM_MOVERESIZE_MOVE) {
++                 /* construct fake xcb_button_press_event_t */
++                 xcb_button_press_event_t fake = {
++                     .root_x = x_root,
++                     .root_y = y_root
++                 };
++                 floating_drag_window(con->parent, &fake);
++
++             } else {
++                DLOG("_NET_WM_MOVERESIZE direction %d not implemented\n", direction);
++             }
++
++         } else {
++             DLOG("Couldn't find con for _NET_WM_MOVERESIZE request. or con not floating (window = %d)\n", event->window);
++         }
+     } else {
+         DLOG("unhandled clientmessage\n");
+         return;
+-- 
+2.2.2
+

@@ -1,0 +1,60 @@
+From 85106df937c800ce1c47a818811fe4fe2ffbb675 Mon Sep 17 00:00:00 2001
+From: Mats <d912e3@…>
+Date: Sun, 21 Dec 2014 17:08:09 +0100
+Subject: [PATCH] Bugfix: Render popups during global fullscreen
+
+fixes #1393
+---
+ src/render.c | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+
+diff --git a/src/render.c b/src/render.c
+index 3cc5006..d8b8467 100644
+--- a/src/render.c
++++ b/src/render.c
+@@ -116,6 +116,31 @@ static void render_l_output(Con *con) {
+ }
+ 
+ /*
++ * Recursively renders all floating containers that are (indirectly) transient
++ * for and on the same workspace as the given container.
++ *
++ */
++static void render_transient_cons(Con *con) {
++    Con *workspace = con_get_workspace(con);
++    Con *child;
++    TAILQ_FOREACH(child, &(workspace->floating_head), floating_windows) {
++        Con *floating_child = con_descend_focused(child);
++
++        if (floating_child == NULL ||
++            floating_child == con ||
++            floating_child->window == NULL ||
++            floating_child->window->transient_for != con->window->id)
++            continue;
++
++        DLOG("window 0x%08x transient for 0x%08x\n", floating_child->window->id, con->window->id);
++        x_raise_con(child);
++        render_con(child, false);
++
++        render_transient_cons(floating_child);
++    }
++}
++
++/*
+  * "Renders" the given container (and its children), meaning that all rects are
+  * updated correctly. Note that this function does not call any xcb_*
+  * functions, so the changes are completely done in memory only (and
+@@ -210,6 +235,10 @@ void render_con(Con *con, bool render_fullscreen) {
+         fullscreen->rect = rect;
+         x_raise_con(fullscreen);
+         render_con(fullscreen, true);
++        if (con->type == CT_ROOT && fullscreen->window != NULL) {
++            DLOG("rendering transient containers for global fullscreen 0x%08x\n", fullscreen->window->id);
++            render_transient_cons(fullscreen);
++        }
+         return;
+     }
+ 
+-- 
+2.2.1
+

@@ -1,0 +1,125 @@
+From f94fe34b0621eda5ac18545d2c53d13540c8d757 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Christoph=20G=C3=B6ttschkes?= <just.mychris@…>
+Date: Thu, 7 Mar 2013 21:21:54 +0100
+Subject: [PATCH] Added format_down option for battery if no battery is
+ available.
+
+---
+ i3status.c               |  3 ++-
+ include/i3status.h       |  2 +-
+ man/i3status.man         |  1 +
+ src/print_battery_info.c | 14 +++++++-------
+ 4 files changed, 11 insertions(+), 9 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index e8e44d4..df233f7 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -230,6 +230,7 @@ int main(int argc, char *argv[]) {
+ 
+         cfg_opt_t battery_opts[] = {
+                 CFG_STR("format", "%status %percentage %remaining", CFGF_NONE),
++                CFG_STR("format_down", "No battery", CFGF_NONE),
+                 CFG_STR("path", "/sys/class/power_supply/BAT%d/uevent", CFGF_NONE),
+                 CFG_INT("low_threshold", 30, CFGF_NONE),
+                 CFG_STR("threshold_type", "time", CFGF_NONE),
+@@ -444,7 +445,7 @@ int main(int argc, char *argv[]) {
+ 
+                         CASE_SEC_TITLE("battery") {
+                                 SEC_OPEN_MAP("battery");
+-                                print_battery_info(json_gen, buffer, atoi(title), cfg_getstr(sec, "path"), cfg_getstr(sec, "format"), cfg_getint(sec, "low_threshold"), cfg_getstr(sec, "threshold_type"), cfg_getbool(sec, "last_full_capacity"), cfg_getbool(sec, "integer_battery_capacity"));
++                                print_battery_info(json_gen, buffer, atoi(title), cfg_getstr(sec, "path"), cfg_getstr(sec, "format"), cfg_getstr(sec, "format_down"), cfg_getint(sec, "low_threshold"), cfg_getstr(sec, "threshold_type"), cfg_getbool(sec, "last_full_capacity"), cfg_getbool(sec, "integer_battery_capacity"));
+                                 SEC_CLOSE_MAP;
+                         }
+ 
+diff --git a/include/i3status.h b/include/i3status.h
+index 47f3350..6b2a688 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -142,7 +142,7 @@ void set_timezone(const char *tz);
+ 
+ void print_ipv6_info(yajl_gen json_gen, char *buffer, const char *format_up, const char *format_down);
+ void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format);
+-void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity);
++void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, const char *format_down, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity);
+ void print_time(yajl_gen json_gen, char *buffer, const char *format, const char *tz, time_t t);
+ void print_ddate(yajl_gen json_gen, char *buffer, const char *format, time_t t);
+ const char *get_ip_addr();
+diff --git a/man/i3status.man b/man/i3status.man
+index 00fdcbc..0fccb7e 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -72,6 +72,7 @@ ethernet eth0 {
+ 
+ battery 0 {
+         format = "%status %percentage %remaining %emptytime"
++        format_down = "No battery"
+         path = "/sys/class/power_supply/BAT%d/uevent"
+         low_threshold = 10
+ }
+diff --git a/src/print_battery_info.c b/src/print_battery_info.c
+index 95237d9..c9eee23 100644
+--- a/src/print_battery_info.c
++++ b/src/print_battery_info.c
+@@ -30,7 +30,7 @@
+  * worn off your battery is.
+  *
+  */
+-void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity) {
++void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, const char *format_down, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity) {
+         time_t empty_time;
+         struct tm *empty_tm;
+         char buf[1024];
+@@ -61,7 +61,7 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+         static char batpath[512];
+         sprintf(batpath, path, number);
+         if (!slurp(batpath, buf, sizeof(buf))) {
+-                OUTPUT_FULL_TEXT("No battery");
++                OUTPUT_FULL_TEXT(format_down);
+                 return;
+         }
+ 
+@@ -123,7 +123,7 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+         }
+ 
+         if ((full_design == -1) || (remaining == -1)) {
+-                OUTPUT_FULL_TEXT("No battery");
++                OUTPUT_FULL_TEXT(format_down);
+                 return;
+         }
+ 
+@@ -196,19 +196,19 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+         size_t sysctl_size = sizeof(sysctl_rslt);
+ 
+         if (sysctlbyname(BATT_LIFE, &sysctl_rslt, &sysctl_size, NULL, 0) != 0) {
+-                OUTPUT_FULL_TEXT("No battery");
++                OUTPUT_FULL_TEXT(format_down);
+                 return;
+         }
+ 
+         present_rate = sysctl_rslt;
+         if (sysctlbyname(BATT_TIME, &sysctl_rslt, &sysctl_size, NULL, 0) != 0) {
+-                OUTPUT_FULL_TEXT("No battery");
++                OUTPUT_FULL_TEXT(format_down);
+                 return;
+         }
+ 
+         remaining = sysctl_rslt;
+         if (sysctlbyname(BATT_STATE, &sysctl_rslt, &sysctl_size, NULL,0) != 0) {
+-                OUTPUT_FULL_TEXT("No battery");
++                OUTPUT_FULL_TEXT(format_down);
+                 return;
+         }
+ 
+@@ -257,7 +257,7 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+ 	/* Don't bother to go further if there's no battery present. */
+ 	if ((apm_info.battery_state == APM_BATTERY_ABSENT) ||
+ 	    (apm_info.battery_state == APM_BATT_UNKNOWN)) {
+-		OUTPUT_FULL_TEXT("No battery");
++		OUTPUT_FULL_TEXT(format_down);
+ 		return;
+ 	}
+ 
+-- 
+1.8.1.5
+

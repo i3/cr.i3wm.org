@@ -1,0 +1,35 @@
+From 2c1b1ebe9efe95b56f5abf8cab3e7ad2d249179c Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sat, 11 Jan 2014 06:07:09 -0500
+Subject: [PATCH 2/2] Do not create container pixmap without a border
+
+A pixmap without a border is not necessary because nothing meaningful
+will be drawn to it. It could possibly obscure areas meant to be
+transparent by the client.
+
+fixes #1013
+---
+ src/x.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/src/x.c b/src/x.c
+index 366cbe1..3cdb82e 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -667,9 +667,10 @@ void x_push_node(Con *con) {
+         /* As the pixmap only depends on the size and not on the position, it
+          * is enough to check if width/height have changed. Also, we don’t
+          * create a pixmap at all when the window is actually not visible
+-         * (height == 0). */
+-        if ((state->rect.width != rect.width ||
+-            state->rect.height != rect.height)) {
++         * (height == 0) or when it is not needed (border_style == BS_NONE). */
++        if (con->border_style != BS_NONE &&
++                (state->rect.width != rect.width ||
++                 state->rect.height != rect.height)) {
+             if (con->pixmap == 0) {
+                 con->pixmap = xcb_generate_id(conn);
+                 con->pm_gc = xcb_generate_id(conn);
+-- 
+1.8.5.2
+

@@ -1,0 +1,292 @@
+From 47dec6ba2f2ff8795981f2f2a1f666e45b39d1c1 Mon Sep 17 00:00:00 2001
+From: aszlig <aszlig@…>
+Date: Sat, 2 Aug 2014 07:01:15 +0200
+Subject: [PATCH] Allow to validate the config file without X.
+
+We're going to call parse_configuration() very early if -C is given on
+the command line. Instead of the previous "only_check_config", which has
+been a global variable, we now simply pass use_nagbar as false if we're
+just validating.
+
+This causes the whole parsing to run without X and of course without
+starting nagbar and displaying the errors to standard out/error instead.
+
+The return code of parse_configuration() is now a boolean which
+represents whether an error occured during parsing and the programs exit
+code is returned accordingly.
+
+Although the config parser still has a lot of side-effects, we now can
+parse without the need to have an XCB connection. A nicer implementation
+would be to just set the new font and load it just after we're done
+parsing, but to ensure we don't break functionality we just load a dummy
+FONT_TYPE_NONE if XCB isn't available. The main reason for going this
+route is that it's a bit difficult to test fonts in a distribution
+agnostic way without bundling fonts with i3 (or Xdummy to be more
+exact).
+
+Signed-off-by: aszlig <aszlig@redmoonstudios.org>
+---
+ include/config.h                    | 14 +++++++++
+ include/config_parser.h             |  7 +++--
+ libi3/font.c                        |  6 ++++
+ src/config.c                        | 13 ++++++--
+ src/config_parser.c                 |  8 +++--
+ src/main.c                          | 16 ++++------
+ testcases/t/235-check-config-no-x.t | 60 +++++++++++++++++++++++++++++++++++++
+ 7 files changed, 107 insertions(+), 17 deletions(-)
+ create mode 100644 testcases/t/235-check-config-no-x.t
+
+diff --git a/include/config.h b/include/config.h
+index 71b37a8..515d60b 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -315,6 +315,20 @@ struct Barconfig {
+ };
+ 
+ /**
++ * Finds the configuration file to use (either the one specified by
++ * override_configpath), the user’s one or the system default) and calls
++ * parse_file().
++ *
++ * If you specify override_configpath, only this path is used to look for a
++ * configuration file.
++ *
++ * If use_nagbar is false, don't try to start i3-nagbar but log the errors to
++ * stdout/stderr instead.
++ *
++ */
++bool parse_configuration(const char *override_configpath, bool use_nagbar);
++
++/**
+  * Reads the configuration from ~/.i3/config or /etc/i3/config if not found.
+  *
+  * If you specify override_configpath, only this path is used to look for a
+diff --git a/include/config_parser.h b/include/config_parser.h
+index e18e5cf..9fc3bf2 100644
+--- a/include/config_parser.h
++++ b/include/config_parser.h
+@@ -33,7 +33,10 @@ struct ConfigResultIR *parse_config(const char *input, struct context *context);
+ 
+ /**
+  * Parses the given file by first replacing the variables, then calling
+- * parse_config and possibly launching i3-nagbar.
++ * parse_config and launching i3-nagbar if use_nagbar is true.
++ *
++ * The return value is a boolean indicating whether there were errors during
++ * parsing.
+  *
+  */
+-void parse_file(const char *f);
++bool parse_file(const char *f, bool use_nagbar);
+diff --git a/libi3/font.c b/libi3/font.c
+index fc868e6..7670335 100644
+--- a/libi3/font.c
++++ b/libi3/font.c
+@@ -167,6 +167,12 @@ i3Font load_font(const char *pattern, const bool fallback) {
+     i3Font font;
+     font.type = FONT_TYPE_NONE;
+ 
++    /* No XCB connction, return early because we're just validating the
++     * configuration file. */
++    if (conn == NULL) {
++        return font;
++    }
++
+ #if PANGO_SUPPORT
+     /* Try to load a pango font if specified */
+     if (strlen(pattern) > strlen("pango:") && !strncmp(pattern, "pango:", strlen("pango:"))) {
+diff --git a/src/config.c b/src/config.c
+index 7e88a9e..44f55a1 100644
+--- a/src/config.c
++++ b/src/config.c
+@@ -114,12 +114,19 @@ static char *get_config_path(const char *override_configpath) {
+  * parse_file().
+  *
+  */
+-static void parse_configuration(const char *override_configpath) {
++bool parse_configuration(const char *override_configpath, bool use_nagbar) {
+     char *path = get_config_path(override_configpath);
+     LOG("Parsing configfile %s\n", path);
+     FREE(current_configpath);
+     current_configpath = path;
+-    parse_file(path);
++
++    /* initialize default bindings if we're just validating the config file */
++    if (!use_nagbar && bindings == NULL) {
++        bindings = scalloc(sizeof(struct bindings_head));
++        TAILQ_INIT(bindings);
++    }
++
++    return parse_file(path, use_nagbar);
+ }
+ 
+ /*
+@@ -262,7 +269,7 @@ void load_configuration(xcb_connection_t *conn, const char *override_configpath,
+     if (config.workspace_urgency_timer == 0)
+         config.workspace_urgency_timer = 0.5;
+ 
+-    parse_configuration(override_configpath);
++    parse_configuration(override_configpath, true);
+ 
+     if (reload) {
+         translate_keysyms();
+diff --git a/src/config_parser.c b/src/config_parser.c
+index 21cd06f..e701de1 100644
+--- a/src/config_parser.c
++++ b/src/config_parser.c
+@@ -840,7 +840,7 @@ static char *migrate_config(char *input, off_t size) {
+  * parse_config and possibly launching i3-nagbar.
+  *
+  */
+-void parse_file(const char *f) {
++bool parse_file(const char *f, bool use_nagbar) {
+     SLIST_HEAD(variables_head, Variable) variables = SLIST_HEAD_INITIALIZER(&variables);
+     int fd, ret, read_bytes = 0;
+     struct stat stbuf;
+@@ -1000,7 +1000,7 @@ void parse_file(const char *f) {
+ 
+     check_for_duplicate_bindings(context);
+ 
+-    if (context->has_errors || context->has_warnings) {
++    if (use_nagbar && (context->has_errors || context->has_warnings)) {
+         ELOG("FYI: You are using i3 version " I3_VERSION "\n");
+         if (version == 3)
+             ELOG("Please convert your configfile first, then fix any remaining errors (see above).\n");
+@@ -1030,6 +1030,8 @@ void parse_file(const char *f) {
+         free(pageraction);
+     }
+ 
++    bool has_errors = context->has_errors;
++
+     FREE(context->line_copy);
+     free(context);
+     free(new);
+@@ -1042,6 +1044,8 @@ void parse_file(const char *f) {
+         SLIST_REMOVE_HEAD(&variables, variables);
+         FREE(current);
+     }
++
++    return !has_errors;
+ }
+ 
+ #endif
+diff --git a/src/main.c b/src/main.c
+index 66090da..ad4bfa3 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -96,11 +96,6 @@ struct ws_assignments_head ws_assignments = TAILQ_HEAD_INITIALIZER(ws_assignment
+ bool xcursor_supported = true;
+ bool xkb_supported = true;
+ 
+-/* This will be set to true when -C is used so that functions can behave
+- * slightly differently. We don’t want i3-nagbar to be started when validating
+- * the config, for example. */
+-bool only_check_config = false;
+-
+ /*
+  * This callback is only a dummy, see xcb_prepare_cb and xcb_check_cb.
+  * See also man libev(3): "ev_prepare" and "ev_check" - customise your event loop
+@@ -276,6 +271,7 @@ int main(int argc, char *argv[]) {
+     bool force_xinerama = false;
+     char *fake_outputs = NULL;
+     bool disable_signalhandler = false;
++    bool only_check_config = false;
+     static struct option long_options[] = {
+         {"no-autostart", no_argument, 0, 'a'},
+         {"config", required_argument, 0, 'c'},
+@@ -441,10 +437,14 @@ int main(int argc, char *argv[]) {
+         }
+     }
+ 
++    if (only_check_config) {
++        exit(parse_configuration(override_configpath, false) ? 0 : 1);
++    }
++
+     /* If the user passes more arguments, we act like i3-msg would: Just send
+      * the arguments as an IPC message to i3. This allows for nice semantic
+      * commands such as 'i3 border none'. */
+-    if (!only_check_config && optind < argc) {
++    if (optind < argc) {
+         /* We enable verbose mode so that the user knows what’s going on.
+          * This should make it easier to find mistakes when the user passes
+          * arguments by mistake. */
+@@ -567,10 +567,6 @@ int main(int argc, char *argv[]) {
+     xcb_query_pointer_cookie_t pointercookie = xcb_query_pointer(conn, root);
+ 
+     load_configuration(conn, override_configpath, false);
+-    if (only_check_config) {
+-        LOG("Done checking configuration file. Exiting.\n");
+-        exit(0);
+-    }
+ 
+     if (config.ipc_socket_path == NULL) {
+         /* Fall back to a file name in /tmp/ based on the PID */
+diff --git a/testcases/t/235-check-config-no-x.t b/testcases/t/235-check-config-no-x.t
+new file mode 100644
+index 0000000..614d6b3
+--- /dev/null
++++ b/testcases/t/235-check-config-no-x.t
+@@ -0,0 +1,60 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Check whether the -C option works without a display and doesn't
++# accidentally start the nagbar.
++#
++use i3test i3_autostart => 0;
++use File::Temp qw(tempfile);
++
++sub check_config {
++    my ($config) = @_;
++    my ($fh, $tmpfile) = tempfile(UNLINK => 1);
++    print $fh $config;
++    my $output = qx(DISPLAY= ../i3 -C -c $tmpfile 2>&1);
++    my $retval = $?;
++    $fh->flush;
++    close($fh);
++    return ($retval >> 8, $output);
++}
++
++################################################################################
++# 1: test with a bogus configuration file
++################################################################################
++
++my $cfg = <<EOT;
++# i3 config file (v4)
++i_am_an_unknown_config option
++EOT
++
++my ($ret, $out) = check_config($cfg);
++is($ret, 1, "exit code == 1");
++like($out, qr/ERROR: *CONFIG: *[Ee]xpected.*tokens/, 'bogus config file');
++
++################################################################################
++# 2: test with a valid configuration file
++################################################################################
++
++my $cfg = <<EOT;
++# i3 config file (v4)
++font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
++EOT
++
++my ($ret, $out) = check_config($cfg);
++is($ret, 0, "exit code == 0");
++is($out, "", 'valid config file');
++
++done_testing;
+-- 
+2.0.2
+

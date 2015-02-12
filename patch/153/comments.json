@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Diego Ongaro",
+    "Line": 17,
+    "Comment": "I should mention that I'm new to the project, and I have no idea if this is the right solution. It seems to work for me, though :)",
+    "EmailHash": "056effcac7fca237926f57ba2450429a"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 17,
+    "Comment": "Sorry for taking so long to respond, I was busy with real life.\n\nThis patch seems like a good idea.",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 22,
+    "Comment": "The right way to do this is to make the layout enum a proper type and then use it here :). Can you please change this?",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 22,
+    "Comment": "Sure, will do.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Diego Ongaro",
+    "Line": 22,
+    "Comment": "Superseded by 165, 166.",
+    "EmailHash": "056effcac7fca237926f57ba2450429a"
+  }
+]

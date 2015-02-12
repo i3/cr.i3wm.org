@@ -1,0 +1,25 @@
+From 16b12021ba153b680630e4f361ce47b1b27f104e Mon Sep 17 00:00:00 2001
+From: Emil Mikulic <emikulic@…>
+Date: Mon, 14 Jan 2013 00:18:13 +1100
+Subject: [PATCH 2/3] src/*.c depends on include/i3status.h
+
+---
+ Makefile |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index eb7da6e..671e27a 100644
+--- a/Makefile
++++ b/Makefile
+@@ -55,7 +55,7 @@ CFLAGS += -idirafter yajl-fallback
+ OBJS:=$(wildcard src/*.c *.c)
+ OBJS:=$(OBJS:.c=.o)
+ 
+-src/%.o: src/%.c
++src/%.o: src/%.c include/i3status.h
+ 	@$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+ 	@echo " CC $<"
+ 
+-- 
+1.7.10.4
+

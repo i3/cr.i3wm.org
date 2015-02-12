@@ -1,0 +1,44 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 24,
+    "Comment": "Please make this const double",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 44,
+    "Comment": "I smell code duplication :). Can you move the code that is replicated three times now into a new function please?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Bas Pape",
+    "Line": 44,
+    "Comment": "I didn't like that much myself either, but given that all vars need to be freed/unrefed, putting those initializers (which are rather trivial calls) in a function wouldn't save much; so unless you're merely talking about ydpi, i don't see a clear way to improve the situation.",
+    "EmailHash": "cdec2dd8cca9dd72043a0795af000967"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 44,
+    "Comment": "Doesn’t the PangoLayout increase the reference count for the context? That way, you could directly g_object_unref(pc); in the hypothetical function. Then, the function would be simple and feasible. But maybe I’m misunderstanding how glib works here :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Bas Pape",
+    "Line": 44,
+    "Comment": "I'm not familiar with glib either, https://developer.gnome.org/pango/stable/pango-Layout-Objects.html#pango-layout-new says the PangoLayout needs to be unrefed. So you do need the layout, pc, cr and surface in the caller to unref them; which means the caller has to decl. them, call the new initializing function and then free them all. Your call.",
+    "EmailHash": "cdec2dd8cca9dd72043a0795af000967"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 44,
+    "Comment": "So I tested this with RefDbg, which is a handy tool for the glib reference counting stuff. In addition, I also stumbled upon the source of pango_cairo_create_layout(), which you are replacing:\n\nhttp://sources.debian.net/src/pango1.0/1.36.0-1/pango/pangocairo-context.c?hl=448#L448\n\nSo I went ahead and refactored it as I suggested (sorry if that was not clear):\nhttp://c.i3wm.org/5a4efd0",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 24,
+    "Comment": "",
+    "EmailHash": ""
+  }
+]

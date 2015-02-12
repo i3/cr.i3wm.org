@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 76,
+    "Comment": "I think only handlers should be allowed to push changes to X",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 82,
+    "Comment": "I don't know why we need to pass a copy, but it seems to be done everywhere.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 82,
+    "Comment": "In case the command contains “reload”, the binding may not exist anymore after the reload completed. We’ve had actual user bug reports about this, so it’s not a theoretical thing. I’ll add a comment stating that to the code.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

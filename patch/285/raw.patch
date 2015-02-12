@@ -1,0 +1,58 @@
+From 3a2dfa143ba04907fecbb2cc2ef50e0c9fa8bf7e Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 29 Oct 2013 23:24:26 -0400
+Subject: [PATCH] Do not reposition floating containers if unmapped
+
+`floating_reposition` will not reposition windows that are not mapped.
+
+Fixes an issue that caused i3 to crash when a user is dragging or
+resizing a floating window that becomes destroyed.
+---
+ src/floating.c                    | 11 +++++++++--
+ testcases/t/112-floating-resize.t |  1 +
+ 2 files changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/src/floating.c b/src/floating.c
+index ae1a919..895412b 100644
+--- a/src/floating.c
++++ b/src/floating.c
+@@ -701,8 +701,9 @@ drag_result_t drag_pointer(Con *con, const xcb_button_press_event_t *event, xcb_
+ 
+ /*
+  * Repositions the CT_FLOATING_CON to have the coordinates specified by
+- * newrect, but only if the coordinates are not out-of-bounds. Also reassigns
+- * the floating con to a different workspace if this move was across different
++ * newrect, but only if the coordinates are not out-of-bounds and the container
++ * is mapped. Also reassigns the floating con to a different workspace if this
++ * move was across different
+  * outputs.
+  *
+  */
+@@ -714,6 +715,12 @@ void floating_reposition(Con *con, Rect newrect) {
+         return;
+     }
+ 
++    /* Sanity check: Is the container mapped? If not, we ignore the request. */
++    if (!con->mapped) {
++        ELOG("Container not mapped. Not repositioning.\n");
++        return;
++    }
++
+     con->rect = newrect;
+ 
+     floating_maybe_reassign_ws(con);
+diff --git a/testcases/t/112-floating-resize.t b/testcases/t/112-floating-resize.t
+index ec690b5..8540da1 100644
+--- a/testcases/t/112-floating-resize.t
++++ b/testcases/t/112-floating-resize.t
+@@ -34,6 +34,7 @@ my ($na, $nt) = $window->rect;
+ is_deeply($na, $a, 'Rects are equal after configurerequest');
+ 
+ sub test_resize {
++    my $window = open_floating_window;
+     $window->rect(X11::XCB::Rect->new(x => 0, y => 0, width => 100, height => 100));
+ 
+     sync_with_i3;
+-- 
+1.8.4.1
+

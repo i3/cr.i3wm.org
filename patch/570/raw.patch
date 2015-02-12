@@ -1,0 +1,90 @@
+From c86ed4c448ebb50f7718a9ddc7ecbd4fe39acc38 Mon Sep 17 00:00:00 2001
+From: Harri Montonen <harri.montonen@…>
+Date: Tue, 10 Jun 2014 19:19:11 +0300
+Subject: [PATCH] Allow i3-input to be set a name with -n option.
+
+i3-input prompt has hardcoded geometrical position. It may be inconvenient
+for some multimonitor systems. On the other hand, prompt window can't be
+easily moved, as it doesn't have a name, nor does it have any option for
+one. This patch is an effort to somewhat fix that issue.
+
+Potential problems, as I'm not qualified C programmer nor have sufficient
+knowledge of X11 internals:
+
+- WM_NAME has been used as name, although I'm not sure if it should be
+  WM_CLASS or _NET_WM_NAME.
+- I'm not sure about validation practises regarding kind as the argument of
+  option -n.
+- I'm not sure whether xcb_change_property -call should have some kind of
+  assurance of succesful call (well, probably should), nor how it should be
+  done.
+
+This commit message has way more characters than actual patch, though, so
+may be this is not a problem. :)
+---
+ i3-input/main.c | 22 +++++++++++++++++++---
+ 1 file changed, 19 insertions(+), 3 deletions(-)
+
+diff --git a/i3-input/main.c b/i3-input/main.c
+index c9ebd01..c6b916c 100644
+--- a/i3-input/main.c
++++ b/i3-input/main.c
+@@ -316,6 +316,7 @@ int main(int argc, char *argv[]) {
+     socket_path = getenv("I3SOCK");
+     char *pattern = sstrdup("-misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1");
+     int o, option_index = 0;
++    char *name = NULL;
+ 
+     static struct option long_options[] = {
+         {"socket", required_argument, 0, 's'},
+@@ -325,11 +326,12 @@ int main(int argc, char *argv[]) {
+         {"prefix", required_argument, 0, 'p'},
+         {"format", required_argument, 0, 'F'},
+         {"font", required_argument, 0, 'f'},
++        {"name", required_argument, 0, 'n'},
+         {"help", no_argument, 0, 'h'},
+         {0, 0, 0, 0}
+     };
+ 
+-    char *options_string = "s:p:P:f:l:F:vh";
++    char *options_string = "s:p:P:f:l:F:n:vh";
+ 
+     while ((o = getopt_long(argc, argv, options_string, long_options, &option_index)) != -1) {
+         switch (o) {
+@@ -361,9 +363,13 @@ int main(int argc, char *argv[]) {
+                 FREE(format);
+                 format = strdup(optarg);
+                 break;
++            case 'n':
++                FREE(name);
++                name = strdup(optarg);
++                break;
+             case 'h':
+                 printf("i3-input " I3_VERSION "\n");
+-                printf("i3-input [-s <socket>] [-F <format>] [-l <limit>] [-P <prompt>] [-f <font>] [-v]\n");
++                printf("i3-input [-s <socket>] [-F <format>] [-l <limit>] [-P <prompt>] [-f <font>] [-n <name>] [-v]\n");
+                 printf("\n");
+                 printf("Example:\n");
+                 printf("    i3-input -F 'workspace \"%%s\"' -P 'Switch to workspace: '\n");
+@@ -417,7 +423,17 @@ int main(int argc, char *argv[]) {
+             1, /* override redirect: don’t manage this window */
+             XCB_EVENT_MASK_EXPOSURE
+         });
+-
++    /* Set window name property (if given) */
++    if (name != NULL)
++        xcb_change_property(
++            conn,
++            XCB_PROP_MODE_REPLACE,
++            win,
++            XCB_ATOM_WM_NAME,
++            XCB_ATOM_STRING,
++            8,
++            strlen(name),
++            name);
+     /* Map the window (make it visible) */
+     xcb_map_window(conn, win);
+ 
+-- 
+2.0.0
+

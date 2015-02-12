@@ -1,0 +1,88 @@
+From 7fb7b29a8621e3109bd9da169a6497948d554e37 Mon Sep 17 00:00:00 2001
+From: Vivien Didelot <vivien.didelot@…>
+Date: Wed, 25 Sep 2013 22:50:50 -0400
+Subject: [PATCH] commands: (rename) check workspace number
+
+Without this patch, you can rename a workspace with a number which is
+already in use, which makes the navigation a bit inconsistent (for
+instance workspace next_on_output won't work as expected).
+
+For example, assuming you have a workspace 1, you can actually rename
+another workspace to "1: foo", but will have issue switching to it.
+
+This patch updates the cmd_rename_workspace() function to check the
+workspace number and forbid using a number already used by a workspace
+different than the target.
+
+Signed-off-by: Vivien Didelot <vivien.didelot@gmail.com>
+---
+ src/commands.c | 30 +++++++++++++++++++++++-------
+ 1 file changed, 23 insertions(+), 7 deletions(-)
+
+diff --git a/src/commands.c b/src/commands.c
+index f37664a..0a9ab10 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -1856,6 +1856,7 @@ void cmd_rename_workspace(I3_CMD, char *old_name, char *new_name) {
+         LOG("Renaming current workspace to \"%s\"\n", new_name);
+     }
+ 
++    /* Define the target workspace. */
+     Con *output, *workspace = NULL;
+     if (old_name) {
+         TAILQ_FOREACH(output, &(croot->nodes_head), nodes)
+@@ -1869,10 +1870,11 @@ void cmd_rename_workspace(I3_CMD, char *old_name, char *new_name) {
+         // TODO: we should include the old workspace name here and use yajl for
+         // generating the reply.
+         // TODO: better error message
+-        yerror("Old workspace not found");
++        yerror("Target workspace not found");
+         return;
+     }
+ 
++    /* Verify the full name is not already used. */
+     Con *check_dest = NULL;
+     TAILQ_FOREACH(output, &(croot->nodes_head), nodes)
+         GREP_FIRST(check_dest, output_get_content(output),
+@@ -1886,18 +1888,32 @@ void cmd_rename_workspace(I3_CMD, char *old_name, char *new_name) {
+         return;
+     }
+ 
+-    /* Change the name and try to parse it as a number. */
+-    FREE(workspace->name);
+-    workspace->name = sstrdup(new_name);
++    /* Parse and check the workspace number. */
+     char *endptr = NULL;
+     long parsed_num = strtol(new_name, &endptr, 10);
+     if (parsed_num == LONG_MIN ||
+         parsed_num == LONG_MAX ||
+         parsed_num < 0 ||
+         endptr == new_name)
+-        workspace->num = -1;
+-    else workspace->num = parsed_num;
+-    LOG("num = %d\n", workspace->num);
++        parsed_num = -1;
++    LOG("num = %ld\n", parsed_num);
++    if (parsed_num != -1) {
++        Con *ws = NULL;
++        TAILQ_FOREACH(output, &(croot->nodes_head), nodes)
++            GREP_FIRST(ws, output_get_content(output),
++                child->num == parsed_num);
++
++        /* It is ok to rename a workspace with its actual number. */
++        if (ws && ws != workspace) {
++            yerror("Workspace number already in use");
++            return;
++        }
++    }
++
++    /* Finally change the name and the number. */
++    FREE(workspace->name);
++    workspace->name = sstrdup(new_name);
++    workspace->num = parsed_num;
+ 
+     /* By re-attaching, the sort order will be correct afterwards. */
+     Con *previously_focused = focused;
+-- 
+1.8.4
+

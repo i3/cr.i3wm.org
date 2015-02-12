@@ -1,0 +1,172 @@
+From 495636a8613e0b0dbb26593d038834fce11a296b Mon Sep 17 00:00:00 2001
+From: Steve Jones <steve@…>
+Date: Fri, 31 Jan 2014 15:23:29 +0000
+Subject: [PATCH 1/8] Add support for the _NET_CLIENT_LIST root window
+ property.
+
+This sets the the _NET_CLIENT_LIST property in x_push_changes when the
+client list changes. Changes to the client list are tracked by the
+client_list_changed flag which is updated by x_con_init and x_con_kill.
+The client list is maintained in the order of connecting by the TAILQ
+with head client_head.
+---
+ include/atoms.xmacro |  1 +
+ include/ewmh.h       |  5 +++++
+ src/ewmh.c           | 16 ++++++++++++++++
+ src/x.c              | 41 +++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 63 insertions(+)
+
+diff --git a/include/atoms.xmacro b/include/atoms.xmacro
+index e6e72e7..9ca01f3 100644
+--- a/include/atoms.xmacro
++++ b/include/atoms.xmacro
+@@ -12,6 +12,7 @@ xmacro(_NET_WM_WINDOW_TYPE_TOOLBAR)
+ xmacro(_NET_WM_WINDOW_TYPE_SPLASH)
+ xmacro(_NET_WM_DESKTOP)
+ xmacro(_NET_WM_STRUT_PARTIAL)
++xmacro(_NET_CLIENT_LIST)
+ xmacro(_NET_CLIENT_LIST_STACKING)
+ xmacro(_NET_CURRENT_DESKTOP)
+ xmacro(_NET_ACTIVE_WINDOW)
+diff --git a/include/ewmh.h b/include/ewmh.h
+index 9cc589d..46d6c98 100644
+--- a/include/ewmh.h
++++ b/include/ewmh.h
+@@ -28,6 +28,11 @@ void ewmh_update_current_desktop(void);
+ void ewmh_update_active_window(xcb_window_t window);
+ 
+ /**
++ * Updates the _NET_CLIENT_LIST hint. Used for window listers.
++ */
++void ewmh_update_client_list(xcb_window_t *list, int num_windows);
++
++/**
+  * Updates the _NET_CLIENT_LIST_STACKING hint. Necessary to move tabs in
+  * Chromium correctly.
+  *
+diff --git a/src/ewmh.c b/src/ewmh.c
+index 0298de3..a9457ef 100644
+--- a/src/ewmh.c
++++ b/src/ewmh.c
+@@ -69,6 +69,22 @@ void ewmh_update_workarea(void) {
+ }
+ 
+ /*
++ * Updates the _NET_CLIENT_LIST hint.
++ *
++ */
++void ewmh_update_client_list(xcb_window_t *list, int num_windows) {
++    xcb_change_property(
++        conn,
++        XCB_PROP_MODE_REPLACE,
++        root,
++        A__NET_CLIENT_LIST,
++        XCB_ATOM_WINDOW,
++        32,
++        num_windows,
++        list);
++}
++
++/*
+  * Updates the _NET_CLIENT_LIST_STACKING hint.
+  *
+  */
+diff --git a/src/x.c b/src/x.c
+index 366cbe1..eda6786 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -20,6 +20,9 @@ xcb_window_t focused_id = XCB_NONE;
+ static xcb_window_t *btt_stack;
+ static int btt_stack_num;
+ 
++/* Flags new clients created or destroyed, used in x_push_changes */
++static bool client_list_changed = false;
++
+ /* Stores coordinates to warp mouse pointer to if set */
+ static Rect *warp_to;
+ 
+@@ -55,6 +58,7 @@ typedef struct con_state {
+ 
+     CIRCLEQ_ENTRY(con_state) state;
+     CIRCLEQ_ENTRY(con_state) old_state;
++    TAILQ_ENTRY(con_state) client_order;
+ } con_state;
+ 
+ CIRCLEQ_HEAD(state_head, con_state) state_head =
+@@ -63,6 +67,9 @@ CIRCLEQ_HEAD(state_head, con_state) state_head =
+ CIRCLEQ_HEAD(old_state_head, con_state) old_state_head =
+     CIRCLEQ_HEAD_INITIALIZER(old_state_head);
+ 
++TAILQ_HEAD(client_head, con_state) client_head =
++    TAILQ_HEAD_INITIALIZER(client_head);
++
+ /*
+  * Returns the container state for the given frame. This function always
+  * returns a container state (otherwise, there is a bug in the code and the
+@@ -146,8 +153,11 @@ void x_con_init(Con *con, uint16_t depth) {
+     state->id = con->frame;
+     state->mapped = false;
+     state->initial = true;
++    DLOG("Adding window 0x%08x to lists\n", state->id);
+     CIRCLEQ_INSERT_HEAD(&state_head, state, state);
+     CIRCLEQ_INSERT_HEAD(&old_state_head, state, old_state);
++    TAILQ_INSERT_TAIL(&client_head, state, client_order);
++    client_list_changed = true;
+     DLOG("adding new state for window id 0x%08x\n", state->id);
+ }
+ 
+@@ -228,6 +238,8 @@ void x_con_kill(Con *con) {
+     state = state_for_frame(con->frame);
+     CIRCLEQ_REMOVE(&state_head, state, state);
+     CIRCLEQ_REMOVE(&old_state_head, state, old_state);
++    TAILQ_REMOVE(&client_head, state, client_order);
++    client_list_changed = true;
+     FREE(state->name);
+     free(state);
+ 
+@@ -876,6 +888,8 @@ void x_push_changes(Con *con) {
+         btt_stack_num = cnt;
+     }
+ 
++    DLOG("Getting window stacking order\n");
++
+     xcb_window_t *walk = btt_stack;
+ 
+     /* X11 correctly represents the stack if we push it from bottom to top */
+@@ -906,6 +920,33 @@ void x_push_changes(Con *con) {
+     if (stacking_changed)
+         ewmh_update_client_list_stacking(btt_stack, btt_stack_num);
+ 
++    /* If the client list changed since the last call update the
++     * _NET_CLIENT_LIST property. */
++    if (client_list_changed) {
++	xcb_window_t *client_list;
++
++	DLOG("Client list changed (%i clients)\n", cnt);
++
++	if (cnt) {
++	    client_list = smalloc(cnt * sizeof(xcb_window_t));
++	    walk = client_list;
++
++	    TAILQ_FOREACH(state, &client_head, client_order) {
++		assert((client_list - walk) < cnt);
++		if (state->con && state->con->window) 
++		    *walk++ = state->con->window->id;
++	    }
++
++	    ewmh_update_client_list(client_list, cnt);
++
++	    free(client_list);
++	} else {
++	    ewmh_update_client_list(NULL, 0);
++	}
++
++	client_list_changed = false;
++    }
++
+     DLOG("PUSHING CHANGES\n");
+     x_push_node(con);
+ 
+-- 
+1.8.1.2
+

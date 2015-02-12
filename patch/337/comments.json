@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 63,
+    "Comment": "movement left and up are not affected by this patch, so those tests should pass on `next`.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 29,
+    "Comment": "I don’t think this properly addresses #1060. Consider this:\n\nWith two tabbed containers on a workspace, both having 5 windows. Focus in the right tabbed container one is on the right-most window. Focus in the left tabbed container is on the right-most window.\n\nWhen moving that window to the right, with your patch, it will be inserted before the fifth window, but #1060 talks about it being inserted before the first window.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

@@ -1,0 +1,133 @@
+From afff5ee468d6e98d6b0020073a0a1a2706986d37 Mon Sep 17 00:00:00 2001
+From: Lancelot SIX <lancelot@…>
+Date: Sat, 23 Nov 2013 12:03:55 +0100
+Subject: [PATCH] libi3/root_atom_contents: handle data of arbitrary length
+
+Handle data fetched from xcb_get_property_unchecked with arbitrary
+length. This avoids having to rely on PATH_MAX macro where it is not
+necessary.
+---
+ i3-config-wizard/i3-config-wizard.mk |  2 +-
+ i3-dump-log/i3-dump-log.mk           |  2 +-
+ i3-input/i3-input.mk                 |  2 +-
+ i3-msg/i3-msg.mk                     |  2 +-
+ i3bar/i3bar.mk                       |  2 +-
+ libi3/root_atom_contents.c           | 18 +++++++++++++++++-
+ 6 files changed, 22 insertions(+), 6 deletions(-)
+
+diff --git a/i3-config-wizard/i3-config-wizard.mk b/i3-config-wizard/i3-config-wizard.mk
+index e759b4b..3dd0a4c 100644
+--- a/i3-config-wizard/i3-config-wizard.mk
++++ b/i3-config-wizard/i3-config-wizard.mk
+@@ -5,7 +5,7 @@ CLEAN_TARGETS += clean-i3-config-wizard
+ i3_config_wizard_SOURCES           := $(wildcard i3-config-wizard/*.c)
+ i3_config_wizard_HEADERS           := $(wildcard i3-config-wizard/*.h)
+ i3_config_wizard_CFLAGS             = $(XCB_CFLAGS) $(XCB_KBD_CFLAGS) $(X11_CFLAGS) $(PANGO_CFLAGS)
+-i3_config_wizard_LIBS               = $(XCB_LIBS) $(XCB_KBD_LIBS) $(X11_LIBS) $(PANGO_LIBS)
++i3_config_wizard_LIBS               = $(XCB_LIBS) $(XCB_KBD_LIBS) $(X11_LIBS) $(PANGO_LIBS) -lm
+ 
+ i3_config_wizard_OBJECTS := $(i3_config_wizard_SOURCES:.c=.o)
+ 
+diff --git a/i3-dump-log/i3-dump-log.mk b/i3-dump-log/i3-dump-log.mk
+index bbce356..0722e46 100644
+--- a/i3-dump-log/i3-dump-log.mk
++++ b/i3-dump-log/i3-dump-log.mk
+@@ -5,7 +5,7 @@ CLEAN_TARGETS += clean-i3-dump-log
+ i3_dump_log_SOURCES := $(wildcard i3-dump-log/*.c)
+ i3_dump_log_HEADERS := $(wildcard i3-dump-log/*.h)
+ i3_dump_log_CFLAGS   = $(XCB_CFLAGS) $(PANGO_CFLAGS)
+-i3_dump_log_LIBS     = $(XCB_LIBS)
++i3_dump_log_LIBS     = $(XCB_LIBS) -lm
+ 
+ i3_dump_log_OBJECTS := $(i3_dump_log_SOURCES:.c=.o)
+ 
+diff --git a/i3-input/i3-input.mk b/i3-input/i3-input.mk
+index 03f4e0a..cc3cff0 100644
+--- a/i3-input/i3-input.mk
++++ b/i3-input/i3-input.mk
+@@ -5,7 +5,7 @@ CLEAN_TARGETS += clean-i3-input
+ i3_input_SOURCES := $(wildcard i3-input/*.c)
+ i3_input_HEADERS := $(wildcard i3-input/*.h)
+ i3_input_CFLAGS   = $(XCB_CFLAGS) $(XCB_KBD_CFLAGS) $(PANGO_CFLAGS)
+-i3_input_LIBS     = $(XCB_LIBS) $(XCB_KBD_LIBS) $(PANGO_LIBS)
++i3_input_LIBS     = $(XCB_LIBS) $(XCB_KBD_LIBS) $(PANGO_LIBS) -lm
+ 
+ i3_input_OBJECTS := $(i3_input_SOURCES:.c=.o)
+ 
+diff --git a/i3-msg/i3-msg.mk b/i3-msg/i3-msg.mk
+index fda56da..06af8ed 100644
+--- a/i3-msg/i3-msg.mk
++++ b/i3-msg/i3-msg.mk
+@@ -5,7 +5,7 @@ CLEAN_TARGETS += clean-i3-msg
+ i3_msg_SOURCES := $(wildcard i3-msg/*.c)
+ i3_msg_HEADERS := $(wildcard i3-msg/*.h)
+ i3_msg_CFLAGS   = $(XCB_CFLAGS) $(PANGO_CFLAGS) $(YAJL_CFLAGS)
+-i3_msg_LIBS     = $(XCB_LIBS) $(YAJL_LIBS)
++i3_msg_LIBS     = $(XCB_LIBS) $(YAJL_LIBS) -lm
+ 
+ i3_msg_OBJECTS := $(i3_msg_SOURCES:.c=.o)
+ 
+diff --git a/i3bar/i3bar.mk b/i3bar/i3bar.mk
+index 0678025..3c50b07 100644
+--- a/i3bar/i3bar.mk
++++ b/i3bar/i3bar.mk
+@@ -5,7 +5,7 @@ CLEAN_TARGETS += clean-i3bar
+ i3bar_SOURCES := $(wildcard i3bar/src/*.c)
+ i3bar_HEADERS := $(wildcard i3bar/include/*.h)
+ i3bar_CFLAGS   = $(XCB_CFLAGS) $(X11_CFLAGS) $(PANGO_CFLAGS) $(YAJL_CFLAGS) $(LIBEV_CFLAGS)
+-i3bar_LIBS     = $(XCB_LIBS) $(X11_LIBS) $(PANGO_LIBS) $(YAJL_LIBS) $(LIBEV_LIBS)
++i3bar_LIBS     = $(XCB_LIBS) $(X11_LIBS) $(PANGO_LIBS) $(YAJL_LIBS) $(LIBEV_LIBS) -lm
+ 
+ i3bar_OBJECTS := $(i3bar_SOURCES:.c=.o)
+ 
+diff --git a/libi3/root_atom_contents.c b/libi3/root_atom_contents.c
+index 236f1b9..00b7400 100644
+--- a/libi3/root_atom_contents.c
++++ b/libi3/root_atom_contents.c
+@@ -10,6 +10,7 @@
+ #include <stdbool.h>
+ #include <limits.h>
+ #include <stdlib.h>
++#include <math.h>
+ 
+ #include <xcb/xcb.h>
+ #include <xcb/xcb_aux.h>
+@@ -31,6 +32,7 @@ char *root_atom_contents(const char *atomname, xcb_connection_t *provided_conn,
+     xcb_intern_atom_cookie_t atom_cookie;
+     xcb_intern_atom_reply_t *atom_reply;
+     char *content;
++    size_t content_max_words = 256;
+     xcb_connection_t *conn = provided_conn;
+ 
+     if (provided_conn == NULL &&
+@@ -50,12 +52,26 @@ char *root_atom_contents(const char *atomname, xcb_connection_t *provided_conn,
+     xcb_get_property_cookie_t prop_cookie;
+     xcb_get_property_reply_t *prop_reply;
+     prop_cookie = xcb_get_property_unchecked(conn, false, root, atom_reply->atom,
+-                                             XCB_GET_PROPERTY_TYPE_ANY, 0, PATH_MAX);
++                                             XCB_GET_PROPERTY_TYPE_ANY, 0, content_max_words);
+     prop_reply = xcb_get_property_reply(conn, prop_cookie, NULL);
+     if (prop_reply == NULL) {
+         free(atom_reply);
+         return NULL;
+     }
++    if (xcb_get_property_value_length(prop_reply) > 0 && prop_reply->bytes_after > 0) {
++        /* We received an incomplete value. Ask again but with a properly
++         * adjusted size. */
++        content_max_words += ceil(prop_reply->bytes_after / 4.0);
++        /* Repeat the request, with adjusted size */
++        free(prop_reply);
++        prop_cookie = xcb_get_property_unchecked(conn, false, root, atom_reply->atom,
++                                                 XCB_GET_PROPERTY_TYPE_ANY, 0, content_max_words);
++        prop_reply = xcb_get_property_reply(conn, prop_cookie, NULL);
++        if (prop_reply == NULL) {
++            free(atom_reply);
++            return NULL;
++        }
++    }
+     if (xcb_get_property_value_length(prop_reply) == 0) {
+         free(atom_reply);
+         free(prop_reply);
+-- 
+1.8.4.3
+

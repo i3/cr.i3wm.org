@@ -1,0 +1,427 @@
+From 0cb6699b4d5a4ad32a97b894d1c21a0e4576eb74 Mon Sep 17 00:00:00 2001
+From: Michael Stapelberg <michael@…>
+Date: Thu, 21 Mar 2013 11:48:27 +0100
+Subject: [PATCH] Add click events to i3bar
+
+If the statusline generator (i.e. i3status) specifies click_events:true
+in the protocol header, i3bar will write a JSON array on it's stdin
+notifying it if the user clicks on a block.
+
+The exact protocol is documented in docs/i3bar-protocol.
+---
+ docs/i3bar-protocol           |  30 +++++++++++-
+ i3bar/include/child.h         |  12 +++++
+ i3bar/include/common.h        |   4 ++
+ i3bar/src/child.c             | 106 ++++++++++++++++++++++++++++++++++++++----
+ i3bar/src/parse_json_header.c |  20 +++++++-
+ i3bar/src/xcb.c               |  61 ++++++++++++++++++------
+ 6 files changed, 208 insertions(+), 25 deletions(-)
+
+diff --git a/docs/i3bar-protocol b/docs/i3bar-protocol
+index 2cf6dd0..7ee084b 100644
+--- a/docs/i3bar-protocol
++++ b/docs/i3bar-protocol
+@@ -51,7 +51,7 @@ consists of a single JSON hash:
+ 
+ *All features example*:
+ ------------------------------
+-{ "version": 1, "stop_signal": 10, "cont_signal": 12 }
++{ "version": 1, "stop_signal": 10, "cont_signal": 12, "click_events": true }
+ ------------------------------
+ 
+ (Note that before i3 v4.3 the precise format had to be +{"version":1}+,
+@@ -110,6 +110,9 @@ cont_signal::
+ 	Specify to i3bar the signal (as an integer)to send to continue your
+ 	processing.
+ 	The default value (if none is specified) is SIGCONT.
++click_events::
++	If specified and true i3bar will write a infinite array (same as above)
++	to your stdin.
+ 
+ === Blocks in detail
+ 
+@@ -183,3 +186,28 @@ An example of a block which uses all possible entries follows:
+  "instance": "eth0"
+ }
+ ------------------------------------------
++
++=== Click events
++
++If enabled i3bar will send you notifications if the user clicks on a block and
++looks like this:
++
++name::
++	Name of the block, if set
++instance::
++	Instance of the block, if set
++x, y::
++	X11 root window coordinates where the click occured
++button:
++	X11 button ID (for example 1 to 3 for left/middle/right mouse button)
++
++*Example*:
++------------------------------------------
++{
++ "name": "ethernet",
++ "instance": "eth0",
++ "button": 1,
++ "x": 1320,
++ "y": 1400
++}
++------------------------------------------
+diff --git a/i3bar/include/child.h b/i3bar/include/child.h
+index d1c4689..dc244be 100644
+--- a/i3bar/include/child.h
++++ b/i3bar/include/child.h
+@@ -33,6 +33,12 @@ typedef struct {
+      * The signal requested by the client to inform it of theun hidden state of i3bar
+      */
+     int cont_signal;
++
++    /**
++     * Enable click events
++     */
++    bool click_events;
++    bool click_events_init;
+ } i3bar_child;
+ 
+ /*
+@@ -68,4 +74,10 @@ void stop_child(void);
+  */
+ void cont_child(void);
+ 
++/*
++ * Generates a click event, if enabled.
++ *
++ */
++void send_block_clicked(int button, const char *name, const char *instance, int x, int y);
++
+ #endif
+diff --git a/i3bar/include/common.h b/i3bar/include/common.h
+index 05fb5aa..a77def3 100644
+--- a/i3bar/include/common.h
++++ b/i3bar/include/common.h
+@@ -50,6 +50,10 @@ struct status_block {
+     uint32_t x_offset;
+     uint32_t x_append;
+ 
++    /* Optional */
++    char *name;
++    char *instance;
++
+     TAILQ_ENTRY(status_block) blocks;
+ };
+ 
+diff --git a/i3bar/src/child.c b/i3bar/src/child.c
+index bea1d58..005f2de 100644
+--- a/i3bar/src/child.c
++++ b/i3bar/src/child.c
+@@ -21,6 +21,7 @@
+ #include <yajl/yajl_common.h>
+ #include <yajl/yajl_parse.h>
+ #include <yajl/yajl_version.h>
++#include <yajl/yajl_gen.h>
+ 
+ #include "common.h"
+ 
+@@ -35,6 +36,9 @@ ev_child *child_sig;
+ yajl_callbacks callbacks;
+ yajl_handle parser;
+ 
++/* JSON generator for stdout */
++yajl_gen gen;
++
+ typedef struct parser_ctx {
+     /* True if one of the parsed blocks was urgent */
+     bool has_urgent;
+@@ -85,6 +89,8 @@ static int stdin_start_array(void *context) {
+         first = TAILQ_FIRST(&statusline_head);
+         I3STRING_FREE(first->full_text);
+         FREE(first->color);
++        FREE(first->name);
++        FREE(first->instance);
+         TAILQ_REMOVE(&statusline_head, first, blocks);
+         free(first);
+     }
+@@ -141,6 +147,18 @@ static int stdin_string(void *context, const unsigned char *val, unsigned int le
+             ctx->block.align = ALIGN_CENTER;
+         }
+     }
++    if (strcasecmp(ctx->last_map_key, "name") == 0) {
++        char *copy = (char*)malloc(len+1);
++        strncpy(copy, (const char *)val, len);
++        copy[len] = 0;
++        ctx->block.name = copy;
++    }
++    if (strcasecmp(ctx->last_map_key, "instance") == 0) {
++        char *copy = (char*)malloc(len+1);
++        strncpy(copy, (const char *)val, len);
++        copy[len] = 0;
++        ctx->block.instance = copy;
++    }
+     return 1;
+ }
+ 
+@@ -322,6 +340,18 @@ void child_sig_cb(struct ev_loop *loop, ev_child *watcher, int revents) {
+     cleanup();
+ }
+ 
++void child_write_output(void) {
++    if (child.click_events) {
++        const unsigned char *output;
++        size_t size;
++        yajl_gen_get_buf(gen, &output, &size);
++        fwrite(output, 1, size, stdout);
++        fwrite("\n", 1, 1, stdout);
++        fflush(stdout);
++        yajl_gen_clear(gen);
++    }
++}
++
+ /*
+  * Start a child-process with the specified command and reroute stdin.
+  * We actually start a $SHELL to execute the command so we don't have to care
+@@ -347,10 +377,16 @@ void start_child(char *command) {
+     parser = yajl_alloc(&callbacks, NULL, &parser_context);
+ #endif
+ 
++    gen = yajl_gen_alloc(NULL);
++
+     if (command != NULL) {
+-        int fd[2];
+-        if (pipe(fd) == -1)
+-            err(EXIT_FAILURE, "pipe(fd)");
++        int pipe_in[2]; /* pipe we read from */
++        int pipe_out[2]; /* pipe we write to */
++
++        if (pipe(pipe_in) == -1)
++            err(EXIT_FAILURE, "pipe(pipe_in)");
++        if (pipe(pipe_out) == -1)
++            err(EXIT_FAILURE, "pipe(pipe_out)");
+ 
+         child.pid = fork();
+         switch (child.pid) {
+@@ -358,10 +394,13 @@ void start_child(char *command) {
+                 ELOG("Couldn't fork(): %s\n", strerror(errno));
+                 exit(EXIT_FAILURE);
+             case 0:
+-                /* Child-process. Reroute stdout and start shell */
+-                close(fd[0]);
++                /* Child-process. Reroute streams and start shell */
+ 
+-                dup2(fd[1], STDOUT_FILENO);
++                close(pipe_in[0]);
++                close(pipe_out[1]);
++
++                dup2(pipe_in[1], STDOUT_FILENO);
++                dup2(pipe_out[0], STDIN_FILENO);
+ 
+                 static const char *shell = NULL;
+ 
+@@ -371,10 +410,13 @@ void start_child(char *command) {
+                 execl(shell, shell, "-c", command, (char*) NULL);
+                 return;
+             default:
+-                /* Parent-process. Rerout stdin */
+-                close(fd[1]);
++                /* Parent-process. Reroute streams */
++
++                close(pipe_in[1]);
++                close(pipe_out[0]);
+ 
+-                dup2(fd[0], STDIN_FILENO);
++                dup2(pipe_in[0], STDIN_FILENO);
++                dup2(pipe_out[1], STDOUT_FILENO);
+ 
+                 break;
+         }
+@@ -395,6 +437,52 @@ void start_child(char *command) {
+     atexit(kill_child_at_exit);
+ }
+ 
++void child_click_events_initialize(void) {
++    if (!child.click_events_init) {
++        yajl_gen_array_open(gen);
++        child_write_output();
++        child.click_events_init = true;
++    }
++}
++
++void child_click_events_key(const char *key) {
++    yajl_gen_string(gen, (const unsigned char *)key, strlen(key));
++}
++
++/*
++ * Generates a click event, if enabled.
++ *
++ */
++void send_block_clicked(int button, const char *name, const char *instance, int x, int y) {
++    if (child.click_events) {
++        child_click_events_initialize();
++
++        yajl_gen_map_open(gen);
++
++        if (name) {
++            child_click_events_key("name");
++            yajl_gen_string(gen, (const unsigned char *)name, strlen(name));
++        }
++
++        if (instance) {
++            child_click_events_key("instance");
++            yajl_gen_string(gen, (const unsigned char *)instance, strlen(instance));
++        }
++
++        child_click_events_key("button");
++        yajl_gen_integer(gen, button);
++
++        child_click_events_key("x");
++        yajl_gen_integer(gen, x);
++
++        child_click_events_key("y");
++        yajl_gen_integer(gen, y);
++
++        yajl_gen_map_close(gen);
++        child_write_output();
++    }
++}
++
+ /*
+  * kill()s the child-process (if any). Called when exit()ing.
+  *
+diff --git a/i3bar/src/parse_json_header.c b/i3bar/src/parse_json_header.c
+index 80ec5af..c09e0f4 100644
+--- a/i3bar/src/parse_json_header.c
++++ b/i3bar/src/parse_json_header.c
+@@ -31,6 +31,7 @@ static enum {
+     KEY_VERSION,
+     KEY_STOP_SIGNAL,
+     KEY_CONT_SIGNAL,
++    KEY_CLICK_EVENTS,
+     NO_KEY
+ } current_key;
+ 
+@@ -54,6 +55,21 @@ static int header_integer(void *ctx, long val) {
+         default:
+             break;
+     }
++
++    return 1;
++}
++
++static int header_boolean(void *ctx, int val) {
++    i3bar_child *child = ctx;
++
++    switch (current_key) {
++        case KEY_CLICK_EVENTS:
++            child->click_events = val;
++            break;
++        default:
++            break;
++    }
++
+     return 1;
+ }
+ 
+@@ -71,13 +87,15 @@ static int header_map_key(void *ctx, const unsigned char *stringval, unsigned in
+         current_key = KEY_STOP_SIGNAL;
+     } else if (CHECK_KEY("cont_signal")) {
+         current_key = KEY_CONT_SIGNAL;
++    } else if (CHECK_KEY("click_events")) {
++        current_key = KEY_CLICK_EVENTS;
+     }
+     return 1;
+ }
+ 
+ static yajl_callbacks version_callbacks = {
+     NULL, /* null */
+-    NULL, /* boolean */
++    &header_boolean, /* boolean */
+     &header_integer,
+     NULL, /* double */
+     NULL, /* number */
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index 3a8d8b9..a94514a 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -306,24 +306,11 @@ void handle_button(xcb_button_press_event_t *event) {
+     }
+ 
+     int32_t x = event->event_x >= 0 ? event->event_x : 0;
++    int32_t original_x = x;
+ 
+     DLOG("Got Button %d\n", event->detail);
+ 
+     switch (event->detail) {
+-        case 1:
+-            /* Left Mousbutton. We determine, which button was clicked
+-             * and set cur_ws accordingly */
+-            TAILQ_FOREACH(cur_ws, walk->workspaces, tailq) {
+-                DLOG("x = %d\n", x);
+-                if (x >= 0 && x < cur_ws->name_width + 10) {
+-                    break;
+-                }
+-                x -= cur_ws->name_width + 11;
+-            }
+-            if (cur_ws == NULL) {
+-                return;
+-            }
+-            break;
+         case 4:
+             /* Mouse wheel up. We select the previous ws, if any.
+              * If there is no more workspace, don’t even send the workspace
+@@ -344,6 +331,52 @@ void handle_button(xcb_button_press_event_t *event) {
+ 
+             cur_ws = TAILQ_NEXT(cur_ws, tailq);
+             break;
++        default:
++            /* Check if this event regards a workspace button */
++            TAILQ_FOREACH(cur_ws, walk->workspaces, tailq) {
++                DLOG("x = %d\n", x);
++                if (x >= 0 && x < cur_ws->name_width + 10) {
++                    break;
++                }
++                x -= cur_ws->name_width + 11;
++            }
++            if (cur_ws == NULL) {
++                /* No workspace button was pressed.
++                 * Check if a status block has been clicked.
++                 * This of course only has an effect,
++                 * if the child reported bidirectional protocol usage. */
++
++                /* First calculate width of tray area */
++                trayclient *trayclient;
++                int tray_width = 0;
++                TAILQ_FOREACH_REVERSE(trayclient, walk->trayclients, tc_head, tailq) {
++                    if (!trayclient->mapped)
++                        continue;
++                    tray_width += (font.height + 2);
++                }
++
++                int block_x = 0, last_block_x;
++                int offset = (walk->rect.w - (statusline_width + tray_width)) - 10;
++
++                x = original_x - offset;
++                if (x < 0)
++                    return;
++
++                struct status_block *block;
++
++                TAILQ_FOREACH(block, &statusline_head, blocks) {
++                    last_block_x = block_x;
++                    block_x += block->width + block->x_offset + block->x_append;
++
++                    if (x <= block_x && x >= last_block_x) {
++                        send_block_clicked(event->detail, block->name, block->instance, event->root_x, event->root_y);
++                        return;
++                    }
++                }
++                return;
++            }
++            if (event->detail != 1)
++                return;
+     }
+ 
+     /* To properly handle workspace names with double quotes in them, we need
+-- 
+1.8.2
+

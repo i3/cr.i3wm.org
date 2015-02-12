@@ -1,0 +1,113 @@
+From 35098f86d656922a56caace6e7db533829f07412 Mon Sep 17 00:00:00 2001
+From: Martin Ichilevici de Oliveira <martin.i.oliveira@…>
+Date: Wed, 9 Oct 2013 14:50:12 -0300
+Subject: [PATCH] This patch adds a new option to i3lock. If the user specifies
+ the -s option (in conjunction with -i), the image will be scaled to match the
+ screen's resolution. Note that the aspect ratio will not be preserved.
+
+---
+ i3lock.1           |  7 +++++++
+ i3lock.c           |  7 ++++++-
+ unlock_indicator.c | 13 +++++++++++++
+ 3 files changed, 26 insertions(+), 1 deletion(-)
+
+diff --git a/i3lock.1 b/i3lock.1
+index e95340c..6b4f5d2 100644
+--- a/i3lock.1
++++ b/i3lock.1
+@@ -24,6 +24,7 @@ i3lock \- improved screen locker
+ .RB [\|\-c
+ .IR color \|]
+ .RB [\|\-t\|]
++.RB [\|\-s\|]
+ .RB [\|\-p
+ .IR pointer\|]
+ .RB [\|\-u\|]
+@@ -90,6 +91,12 @@ If an image is specified (via \-i) it will display the image tiled all over the
+ (if it is a multi-monitor setup, the image is visible on all screens).
+ 
+ .TP
++.B \-s, \-\-scale
++If an image is specified (via \-i) it will scale the image to match the resolution of the
++screen. Note that the aspect ratio will not be preserved. This option has no effect if
++tiling (via \-t) was used. 
++
++.TP
+ .BI \-p\  win|default \fR,\ \fB\-\-pointer= win|default
+ If you specify "default",
+ .B i3lock
+diff --git a/i3lock.c b/i3lock.c
+index 7d1f7b3..2ad085e 100644
+--- a/i3lock.c
++++ b/i3lock.c
+@@ -60,6 +60,7 @@ static struct xkb_context *xkb_context;
+ static struct xkb_keymap *xkb_keymap;
+ 
+ cairo_surface_t *img = NULL;
++bool scale = false;
+ bool tile = false;
+ bool ignore_empty_password = false;
+ 
+@@ -584,6 +585,7 @@ int main(int argc, char *argv[]) {
+         {"no-unlock-indicator", no_argument, NULL, 'u'},
+         {"image", required_argument, NULL, 'i'},
+         {"tiling", no_argument, NULL, 't'},
++        {"scale", no_argument, NULL, 's'},
+         {"ignore-empty-password", no_argument, NULL, 'e'},
+         {NULL, no_argument, NULL, 0}
+     };
+@@ -591,7 +593,7 @@ int main(int argc, char *argv[]) {
+     if ((username = getenv("USER")) == NULL)
+         errx(1, "USER environment variable not set, please set it.\n");
+ 
+-    while ((o = getopt_long(argc, argv, "hvnbdc:p:ui:te", longopts, &optind)) != -1) {
++    while ((o = getopt_long(argc, argv, "hvnbdc:p:ui:tes", longopts, &optind)) != -1) {
+         switch (o) {
+         case 'v':
+             errx(EXIT_SUCCESS, "version " VERSION " © 2010-2012 Michael Stapelberg");
+@@ -622,6 +624,9 @@ int main(int argc, char *argv[]) {
+         case 'i':
+             image_path = strdup(optarg);
+             break;
++        case 's':
++            scale = true;
++            break;
+         case 't':
+             tile = true;
+             break;
+diff --git a/unlock_indicator.c b/unlock_indicator.c
+index 5e4015c..0473e5f 100644
+--- a/unlock_indicator.c
++++ b/unlock_indicator.c
+@@ -46,6 +46,8 @@ extern bool unlock_indicator;
+ /* A Cairo surface containing the specified image (-i), if any. */
+ extern cairo_surface_t *img;
+ 
++/* Whether the image should be scaled to fit the screen */
++extern bool scale;
+ /* Whether the image should be tiled. */
+ extern bool tile;
+ /* The background color to use (in hex). */
+@@ -87,8 +89,19 @@ xcb_pixmap_t draw_image(uint32_t *resolution) {
+ 
+     if (img) {
+         if (!tile) {
++            int w, h;
++            if (scale) {
++                w = cairo_image_surface_get_width(img);
++                h = cairo_image_surface_get_height(img);
++                cairo_scale(xcb_ctx, (float) resolution[0]/w, (float) resolution[1]/h);
++            }
+             cairo_set_source_surface(xcb_ctx, img, 0, 0);
+             cairo_paint(xcb_ctx);
++            if (scale) {
++                /* Now that the context has been painted, we need to rescale it back to it's original
++                 * size, since other features depend on this */
++                cairo_scale(xcb_ctx, (float) w/resolution[0], (float) h/resolution[1]);
++            }
+         } else {
+             /* create a pattern and fill a rectangle as big as the screen */
+             cairo_pattern_t *pattern;
+-- 
+1.8.4
+

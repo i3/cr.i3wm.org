@@ -1,0 +1,44 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 123,
+    "Comment": "Instead of this, use free(destpath); followed by asprintf(\u0026destpath, …)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 150,
+    "Comment": "Same here: use asprintf",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 190,
+    "Comment": "asprintf()",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 208,
+    "Comment": "asprintf",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 227,
+    "Comment": "asprintf",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 257,
+    "Comment": "indentation is wrong",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 259,
+    "Comment": "indentation is wrong (8 spaces instead of 4)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

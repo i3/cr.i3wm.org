@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 21,
+    "Comment": "I think the xcb_icccm_get_wm_size_hints_reply() function will effectively overwrite all values in the wm_size_hints struct. One could argue that maybe we should error-check, then :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 21,
+    "Comment": "yeah, it's a valgrind error but I doubt it's a big deal.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

@@ -1,0 +1,25 @@
+From a37fcac07949fb05f3d4abb6c201216cda46fd20 Mon Sep 17 00:00:00 2001
+From: smlb <smlb@…>
+Date: Sun, 23 Nov 2014 17:51:57 +0100
+Subject: [PATCH] Added termite to default terminals
+
+---
+ i3-sensible-terminal | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/i3-sensible-terminal b/i3-sensible-terminal
+index d56efa7..06c9635 100755
+--- a/i3-sensible-terminal
++++ b/i3-sensible-terminal
+@@ -8,7 +8,7 @@
+ # We welcome patches that add distribution-specific mechanisms to find the
+ # preferred terminal emulator. On Debian, there is the x-terminal-emulator
+ # symlink for example.
+-for terminal in $TERMINAL x-terminal-emulator urxvt rxvt terminator Eterm aterm xterm gnome-terminal roxterm xfce4-terminal; do
++for terminal in $TERMINAL x-terminal-emulator urxvt rxvt terminator Eterm aterm xterm gnome-terminal roxterm xfce4-terminal termite; do
+     if command -v $terminal > /dev/null 2>&1; then
+         exec $terminal "$@"
+     fi
+-- 
+2.1.3
+

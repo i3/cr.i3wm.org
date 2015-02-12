@@ -1,0 +1,141 @@
+From 53ce140d6b315f00871d48bfb27bde5a09e06f8e Mon Sep 17 00:00:00 2001
+From: andaagar <anders.aagaard@…>
+Date: Tue, 27 May 2014 19:29:43 +0200
+Subject: [PATCH] event for window focus changes
+
+---
+ include/i3/ipc.h            |  3 +++
+ src/handlers.c              | 32 +++++++++++++++++++++++++++++
+ testcases/t/519-ipc-focus.t | 49 +++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 84 insertions(+)
+ create mode 100644 testcases/t/519-ipc-focus.t
+
+diff --git a/include/i3/ipc.h b/include/i3/ipc.h
+index 94a3990..f3f4b90 100644
+--- a/include/i3/ipc.h
++++ b/include/i3/ipc.h
+@@ -100,3 +100,6 @@ typedef struct i3_ipc_header {
+ 
+ /** Bar config update will be triggered to update the bar config */
+ #define I3_IPC_EVENT_BARCONFIG_UPDATE           (I3_IPC_EVENT_MASK | 4)
++
++/** Window focus events will be triggered upon window focus requests */
++#define I3_IPC_EVENT_FOCUS           			(I3_IPC_EVENT_MASK | 5)
+diff --git a/src/handlers.c b/src/handlers.c
+index d6e8891..ddd775b 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -20,6 +20,10 @@
+ #define SN_API_NOT_YET_FROZEN 1
+ #include <libsn/sn-monitor.h>
+ 
++ #include "yajl_utils.h"
++
++#include <yajl/yajl_gen.h>
++
+ int randr_base = -1;
+ 
+ /* After mapping/unmapping windows, a notify event is generated. However, we don’t want it,
+@@ -647,6 +651,32 @@ static void handle_expose_event(xcb_expose_event_t *event) {
+ }
+ 
+ /*
++ * Send focus events
++ */
++ static void ipc_send_window_focus_event(Con *con, char *change) {
++    setlocale(LC_NUMERIC, "C");
++    yajl_gen gen = ygenalloc();
++
++    y(map_open);
++
++    ystr("change");
++    ystr(change);
++
++    ystr("container");
++    dump_node(gen, con, false);
++
++    y(map_close);
++
++    const unsigned char *payload;
++    ylength length;
++    y(get_buf, &payload, &length);
++
++    ipc_send_event("focus", I3_IPC_EVENT_FOCUS, (const char *)payload);
++    y(free);
++    setlocale(LC_NUMERIC, "");
++}
++
++/*
+  * Handle client messages (EWMH)
+  *
+  */
+@@ -731,9 +761,11 @@ static void handle_client_message(xcb_client_message_event_t *event) {
+                 DLOG("Request to focus con on a visible workspace. Focusing con = %p\n", con);
+                 workspace_show(ws);
+                 con_focus(con);
++                ipc_send_window_focus_event(con, "focused");
+             } else {
+                 DLOG("Request to focus con on a hidden workspace. Setting urgent con = %p\n", con);
+                 con_set_urgency(con, true);
++                ipc_send_window_focus_event(con, "blocked");
+             }
+         }
+ 
+diff --git a/testcases/t/519-ipc-focus.t b/testcases/t/519-ipc-focus.t
+new file mode 100644
+index 0000000..66f4344
+--- /dev/null
++++ b/testcases/t/519-ipc-focus.t
+@@ -0,0 +1,49 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++
++use i3test;
++
++SKIP: {
++
++    skip "AnyEvent::I3 too old (need >= 0.15)", 1 if $AnyEvent::I3::VERSION < 0.15;
++
++my $i3 = i3(get_socket_path());
++$i3->connect()->recv;
++
++################################
++# Window event
++################################
++
++# Events
++
++my $new = AnyEvent->condvar;
++$i3->subscribe({
++    focus => sub {
++        my ($event) = @_;
++        $new->send($event->{change} eq 'focused');
++    }
++})->recv;
++
++open_window;
++
++my $t;
++$t = AnyEvent->timer(after => 0.5, cb => sub { $new->send(0); });
++
++ok($new->recv, 'Window "focused" event received');
++
++}
++
++done_testing;
+-- 
+1.9.1
+

@@ -1,0 +1,50 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 122,
+    "Comment": "What are the formats that are supported? You mention %g and %cb, but are there others? And what do they even mean? :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 26,
+    "Comment": "Can you move this into src/print_wireless_info.c please?\n\nAlso mark it static.\n\nAlso format it so that it’s consistent with the rest of the code",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 16,
+    "Comment": "In general, what’s your use case for this? Why isn’t the existing printed bitrate good enough?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 113,
+    "Comment": "Hm, shouldn’t we support %g, %cb (and others if they exist) in the format_up string instead of having two format strings?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Enrico Carlesso",
+    "Line": 16,
+    "Comment": "Hi Michael. The reason is pretty simple. I've recently switched to a dual band wireless router, so my speed changes frequently and typical values with %g are: 96, 130, 166.6 and so on. This change the length of the text in my bar, and it distracts me a lot, so I've switched to %5.1f.",
+    "EmailHash": "13d35cfcb64d83bd4019053045cd95b4"
+  },
+  {
+    "Author": "Enrico Carlesso",
+    "Line": 26,
+    "Comment": "Sure, I was putting this here because I was thinking to use it in eth speed, but it's a different story there.",
+    "EmailHash": "13d35cfcb64d83bd4019053045cd95b4"
+  },
+  {
+    "Author": "Enrico Carlesso",
+    "Line": 16,
+    "Comment": "Should I provide a new complete patch in this case?",
+    "EmailHash": "13d35cfcb64d83bd4019053045cd95b4"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 16,
+    "Comment": "Yes, please submit a new patch. It’d also be good to list your use case as an example in the documentation so that people know how to use that feature.",
+    "EmailHash": ""
+  }
+]

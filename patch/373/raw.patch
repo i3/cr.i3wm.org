@@ -1,0 +1,176 @@
+From ed829adf3b8f468c4571b5017a43760559b11932 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sat, 11 Jan 2014 05:51:45 -0500
+Subject: [PATCH 1/2] Respect Motif hint for window decorations
+
+When the _MOTIF_WM_HINTS property of a window specifies it should have
+no title bar, or no decorations at all, respond by setting the border
+style of that container to BS_PIXEL or BS_NONE respectively.
+
+This comes from the old Motif window manager. It was originally intended
+to specify exactly what sort of decorations a window should have, and
+exactly what sort of user input it should respond to. The EWMH spec
+intended to replace Motif hints with _NET_WM_WINDOW_TYPE, but it is
+still in use by popular widget toolkits such as GTK+ and Java AWT.
+
+i3's implementation simply mirrors Gnome's Metacity. Official
+documentation of this hint is nowhere to be found.
+
+For more information see:
+https://people.gnome.org/~tthurman/docs/metacity/xprops_8h-source.html
+http://stackoverflow.com/questions/13787553/detect-if-a-x11-window-has-decorations
+
+fixes #832
+---
+ include/atoms.xmacro |  1 +
+ include/window.h     | 14 +++++++++++++
+ src/manage.c         | 16 ++++++++++++++-
+ src/window.c         | 56 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 86 insertions(+), 1 deletion(-)
+
+diff --git a/include/atoms.xmacro b/include/atoms.xmacro
+index 41889eb..e6e72e7 100644
+--- a/include/atoms.xmacro
++++ b/include/atoms.xmacro
+@@ -31,3 +31,4 @@ xmacro(I3_SHMLOG_PATH)
+ xmacro(I3_PID)
+ xmacro(_NET_REQUEST_FRAME_EXTENTS)
+ xmacro(_NET_FRAME_EXTENTS)
++xmacro(_MOTIF_WM_HINTS)
+diff --git a/include/window.h b/include/window.h
+index 23a8d69..480cee1 100644
+--- a/include/window.h
++++ b/include/window.h
+@@ -61,3 +61,17 @@ void window_update_role(i3Window *win, xcb_get_property_reply_t *prop, bool befo
+  *
+  */
+ void window_update_hints(i3Window *win, xcb_get_property_reply_t *prop, bool *urgency_hint);
++
++/**
++ * Updates the MOTIF_WM_HINTS. The container's border style should be set to
++ * `motif_border_style' if border style is not BS_NORMAL.
++ *
++ * i3 only uses this hint when it specifies a window should have no
++ * title bar, or no decorations at all, which is how most window managers
++ * handle it.
++ *
++ * The EWMH spec intended to replace Motif hints with _NET_WM_WINDOW_TYPE, but
++ * it is still in use by popular widget toolkits such as GTK+ and Java AWT.
++ *
++ */
++void window_update_motif_hints(i3Window *win, xcb_get_property_reply_t *prop, border_style_t *motif_border_style);
+diff --git a/src/manage.c b/src/manage.c
+index 5420371..7289851 100644
+--- a/src/manage.c
++++ b/src/manage.c
+@@ -118,7 +118,8 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+     xcb_get_property_cookie_t wm_type_cookie, strut_cookie, state_cookie,
+                               utf8_title_cookie, title_cookie,
+                               class_cookie, leader_cookie, transient_cookie,
+-                              role_cookie, startup_id_cookie, wm_hints_cookie;
++                              role_cookie, startup_id_cookie, wm_hints_cookie,
++                              motif_wm_hints_cookie;
+ 
+ 
+     geomc = xcb_get_geometry(conn, d);
+@@ -188,6 +189,7 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+     role_cookie = GET_PROPERTY(A_WM_WINDOW_ROLE, 128);
+     startup_id_cookie = GET_PROPERTY(A__NET_STARTUP_ID, 512);
+     wm_hints_cookie = xcb_icccm_get_wm_hints(conn, window);
++    motif_wm_hints_cookie = GET_PROPERTY(A__MOTIF_WM_HINTS, 5 * sizeof(long));
+     /* TODO: also get wm_normal_hints here. implement after we got rid of xcb-event */
+ 
+     DLOG("Managing window 0x%08x\n", window);
+@@ -222,6 +224,8 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+     window_update_role(cwindow, xcb_get_property_reply(conn, role_cookie, NULL), true);
+     bool urgency_hint;
+     window_update_hints(cwindow, xcb_get_property_reply(conn, wm_hints_cookie, NULL), &urgency_hint);
++    border_style_t motif_border_style = BS_NORMAL;
++    window_update_motif_hints(cwindow, xcb_get_property_reply(conn, motif_wm_hints_cookie, NULL), &motif_border_style);
+ 
+     xcb_get_property_reply_t *startup_id_reply;
+     startup_id_reply = xcb_get_property_reply(conn, startup_id_cookie, NULL);
+@@ -439,6 +443,16 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+      * here because it’s used for dock clients. */
+     nc->geometry = (Rect){ geom->x, geom->y, geom->width, geom->height };
+ 
++    if (motif_border_style != BS_NORMAL) {
++        DLOG("MOTIF_WM_HINTS specifies decorations (border_style = %d)\n", motif_border_style);
++        /* A client sets these hints because they are providing their own
++         * window controls (Chromium, Steam), splash screens, or shaped utility
++         * windows that need focus (Eclipse), so it makes sense to make them
++         * floating. */
++        floating_enable(nc, false);
++        con_set_border_style(nc, motif_border_style, config.default_border_width);
++    }
++
+     if (want_floating) {
+         DLOG("geometry = %d x %d\n", nc->geometry.width, nc->geometry.height);
+         floating_enable(nc, true);
+diff --git a/src/window.c b/src/window.c
+index 219e64c..f1795a8 100644
+--- a/src/window.c
++++ b/src/window.c
+@@ -254,3 +254,59 @@ void window_update_hints(i3Window *win, xcb_get_property_reply_t *prop, bool *ur
+ 
+     free(prop);
+ }
++
++/*
++ * Updates the MOTIF_WM_HINTS. The container's border style should be set to
++ * `motif_border_style' if border style is not BS_NORMAL.
++ *
++ * i3 only uses this hint when it specifies a window should have no
++ * title bar, or no decorations at all, which is how most window managers
++ * handle it.
++ *
++ * The EWMH spec intended to replace Motif hints with _NET_WM_WINDOW_TYPE, but
++ * it is still in use by popular widget toolkits such as GTK+ and Java AWT.
++ *
++ */
++void window_update_motif_hints(i3Window *win, xcb_get_property_reply_t *prop, border_style_t *motif_border_style) {
++    /* This implementation simply mirrors Gnome's Metacity. Official
++     * documentation of this hint is nowhere to be found.
++     * For more information see:
++     * https://people.gnome.org/~tthurman/docs/metacity/xprops_8h-source.html
++     * http://stackoverflow.com/questions/13787553/detect-if-a-x11-window-has-decorations
++     */
++#define MWM_HINTS_DECORATIONS   (1L << 1)
++#define MWM_DECOR_ALL           (1L << 0)
++#define MWM_DECOR_BORDER        (1L << 1)
++#define MWM_DECOR_TITLE         (1L << 3)
++
++    if (motif_border_style != NULL)
++        *motif_border_style = BS_NORMAL;
++
++    if (prop == NULL || xcb_get_property_value_length(prop) == 0) {
++        FREE(prop);
++        return;
++    }
++
++    /* The property consists of an array of 5 `long's. The first value is a bit
++     * mask of what properties the hint will specify. We are only interested in
++     * MWM_HINTS_DECORATIONS because it indicates that the second value of the
++     * array tells us which decorations the window should have, each flag being
++     * a particular decoration. */
++    long *motif_hints = (long *)xcb_get_property_value(prop);
++
++    if (motif_border_style != NULL && motif_hints[0] & MWM_HINTS_DECORATIONS) {
++        if (motif_hints[1] & MWM_DECOR_ALL || motif_hints[1] & MWM_DECOR_TITLE)
++            *motif_border_style = BS_NORMAL;
++        else if (motif_hints[1] & MWM_DECOR_BORDER)
++            *motif_border_style = BS_PIXEL;
++        else
++            *motif_border_style = BS_NONE;
++    }
++
++    FREE(prop);
++
++#undef MWM_HINTS_DECORATIONS
++#undef MWM_DECOR_ALL
++#undef MWM_DECOR_BORDER
++#undef MWM_DECOR_TITLE
++}
+-- 
+1.8.5.2
+

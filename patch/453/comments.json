@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Mats",
+    "Line": 21,
+    "Comment": "Sorry, I accidently double-clicked the ‘Submit patch for review’ button...",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  },
+  {
+    "Author": "Mats",
+    "Line": 110,
+    "Comment": "First condition in case user specifies ‘threshold_type = \"\"’.",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  }
+]

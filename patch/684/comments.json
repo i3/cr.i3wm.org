@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Ingo Bürk",
+    "Line": 14,
+    "Comment": "Reasoning: the current message doesn't really help the user and the only way to figure out what's wrong is by grepping the code.",
+    "EmailHash": "b6308596489b8c826a3d5212abd7518d"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 18,
+    "Comment": "I want to keep signaling that this is a spec violation. Can you change the message to “SPEC VIOLATION: full_text is NULL” please?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Ingo Bürk",
+    "Line": 18,
+    "Comment": "New patch is submitted. :)",
+    "EmailHash": "b6308596489b8c826a3d5212abd7518d"
+  }
+]

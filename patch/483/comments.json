@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 19,
+    "Comment": "My opinion is that this section of the code is rough and still needs work before the functionality is expanded.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 19,
+    "Comment": "See my comments on the other submission. If this code doesn't have a maintainer and it's not broken then it shouldn't be changed.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Quentin Glidic",
+    "Line": 19,
+    "Comment": "This code is not changed, but you consider it broken any way.\nAs long as this code exists, it should handle the whole thing, not a subset.\n\nIf the click events are considered WIP, then they should either be moved to another branch or removed, but that shouldn’t prevent bringing the full feature to users.\n\nIf something needs change, just do it in another commit please…",
+    "EmailHash": "b9d5ee990bb13844ad53942c769c5469"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "I definitely agree with Quentin here — he is just moving code around, so it’s not on him to fix any issues with the code.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 19,
+    "Comment": "This is not just moving code around. The early return changes the control flow and alters the functionality of clicks on the bar.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

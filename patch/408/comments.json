@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 76,
+    "Comment": "I couldn't figure out how to set the WM_HINTS in perl.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 89,
+    "Comment": "This test succeeds without merging your commit. AFAICT, it shouldn’t, so your test is broken :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 105,
+    "Comment": "This changes WM_NORMAL_HINTS, not WM_HINTS.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 76,
+    "Comment": "The “correct” way to do it is to implement the remaining xcb_icccm_set_* methods in X11::XCB, i.e. set_input in this case.\n\nA less involved way is:\n\n$x-\u003echange_property(\n    PROP_MODE_REPLACE,\n    $win_id,\n    $x-\u003eatom(name =\u003e 'WM_HINTS')-\u003eid,\n    $x-\u003eatom(name =\u003e 'WM_HINTS')-\u003eid,\n    32,\n    2,\n    # the first value contains the flags (XCB_ICCCM_WM_HINT_INPUT = 1)\n    # the second value is 0 or 1, depending on whether input should be unset or set\n    pack('L2', 1, 0));\n$x-\u003eflush();\n",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

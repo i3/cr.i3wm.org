@@ -1,0 +1,25 @@
+From 825ed96a77022d47f215ad7c21010648d26c6a17 Mon Sep 17 00:00:00 2001
+From: Axel Beckert <abe@…>
+Date: Wed, 20 Feb 2013 15:17:58 +0100
+Subject: [PATCH] Fix superfluous </fc> in battery output for xmobar
+
+---
+ src/print_battery_info.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/src/print_battery_info.c b/src/print_battery_info.c
+index d4b091b..5c4f494 100644
+--- a/src/print_battery_info.c
++++ b/src/print_battery_info.c
+@@ -337,8 +337,5 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+                 }
+         }
+ 
+-        if (colorful_output)
+-                END_COLOR;
+-
+         OUTPUT_FULL_TEXT(buffer);
+ }
+-- 
+1.8.2.rc0
+

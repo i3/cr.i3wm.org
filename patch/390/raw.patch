@@ -1,0 +1,33 @@
+From 436fd3953a17bd23d99ebd22aad6a267187cb795 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 28 Jan 2014 17:09:47 -0500
+Subject: [PATCH] Document the existence of a C ipc project
+
+Add a link to https://github.com/acrisci/i3-ipc which is a new ipc
+library in the design phase of development. When it is stable, it will
+provide bindings to many high-level scripting languages with
+GObject-introspection.
+
+This project aims to replace the unmaintained Python library and offer
+an ipc library in new languages such as Lua and JavaScript.
+---
+ docs/ipc | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/docs/ipc b/docs/ipc
+index e4f1e80..29e9999 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -760,8 +760,7 @@ all this on your own). This list names some (if you wrote one, please let me
+ know):
+ 
+ C::
+-	i3 includes a headerfile +i3/ipc.h+ which provides you all constants.
+-	However, there is no library yet.
++	https://github.com/acrisci/i3-ipc (not yet ready for production use)
+ Ruby::
+ 	http://github.com/badboy/i3-ipc
+ Perl::
+-- 
+1.8.5.3
+

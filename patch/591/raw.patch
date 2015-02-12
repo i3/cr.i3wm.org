@@ -1,0 +1,98 @@
+From f0b7a4a88db3bd7449b3d6674a4780714372b18a Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Thu, 19 Jun 2014 03:17:52 -0400
+Subject: [PATCH] Implement the window::close event
+
+The window::close event should be emitted when a window closes.
+---
+ docs/ipc                           |  1 +
+ src/tree.c                         |  1 +
+ testcases/t/231-ipc-window-close.t | 52 ++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 54 insertions(+)
+ create mode 100644 testcases/t/231-ipc-window-close.t
+
+diff --git a/docs/ipc b/docs/ipc
+index 4c82d40..3b9f40b 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -717,6 +717,7 @@ This event consists of a single serialized map containing a property
+ +change (string)+ which indicates the type of the change
+ 
+ * +new+ - the window has become managed by i3
++* +close+ - the window has closed
+ * +focus+ - the window has received input focus
+ * +title+ - the window's title has changed
+ * +fullscreen_mode+ - the window has entered or exited fullscreen mode
+diff --git a/src/tree.c b/src/tree.c
+index da73e14..c2f7997 100644
+--- a/src/tree.c
++++ b/src/tree.c
+@@ -255,6 +255,7 @@ bool tree_close(Con *con, kill_window_t kill_window, bool dont_kill_parent, bool
+              * X11 Errors are returned when the window was already destroyed */
+             add_ignore_event(cookie.sequence, 0);
+         }
++        ipc_send_window_event("close", con);
+         FREE(con->window->class_class);
+         FREE(con->window->class_instance);
+         i3string_free(con->window->name);
+diff --git a/testcases/t/231-ipc-window-close.t b/testcases/t/231-ipc-window-close.t
+new file mode 100644
+index 0000000..3483cf4
+--- /dev/null
++++ b/testcases/t/231-ipc-window-close.t
+@@ -0,0 +1,52 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Tests that the ipc close event works properly
++#
++# Bug still in: 4.8-7-gf4a8253
++use i3test;
++
++my $i3 = i3(get_socket_path());
++$i3->connect()->recv;
++
++my $cv;
++my $t;
++
++sub reset_test {
++    $cv = AE::cv;
++    $t = AE::timer(0.5, 0, sub { $cv->send(0); });
++}
++
++reset_test;
++
++$i3->subscribe({
++        window => sub {
++            my ($e) = @_;
++            if ($e->{change} eq 'close') {
++                $cv->send($e->{container});
++            }
++        },
++    })->recv;
++
++my $window = open_window;
++
++cmd 'kill';
++my $con = $cv->recv;
++
++ok($con, 'closing a window should send the window::close event');
++is($con->{window}, $window->{id}, 'the event should contain information about the window');
++
++done_testing;
+-- 
+2.0.0
+

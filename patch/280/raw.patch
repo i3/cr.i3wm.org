@@ -1,0 +1,28 @@
+From dfe896552dcb53d42ad365bcd2d43f270beb8aca Mon Sep 17 00:00:00 2001
+From: "jj" <haptix@…>
+Date: Tue, 22 Oct 2013 14:12:24 +0200
+Subject: [PATCH] Update comment for the con_toggle_fullscreen method
+
+---
+ src/con.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/src/con.c b/src/con.c
+index 5b68481..84063eb 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -569,8 +569,9 @@ void con_fix_percent(Con *con) {
+ }
+ 
+ /*
+- * Toggles fullscreen mode for the given container. Fullscreen mode will not be
+- * entered when there already is a fullscreen container on this workspace.
++ * Toggles fullscreen mode for the given container. If there already is a
++ * fullscreen container on this workspace, fullscreen will be disabled and then
++ * enabled for the container the user wants to have in fullscreen mode.
+  *
+  */
+ void con_toggle_fullscreen(Con *con, int fullscreen_mode) {
+-- 
+1.8.4.rc3
+

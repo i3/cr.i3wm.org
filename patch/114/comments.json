@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 15,
+    "Comment": "The patch seems good. Can you please fix the title/description (it’s all in one line) and add a test to the testsuite? See http://build.i3wm.org/docs/testsuite.html",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  },
+  {
+    "Author": "Philippe Virouleau",
+    "Line": 15,
+    "Comment": "Yes sure, I already fixed the title on my local repo, I will create the test case asap, probably by tomorow's morning.",
+    "EmailHash": "73e4ef48030de3c30ccb5a5c05b20e66"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 15,
+    "Comment": "This fixes bug 994 as well.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Philippe Virouleau",
+    "Line": 15,
+    "Comment": "Not totally but it will (see your report ticket).\nI've corrected the testcase 202 for this patch, I will add a test for bug 994.",
+    "EmailHash": "73e4ef48030de3c30ccb5a5c05b20e66"
+  }
+]

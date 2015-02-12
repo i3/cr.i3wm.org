@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Aleksi Blinnikka",
+    "Line": 27,
+    "Comment": "I made the changes that were requested and added a test case. The earlier patch can be rejected. Hopefully this patch is okay.",
+    "EmailHash": "2b5073a2ca17d42926c6af6ae86bef2f"
+  },
+  {
+    "Author": "Aleksi Blinnikka",
+    "Line": 27,
+    "Comment": "Just to be clear the earlier patch mentioned was #544.",
+    "EmailHash": "2b5073a2ca17d42926c6af6ae86bef2f"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 27,
+    "Comment": "Sweet. Well done!",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

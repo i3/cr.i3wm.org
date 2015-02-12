@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 26,
+    "Comment": "s/flip/toggle/ for consistency please",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 74,
+    "Comment": "To make this cleaner, try something like this:\n\nvalue = 'toggle', 'on', 'off'\n  -\u003e call cmd_shmlog($value)\n\nsize = number\n  -\u003e call cmd_shmlog(\u0026size)",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 103,
+    "Comment": "This really needs to be split into multiple lines and clean/concise if statements.",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 122,
+    "Comment": "Does that mean “i3-msg shmlog $((23 * 1024 * 1024))” will not change the size from 25 to 23 MiB? If that is correct, could you make that work? Should be as simple as turning off logging, then turning it on with the new size, right? ",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  }
+]

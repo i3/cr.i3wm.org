@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 37,
+    "Comment": "I don't know if I necessarily like the name. Maybe simply `wheel_up` and `wheel_down` would be cleaner. Or maybe even something like `button_4` or `button_5`.\n\nI would also like to do right click, because it would be useful to launch an application like a window switcher with that.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 34,
+    "Comment": "This patch breaks t/201-config-parser.t",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

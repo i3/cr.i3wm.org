@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "Your patch implies that the binding mode indicator is more important than the workspace buttons, but I don’t think that is the case. Not convinced to merge it, sorry :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 19,
+    "Comment": "Indeed for me the modes are very important, you'll see why in a couple of months :) Are you open to an eventual option to draw it first ?",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "Currently not. Let’s revisit that in a couple of months after I can better understand why you need that.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 19,
+    "Comment": "Great, thank you.",
+    "EmailHash": ""
+  }
+]

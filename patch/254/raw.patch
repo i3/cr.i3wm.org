@@ -1,0 +1,28 @@
+From 651b97defb9cc2a0295676450fb183c2c173ebf5 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Mon, 7 Oct 2013 12:06:28 -0400
+Subject: [PATCH] i3-nagbar: Set button inner-width to the width of the label
+
+Use predict_text_width to find the width of the label and then account
+for right padding when calculating the width of the button.
+---
+ i3-nagbar/main.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/i3-nagbar/main.c b/i3-nagbar/main.c
+index a9619f9..d42a819 100644
+--- a/i3-nagbar/main.c
++++ b/i3-nagbar/main.c
+@@ -230,8 +230,7 @@ static int handle_expose(xcb_connection_t *conn, xcb_expose_event_t *event) {
+     /* render custom buttons */
+     line_width = 1;
+     for (int c = 0; c < buttoncnt; c++) {
+-        /* TODO: make w = text extents of the label */
+-        w = 100;
++        w = predict_text_width(buttons[c].label) + 12;
+         y -= 30;
+         xcb_change_gc(conn, pixmap_gc, XCB_GC_FOREGROUND, (uint32_t[]){ color_button_background });
+         close = (xcb_rectangle_t){ y - w - (2 * line_width), 2, w + (2 * line_width), rect.height - 6 };
+-- 
+1.8.4
+

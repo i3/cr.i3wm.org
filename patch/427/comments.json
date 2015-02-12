@@ -1,0 +1,56 @@
+[
+  {
+    "Author": "Kernc",
+    "Line": 121,
+    "Comment": "Your proof in #1182 holds for any window type, but it may be neater if desktop windows, likely set to screen resolution size, are tiled by default.",
+    "EmailHash": "28709af063bd0d54484173c7eb13eab4"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 121,
+    "Comment": "I’m sorry to keep insisting on this, but I think we should not handle DESKTOP windows at all. They should break loudly and horribly, and the user should disable any feature that creates DESKTOP windows. This kind of half-baked workaround that kinda sorta makes it work a little bit is really not what I want.\n\nTherefore, please remove the handling of TYPE_DESKTOP.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 22,
+    "Comment": "One more note about the git long description: our hooks recognize “closes #1182” or “fixes #1182” as special (and will close the bug), so please use that format :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Kernc",
+    "Line": 121,
+    "Comment": "But maaaaaan. Just look at what cool tiled window the desktop makes: http://imgur.com/a/MQq9w I suppose Gnome or KDE desktop window is not much different. It's just a normal window!\n\nWhile I understand how such exception unfounded in the spec seems detrimental to the code quality, wouldn't you make it perfectly convenient to run i3 (only) as a tiling WM alongside a more full-featured desktop environment? Can you envision i3 (or similar tiling system) ever becoming the mainstream in the near future? The trends are surely there.\n\nBy allowing this exception, you make \"a single window containing desktop icons with the same dimensions as the screen\" tiled by default (instead of floating, which would in this large-window case cover up everything else). You already except DOCKs a few lines lower (if window_type == DOCK: want_floating = False).\n\nThis way, anyone wishing to more closely integrate i3 with their desktop will have to set the exception by hand, which isn't to die for but is slightly inconvenient.\n\nI'll do as you say, of course. Also, I'll drop NOTIFICATION as I notice both notification-daemon as xfce4-notifyd use fixed size windows. So if nothing else, they'll get excepted there. Moreover, if a user defines their NOTIFICATION in a resizable window, everything is wrong anyway. Good.",
+    "EmailHash": "28709af063bd0d54484173c7eb13eab4"
+  },
+  {
+    "Author": "Kernc",
+    "Line": 22,
+    "Comment": "Of course, sorry. With infrastructure so divided, I was dumb thinking there were no such mechanisms in place, so I added the word for convenience. :D",
+    "EmailHash": "28709af063bd0d54484173c7eb13eab4"
+  },
+  {
+    "Author": "Kernc",
+    "Line": 94,
+    "Comment": "How 'bout I move this line a few lines up where all the other replies are fetched? It will reduce code clarity somewhat but should serve better the objective of \"batch info acquisition.\"",
+    "EmailHash": "28709af063bd0d54484173c7eb13eab4"
+  },
+  {
+    "Author": "Kernc",
+    "Line": 94,
+    "Comment": "No, shit, I meant the other, *state_reply* line.",
+    "EmailHash": "28709af063bd0d54484173c7eb13eab4"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 94,
+    "Comment": "It doesn’t matter when you get the replies, it’s only about the requests :). The replies will stay in the buffer until you fetch them.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 121,
+    "Comment": "For the record: I don’t think tiling WMs will become mainstream in the near or mid-term future.\n\nThe general line of thinking with i3 is to make it compatible to niche use-cases (like within a desktop environment) when it’s convenient and reasonable to do so, but not in cases that are weird and strange (like this one, IMO).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

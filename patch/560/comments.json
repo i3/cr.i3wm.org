@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 25,
+    "Comment": "supersedes 558.\n\nI think the basic bindmouse functionality will come next.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 25,
+    "Comment": "The first submission for this, which is essentially the same as this one, was submitted on May third. So this took about a month to do.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 25,
+    "Comment": "Bindmouse itself has taken about five months now and I haven't even made any big changes yet. I think a reasonable estimate for when this gets done is about 8 months.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 25,
+    "Comment": "Yeah, it’s unfortunate that this took so long. I suppose the biggest time sink is latency for code reviews? If you think that’s true, we sure can discuss how to accelerate the process. One thing that comes to my mind is a hackathon-weekend, where we focus on getting this done and allocate a chunk of time in which we hack/review code.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 164,
+    "Comment": "I think “(gen != NULL ? gen : NULL)” can simply be written as “gen”, right? If not, please add a comment explaining why this is necessary.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 164,
+    "Comment": "I went ahead and made the change for you so that I could merge this patch.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

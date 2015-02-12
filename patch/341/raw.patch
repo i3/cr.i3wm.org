@@ -1,0 +1,30 @@
+From 063476678fe2d5c5319fbb23bae0f50c0a426724 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Mon, 2 Dec 2013 18:06:19 -0500
+Subject: [PATCH] Testcases: init pointer in a predictable position
+
+Tests may disturb the pointer in their normal operation that may lead to
+unexpected results in later tests using that display. Reset the pointer
+before a test begins to (0, 0) to save test developers from related
+"gotchas" and reduce multi-monitor test boilerplate.
+---
+ testcases/lib/i3test.pm | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/testcases/lib/i3test.pm b/testcases/lib/i3test.pm
+index 476cda0..414362a 100644
+--- a/testcases/lib/i3test.pm
++++ b/testcases/lib/i3test.pm
+@@ -155,6 +155,9 @@ __
+     warnings->import;
+ 
+     $x ||= i3test::X11->new;
++    # set the pointer to a predictable position in case a previous test has
++    # disturbed it
++    $x->root->warp_pointer(0, 0);
+     $cv->recv if $i3_autostart;
+ 
+     @_ = ($class);
+-- 
+1.8.4.2
+

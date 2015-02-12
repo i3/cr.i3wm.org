@@ -1,0 +1,134 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 84,
+    "Comment": "Please use ygenalloc(); from include/yajl_utils.h here. If you copied this from another place in our codebase, consider sending a separate patch to clean up that place, too :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 139,
+    "Comment": "Please add a short test description.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 151,
+    "Comment": "The convention is to use 80 #’s here",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 152,
+    "Comment": "cmd_event doesn’t tell the reader anything. I propose removing this block, since the test only tests one thing.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 168,
+    "Comment": "You can use cmd qq|event $event_name \"$event_payload\"|; to make this slightly more readable (less escaping).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 145,
+    "Comment": "This file is indented using tabs, but we use expandtab (see second line) and 4 spaces. It seems like you are not using vim, but please try to keep the file consistent with what we already have.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 170,
+    "Comment": "style: please use spaces after and before braces, i.e. “sub { $condvar-\u003esend(0); }”",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 172,
+    "Comment": "Please use the passive form here, i.e. “received custom event”",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 142,
+    "Comment": "This seems to be a left-over from debugging. Please remove.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 24,
+    "Comment": "To avoid confusion, I propose renaming this to custom_ipc_event. It’s a mouthful, but _a lot_ clearer than just “event”.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Paul Grove",
+    "Line": 145,
+    "Comment": "Am using vim, but didn't bring my usual vim config over to my test system.",
+    "EmailHash": "caece4652a0137be7f3c4732b352e6ab"
+  },
+  {
+    "Author": "Paul Grove",
+    "Line": 24,
+    "Comment": "sure np",
+    "EmailHash": "caece4652a0137be7f3c4732b352e6ab"
+  },
+  {
+    "Author": "Paul Grove",
+    "Line": 84,
+    "Comment": "yeah, so the definitions in yajl_utils.h conflict with the defs in commands.c (they are named the same), so i couldn't include it as it is, and they are non-compatible, are you OK with renaming y and ystr throughout commands.c?",
+    "EmailHash": "caece4652a0137be7f3c4732b352e6ab"
+  },
+  {
+    "Author": "Paul Grove",
+    "Line": 139,
+    "Comment": "np",
+    "EmailHash": "caece4652a0137be7f3c4732b352e6ab"
+  },
+  {
+    "Author": "Paul Grove",
+    "Line": 142,
+    "Comment": "np",
+    "EmailHash": "caece4652a0137be7f3c4732b352e6ab"
+  },
+  {
+    "Author": "Paul Grove",
+    "Line": 151,
+    "Comment": "np",
+    "EmailHash": "caece4652a0137be7f3c4732b352e6ab"
+  },
+  {
+    "Author": "Paul Grove",
+    "Line": 152,
+    "Comment": "np",
+    "EmailHash": "caece4652a0137be7f3c4732b352e6ab"
+  },
+  {
+    "Author": "Paul Grove",
+    "Line": 168,
+    "Comment": "never liked qq (dunno why) but sure np",
+    "EmailHash": "caece4652a0137be7f3c4732b352e6ab"
+  },
+  {
+    "Author": "Paul Grove",
+    "Line": 172,
+    "Comment": "np",
+    "EmailHash": "caece4652a0137be7f3c4732b352e6ab"
+  },
+  {
+    "Author": "Paul Grove",
+    "Line": 64,
+    "Comment": "Can you advise on how to make the EVENT_PAYLOAD optional?",
+    "EmailHash": "caece4652a0137be7f3c4732b352e6ab"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 64,
+    "Comment": "By adding the “end” token to the EVENT state, see other commands with optional arguments.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 84,
+    "Comment": "Fixing this conflict is appreciated, but please do it in a separate commit/patch.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

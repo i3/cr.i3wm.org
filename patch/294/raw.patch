@@ -1,0 +1,188 @@
+From 69b1315380c9d50d550422e465ba58d7a7fcb7e9 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Thu, 31 Oct 2013 20:36:31 -0400
+Subject: [PATCH] Return DRAG_ABORT on UnmapNotify from drag_pointer
+
+Add DRAG_ABORT to enum drag_result_t. DRAG_ABORT will indicate the drag
+operation cannot be completed.
+
+Return DRAG_ABORT on UnmapNotify, or when the keyboard or pointer cannot
+be grabbed.
+
+Add DRAGGING to return value for drag_result_t. DRAGGING is used
+internally by drag_pointer to indicate the drag is in progress.
+
+Change DRAG_CANCEL to DRAG_REVERT to clarify the distinction between
+"abort" and "revert/cancel" actions.
+
+Fixes an issue that caused i3 to crash when a user is dragging or
+resizing a floating window that becomes destroyed.
+---
+ include/floating.h | 20 ++++++++++++++++----
+ src/floating.c     | 37 +++++++++++++++++++------------------
+ src/resize.c       |  2 +-
+ 3 files changed, 36 insertions(+), 23 deletions(-)
+
+diff --git a/include/floating.h b/include/floating.h
+index 04db158..9f26f4e 100644
+--- a/include/floating.h
++++ b/include/floating.h
+@@ -134,12 +134,24 @@ void floating_toggle_hide(xcb_connection_t *conn, Workspace *workspace);
+ 
+ #endif
+ /**
+- * This is the return value of a drag operation like drag_pointer. DRAG_CANCEL
+- * will indicate the intention of the drag should not be carried out, or that
+- * the drag actions should be undone.
++ * This is the return value of a drag operation like drag_pointer.
++ *
++ * DRAG_SUCCESS will indicate the intention of the drag action should be
++ * carried out.
++ *
++ * DRAG_REVERT will indicate an attempt should be made to restore the state of
++ * the involved windows to their condition before the drag.
++ *
++ * DRAG_ABORT will indicate that the intention of the drag action cannot be
++ * carried out (e.g. because the window has been unmapped).
+  *
+  */
+-typedef enum { DRAG_SUCCESS = 0, DRAG_CANCEL } drag_result_t;
++typedef enum {
++    DRAGGING = 0,
++    DRAG_SUCCESS,
++    DRAG_REVERT,
++    DRAG_ABORT
++} drag_result_t;
+ 
+ /**
+  * This function grabs your pointer and keyboard and lets you drag stuff around
+diff --git a/src/floating.c b/src/floating.c
+index ae1a919..c54c408 100644
+--- a/src/floating.c
++++ b/src/floating.c
+@@ -441,14 +441,14 @@ void floating_drag_window(Con *con, const xcb_button_press_event_t *event) {
+      * after the user releases the mouse button */
+     tree_render();
+ 
+-    /* Store the initial rect in case of user cancel */
++    /* Store the initial rect in case of user revert/cancel */
+     Rect initial_rect = con->rect;
+ 
+     /* Drag the window */
+     drag_result_t drag_result = drag_pointer(con, event, XCB_NONE, BORDER_TOP /* irrelevant */, XCURSOR_CURSOR_MOVE, drag_window_callback, event);
+ 
+     /* If the user cancelled, undo the changes. */
+-    if (drag_result == DRAG_CANCEL)
++    if (drag_result == DRAG_REVERT)
+         floating_reposition(con, initial_rect);
+ 
+     /* If this is a scratchpad window, don't auto center it from now on. */
+@@ -553,13 +553,13 @@ void floating_resize_window(Con *con, const bool proportional,
+ 
+     struct resize_window_callback_params params = { corner, proportional, event };
+ 
+-    /* get the initial rect in case of cancel */
++    /* get the initial rect in case of revert/cancel */
+     Rect initial_rect = con->rect;
+ 
+     drag_result_t drag_result = drag_pointer(con, event, XCB_NONE, BORDER_TOP /* irrelevant */, cursor, resize_window_callback, &params);
+ 
+     /* If the user cancels, undo the resize */
+-    if (drag_result == DRAG_CANCEL)
++    if (drag_result == DRAG_REVERT)
+         floating_reposition(con, initial_rect);
+ 
+     /* If this is a scratchpad window, don't auto center it from now on. */
+@@ -601,7 +601,7 @@ drag_result_t drag_pointer(Con *con, const xcb_button_press_event_t *event, xcb_
+ 
+     if ((reply = xcb_grab_pointer_reply(conn, cookie, NULL)) == NULL) {
+         ELOG("Could not grab pointer\n");
+-        return DRAG_CANCEL;
++        return DRAG_ABORT;
+     }
+ 
+     free(reply);
+@@ -620,7 +620,7 @@ drag_result_t drag_pointer(Con *con, const xcb_button_press_event_t *event, xcb_
+ 
+     if ((keyb_reply = xcb_grab_keyboard_reply(conn, keyb_cookie, NULL)) == NULL) {
+         ELOG("Could not grab keyboard\n");
+-        return DRAG_CANCEL;
++        return DRAG_ABORT;
+     }
+ 
+     free(keyb_reply);
+@@ -629,11 +629,11 @@ drag_result_t drag_pointer(Con *con, const xcb_button_press_event_t *event, xcb_
+     xcb_flush(conn);
+ 
+     xcb_generic_event_t *inside_event, *last_motion_notify = NULL;
+-    bool loop_done = false;
+-    /* The return value, set to DRAG_CANCEL on user cancel */
+-    drag_result_t drag_result = DRAG_SUCCESS;
++    Con *inside_con = NULL;
++    /* The return value, set to exit the event loop */
++    drag_result_t drag_result = DRAGGING;
+     /* I’ve always wanted to have my own eventhandler… */
+-    while (!loop_done && (inside_event = xcb_wait_for_event(conn))) {
++    while (drag_result == DRAGGING && (inside_event = xcb_wait_for_event(conn))) {
+         /* We now handle all events we can get using xcb_poll_for_event */
+         do {
+             /* skip x11 errors */
+@@ -646,7 +646,7 @@ drag_result_t drag_pointer(Con *con, const xcb_button_press_event_t *event, xcb_
+ 
+             switch (type) {
+                 case XCB_BUTTON_RELEASE:
+-                    loop_done = true;
++                    drag_result = DRAG_SUCCESS;
+                     break;
+ 
+                 case XCB_MOTION_NOTIFY:
+@@ -656,17 +656,18 @@ drag_result_t drag_pointer(Con *con, const xcb_button_press_event_t *event, xcb_
+                     break;
+ 
+                 case XCB_UNMAP_NOTIFY:
+-                    DLOG("Unmap-notify, aborting\n");
++                    inside_con = con_by_window_id(((xcb_unmap_notify_event_t*)inside_event)->window);
++
++                    DLOG("UnmapNotify for window 0x%08x (container %p)\n", ((xcb_unmap_notify_event_t*)inside_event)->window, inside_con);
++                    drag_result = DRAG_ABORT;
++
+                     handle_event(type, inside_event);
+-                    loop_done = true;
+-                    drag_result = DRAG_CANCEL;
+                     break;
+ 
+                 case XCB_KEY_PRESS:
+                     /* Cancel the drag if a key was pressed */
+-                    DLOG("A key was pressed during drag, canceling.");
+-                    loop_done = true;
+-                    drag_result = DRAG_CANCEL;
++                    DLOG("A key was pressed during drag, reverting changes.");
++                    drag_result = DRAG_REVERT;
+ 
+                     handle_event(type, inside_event);
+                     break;
+@@ -681,7 +682,7 @@ drag_result_t drag_pointer(Con *con, const xcb_button_press_event_t *event, xcb_
+                 free(inside_event);
+         } while ((inside_event = xcb_poll_for_event(conn)) != NULL);
+ 
+-        if (last_motion_notify == NULL || loop_done)
++        if (last_motion_notify == NULL || drag_result != DRAGGING)
+             continue;
+ 
+         new_x = ((xcb_motion_notify_event_t*)last_motion_notify)->root_x;
+diff --git a/src/resize.c b/src/resize.c
+index 764a485..cc4ba84 100644
+--- a/src/resize.c
++++ b/src/resize.c
+@@ -161,7 +161,7 @@ int resize_graphical_handler(Con *first, Con *second, orientation_t orientation,
+     xcb_flush(conn);
+ 
+     /* User cancelled the drag so no action should be taken. */
+-    if (drag_result == DRAG_CANCEL)
++    if (drag_result == DRAG_REVERT)
+         return 0;
+ 
+     int pixels;
+-- 
+1.8.4.2
+

@@ -1,0 +1,175 @@
+From b7063ff104247e6de7891eda3bb235f0692c6d54 Mon Sep 17 00:00:00 2001
+From: Mats <d912e3@…>
+Date: Sat, 8 Mar 2014 00:24:42 +0100
+Subject: [PATCH] disk: Colorize output when below given threshold
+
+New disk module options:
+* threshold_type: ^(percentage|[kmgt]?bytes)_(free|avail)$
+* low_threshold: <double>
+
+fixes #912
+---
+ i3status.c            |  5 ++++-
+ include/i3status.h    |  2 +-
+ man/i3status.man      | 14 +++++++++++++
+ src/print_disk_info.c | 56 ++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 4 files changed, 74 insertions(+), 3 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index 3733cf0..ded8e94 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -382,6 +382,9 @@ int main(int argc, char *argv[]) {
+         cfg_opt_t disk_opts[] = {
+                 CFG_STR("format", "%free", CFGF_NONE),
+                 CFG_STR("prefix_type", "binary", CFGF_NONE),
++                CFG_STR("threshold_type", "percentage_avail", CFGF_NONE),
++                CFG_FLOAT("low_threshold", 0, CFGF_NONE),
++                CFG_CUSTOM_COLOR_OPTS,
+                 CFG_CUSTOM_ALIGN_OPT,
+                 CFG_CUSTOM_MIN_WIDTH_OPT,
+                 CFG_END()
+@@ -601,7 +604,7 @@ int main(int argc, char *argv[]) {
+ 
+                         CASE_SEC_TITLE("disk") {
+                                 SEC_OPEN_MAP("disk_info");
+-                                print_disk_info(json_gen, buffer, title, cfg_getstr(sec, "format"), cfg_getstr(sec, "prefix_type"));
++                                print_disk_info(json_gen, buffer, title, cfg_getstr(sec, "format"), cfg_getstr(sec, "prefix_type"), cfg_getstr(sec, "threshold_type"), cfg_getfloat(sec, "low_threshold"));
+                                 SEC_CLOSE_MAP;
+                         }
+ 
+diff --git a/include/i3status.h b/include/i3status.h
+index 8c64586..829fc4e 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -174,7 +174,7 @@ char *auto_detect_format();
+ void set_timezone(const char *tz);
+ 
+ void print_ipv6_info(yajl_gen json_gen, char *buffer, const char *format_up, const char *format_down);
+-void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format, const char *prefix_type);
++void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format, const char *prefix_type, const char *threshold_type, const double low_threshold);
+ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, const char *format_down, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity, bool hide_seconds);
+ void print_time(yajl_gen json_gen, char *buffer, const char *format, const char *tz, time_t t);
+ void print_ddate(yajl_gen json_gen, char *buffer, const char *format, time_t t);
+diff --git a/man/i3status.man b/man/i3status.man
+index 656a8bf..1182e54 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -223,6 +223,16 @@ SI prefixes (k, M, G, T) represent multiples of powers of 1000.
+ custom::
+ The custom prefixes (K, M, G, T) represent multiples of powers of 1024.
+ 
++It is possible to define a low_threshold that causes the disk text to be
++displayed using color_bad. The low_threshold type can be of threshold_type
++"bytes_free", "bytes_avail", "percentage_free", or "percentage_avail", where
++the former two can be prepended by a generic prefix (k, m, g, t) having
++prefix_type. So, if you configure low_threshold to 2, threshold_type to
++"gbytes_avail", and prefix_type to "binary", and the remaining available disk
++space is below 2 GiB, it will be colored bad. If not specified, threshold_type
++is assumed to be "percentage_avail" and low_threshold to be set to 0, which
++implies no coloring at all.
++
+ *Example order*: +disk /mnt/usbstick+
+ 
+ *Example format*: +%free (%avail)/ %total+
+@@ -231,6 +241,10 @@ The custom prefixes (K, M, G, T) represent multiples of powers of 1024.
+ 
+ *Example prefix_type*: +custom+
+ 
++*Example low_threshold*: +5+
++
++*Example threshold_type*: +percentage_free+
++
+ === Run-watch
+ 
+ Expands the given path to a pidfile and checks if the process ID found inside
+diff --git a/src/print_disk_info.c b/src/print_disk_info.c
+index 2308305..14ba137 100644
+--- a/src/print_disk_info.c
++++ b/src/print_disk_info.c
+@@ -53,13 +53,59 @@ static int print_bytes_human(char *outwalk, uint64_t bytes, const char *prefix_t
+ }
+ 
+ /*
++ * Determines whether remaining bytes are below given threshold.
++ *
++ */
++#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__OpenBSD__) || defined(__DragonFly__)
++static bool below_threshold(struct statfs buf, const char *prefix_type, const char *threshold_type, const double low_threshold) {
++#else
++static bool below_threshold(struct statvfs buf, const char *prefix_type, const char *threshold_type, const double low_threshold) {
++#endif
++        if (strcmp(threshold_type, "percentage_free") == 0) {
++                return 100.0 * (double)buf.f_bfree / (double)buf.f_blocks < low_threshold;
++        } else if (strcmp(threshold_type, "percentage_avail") == 0) {
++                return 100.0 * (double)buf.f_bavail / (double)buf.f_blocks < low_threshold;
++        } else if (strcmp(threshold_type, "bytes_free") == 0) {
++                return (double)buf.f_bsize * (double)buf.f_bfree < low_threshold;
++        } else if (strcmp(threshold_type, "bytes_avail") == 0) {
++                return (double)buf.f_bsize * (double)buf.f_bavail < low_threshold;
++        } else if (BEGINS_WITH(threshold_type+1, "bytes_")) {
++                uint64_t base = strcmp(prefix_type, "decimal") == 0 ? DECIMAL_BASE : BINARY_BASE;
++                double factor = 1;
++
++                switch (threshold_type[0]) {
++                case 't':
++                        factor *= base;
++                case 'g':
++                        factor *= base;
++                case 'm':
++                        factor *= base;
++                case 'k':
++                        factor *= base;
++                        break;
++                default:
++                        return false;
++                }
++
++                if (strcmp(threshold_type+1, "bytes_free") == 0) {
++                        return (double)buf.f_bsize * (double)buf.f_bfree < low_threshold * factor;
++                } else if (strcmp(threshold_type+1, "bytes_avail") == 0) {
++                        return (double)buf.f_bsize * (double)buf.f_bavail < low_threshold * factor;
++                }
++        }
++
++        return false;
++}
++
++/*
+  * Does a statvfs and prints either free, used or total amounts of bytes in a
+  * human readable manner.
+  *
+  */
+-void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format, const char *prefix_type) {
++void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format, const char *prefix_type, const char *threshold_type, const double low_threshold) {
+         const char *walk;
+         char *outwalk = buffer;
++        bool colorful_output = false;
+ 
+         INSTANCE(path);
+ 
+@@ -75,6 +121,11 @@ void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const ch
+                 return;
+ #endif
+ 
++        if (low_threshold > 0 && below_threshold(buf, prefix_type, threshold_type, low_threshold)) {
++                START_COLOR("color_bad");
++                colorful_output = true;
++        }
++
+         for (walk = format; *walk != '\0'; walk++) {
+                 if (*walk != '%') {
+                         *(outwalk++) = *walk;
+@@ -122,6 +173,9 @@ void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const ch
+                 }
+         }
+ 
++        if (colorful_output)
++                END_COLOR;
++
+         *outwalk = '\0';
+         OUTPUT_FULL_TEXT(buffer);
+ }
+-- 
+1.9.0
+

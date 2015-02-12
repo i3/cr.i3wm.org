@@ -1,0 +1,25 @@
+From 1075fbbe39675698562e170883eaad6d1a696dff Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ingo=20B=C3=BCrk?= <ingo.buerk@…>
+Date: Wed, 3 Dec 2014 20:11:05 +0100
+Subject: [PATCH] Improve error message when a full_text property is missing
+
+---
+ i3bar/src/child.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/i3bar/src/child.c b/i3bar/src/child.c
+index 4b09daa..8946edd 100644
+--- a/i3bar/src/child.c
++++ b/i3bar/src/child.c
+@@ -233,7 +233,7 @@ static int stdin_end_map(void *context) {
+     /* Ensure we have a full_text set, so that when it is missing (or null),
+      * i3bar doesn’t crash and the user gets an annoying message. */
+     if (!new_block->full_text)
+-        new_block->full_text = i3string_from_utf8("SPEC VIOLATION (null)");
++        new_block->full_text = i3string_from_utf8("SPEC VIOLATION: full_text is NULL!");
+     if (new_block->urgent)
+         ctx->has_urgent = true;
+     TAILQ_INSERT_TAIL(&statusline_head, new_block, blocks);
+-- 
+1.9.1
+

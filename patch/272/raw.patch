@@ -1,0 +1,27 @@
+From b1c2c054ce94103238679e5f11cd4bb64ea987ca Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 18 Oct 2013 20:02:17 -0400
+Subject: [PATCH] Testcases: Use AnyEvent::I3 version 0.15
+
+Use the latest version of AnyEvent::I3, version 0.15, which includes
+support for the `window` event tag.
+---
+ testcases/Makefile.PL | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/testcases/Makefile.PL b/testcases/Makefile.PL
+index 1a9b19c..6bc80d8 100755
+--- a/testcases/Makefile.PL
++++ b/testcases/Makefile.PL
+@@ -8,7 +8,7 @@ WriteMakefile(
+     MIN_PERL_VERSION => '5.010000', # 5.10.0
+     PREREQ_PM => {
+         'AnyEvent'     => 0,
+-        'AnyEvent::I3' => '0.14',
++        'AnyEvent::I3' => '0.15',
+         'X11::XCB'     => '0.09',
+         'Inline'       => 0,
+         'ExtUtils::PkgConfig' => 0,
+-- 
+1.8.4.1
+

@@ -1,0 +1,259 @@
+From ec735f31432de4c9da1f2e5f77f953609269a612 Mon Sep 17 00:00:00 2001
+From: Emil Mikulic <emikulic@…>
+Date: Mon, 14 Jan 2013 00:18:38 +1100
+Subject: [PATCH] Add tztime module to support multiple different timezones.
+
+---
+ i3status.c         |   26 ++++++++++++++++----------
+ i3status.conf      |    4 ++--
+ include/i3status.h |    7 +++++--
+ man/i3status.man   |   33 +++++++++++++++++++++++++++++----
+ src/print_ddate.c  |    7 +++++--
+ src/print_time.c   |   37 ++++++++++++++++++++++++++++++++-----
+ 6 files changed, 89 insertions(+), 25 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index af62a7c..c1f6039 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -239,7 +239,13 @@ int main(int argc, char *argv[]) {
+         };
+ 
+         cfg_opt_t time_opts[] = {
+-                CFG_STR("format", "%d.%m.%Y %H:%M:%S", CFGF_NONE),
++                CFG_STR("format", "%Y-%m-%d %H:%M:%S", CFGF_NONE),
++                CFG_END()
++        };
++
++        cfg_opt_t tztime_opts[] = {
++                CFG_STR("format", "%Y-%m-%d %H:%M:%S %Z", CFGF_NONE),
++                CFG_STR("timezone", "", CFGF_NONE),
+                 CFG_END()
+         };
+ 
+@@ -292,6 +298,7 @@ int main(int argc, char *argv[]) {
+                 CFG_SEC("volume", volume_opts, CFGF_TITLE | CFGF_MULTI),
+                 CFG_SEC("ipv6", ipv6_opts, CFGF_NONE),
+                 CFG_SEC("time", time_opts, CFGF_NONE),
++                CFG_SEC("tztime", tztime_opts, CFGF_TITLE | CFGF_MULTI),
+                 CFG_SEC("ddate", ddate_opts, CFGF_NONE),
+                 CFG_SEC("load", load_opts, CFGF_NONE),
+                 CFG_SEC("cpu_usage", usage_opts, CFGF_NONE),
+@@ -403,16 +410,9 @@ int main(int argc, char *argv[]) {
+          * (!), not individual plugins, seem very unlikely. */
+         char buffer[4096];
+ 
+-        struct tm tm;
+         while (1) {
+                 struct timeval tv;
+                 gettimeofday(&tv, NULL);
+-                time_t current_time = tv.tv_sec;
+-                struct tm *current_tm = NULL;
+-                if (current_time != (time_t) -1) {
+-                        localtime_r(&current_time, &tm);
+-                        current_tm = &tm;
+-                }
+                 if (output_format == O_I3BAR)
+                         yajl_gen_array_open(json_gen);
+                 for (j = 0; j < cfg_size(cfg, "order"); j++) {
+@@ -465,13 +465,19 @@ int main(int argc, char *argv[]) {
+ 
+                         CASE_SEC("time") {
+                                 SEC_OPEN_MAP("time");
+-                                print_time(json_gen, buffer, cfg_getstr(sec, "format"), current_tm);
++                                print_time(json_gen, buffer, cfg_getstr(sec, "format"), NULL, tv.tv_sec);
++                                SEC_CLOSE_MAP;
++                        }
++
++                        CASE_SEC_TITLE("tztime") {
++                                SEC_OPEN_MAP("tztime");
++                                print_time(json_gen, buffer, cfg_getstr(sec, "format"), cfg_getstr(sec, "timezone"), tv.tv_sec);
+                                 SEC_CLOSE_MAP;
+                         }
+ 
+                         CASE_SEC("ddate") {
+                                 SEC_OPEN_MAP("ddate");
+-                                print_ddate(json_gen, buffer, cfg_getstr(sec, "format"), current_tm);
++                                print_ddate(json_gen, buffer, cfg_getstr(sec, "format"), tv.tv_sec);
+                                 SEC_CLOSE_MAP;
+                         }
+ 
+diff --git a/i3status.conf b/i3status.conf
+index 49ea488..6b1d2d7 100644
+--- a/i3status.conf
++++ b/i3status.conf
+@@ -19,7 +19,7 @@ order += "wireless wlan0"
+ order += "ethernet eth0"
+ order += "battery 0"
+ order += "load"
+-order += "time"
++order += "tztime local"
+ 
+ wireless wlan0 {
+         format_up = "W: (%quality at %essid) %ip"
+@@ -44,7 +44,7 @@ run_watch VPN {
+         pidfile = "/var/run/vpnc/pid"
+ }
+ 
+-time {
++tztime local {
+         format = "%Y-%m-%d %H:%M:%S"
+ }
+ 
+diff --git a/include/i3status.h b/include/i3status.h
+index 09394bd..01d83d1 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -137,11 +137,14 @@ char *endcolor() __attribute__ ((pure));
+ /* src/auto_detect_format.c */
+ char *auto_detect_format();
+ 
++/* src/print_time.c */
++void set_timezone(const char *timezone);
++
+ void print_ipv6_info(yajl_gen json_gen, char *buffer, const char *format_up, const char *format_down);
+ void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format);
+ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, int low_threshold, char *threshold_type, bool last_full_capacity);
+-void print_time(yajl_gen json_gen, char *buffer, const char *format, struct tm *current_tm);
+-void print_ddate(yajl_gen json_gen, char *buffer, const char *format, struct tm *current_tm);
++void print_time(yajl_gen json_gen, char *buffer, const char *format, const char *timezone, time_t t);
++void print_ddate(yajl_gen json_gen, char *buffer, const char *format, time_t t);
+ const char *get_ip_addr();
+ void print_wireless_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
+ void print_run_watch(yajl_gen json_gen, char *buffer, const char *title, const char *pidfile, const char *format);
+diff --git a/man/i3status.man b/man/i3status.man
+index 3f7a924..d780363 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -56,7 +56,8 @@ order += "ethernet eth0"
+ order += "battery 0"
+ order += "cpu_temperature 0"
+ order += "load"
+-order += "time"
++order += "tztime local"
++order += "tztime berlin"
+ 
+ wireless wlan0 {
+         format_up = "W: (%quality at %essid, %bitrate) %ip"
+@@ -83,8 +84,13 @@ run_watch VPN {
+         pidfile = "/var/run/vpnc/pid"
+ }
+ 
+-time {
+-	format = "%Y-%m-%d %H:%M:%S"
++tztime local {
++        format = "%Y-%m-%d %H:%M:%S"
++}
++
++tztime berlin {
++        format = "%Y-%m-%d %H:%M:%S %Z"
++        timezone = "Europe/Berlin"
+ }
+ 
+ load {
+@@ -258,12 +264,31 @@ Gets the system load (number of processes waiting for CPU time in the last
+ 
+ === Time
+ 
+-Formats the current system time. See +strftime(3)+ for the format.
++Outputs the current time in the local timezone.
++To use a different timezone, you can set the TZ environment variable,
++or use the +tztime+ module.
++See +strftime(3)+ for details on the format string.
+ 
+ *Example order*: +time+
+ 
+ *Example format*: +%Y-%m-%d %H:%M:%S+
+ 
++=== TzTime
++
++Outputs the current time in the given timezone.
++If no timezone is given, local time will be used.
++See +strftime(3)+ for details on the format string.
++The system's timezone database is usually installed in +/usr/share/zoneinfo+.
++Files below that path make for valid timezone strings, e.g. for
+++/usr/share/zoneinfo/Europe/Berlin+ you can set timezone to +Europe/Berlin+
++in the +tztime+ module.
++
++*Example order*: +tztime berlin+
++
++*Example format*: +%Y-%m-%d %H:%M:%S %Z+
++
++*Example timezone*: +Europe/Berlin+
++
+ === DDate
+ 
+ Outputs the current discordian date in user-specified format. See +ddate(1)+ for
+diff --git a/src/print_ddate.c b/src/print_ddate.c
+index 8213862..de9a7be 100644
+--- a/src/print_ddate.c
++++ b/src/print_ddate.c
+@@ -204,11 +204,14 @@ struct disc_time *get_ddate(struct tm *current_tm) {
+         return &dt;
+ }
+ 
+-void print_ddate(yajl_gen json_gen, char *buffer, const char *format, struct tm *current_tm) {
++void print_ddate(yajl_gen json_gen, char *buffer, const char *format, time_t t) {
+         char *outwalk = buffer;
+         static char *form = NULL;
++        struct tm current_tm;
+         struct disc_time *dt;
+-        if ((dt = get_ddate(current_tm)) == NULL)
++        set_timezone(NULL);  /* Use local time. */
++        localtime_r(&t, &current_tm);
++        if ((dt = get_ddate(&current_tm)) == NULL)
+                 return;
+         if (form == NULL)
+                 if ((form = malloc(strlen(format) + 1)) == NULL)
+diff --git a/src/print_time.c b/src/print_time.c
+index 00a6196..ad1efdd 100644
+--- a/src/print_time.c
++++ b/src/print_time.c
+@@ -7,12 +7,39 @@
+ 
+ #include "i3status.h"
+ 
+-void print_time(yajl_gen json_gen, char *buffer, const char *format, struct tm *current_tm) {
++static int local_timezone_init = 0;
++static const char *local_timezone = NULL;
++static const char *current_timezone = NULL;
++
++void set_timezone(const char *timezone) {
++        if (!local_timezone_init) {
++                /* First call, initialize. */
++                local_timezone = getenv("TZ");
++                local_timezone_init = 1;
++        }
++        if (timezone == NULL || timezone[0] == '\0') {
++                /* User wants localtime. */
++                timezone = local_timezone;
++        }
++        if (timezone != current_timezone) {
++                if (timezone) {
++                        setenv("TZ", timezone, 1);
++                } else {
++                        unsetenv("TZ");
++                }
++                tzset();
++                current_timezone = timezone;
++        }
++}
++
++void print_time(yajl_gen json_gen, char *buffer, const char *format, const char *timezone, time_t t) {
+         char *outwalk = buffer;
+-        if (current_tm == NULL)
+-                return;
+-        /* Get date & time */
+-        outwalk += strftime(outwalk, 4095, format, current_tm);
++        struct tm tm;
++
++        /* Convert time and format output. */
++        set_timezone(timezone);
++        localtime_r(&t, &tm);
++        outwalk += strftime(outwalk, 4095, format, &tm);
+         *outwalk = '\0';
+         OUTPUT_FULL_TEXT(buffer);
+ }
+-- 
+1.7.10.4
+

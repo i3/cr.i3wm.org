@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 21,
+    "Comment": "The change looks good to me. Could you please update the http://build.i3wm.org/docs/testsuite.html accordingly, so that the new behavior is verified with a test? Thanks!",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 21,
+    "Comment": "Also, please make the commit title a bit more useful for people who are not aware of the individual scratchpad implementation details :-) E.g. “scratchpad: Don’t resize floating windows”",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 22,
+    "Comment": "I had a patch for that, which is a bit more intrusive. I moved the readjusting code to the scratchpad_move() function, which makes the SCRATCHPAD_FRESH state obsolete. I'll upload the patch anyway to have your point on this @Michael",
+    "EmailHash": ""
+  }
+]

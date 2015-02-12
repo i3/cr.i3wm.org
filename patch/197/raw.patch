@@ -1,0 +1,24 @@
+From 79c693b1d3142e2bd776f19cb1bed3a85651cdaf Mon Sep 17 00:00:00 2001
+From: Franck Michea <franck.michea@…>
+Date: Mon, 29 Jul 2013 22:45:27 +0200
+Subject: [PATCH] Add missing return after error reporting.
+
+---
+ src/commands.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/commands.c b/src/commands.c
+index ca9a332..cde1cd7 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -1796,6 +1796,7 @@ void cmd_move_window_to_center(I3_CMD, char *method) {
+         ystr("error");
+         ystr("Cannot change position. The window/container is not floating.");
+         y(map_close);
++        return;
+     }
+ 
+     if (strcmp(method, "absolute") == 0) {
+-- 
+1.8.3.4
+

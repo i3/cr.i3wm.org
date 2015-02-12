@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 105,
+    "Comment": "the “or” in this sentence is in the wrong place, so the line reads weird",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 80,
+    "Comment": "s/send/sent/",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 267,
+    "Comment": "memory leak: you need to free(expected_id); also before returning",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 264,
+    "Comment": "code style: please use char *expected_id",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 266,
+    "Comment": "code style: please use if (strstr",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

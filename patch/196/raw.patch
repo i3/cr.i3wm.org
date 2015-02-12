@@ -1,0 +1,35 @@
+From 539bc479aac3325f84f4a9037c409e402edd06d4 Mon Sep 17 00:00:00 2001
+From: Travis Cardwell <travis.cardwell@…>
+Date: Sat, 27 Jul 2013 20:57:10 +0900
+Subject: [PATCH 2/2] document nopass option
+
+---
+ i3lock.1 |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/i3lock.1 b/i3lock.1
+index 8bc00f5..6dc5e5b 100644
+--- a/i3lock.1
++++ b/i3lock.1
+@@ -17,6 +17,7 @@ i3lock \- improved screen locker
+ .B i3lock
+ .RB [\|\-v\|]
+ .RB [\|\-n\|]
++.RB [\|\-N\|]
+ .RB [\|\-b\|]
+ .RB [\|\-d\|]
+ .RB [\|\-i
+@@ -60,6 +61,10 @@ Display the version of your
+ Don't fork after starting.
+ 
+ .TP
++.B \-N, \-\-nopass
++Don't require a password to unlock your screen.
++
++.TP
+ .B \-b, \-\-beep
+ Enable beeping. Be sure to not do this when you are about to annoy other people,
+ like when opening your laptop in a boring lecture.
+-- 
+1.7.10.4
+

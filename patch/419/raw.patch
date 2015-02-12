@@ -1,0 +1,27 @@
+From 0c1b7e1da927731662533b62c0bb456315066a2f Mon Sep 17 00:00:00 2001
+From: S0lll0s <S0lll0s@…>
+Date: Tue, 11 Feb 2014 14:43:37 +0100
+Subject: [PATCH 2/3] Center i3bar text vertically
+
+---
+ i3bar/src/xcb.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index dd06e85..93e6c75 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -1719,8 +1719,8 @@ void draw_bars(bool unhide) {
+                           outputs_walk->buffer,
+                           outputs_walk->bargc,
+                           MAX(0, (int16_t)(statusline_width - outputs_walk->rect.w + 4)), 0,
+-                          MAX(0, (int16_t)(outputs_walk->rect.w - statusline_width - traypx - 4)), 3,
+-                          MIN(outputs_walk->rect.w - traypx - 4, (int)statusline_width), font.height + 2);
++                          MAX(0, (int16_t)(outputs_walk->rect.w - statusline_width - traypx - 4)), 2,
++                          MIN(outputs_walk->rect.w - traypx - 4, statusline_width), font.height + 2);
+         }
+ 
+         if (!config.disable_ws) {
+-- 
+1.8.5.3
+

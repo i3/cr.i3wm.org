@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 31,
+    "Comment": "My apologies. I'm piping the output from i3status through a script and forgot to disable the logic that disabled the separator during testing...",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  }
+]

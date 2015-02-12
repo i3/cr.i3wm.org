@@ -1,0 +1,30 @@
+From a4426d8ae9d9b434fab83bf3c3dacaacc5b749e9 Mon Sep 17 00:00:00 2001
+From: Mats <d912e3@…>
+Date: Wed, 22 Oct 2014 00:59:05 +0200
+Subject: [PATCH] Makefile.PL: Add Inline::C and List::MoreUtils
+
+* Inline::C: no longer shipped with Inline
+* List::MoreUtils: introduced in 234-layout-restore-output.t
+---
+ testcases/Makefile.PL | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/testcases/Makefile.PL b/testcases/Makefile.PL
+index 6bc80d8..c790730 100755
+--- a/testcases/Makefile.PL
++++ b/testcases/Makefile.PL
+@@ -11,9 +11,11 @@ WriteMakefile(
+         'AnyEvent::I3' => '0.15',
+         'X11::XCB'     => '0.09',
+         'Inline'       => 0,
++        'Inline::C'    => 0,
+         'ExtUtils::PkgConfig' => 0,
+         'Test::More'   => '0.94',
+         'IPC::Run' => 0,
++        'List::MoreUtils' => 0,
+     },
+     PM => {}, # do not install any files from this directory
+     clean => {
+-- 
+2.1.2
+

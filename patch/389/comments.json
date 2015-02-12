@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 57,
+    "Comment": "I can't assign here or it gets assigned more than once and throws an error. I tested that with #pragma once and normal include guards.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 148,
+    "Comment": "added the FREE here to address the leak",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 117,
+    "Comment": "added the return and removed the conditional",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

@@ -1,0 +1,101 @@
+From eda5649ebe2b85fe9ff6be10cd4cc1d9d50c04ed Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ingo=20B=C3=BCrk?= <ingo.buerk@…>
+Date: Tue, 2 Dec 2014 18:22:11 +0100
+Subject: [PATCH] i3bar: Respect the urgency flag on status blocks by drawing
+ urgent blocks with the same settings as an urgent workspace.
+
+---
+ i3bar/src/xcb.c | 48 ++++++++++++++++++++++++++++++++++++++----------
+ 1 file changed, 38 insertions(+), 10 deletions(-)
+
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index 95aa748..c3361b7 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -156,7 +156,7 @@ void refresh_statusline(void) {
+ 
+         /* If this is not the last block, add some pixels for a separator. */
+         if (TAILQ_NEXT(block, blocks) != NULL)
+-            block->width += block->sep_block_width;
++            statusline_width += block->sep_block_width;
+ 
+         statusline_width += block->width + block->x_offset + block->x_append;
+     }
+@@ -168,7 +168,7 @@ void refresh_statusline(void) {
+         realloc_sl_buffer();
+ 
+     /* Clear the statusline pixmap. */
+-    xcb_rectangle_t rect = {0, 0, root_screen->width_in_pixels, font.height + logical_px(5)};
++    xcb_rectangle_t rect = {0, 0, root_screen->width_in_pixels, bar_height};
+     xcb_poly_fill_rectangle(xcb_connection, statusline_pm, statusline_clear, 1, &rect);
+ 
+     /* Draw the text of each block. */
+@@ -176,11 +176,39 @@ void refresh_statusline(void) {
+     TAILQ_FOREACH(block, &statusline_head, blocks) {
+         if (i3string_get_num_bytes(block->full_text) == 0)
+             continue;
++        uint32_t fg_color;
+ 
+-        uint32_t colorpixel = (block->color ? get_colorpixel(block->color) : colors.bar_fg);
+-        set_font_colors(statusline_ctx, colorpixel, colors.bar_bg);
+-        draw_text(block->full_text, statusline_pm, statusline_ctx, x + block->x_offset, 1, block->width);
+-        x += block->width + block->x_offset + block->x_append;
++        /* If this block is urgent, draw it with the defined color and border. */
++        if (block->urgent) {
++            fg_color = colors.urgent_ws_fg;
++
++            uint32_t mask = XCB_GC_FOREGROUND | XCB_GC_BACKGROUND;
++
++            /* Draw the border. */
++            uint32_t border_color = colors.urgent_ws_border;
++            uint32_t border_values[] = { border_color, border_color };
++            xcb_change_gc(xcb_connection, statusline_ctx, mask, border_values);
++
++            xcb_rectangle_t border_rect = { x, 0,
++                                            block->width + block->x_offset + block->x_append, bar_height };
++            xcb_poly_fill_rectangle(xcb_connection, statusline_pm, statusline_ctx, 1, &border_rect);
++
++            /* Draw the background */
++            uint32_t bg_color = colors.urgent_ws_bg;
++            uint32_t bg_values[] = { bg_color, bg_color };
++            xcb_change_gc(xcb_connection, statusline_ctx, mask, bg_values);
++
++            xcb_rectangle_t bg_rect = { x + 1, 1,
++                                        block->width + block->x_offset + block->x_append - 2,
++                                        bar_height - 2 };
++            xcb_poly_fill_rectangle(xcb_connection, statusline_pm, statusline_ctx, 1, &bg_rect);
++        } else {
++            fg_color = (block->color ? get_colorpixel(block->color) : colors.bar_fg);
++        }
++
++        set_font_colors(statusline_ctx, fg_color, colors.bar_bg);
++        draw_text(block->full_text, statusline_pm, statusline_ctx, x + block->x_offset, 3, block->width);
++        x += block->width + block->sep_block_width + block->x_offset + block->x_append;
+ 
+         if (TAILQ_NEXT(block, blocks) != NULL && !block->no_separator && block->sep_block_width > 0) {
+             /* This is not the last block, draw a separator. */
+@@ -190,8 +218,8 @@ void refresh_statusline(void) {
+             xcb_change_gc(xcb_connection, statusline_ctx, mask, values);
+             xcb_poly_line(xcb_connection, XCB_COORD_MODE_ORIGIN, statusline_pm,
+                           statusline_ctx, 2,
+-                          (xcb_point_t[]) {{x - sep_offset, 2},
+-                                           {x - sep_offset, font.height - 2}});
++                          (xcb_point_t[]) { { x - sep_offset, 4 },
++                                            { x - sep_offset, bar_height - 4 } });
+         }
+     }
+ }
+@@ -1713,8 +1741,8 @@ void draw_bars(bool unhide) {
+                           outputs_walk->buffer,
+                           outputs_walk->bargc,
+                           MAX(0, (int16_t)(statusline_width - outputs_walk->rect.w + 4)), 0,
+-                          MAX(0, (int16_t)(outputs_walk->rect.w - statusline_width - traypx - 4)), 3,
+-                          MIN(outputs_walk->rect.w - traypx - 4, (int)statusline_width), font.height + 2);
++                          MAX(0, (int16_t)(outputs_walk->rect.w - statusline_width - traypx - 4)), 0,
++                          MIN(outputs_walk->rect.w - traypx - 4, (int)statusline_width), bar_height);
+         }
+ 
+         if (!config.disable_ws) {
+-- 
+2.1.0
+

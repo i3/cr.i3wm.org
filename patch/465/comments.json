@@ -1,0 +1,44 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 18,
+    "Comment": "The patch looks good, but let’s wait for the discussion on i3-discuss to settle.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 18,
+    "Comment": "Yep, I probably missed the point. The code comment says that the update should start at :00 for every new minute, which it still does with this patch, but that does not seem to be the important factor. \n\nI guess to make both parties happy, a new global setting to control the behavior of the loop might be beneficial.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 18,
+    "Comment": "So, after the thread came to its conclusion, I’m not sure why we actually need this patch. The behavior I observe with the current code seems fine to me. Can you please elaborate so that we arrive at a patch description that is more descriptive or can just drop the patch?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 18,
+    "Comment": "Well, I'm not sure what I could add to the description. My goal with the patch was to stick to the defined interval as much as possible (and reduce the total number of refreshes as a consequence).\n\nThe constant alignment just seemed like unnecessary overhead (and with my config it absolutely is) for no good reason, as one attempt to align would be enough to start with the full minute.\n\nBut as the purpose of the alignment seems to be purely for aesthetic reasons, it would take away some value in this regard if I understood the intention behind the alignment correctly. Therefore my proposal to make it configurable to cater for both needs.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 18,
+    "Comment": "So, AIUI, your rationale for this patch was to only align on minutes, to prevent some sort of overhead. I’m not entirely sure whether you mean the modulo calculation, but since that is still present, that can’t be it. I’m guessing you mean the refresh of all modules, then, but I currently fail to see the additional refresh that is prevented with your patch.\n\nAFAICT, this effectively breaks aligning on 5s intervals (e.g. having refreshes at :00, :05, :10, :15) for no good reason.\n\nI’d suggest we stop discussing this patch entirely, unless you feel really strongly about something and succeed in explaining what it is in your next message :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 18,
+    "Comment": "It's a matter of progression. To give you an example (first column with alignment, second without):\n\n:00     :00\n:03     :03 \u003c-USR1\n:05     :08\n:09     :09 \u003c-USR1\n:10     :14\n:13     :17 \u003c-USR1\n:15     :22\n:17     :24 \u003c-USR1\n:20     :29\n:21     :30 \u003c-USR1\n:25     :35\n:28     :38 \u003c-USR1\n:30     :43\n:34     :47 \u003c-USR1\n:35     :52\n:40     :57\n:45\n:50\n:55\n:00     :00\n\n7 signals, 3 additional refreshes.\n\nThis is a contrived example, I haven't traced actual usage, but as I use USR1 signaling to update the application title in my i3bar, signaling does happen regularly and the additional refreshes will add up over time.\n\nI don't want to drag this issue to death either. It's certainly not a big deal and if you don't want to accept a patch to cater for both needs, so be it :)",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 18,
+    "Comment": "Thanks for the careful explanation.\n\nI think the pure usage of alignment means that the user wants to see the first column, and having the extra refreshes is certainly acceptable, I think.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

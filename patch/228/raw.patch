@@ -1,0 +1,56 @@
+From 400dd143406924dafa32ef2524bb66cb2642c96b Mon Sep 17 00:00:00 2001
+From: "jj" <haptix@…>
+Date: Thu, 19 Sep 2013 20:49:38 +0200
+Subject: [PATCH] Fix keyboard resize in windows beneath stacked/tabbed
+ containers
+
+When resizing with keyboard, stacked and tabbed containers need to be
+skipped.
+
+fixes #1085
+---
+ src/commands.c |   14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/src/commands.c b/src/commands.c
+index f427424..e3721c8 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -618,19 +618,19 @@ static void cmd_resize_floating(I3_CMD, char *way, char *direction, Con *floatin
+ 
+ static bool cmd_resize_tiling_direction(I3_CMD, Con *current, char *way, char *direction, int ppt) {
+     LOG("tiling resize\n");
+-    /* get the appropriate current container (skip stacked/tabbed cons) */
+     Con *other = NULL;
+     double percentage = 0;
+-    while (current->parent->layout == L_STACKED ||
+-           current->parent->layout == L_TABBED)
+-        current = current->parent;
+ 
+-    /* Then further go up until we find one with the matching orientation. */
++    /* Go up in the tree and search for a container to resize */
+     orientation_t search_orientation =
+         (strcmp(direction, "left") == 0 || strcmp(direction, "right") == 0 ? HORIZ : VERT);
+ 
+     do {
+-        if (con_orientation(current->parent) != search_orientation) {
++        /* get the appropriate current container with the matching
++         * orientation (skip stacked/tabbed cons) */
++        if ((con_orientation(current->parent) != search_orientation) ||
++            (current->parent->layout == L_STACKED) ||
++            (current->parent->layout == L_TABBED)) {
+             current = current->parent;
+             continue;
+         }
+@@ -668,7 +668,7 @@ static bool cmd_resize_tiling_direction(I3_CMD, Con *current, char *way, char *d
+              current->type != CT_FLOATING_CON);
+ 
+     if (other == NULL) {
+-        LOG("No other container in this direction found, trying to look further up in the tree...\n");
++        LOG("No other container in this direction found.\n");
+         ysuccess(false);
+         return false;
+     }
+-- 
+1.7.9.5
+

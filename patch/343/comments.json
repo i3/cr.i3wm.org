@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 58,
+    "Comment": "con_descend_direction gives the focused-inactive container of the branch if the direction and orientation disagree. From the UI standpoint, I think this behavior makes sense, because the focused-inactive container is likely significant to the user, so having it close by is probably convenient. The more \"geometrically pleasing\" alternative would be to insert the con at the midpoint of the branch, but that is a bit more complicated in the code, and not necessarily better. I think the worst option would be to append/prepend based on a kind of \"directional coercion\". That looks very surprising in practice with many tabs.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 57,
+    "Comment": "With tabbed layout, this achieves the intended effect. With stacked layout, it feels weird.\n\nI guess there is no better alternative than to make the code also check the layout, or not merge this at all.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 57,
+    "Comment": "To clarify on what feels weird: the moved container ends up either at the bottom or at the top of the stack, depending on whether you move to the right or to the left. (in a workspace with 3 stecks next to each other)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 57,
+    "Comment": "If you move right into a stack, it will be inserted above the focused-inactive container. If you move left into a stack, it will be inserted below the focused-inactive container. (this is the same behavior as moving up/down into tabs)\n\nThe case you pointed out should only be true if there is only one container in the stack.\n\nDo you want right/left movement into a stack both to insert the container below the focused-inactive stack leaf (which was the previous behavior)?",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 57,
+    "Comment": "Yeah, I think we should preserve the old behavior in this case.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

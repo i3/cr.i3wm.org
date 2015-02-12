@@ -1,0 +1,62 @@
+From 228ff0400017cef4f3d19bbbb6e7be100dc2fb03 Mon Sep 17 00:00:00 2001
+From: Vivien Didelot <vivien.didelot@…>
+Date: Wed, 23 Jan 2013 17:37:27 -0500
+Subject: [PATCH] split main .gitignore and ignore more files
+
+This patch splits the main .gitignore with a specific
+testcases/.gitignore and also add 4 patterns to the ignore list:
+
+  i3-command-parser.stamp
+  i3-config-parser.stamp
+  testcases/-
+  testcases/i3-cfg-for-*
+---
+ .gitignore           | 10 ++--------
+ testcases/.gitignore | 10 ++++++++++
+ 2 files changed, 12 insertions(+), 8 deletions(-)
+ create mode 100644 testcases/.gitignore
+
+diff --git a/.gitignore b/.gitignore
+index 26c170f..efeb489 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -5,14 +5,6 @@ include/all.h.pch
+ *.swp
+ *.gcda
+ *.gcno
+-testcases/testsuite-*
+-testcases/latest
+-testcases/Makefile
+-testcases/Makefile.old
+-testcases/.last_run_timings.json
+-testcases/_Inline
+-testcases/inc
+-testcases/META.yml
+ test.commands_parser
+ test.config_parser
+ *.output
+@@ -32,3 +24,5 @@ libi3.a
+ docs/*.pdf
+ docs/*.html
+ !/docs/refcard.html
++i3-command-parser.stamp
++i3-config-parser.stamp
+diff --git a/testcases/.gitignore b/testcases/.gitignore
+new file mode 100644
+index 0000000..c11c556
+--- /dev/null
++++ b/testcases/.gitignore
+@@ -0,0 +1,10 @@
++testsuite-*
++latest
++Makefile
++Makefile.old
++.last_run_timings.json
++_Inline
++inc
++META.yml
++i3-cfg-for-*
++-
+-- 
+1.8.1.1
+

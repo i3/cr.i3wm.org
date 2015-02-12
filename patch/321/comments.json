@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 55,
+    "Comment": "Why would you ever want to do that for storage? I am not aware of _any_ place where, even though it says gigabyte, actual gigabytes are displayed. Everybody means gibibytes.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Mats",
+    "Line": 55,
+    "Comment": "Personally, I find powers of 1000 easier to work with than powers of 1024 :)\n\nBut that’s not really the reason why I submitted this patch. It’s more about the unambiguity that comes along with using the standardized prefixes¹, especially the binary ones. There are numerous programs that adopted this form, e.g., pacman, gdisk, aria2c, …\n\nBut there’s also software that uses the SI prefixes with their actual decimal meaning: apt-get, dd, fdisk, and most prominently OS X throughout the entire system².\n\n¹ https://en.wikipedia.org/wiki/IEC_80000-13\n² https://en.wikipedia.org/wiki/Binary_prefix#Current_practice",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 55,
+    "Comment": "I’m all in for unambiguity, but not in the way you proposed.\n\nI’d accept a patch that changes the output from GB to GiB to reflect what is actually happening, with an option to force GB for people who want the wrong suffix :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

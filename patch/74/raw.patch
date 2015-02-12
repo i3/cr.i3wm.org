@@ -1,0 +1,77 @@
+From 27c4a029dec657345caa4e49f83ae4315662b4fb Mon Sep 17 00:00:00 2001
+From: Sebastian Rachuj <rachus@…>
+Date: Wed, 20 Feb 2013 14:52:37 +0100
+Subject: [PATCH] Better back_and_forth handling with multimonitor setups
+
+---
+ src/workspace.c | 34 +++++++++++++++++++++++++++++++++-
+ 1 file changed, 33 insertions(+), 1 deletion(-)
+
+diff --git a/src/workspace.c b/src/workspace.c
+index 5a0913b..4e8cb18 100644
+--- a/src/workspace.c
++++ b/src/workspace.c
+@@ -19,6 +19,11 @@
+  * back-and-forth switching. */
+ static char *previous_workspace_name = NULL;
+ 
++/* Stores a copy of the name of the last displaced workspace. This means
++ * that the workspace did not have a focus when it lost visibility.
++ * Can be used for Bug #927. */
++static char *displaced_workspace_name = NULL;
++
+ /*
+  * Sets ws->layout to splith/splitv if default_orientation was specified in the
+  * configfile. Otherwise, it uses splith/splitv depending on whether the output
+@@ -376,12 +381,29 @@ static void _workspace_show(Con *workspace) {
+ 
+     /* disable fullscreen for the other workspaces and get the workspace we are
+      * currently on. */
++    /* Additionally remember the workspace name of the workspace that was on 
++     * another output and was displaced. */
++    bool changed_displaced = false;
+     TAILQ_FOREACH(current, &(workspace->parent->nodes_head), nodes) {
++        if (workspace_is_visible(current) && !con_is_internal(current) &&
++            con_get_output(focused) != con_get_output(workspace)) {
++            FREE(displaced_workspace_name);
++            displaced_workspace_name = sstrdup(current->name);
++            changed_displaced = true;
++            DLOG("Setting displaced_workspace_name = %s\n", displaced_workspace_name);
++        }
+         if (current->fullscreen_mode == CF_OUTPUT)
+             old = current;
+         current->fullscreen_mode = CF_NONE;
+     }
+ 
++    /* If there was no workspace displaced, we did not write anything to
++     * the string and can therefore remove the old information. */
++    if (!changed_displaced) {
++        FREE(displaced_workspace_name);
++        DLOG("Freeing displaced_workspace_name\n");
++    }
++
+     /* enable fullscreen for the target workspace. If it happens to be the
+      * same one we are currently on anyways, we can stop here. */
+     workspace->fullscreen_mode = CF_OUTPUT;
+@@ -754,7 +776,17 @@ void workspace_back_and_forth(void) {
+         return;
+     }
+ 
+-    workspace_show_by_name(previous_workspace_name);
++    /* Save the real workspace in case we show the displaced workspace
++     * first. */
++    char* real_prev = sstrdup(previous_workspace_name);
++
++    /* With the last workspace change there was workspace displaced.
++     * Show it before showing the real previous workspace. */
++    if (displaced_workspace_name)
++        workspace_show_by_name(displaced_workspace_name);
++
++    workspace_show_by_name(real_prev);
++    FREE(real_prev);
+ }
+ 
+ /*
+-- 
+1.8.1.3
+

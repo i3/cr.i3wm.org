@@ -1,0 +1,42 @@
+From 54fa4d5d022be49f6e7f93d842afc9f45e6aaebc Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20P=C3=ADsa=C5=99?= <petr.pisar@…>
+Date: Thu, 24 Apr 2014 20:35:17 +0200
+Subject: [PATCH] Reset SIGIPE handler before executing a command
+
+This commit:
+
+commit fb6d117c42ce3d9988ff44c079814b3840b1e37f
+Author: Axel Wagner <mail@merovius.de>
+Date:   Thu Dec 30 21:09:32 2010 +0100
+
+    Port sighandler to tree-branch
+
+blocks SIGPIPE. Unfortunatelly blocked signal set is preserved accross
+execve()s, so any program executed by i3 inherited blocked SIGPIPE signal.
+This leads to courious effects when pipe writer does not terminate after
+exiting pipe reader.
+
+Simple reproducer is to spawn a new xterm by a key shortcut and then run this
+command there:
+
+$ perl -e 'print $SIG{PIPE}, qq{\n}'
+IGNORE
+---
+ src/startup.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/startup.c b/src/startup.c
+index 85e5dbc..a3e4d58 100644
+--- a/src/startup.c
++++ b/src/startup.c
+@@ -187,6 +187,7 @@ void start_application(const char *command, bool no_startup_id) {
+         }
+         unsetenv("LISTEN_PID");
+         unsetenv("LISTEN_FDS");
++        signal(SIGPIPE, SIG_DFL);
+         if (fork() == 0) {
+             /* Setup the environment variable(s) */
+             if (!no_startup_id)
+-- 
+1.8.3.2
+

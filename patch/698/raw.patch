@@ -1,0 +1,90 @@
+From a0f7536830ed73e6d36484e99f5bd7c214b10c64 Mon Sep 17 00:00:00 2001
+From: Alexander Monakov <amonakov@…>
+Date: Fri, 9 Jan 2015 01:18:23 +0300
+Subject: [PATCH] i3bar: suspend the child when bars are fully obscured
+
+---
+ i3bar/include/outputs.h |  1 +
+ i3bar/src/xcb.c         | 40 ++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 41 insertions(+)
+
+diff --git a/i3bar/include/outputs.h b/i3bar/include/outputs.h
+index e0beae8..bd41e77 100644
+--- a/i3bar/include/outputs.h
++++ b/i3bar/include/outputs.h
+@@ -40,6 +40,7 @@ struct i3_output {
+     char* name;   /* Name of the output */
+     bool active;  /* If the output is active */
+     bool primary; /* If it is the primary output */
++    bool visible; /* If the bar is visible on this output */
+     int ws;       /* The number of the currently visible ws */
+     rect rect;    /* The rect (relative to the root-win) */
+ 
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index 30dd837..546fdbf 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -482,6 +482,36 @@ void handle_button(xcb_button_press_event_t *event) {
+ }
+ 
+ /*
++ * Handle visibility notifications: when none of the bars are visible, e.g.
++ * if windows are in full-screen on each output, suspend the child process.
++ *
++ */
++static void handle_visibility_notify(xcb_visibility_notify_event_t *event) {
++    bool visible = event->state != XCB_VISIBILITY_FULLY_OBSCURED;
++    int num_visible = 0;
++    i3_output *output;
++
++    SLIST_FOREACH (output, outputs, slist) {
++        if (!output->active) {
++            continue;
++        }
++        if (output->bar == event->window) {
++            if (output->visible == visible) {
++                return;
++            }
++            output->visible = visible;
++        }
++        num_visible += output->visible;
++    }
++
++    if (num_visible == 0) {
++        stop_child();
++    } else if (num_visible - visible == 0) {
++        cont_child();
++    }
++}
++
++/*
+  * Adjusts the size of the tray window and alignment of the tray clients by
+  * configuring their respective x coordinates. To be called when mapping or
+  * unmapping a tray client window.
+@@ -945,6 +975,10 @@ void xcb_chk_cb(struct ev_loop *loop, ev_check *watcher, int revents) {
+         }
+ 
+         switch (type) {
++            case XCB_VISIBILITY_NOTIFY:
++                /* Visibility change: a bar is [un]obscured by other window */
++                handle_visibility_notify((xcb_visibility_notify_event_t *)event);
++                break;
+             case XCB_EXPOSE:
+                 /* Expose-events happen, when the window needs to be redrawn */
+                 redraw_bars();
+@@ -1461,6 +1495,12 @@ void reconfig_windows(bool redraw_bars) {
+              * */
+             values[2] = XCB_EVENT_MASK_EXPOSURE |
+                         XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT;
++            if (config.hide_on_modifier == M_DOCK) {
++                /* If the bar is normally visible, catch visibility change events to suspend
++                 * the status process when the bar is obscured by full-screened windows.  */
++                values[2] |= XCB_EVENT_MASK_VISIBILITY_CHANGE;
++                walk->visible = true;
++            }
+             if (!config.disable_ws) {
+                 values[2] |= XCB_EVENT_MASK_BUTTON_PRESS;
+             }
+-- 
+2.1.3
+

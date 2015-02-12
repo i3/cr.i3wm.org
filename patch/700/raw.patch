@@ -1,0 +1,24 @@
+From bc528f3b2494972c6266270b184d1e2f0075259f Mon Sep 17 00:00:00 2001
+From: Marein Konings <marein@…>
+Date: Sun, 18 Jan 2015 20:48:34 +0100
+Subject: [PATCH] Add 'mark' as allowed key to i3-save-tree output
+
+---
+ i3-save-tree | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/i3-save-tree b/i3-save-tree
+index add4c8c..c64fc72 100755
+--- a/i3-save-tree
++++ b/i3-save-tree
+@@ -92,6 +92,7 @@ my %allowed_keys = map { ($_, 1) } qw(
+     name
+     geometry
+     window_properties
++    mark
+ );
+ 
+ sub strip_containers {
+-- 
+2.2.1
+

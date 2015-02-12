@@ -1,0 +1,27 @@
+From fb574f7f517f5461d82a8561ed65c95929bd82ff Mon Sep 17 00:00:00 2001
+From: Diego Ongaro <ongardie@…>
+Date: Tue, 30 Apr 2013 22:23:03 -0700
+Subject: [PATCH] contrib/gtk-tree-watch.pl: Remove bogus default socket path
+
+The default i3 socket path was set to "/tmp/nestedcons". This isn't
+going to work for most people.
+---
+ contrib/gtk-tree-watch.pl |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/contrib/gtk-tree-watch.pl b/contrib/gtk-tree-watch.pl
+index f15d0c1..30cc64f 100755
+--- a/contrib/gtk-tree-watch.pl
++++ b/contrib/gtk-tree-watch.pl
+@@ -19,7 +19,7 @@ $window->signal_connect('delete_event' => sub { Gtk2->main_quit; });
+ 
+ my $tree_store = Gtk2::TreeStore->new(qw/Glib::String/, qw/Glib::String/, qw/Glib::String/, qw/Glib::String/, qw/Glib::String/, qw/Glib::String/, qw/Glib::String/, qw/Glib::String/);
+ 
+-my $i3 = i3("/tmp/nestedcons");
++my $i3 = i3();
+ 
+ my $tree_view = Gtk2::TreeView->new($tree_store);
+ 
+-- 
+1.7.10.4
+

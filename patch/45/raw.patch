@@ -1,0 +1,150 @@
+From d2e134762c3fc2c9902f1b0973d9178fb2b4a13e Mon Sep 17 00:00:00 2001
+From: Sebastian Ullrich <sebasti@…>
+Date: Mon, 24 Sep 2012 21:14:40 +0200
+Subject: [PATCH] Always auto center on 'scratchpad show' if window hasn't been
+ repositioned by the user
+
+This change ensures a scratchpad window is still centered on the screen
+if it has first been shown on another screen of a different
+resolution. Moving or resizing the scratchpad manually disables this
+behavior.
+---
+ include/data.h               |  2 ++
+ src/commands.c               |  4 ++++
+ src/floating.c               | 14 ++++++++++++++
+ src/scratchpad.c             |  1 -
+ testcases/t/185-scratchpad.t | 30 ++++++++++++++++++++++++++----
+ 5 files changed, 46 insertions(+), 5 deletions(-)
+
+diff --git a/include/data.h b/include/data.h
+index 9a814f4..374a70f 100644
+--- a/include/data.h
++++ b/include/data.h
+@@ -569,6 +569,8 @@ struct Con {
+     /** callbacks */
+     void(*on_remove_child)(Con *);
+ 
++    /** not a scratchpad window, auto centered scratchpad window, or
++     * user positioned scratchpad window. */
+     enum {
+         SCRATCHPAD_NONE = 0,
+         SCRATCHPAD_FRESH = 1,
+diff --git a/src/commands.c b/src/commands.c
+index 0fbf26c..88261ba 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -592,6 +592,10 @@ static void cmd_resize_floating(I3_CMD, char *way, char *direction, Con *floatin
+     } else if (strcmp(direction, "left") == 0) {
+         floating_con->rect.x -= px;
+     }
++
++    /* If this is a scratchpad window, don't auto center it from now on. */
++    if (floating_con->scratchpad_state == SCRATCHPAD_FRESH)
++        floating_con->scratchpad_state = SCRATCHPAD_CHANGED;
+ }
+ 
+ static bool cmd_resize_tiling_direction(I3_CMD, Con *current, char *way, char *direction, int ppt) {
+diff --git a/src/floating.c b/src/floating.c
+index 761d207..97ee0e2 100644
+--- a/src/floating.c
++++ b/src/floating.c
+@@ -409,6 +409,11 @@ void floating_drag_window(Con *con, const xcb_button_press_event_t *event) {
+ 
+     /* Drag the window */
+     drag_pointer(con, event, XCB_NONE, BORDER_TOP /* irrelevant */, XCURSOR_CURSOR_MOVE, drag_window_callback, event);
++
++    /* If this is a scratchpad window, don't auto center it from now on. */
++    if (con->scratchpad_state == SCRATCHPAD_FRESH)
++        con->scratchpad_state = SCRATCHPAD_CHANGED;
++
+     tree_render();
+ }
+ 
+@@ -507,6 +512,10 @@ void floating_resize_window(Con *con, const bool proportional,
+     struct resize_window_callback_params params = { corner, proportional, event };
+ 
+     drag_pointer(con, event, XCB_NONE, BORDER_TOP /* irrelevant */, cursor, resize_window_callback, &params);
++
++    /* If this is a scratchpad window, don't auto center it from now on. */
++    if (con->scratchpad_state == SCRATCHPAD_FRESH)
++        con->scratchpad_state = SCRATCHPAD_CHANGED;
+ }
+ 
+ /*
+@@ -630,6 +639,11 @@ void floating_reposition(Con *con, Rect newrect) {
+     con->rect = newrect;
+ 
+     floating_maybe_reassign_ws(con);
++
++    /* If this is a scratchpad window, don't auto center it from now on. */
++    if (con->scratchpad_state == SCRATCHPAD_FRESH)
++        con->scratchpad_state = SCRATCHPAD_CHANGED;
++
+     tree_render();
+ }
+ 
+diff --git a/src/scratchpad.c b/src/scratchpad.c
+index 8b96521..29300c8 100644
+--- a/src/scratchpad.c
++++ b/src/scratchpad.c
+@@ -177,7 +177,6 @@ void scratchpad_show(Con *con) {
+                       ((output->rect.width / 2.0) - (con->rect.width / 2.0));
+         con->rect.y = output->rect.y +
+                       ((output->rect.height / 2.0) - (con->rect.height / 2.0));
+-        con->scratchpad_state = SCRATCHPAD_CHANGED;
+     }
+ 
+     /* Activate active workspace if window is from another workspace to ensure
+diff --git a/testcases/t/185-scratchpad.t b/testcases/t/185-scratchpad.t
+index d399430..6ee877b 100644
+--- a/testcases/t/185-scratchpad.t
++++ b/testcases/t/185-scratchpad.t
+@@ -93,8 +93,7 @@ is(scalar @{$__i3_scratch->{floating_nodes}}, 0, '__i3_scratch ws empty');
+ ################################################################################
+ # 3: Verify that 'scratchpad toggle' sends a window to the __i3_scratch
+ # workspace and sets the scratchpad flag to SCRATCHPAD_FRESH. The window’s size
+-# and position will be changed (once!) on the next 'scratchpad show' and the
+-# flag will be changed to SCRATCHPAD_CHANGED.
++# and position will be changed on the next 'scratchpad show'.
+ ################################################################################
+ 
+ my ($nodes, $focus) = get_ws_content($tmp);
+@@ -165,10 +164,33 @@ $__i3_scratch = get_ws('__i3_scratch');
+ @scratch_nodes = @{$__i3_scratch->{floating_nodes}};
+ is(scalar @scratch_nodes, 1, '__i3_scratch contains our window');
+ 
+-is($scratch_nodes[0]->{scratchpad_state}, 'changed', 'scratchpad_state changed');
++################################################################################
++# 6: Resizing the window should disable auto centering on scratchpad show
++################################################################################
++
++cmd 'scratchpad show';
++
++$ws = get_ws($tmp);
++is($ws->{floating_nodes}->[0]->{scratchpad_state}, 'fresh',
++   'scratchpad_state fresh');
++
++cmd 'resize grow width 10 px';
++cmd 'scratchpad show';
++cmd 'scratchpad show';
++
++$ws = get_ws($tmp);
++$scratchrect = $ws->{floating_nodes}->[0]->{rect};
++$outputrect = $output->{rect};
++
++is($ws->{floating_nodes}->[0]->{scratchpad_state}, 'changed',
++   'scratchpad_state changed');
++is($scratchrect->{width}, $outputrect->{width} * 0.5 + 10, 'scratch width is 50% + 10px');
++
++cmd 'resize shrink width 10 px';
++cmd 'scratchpad show';
+ 
+ ################################################################################
+-# 6: Verify that repeated 'scratchpad show' cycle through the stack, that is,
++# 7: Verify that repeated 'scratchpad show' cycle through the stack, that is,
+ # toggling a visible window should insert it at the bottom of the stack of the
+ # __i3_scratch workspace.
+ ################################################################################
+-- 
+1.8.1.2
+

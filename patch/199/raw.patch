@@ -1,0 +1,37 @@
+From 8d1c0c011b7706d173048fd41ad9e111ab16547a Mon Sep 17 00:00:00 2001
+From: syl20bnr <sylvain.benner@…>
+Date: Sat, 3 Aug 2013 21:29:07 -0400
+Subject: [PATCH] Update documentation paragraph on variables to emphasize on
+ limitation (see
+ http://infra.in.zekjur.net/archives/i3-discuss/2013-August/001377.html)
+
+---
+ docs/userguide | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/docs/userguide b/docs/userguide
+index f264599..4900be4 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -570,11 +570,13 @@ set $m Mod1
+ bindsym $m+Shift+r restart
+ ------------------------
+ 
+-Variables are directly replaced in the file when parsing. There is no fancy
+-handling and there are absolutely no plans to change this. If you need a more
+-dynamic configuration you should create a little script which generates a
+-configuration file and run it before starting i3 (for example in your
+-+~/.xsession+ file).
++Variables behaves like very basic macros.They are directly replaced in
++the file when parsing. Variables expansion is not recursive so it is not
++possible to define a variable with a value containing another variable.
++There is no fancy handling and there are absolutely no plans to change this.
++If you need a more dynamic configuration you should create a little script
++which generates a configuration file and run it before starting i3 (for
++example in your +~/.xsession+ file).
+ 
+ === Automatically putting clients on specific workspaces
+ 
+-- 
+1.8.1.2
+

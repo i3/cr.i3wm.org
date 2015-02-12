@@ -1,0 +1,73 @@
+From 9fcff126542014349420897a06c514de4dbf81f0 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sat, 29 Mar 2014 00:25:52 -0400
+Subject: [PATCH] Send last event timestamp with WM_TAKE_FOCUS msg
+
+According to 4.1.7 of the iccm spec
+
+http://tronche.com/gui/x/icccm/sec-4.html#s-4.1.7
+
+> Windows with the atom WM_TAKE_FOCUS in their WM_PROTOCOLS property may
+> receive a ClientMessage event from the window manager (as described in
+> section 4.2.8) with WM_TAKE_FOCUS in its data[0] field and a valid
+> timestamp (i.e. not CurrentTime ) in its data[1] field.
+
+Adds the timestamp parameter to send_take_focus to avoid the dangerous
+use of a global variable.
+---
+ include/xcb.h | 2 +-
+ src/x.c       | 2 +-
+ src/xcb.c     | 4 ++--
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/include/xcb.h b/include/xcb.h
+index 848fe29..4df7f63 100644
+--- a/include/xcb.h
++++ b/include/xcb.h
+@@ -94,7 +94,7 @@ void fake_absolute_configure_notify(Con *con);
+  * Sends the WM_TAKE_FOCUS ClientMessage to the given window
+  *
+  */
+-void send_take_focus(xcb_window_t window);
++void send_take_focus(xcb_window_t window, xcb_timestamp_t timestamp);
+ 
+ /**
+  * Raises the given window (typically client->frame) above all other windows
+diff --git a/src/x.c b/src/x.c
+index cd36a28..eca95da 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -992,7 +992,7 @@ void x_push_changes(Con *con) {
+                 focused->window->needs_take_focus) {
+                 DLOG("Updating focus by sending WM_TAKE_FOCUS to window 0x%08x (focused: %p / %s)\n",
+                      to_focus, focused, focused->name);
+-                send_take_focus(to_focus);
++                send_take_focus(to_focus, last_timestamp);
+                 set_focus = !focused->window->doesnt_accept_focus;
+                 DLOG("set_focus = %d\n", set_focus);
+ 
+diff --git a/src/xcb.c b/src/xcb.c
+index caa203f..3039b03 100644
+--- a/src/xcb.c
++++ b/src/xcb.c
+@@ -110,7 +110,7 @@ void fake_absolute_configure_notify(Con *con) {
+  * Sends the WM_TAKE_FOCUS ClientMessage to the given window
+  *
+  */
+-void send_take_focus(xcb_window_t window) {
++void send_take_focus(xcb_window_t window, xcb_timestamp_t timestamp) {
+     /* Every X11 event is 32 bytes long. Therefore, XCB will copy 32 bytes.
+      * In order to properly initialize these bytes, we allocate 32 bytes even
+      * though we only need less for an xcb_configure_notify_event_t */
+@@ -122,7 +122,7 @@ void send_take_focus(xcb_window_t window) {
+     ev->type = A_WM_PROTOCOLS;
+     ev->format = 32;
+     ev->data.data32[0] = A_WM_TAKE_FOCUS;
+-    ev->data.data32[1] = XCB_CURRENT_TIME;
++    ev->data.data32[1] = timestamp;
+ 
+     DLOG("Sending WM_TAKE_FOCUS to the client\n");
+     xcb_send_event(conn, false, window, XCB_EVENT_MASK_NO_EVENT, (char*)ev);
+-- 
+1.9.1
+

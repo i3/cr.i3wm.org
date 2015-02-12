@@ -1,0 +1,86 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 393,
+    "Comment": "I think you meant $width",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 383,
+    "Comment": "Can you update the surrounding lines so that the “-\u003e” are aligned?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 371,
+    "Comment": "Please also specify the variable name in the prototype, not only its type.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 330,
+    "Comment": "Coding style: no space before the “(”, put the “{” on the same line.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 330,
+    "Comment": "Prototype has “void init_sizes(const int32_t sep_block_width)”, please make that consistent.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 157,
+    "Comment": "Why don’t you store it as an uint32_t in the first place? Then the conversion can happen when you parse the value from JSON and the types are consistent in the rest of the code.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 49,
+    "Comment": "The empty line you removed here is missing below, after the end of the foo::bar description block and before the next paragraph.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 67,
+    "Comment": "“…the gap, a separating…”, right?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 89,
+    "Comment": "Wait, why is this configurable for i3bar at all? Users who care can modify it via protocol. I don’t think adding an option to the i3 config file makes sense for this.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 89,
+    "Comment": "As it was noted in the previous attempt, it would be useful to have 0 gap between the items.  Now, as \"separatpr\" in i3bar protocol only triggers the drawing of the line, the separator-block-width should come from somewhere.  It is unlikely, that you would want to have different gaps for different items, however it is very likely that you may want to trigger the width of the gap globally.  We can add triggering of the gap width via i3bar protocol later, if needed.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 157,
+    "Comment": "I was just following the style of this structure.  'num_outputs' should be uint32_t, but it is 'int' by some reason.  But I am happy to make it 'sep_block_width' of type uint32_t.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 393,
+    "Comment": "Right, what is the difference between '\u0026' and '$' notation?  (I thought that '$' goes for pointer, and '\u0026' for non-pointer)  I have reused '\u0026' from FLOATING_MINIMUM_SIZE_HEIGHT rule, there you use '\u0026'.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 393,
+    "Comment": "Ok, so, as far as 'width' is  number, $width generates get_string, where \u0026width generates get_long, so I need \u0026width here.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 49,
+    "Comment": "Michael, I fixed the patch according to your comments and submitting it again.  Can you please delete the older versions of the patch as they are deprecated now?\n\nThanks.",
+    "EmailHash": ""
+  }
+]

@@ -1,0 +1,28 @@
+From 098af23f3b5544682aa93833fcf94c7d1f4ede31 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 18 Mar 2014 23:05:04 -0400
+Subject: [PATCH] Test 517: avoid command chaining
+
+Command chaining seems to introduce concurrency problems with the test
+suite or the ipc that are not being tested in this case.
+---
+ testcases/t/517-regress-move-direction-ipc.t | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/testcases/t/517-regress-move-direction-ipc.t b/testcases/t/517-regress-move-direction-ipc.t
+index 45088c5..0c593de 100644
+--- a/testcases/t/517-regress-move-direction-ipc.t
++++ b/testcases/t/517-regress-move-direction-ipc.t
+@@ -68,7 +68,8 @@ is(@{$event->{current}->{nodes}}, 1, 'focus event gave the right number of windo
+ 
+ # reset and try again
+ $focus = AnyEvent->condvar;
+-cmd 'workspace ws-left; move right';
++cmd 'workspace ws-left';
++cmd 'move right';
+ $event = $focus->recv;
+ ok($event, 'moving from workspace with one window triggered focus ipc event');
+ is($event->{current}->{name}, 'ws-right', 'focus event gave the right workspace');
+-- 
+1.9.0
+

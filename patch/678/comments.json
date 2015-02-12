@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "cornerman",
+    "Line": 114,
+    "Comment": "I could provide another testcase for the correctness of the rect, window_rect, deco_rect in a separate patch. This could include checking whether the rect includes both the window_rect as well as the deco_rect and checking the placement of the window and the decoration in different layouts. Just let me know.",
+    "EmailHash": "347d62898134ebbc66417b1ae633ef01"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 43,
+    "Comment": "I’m fine with dumping the rect, but why are you restoring it? It should get calculated based on the other properties of a container already, right?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

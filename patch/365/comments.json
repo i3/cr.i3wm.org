@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 29,
+    "Comment": "This is so the IPC event will have the \"old\" and \"new\" members set to the correct workspace.\n\nThis has the problem that focus will not be correct within the tree, which might cause some problems for IPC consumers (but not i3bar).\n\nI can't think of a good way to fix this without making some changes to the workspace interface. The problem is that if we call `workspace_show` when the new workspace is focused, the event will not fire, because the old workspace is unknown to the function.\n\nWe can't use the normal workspace functions because we need to insert the container at a specific location within the workspace, and those functions don't support that.\n\nI'm going to need to think about how to get this to work and post a revision.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 16,
+    "Comment": "Can you add a test for this please?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

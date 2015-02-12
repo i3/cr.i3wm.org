@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "Looking at the corresponding section for Linux, I think you should also support the integer_battery_capacity option :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 19,
+    "Comment": "I will do that, shall I combine that with this patch or shall I submit a new patch?",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "Please squash both changes into one patch file and submit that to cr.i3wm.org.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Jasper Lievisse Adriaanse",
+    "Line": 19,
+    "Comment": "Actually, apm(4) on OpenBSD only reports the battery life in whole digits. I.e., implicitly 'integer_battery_capacity' is always used.",
+    "EmailHash": "0fac6cc5c7e2d8eae5bb9a04d486dd5a"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "Then please add a comment explaining that.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Jasper Lievisse Adriaanse",
+    "Line": 19,
+    "Comment": "Done, as http://cr.i3wm.org/patch/463",
+    "EmailHash": "0fac6cc5c7e2d8eae5bb9a04d486dd5a"
+  }
+]

@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 30,
+    "Comment": "Why is this necessary? I just tried this and it worked fine:\n\ncat /tmp/foo\\ bar.sh\n#!/bin/sh\necho $(date) \u003e /tmp/foo.txt\n\ni3-msg 'exec i3-sensible-terminal -e \"/tmp/foo bar.sh\"'\n2013-03-02 13:53:07 - Additional arguments passed. Sending them as a command to i3.\n[{\"success\":true}]\n\ncat /tmp/foo.txt \nSat Mar 2 13:53:07 CET 2013\n",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 23,
+    "Comment": "Actually, instead of doing this, we should probably switch to a similar workaround as with i3-nagbar, because the current way breaks on some systems.\n\nSee http://code.stapelberg.de/git/i3/commit/?h=next\u0026id=2bf80528bdb2814331f9149289a0dd1e3422282b",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 23,
+    "Comment": "I don't know what i3-nagbar does, but I am willing to check it out. It only occurred to me that this might not work without quotes when $filename has spaces...",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 30,
+    "Comment": "I will send you an email that will clarify the issue.",
+    "EmailHash": ""
+  }
+]

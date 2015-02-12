@@ -1,0 +1,64 @@
+From aff41d0c1f6f28cb46e035fb46825b077a1c9b10 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 20 Jun 2014 04:02:00 -0400
+Subject: [PATCH] Consistently set focus across outputs
+
+When focusing across containers, the window on the top of the focus
+stack should get focus, even when that container is on another output.
+
+fixes #1160
+---
+ src/tree.c                             | 2 +-
+ testcases/t/510-focus-across-outputs.t | 9 ++++++---
+ 2 files changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/src/tree.c b/src/tree.c
+index b54f77b..d060ee0 100644
+--- a/src/tree.c
++++ b/src/tree.c
+@@ -581,7 +581,7 @@ static bool _tree_next(Con *con, char way, orientation_t orientation, bool wrap)
+         if (con_get_fullscreen_con(workspace, CF_OUTPUT))
+             return true;
+ 
+-        Con *focus = con_descend_direction(workspace, direction);
++        Con *focus = con_descend_tiling_focused(workspace);
+         if (focus) {
+             con_focus(focus);
+             x_set_warp_to(&(focus->rect));
+diff --git a/testcases/t/510-focus-across-outputs.t b/testcases/t/510-focus-across-outputs.t
+index afa0dde..702dd09 100644
+--- a/testcases/t/510-focus-across-outputs.t
++++ b/testcases/t/510-focus-across-outputs.t
+@@ -99,7 +99,8 @@ reset_focus $s3_ws;
+ 
+ cmd "workspace $s2_ws";
+ cmd 'focus right';
+-is($x->input_focus, $sixth->id, 'sixth window focused');
++diag 'it should focus the window on the top of the focus stack';
++is($x->input_focus, $seventh->id, 'seventh window focused');
+ reset_focus $s3_ws;
+ 
+ cmd "workspace $s2_ws";
+@@ -128,7 +129,8 @@ reset_focus $s3_ws;
+ 
+ cmd "workspace $s1_ws";
+ cmd 'focus left';
+-is($x->input_focus, $second->id, 'second window focused');
++diag 'it should focus the window on the top of the focus stack';
++is($x->input_focus, $first->id, 'first window focused');
+ reset_focus $s0_ws;
+ 
+ cmd "workspace $s1_ws";
+@@ -142,7 +144,8 @@ is($x->input_focus, $sixth->id, 'sixth window focused');
+ 
+ cmd "workspace $s2_ws";
+ cmd 'focus up';
+-is($x->input_focus, $second->id, 'second window focused');
++diag 'it should focus the window on the top of the focus stack';
++is($x->input_focus, $first->id, 'first window focused');
+ 
+ exit_gracefully($pid);
+ 
+-- 
+2.0.0
+

@@ -1,0 +1,225 @@
+From 8e91215d9f086025c55262c9d9de55b6ef261dc5 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 30 Sep 2014 17:52:47 -0400
+Subject: [PATCH] Testcases: Use Xephyr instead of XDummy
+
+Replace the XDummy script with Xephyr. This is done because of some
+changes in the Xorg server that make XDummy difficult to use.
+
+Rename library internal variables and function names to replace "xdummy"
+with "xserver" to show this change (except for renaming the package and
+lib file for better git history).
+
+Rename the switch `--keep-xdummy-output` to `--keep-xserver-output`.
+This switch should now be rarely used because Xephyr requires less set
+up.
+
+Replace "xdummy" with "xephyr" in comments and utility help
+documentation.
+
+fixes #1367
+---
+ testcases/complete-run.pl         | 24 +++++++++++------------
+ testcases/lib/StartXDummy.pm      | 41 +++++++++++++++++----------------------
+ testcases/t/112-floating-resize.t |  2 +-
+ 3 files changed, 31 insertions(+), 36 deletions(-)
+
+diff --git a/testcases/complete-run.pl b/testcases/complete-run.pl
+index 7ca8901..867aaed 100755
+--- a/testcases/complete-run.pl
++++ b/testcases/complete-run.pl
+@@ -43,7 +43,7 @@ sub Log { say $log "@_" }
+ 
+ my %timings;
+ my $help = 0;
+-# Number of tests to run in parallel. Important to know how many Xdummy
++# Number of tests to run in parallel. Important to know how many Xephyr
+ # instances we need to start (unless @displays are given). Defaults to
+ # num_cores * 2.
+ my $parallel = undef;
+@@ -55,11 +55,11 @@ my %options = (
+     coverage => 0,
+     restart => 0,
+ );
+-my $keep_xdummy_output = 0;
++my $keep_xserver_output = 0;
+ 
+ my $result = GetOptions(
+     "coverage-testing" => \$options{coverage},
+-    "keep-xdummy-output" => \$keep_xdummy_output,
++    "keep-xserver-output" => \$keep_xserver_output,
+     "valgrind" => \$options{valgrind},
+     "strace" => \$options{strace},
+     "xtrace" => \$options{xtrace},
+@@ -79,6 +79,7 @@ my @binaries = qw(
+                    ../i3-input/i3-input
+                    ../i3-msg/i3-msg
+                    ../i3-nagbar/i3-nagbar
++                   /usr/bin/Xephyr
+                );
+ 
+ foreach my $binary (@binaries) {
+@@ -97,9 +98,9 @@ my @testfiles = @ARGV;
+ 
+ my $numtests = scalar @testfiles;
+ 
+-# No displays specified, let’s start some Xdummy instances.
++# No displays specified, let’s start some Xephyr instances.
+ if (@displays == 0) {
+-    @displays = start_xdummy($parallel, $numtests, $keep_xdummy_output);
++    @displays = start_xserver($parallel, $numtests, $keep_xserver_output);
+ }
+ 
+ # 1: create an output directory for this test-run
+@@ -115,8 +116,7 @@ symlink("$outdir", "latest") or die "Could not symlink latest to $outdir";
+ # connect to all displays for two reasons:
+ # 1: check if the display actually works
+ # 2: keep the connection open so that i3 is not the only client. this prevents
+-#    the X server from exiting (Xdummy will restart it, but not quick enough
+-#    sometimes)
++#    the X server from exiting
+ my @single_worker;
+ for my $display (@displays) {
+     my $screen;
+@@ -346,7 +346,7 @@ complete-run.pl [files...]
+ 
+ =head1 EXAMPLE
+ 
+-To run the whole testsuite on a reasonable number of Xdummy instances (your
++To run the whole testsuite on a reasonable number of Xephyr instances (your
+ running X11 will not be touched), run:
+   ./complete-run.pl
+ 
+@@ -365,11 +365,11 @@ will parallelize the tests:
+   # Run tests on the second X server
+   ./complete-run.pl -d :1
+ 
+-  # Run four tests in parallel on some Xdummy servers
++  # Run four tests in parallel on some Xephyr servers
+   ./complete-run.pl -d :1,:2,:3,:4
+ 
+ Note that it is not necessary to specify this anymore. If omitted,
+-complete-run.pl will start (num_cores * 2) Xdummy instances.
++complete-run.pl will start (num_cores * 2) Xephyr instances.
+ 
+ =item B<--valgrind>
+ 
+@@ -392,8 +392,8 @@ Exits i3 cleanly (instead of kill -9) to make coverage testing work properly.
+ 
+ =item B<--parallel>
+ 
+-Number of Xdummy instances to start (if you don’t want to start num_cores * 2
++Number of Xephyr instances to start (if you don’t want to start num_cores * 2
+ instances for some reason).
+ 
+-  # Run all tests on a single Xdummy instance
++  # Run all tests on a single Xephyr instance
+   ./complete-run.pl -p 1
+diff --git a/testcases/lib/StartXDummy.pm b/testcases/lib/StartXDummy.pm
+index 592feb8..3a8167b 100644
+--- a/testcases/lib/StartXDummy.pm
++++ b/testcases/lib/StartXDummy.pm
+@@ -7,7 +7,7 @@ use Exporter 'import';
+ use Time::HiRes qw(sleep);
+ use v5.10;
+ 
+-our @EXPORT = qw(start_xdummy);
++our @EXPORT = qw(start_xserver);
+ 
+ my @pids;
+ my $x_socketpath = '/tmp/.X11-unix/X';
+@@ -19,15 +19,15 @@ sub slurp {
+     <$fh>;
+ }
+ 
+-# forks an Xdummy or Xdmx process
++# forks an X server process
+ sub fork_xserver {
+-    my $keep_xdummy_output = shift;
++    my $keep_xserver_output = shift;
+     my $displaynum = shift;
+     my $pid = fork();
+     die "Could not fork: $!" unless defined($pid);
+     if ($pid == 0) {
+-        # Child, close stdout/stderr, then start Xdummy.
+-        if (!$keep_xdummy_output) {
++        # Child, close stdout/stderr, then start Xephyr
++        if (!$keep_xserver_output) {
+             close STDOUT;
+             close STDERR;
+         }
+@@ -60,16 +60,17 @@ sub wait_for_x {
+     }
+ }
+ 
+-=head2 start_xdummy($parallel)
++=head2 start_xserver($parallel)
+ 
+-Starts C<$parallel> (or number of cores * 2 if undef) Xdummy processes (see
+-the file ./Xdummy) and returns two arrayrefs: a list of X11 display numbers to
+-the Xdummy processes and a list of PIDs of the processes.
++Starts C<$parallel> (or number of cores * 2 if undef) Xephyr processes (see
++http://www.freedesktop.org/wiki/Software/Xephyr/) and returns two arrayrefs: a
++list of X11 display numbers to the Xephyr processes and a list of PIDs of the
++processes.
+ 
+ =cut
+ 
+-sub start_xdummy {
+-    my ($parallel, $numtests, $keep_xdummy_output) = @_;
++sub start_xserver {
++    my ($parallel, $numtests, $keep_xserver_output) = @_;
+ 
+     my @displays = ();
+     my @childpids = ();
+@@ -78,11 +79,8 @@ sub start_xdummy {
+         my $child = waitpid -1, POSIX::WNOHANG;
+         @pids = grep { $_ != $child } @pids;
+         return unless @pids == 0;
+-        print STDERR "All Xdummy processes died.\n";
+-        print STDERR "Use ./complete-run.pl --parallel 1 --keep-xdummy-output\n";
+-        print STDERR "";
+-        print STDERR "A frequent cause for this is missing the DUMMY Xorg module,\n";
+-        print STDERR "package xserver-xorg-video-dummy on Debian.\n";
++        print STDERR "All X server processes died.\n";
++        print STDERR "Use ./complete-run.pl --parallel 1 --keep-xserver-output\n";
+         exit 1;
+     };
+ 
+@@ -104,16 +102,13 @@ sub start_xdummy {
+     my ($displaynum) = map { /(\d+)$/ } reverse sort glob($x_socketpath . '*');
+     $displaynum++;
+ 
+-    say "Starting $parallel Xdummy instances, starting at :$displaynum...";
++    say "Starting $parallel Xephyr instances, starting at :$displaynum...";
+ 
+     my @sockets_waiting;
+     for (1 .. $parallel) {
+-        # We use -config /dev/null to prevent Xdummy from using the system
+-        # Xorg configuration. The tests should be independant from the
+-        # actual system X configuration.
+-        my $socket = fork_xserver($keep_xdummy_output, $displaynum,
+-                './Xdummy', ":$displaynum", '-config', '/dev/null',
+-                '-configdir', '/dev/null', '-nolisten', 'tcp');
++        my $socket = fork_xserver($keep_xserver_output, $displaynum,
++                '/usr/bin/Xephyr', ":$displaynum", '-screen', '1280x800',
++                '-nolisten', 'tcp');
+         push(@displays, ":$displaynum");
+         push(@sockets_waiting, $socket);
+         $displaynum++;
+diff --git a/testcases/t/112-floating-resize.t b/testcases/t/112-floating-resize.t
+index ec690b5..a739005 100644
+--- a/testcases/t/112-floating-resize.t
++++ b/testcases/t/112-floating-resize.t
+@@ -69,7 +69,7 @@ cmd 'border 1pixel';
+ test_resize;
+ 
+ ################################################################################
+-# Check if we can position a floating window out of bounds. The XDummy screen
++# Check if we can position a floating window out of bounds. The Xephyr screen
+ # is 1280x1024, so x=2864, y=893 is out of bounds.
+ ################################################################################
+ 
+-- 
+2.1.1
+

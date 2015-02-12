@@ -1,0 +1,577 @@
+From 218d4976056125cdc34a49b54c1d4e0d7b53e8c8 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Fabi=C3=A1n=20Ezequiel=20Gallina?= <galli.87@…>
+Date: Sun, 17 Mar 2013 00:25:19 -0300
+Subject: [PATCH] Implementation of 'floating hide|show|toggle_hide' commands
+
+These allows changing the visibility of floating windows on all
+workspaces, but will not affect scratchpad windows.
+
+Visibility state is saved in the floating_hidden global variable, and
+it is included in the IPC's TREE reply as a root attribute.
+
+fixes #807
+---
+ include/commands.h                     |   6 ++
+ include/floating.h                     |  18 ++--
+ include/tree.h                         |   7 ++
+ parser-specs/commands.spec             |   5 +-
+ src/commands.c                         |  32 +++++++
+ src/floating.c                         |  97 ++++++++++++++-----
+ src/ipc.c                              |   5 +
+ src/main.c                             |   4 +
+ src/render.c                           |   6 ++
+ src/tree.c                             |  16 ++--
+ testcases/t/116-nestedcons.t           |   1 +
+ testcases/t/206-floating_toggle_hide.t | 169 +++++++++++++++++++++++++++++++++
+ 12 files changed, 330 insertions(+), 36 deletions(-)
+ create mode 100644 testcases/t/206-floating_toggle_hide.t
+
+diff --git a/include/commands.h b/include/commands.h
+index a517d83..b5ed0ba 100644
+--- a/include/commands.h
++++ b/include/commands.h
+@@ -134,6 +134,12 @@ void cmd_move_con_to_output(I3_CMD, char *name);
+ void cmd_floating(I3_CMD, char *floating_mode);
+ 
+ /**
++ * Implementation of floating show|hide|toggle_hide
++ *
++ */
++void cmd_floating_visibility(I3_CMD, char *visibility_mode);
++
++/**
+  * Implementation of 'move workspace to [output] <str>'.
+  *
+  */
+diff --git a/include/floating.h b/include/floating.h
+index c858652..67df28e 100644
+--- a/include/floating.h
++++ b/include/floating.h
+@@ -26,6 +26,10 @@ typedef enum { BORDER_LEFT   = (1 << 0),
+                BORDER_TOP    = (1 << 2),
+                BORDER_BOTTOM = (1 << 3)} border_t;
+ 
++typedef enum { FLOATING_TOGGLE_HIDE,
++               FLOATING_SHOW,
++               FLOATING_HIDE } floating_visibility_t;
++
+ /**
+  * Enables floating mode for the given container by detaching it from its
+  * parent, creating a new container around it and storing this container in the
+@@ -125,14 +129,8 @@ void floating_focus_direction(xcb_connection_t *conn, Client *currently_focused,
+ void floating_move(xcb_connection_t *conn, Client *currently_focused,
+                    direction_t direction);
+ 
+-/**
+- * Hides all floating clients (or show them if they are currently hidden) on
+- * the specified workspace.
+- *
+- */
+-void floating_toggle_hide(xcb_connection_t *conn, Workspace *workspace);
+-
+ #endif
++
+ /**
+  * This function grabs your pointer and lets you drag stuff around (borders).
+  * Every time you move your mouse, an XCB_MOTION_NOTIFY event will be received
+@@ -161,4 +159,10 @@ void floating_reposition(Con *con, Rect newrect);
+  */
+ void floating_fix_coordinates(Con *con, Rect *old_rect, Rect *new_rect);
+ 
++/**
++ * Sets visibility of floating clients on all workspaces.
++ *
++ */
++void floating_visibility(floating_visibility_t value);
++
+ #endif
+diff --git a/include/tree.h b/include/tree.h
+index 2799afe..41cf203 100644
+--- a/include/tree.h
++++ b/include/tree.h
+@@ -16,6 +16,7 @@ extern Con *croot;
+ extern Con *focused;
+ TAILQ_HEAD(all_cons_head, Con);
+ extern struct all_cons_head all_cons;
++extern bool floating_hidden;
+ 
+ /**
+  * Initializes the tree by creating the root node, adding all RandR outputs
+@@ -51,6 +52,12 @@ bool level_up(void);
+ bool level_down(void);
+ 
+ /**
++ * Marks Con and its children as mapped/unmapped.
++ *
++ */
++void mark_mapped(Con *con, bool mapped);
++
++/**
+  * Renders the tree, that is rendering all outputs using render_con() and
+  * pushing the changes to X11 using x_push_changes().
+  *
+diff --git a/parser-specs/commands.spec b/parser-specs/commands.spec
+index a4a01a8..74356b8 100644
+--- a/parser-specs/commands.spec
++++ b/parser-specs/commands.spec
+@@ -106,7 +106,7 @@ state WORKSPACE:
+       -> call cmd_workspace_back_and_forth()
+   'number'
+       -> WORKSPACE_NUMBER
+-  workspace = string 
++  workspace = string
+       -> call cmd_workspace_name($workspace)
+ 
+ state WORKSPACE_NUMBER:
+@@ -153,8 +153,11 @@ state SPLIT:
+   direction = 'horizontal', 'vertical', 'v', 'h'
+       -> call cmd_split($direction)
+ 
++# floating hide|show|toggle_hide
+ # floating enable|disable|toggle
+ state FLOATING:
++  visibility = 'hide', 'show', 'toggle_hide'
++      -> call cmd_floating_visibility($visibility)
+   floating = 'enable', 'disable', 'toggle'
+       -> call cmd_floating($floating)
+ 
+diff --git a/src/commands.c b/src/commands.c
+index 2404a81..59ea4fd 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -1108,12 +1108,44 @@ void cmd_floating(I3_CMD, char *floating_mode) {
+         }
+     }
+ 
++    if (floating_hidden && con_is_floating(focused)) {
++        Con *con, *workspace = con_get_workspace(focused);
++        /* When floating containers are hidden and the current->con
++         * turned into a floating one, fix focus. */
++        TAILQ_FOREACH(con, &(workspace->focus_head), focused) {
++            if (con->type != CT_FLOATING_CON) {
++                con_focus(con_descend_focused(con));
++                DLOG("moved focus to %p\n", con);
++                break;
++            }
++        }
++    }
++
+     cmd_output->needs_tree_render = true;
+     // XXX: default reply for now, make this a better reply
+     ysuccess(true);
+ }
+ 
+ /*
++ * Implementation of floating show|hide|toggle_hide
++ *
++ */
++void cmd_floating_visibility(I3_CMD, char *visibility_mode) {
++
++    if (strcmp(visibility_mode, "toggle_hide") == 0) {
++        floating_visibility(FLOATING_TOGGLE_HIDE);
++    } else {
++        if (strcmp(visibility_mode, "show") == 0) {
++            floating_visibility(FLOATING_SHOW);
++        } else {
++            floating_visibility(FLOATING_HIDE);
++        }
++    }
++
++    ysuccess(true);
++}
++
++/*
+  * Implementation of 'move workspace to [output] <str>'.
+  *
+  */
+diff --git a/src/floating.c b/src/floating.c
+index 49a4122..d04657d 100644
+--- a/src/floating.c
++++ b/src/floating.c
+@@ -754,33 +754,86 @@ void floating_move(xcb_connection_t *conn, Client *currently_focused, direction_
+         fake_absolute_configure_notify(conn, currently_focused);
+         /* fake_absolute_configure_notify flushes */
+ }
++#endif
+ 
+ /*
+- * Hides all floating clients (or show them if they are currently hidden) on
+- * the specified workspace.
++ * Sets visibility of floating clients on all workspaces.
+  *
+  */
+-void floating_toggle_hide(xcb_connection_t *conn, Workspace *workspace) {
+-        Client *client;
+-
+-        workspace->floating_hidden = !workspace->floating_hidden;
+-        DLOG("floating_hidden is now: %d\n", workspace->floating_hidden);
+-        TAILQ_FOREACH(client, &(workspace->floating_clients), floating_clients) {
+-                if (workspace->floating_hidden)
+-                        client_unmap(conn, client);
+-                else client_map(conn, client);
+-        }
++void floating_visibility(floating_visibility_t value) {
++    Con *output, *con, *scratchpad_con = NULL, *workspace;
++
++    if (value == FLOATING_TOGGLE_HIDE) {
++        floating_hidden = !floating_hidden;
++        DLOG("toggling floating_hidden: %d -> %d\n",
++             !floating_hidden, floating_hidden);
++    } else if (value == FLOATING_SHOW) {
++        floating_hidden = false;
++        DLOG("setting floating_hidden to false\n");
++    } else {
++        floating_hidden = true;
++        DLOG("setting floating_hidden to true\n");
++    }
+ 
+-        /* If we just unmapped all floating windows we should ensure that the focus
+-         * is set correctly, that ist, to the first non-floating client in stack */
+-        if (workspace->floating_hidden)
+-                SLIST_FOREACH(client, &(workspace->focus_stack), focus_clients) {
+-                        if (client_is_floating(client))
+-                                continue;
+-                        set_focus(conn, client, true);
+-                        return;
++    TAILQ_FOREACH(output, &(croot->nodes_head), nodes) {
++        if (con_is_internal(output))
++            continue;
++        Con *content = output_get_content(output);
++        if (!content || TAILQ_EMPTY(&(content->focus_head))) {
++            continue;
++        }
++        workspace = TAILQ_FIRST(&(content->focus_head));
++        DLOG("applying floating display changes on %p\n", workspace);
++        TAILQ_FOREACH(con, &(workspace->floating_head), floating_windows) {
++            /** Don't mess with scratchpad windows. */
++            if (con->scratchpad_state != SCRATCHPAD_NONE) {
++                /** but in the case there's one showing, save
++                 * its reference so it can be raised over all
++                 * re-displayed floating windows. */
++                if (!floating_hidden) {
++                    scratchpad_con = con;
+                 }
++                DLOG("ignore scratchpad window %p with state %d\n",
++                     con, con->scratchpad_state);
++                continue;
++            }
++            mark_mapped(con, !floating_hidden);
++            DLOG("mapped for con (and children) %p is now %d\n",
++                 con, !floating_hidden);
++            if (!floating_hidden) {
++                x_raise_con(con);
++                render_con(con, false);
++                DLOG("rendered floating con %p\n", con);
++            }
++            x_push_changes(con);
++        }
++        /** Put the scratchpad window in front of all re-displayed
++         * floating windows */
++        if (scratchpad_con != NULL) {
++            x_raise_con(scratchpad_con);
++            render_con(scratchpad_con, false);
++            x_push_changes(scratchpad_con);
++            DLOG("re-raised scratchpad window %p\n", scratchpad_con);
++        }
++    }
+ 
+-        xcb_flush(conn);
++    Con *current = TAILQ_FIRST(&workspace->focus_head);
++    bool floating_focused = (current != NULL &&
++                             current->type == CT_FLOATING_CON &&
++                             current->scratchpad_state == SCRATCHPAD_NONE);
++
++    /** If all floating windows are hidden and focus was in a floating
++     * container (not a scratchpad window), set focus to the first
++     * non-floating window available. */
++    if (floating_hidden && floating_focused) {
++        workspace = con_get_workspace(focused);
++        TAILQ_FOREACH(con, &(workspace->focus_head), focused) {
++            if (con->type != CT_FLOATING_CON) {
++                con_focus(con);
++                DLOG("moved focus to %p\n", con);
++                render_con(con, false);
++                break;
++            }
++        }
++    }
+ }
+-#endif
+diff --git a/src/ipc.c b/src/ipc.c
+index cf25357..de8c6cd 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -165,6 +165,11 @@ void dump_node(yajl_gen gen, struct Con *con, bool inplace_restart) {
+         else ystr("vertical");
+     }
+ 
++    if (con == croot) {
++      ystr("floating_hidden");
++      y(bool, floating_hidden);
++    }
++
+     ystr("scratchpad_state");
+     switch (con->scratchpad_state) {
+         case SCRATCHPAD_NONE:
+diff --git a/src/main.c b/src/main.c
+index db3aca4..fd6bc4c 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -92,6 +92,10 @@ bool xkb_supported = true;
+  * the config, for example. */
+ bool only_check_config = false;
+ 
++/* Tells if floating windows hidden. This is here for global access
++ * because at the time render.c and floating.c need it. */
++bool floating_hidden = false;
++
+ /*
+  * This callback is only a dummy, see xcb_prepare_cb and xcb_check_cb.
+  * See also man libev(3): "ev_prepare" and "ev_check" - customise your event loop
+diff --git a/src/render.c b/src/render.c
+index 16bfc55..6df1477 100644
+--- a/src/render.c
++++ b/src/render.c
+@@ -268,6 +268,12 @@ void render_con(Con *con, bool render_fullscreen) {
+             Con *fullscreen = con_get_fullscreen_con(workspace, CF_OUTPUT);
+             Con *child;
+             TAILQ_FOREACH(child, &(workspace->floating_head), floating_windows) {
++                /** Don't show floating windows when floating_hidden
++                 * is set but also don't mess with scratchpad windows
++                 * in the process */
++                if (floating_hidden &&
++                    child->scratchpad_state == SCRATCHPAD_NONE)
++                        continue;
+                 /* Don’t render floating windows when there is a fullscreen window
+                  * on that workspace. Necessary to make floating fullscreen work
+                  * correctly (ticket #564). */
+diff --git a/src/tree.c b/src/tree.c
+index 32bec96..6daa922 100644
+--- a/src/tree.c
++++ b/src/tree.c
+@@ -474,17 +474,21 @@ bool level_down(void) {
+     return true;
+ }
+ 
+-static void mark_unmapped(Con *con) {
++/*
++ * Marks Con and its children as mapped/unmapped.
++ *
++ */
++void mark_mapped(Con *con, bool mapped) {
+     Con *current;
+ 
+-    con->mapped = false;
++    con->mapped = mapped;
+     TAILQ_FOREACH(current, &(con->nodes_head), nodes)
+-        mark_unmapped(current);
++            mark_mapped(current, mapped);
+     if (con->type == CT_WORKSPACE) {
+-        /* We need to call mark_unmapped on floating nodes aswell since we can
++        /* We need to call mark_mapped on floating nodes aswell since we can
+          * make containers floating. */
+         TAILQ_FOREACH(current, &(con->floating_head), floating_windows)
+-            mark_unmapped(current);
++                mark_mapped(current, mapped);
+     }
+ }
+ 
+@@ -500,7 +504,7 @@ void tree_render(void) {
+     DLOG("-- BEGIN RENDERING --\n");
+     /* Reset map state for all nodes in tree */
+     /* TODO: a nicer method to walk all nodes would be good, maybe? */
+-    mark_unmapped(croot);
++    mark_mapped(croot, false);
+     croot->mapped = true;
+ 
+     render_con(croot, false);
+diff --git a/testcases/t/116-nestedcons.t b/testcases/t/116-nestedcons.t
+index 84e8687..6ecadf9 100644
+--- a/testcases/t/116-nestedcons.t
++++ b/testcases/t/116-nestedcons.t
+@@ -60,6 +60,7 @@ my $expected = {
+     percent => undef,
+     layout => 'splith',
+     floating => 'auto_off',
++    floating_hidden => JSON::XS::false,
+     last_split_layout => 'splith',
+     scratchpad_state => 'none',
+     focus => $ignore,
+diff --git a/testcases/t/206-floating_toggle_hide.t b/testcases/t/206-floating_toggle_hide.t
+new file mode 100644
+index 0000000..68755bf
+--- /dev/null
++++ b/testcases/t/206-floating_toggle_hide.t
+@@ -0,0 +1,169 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Test floating_toggle_hide command implementation.
++# Ticket: #807
++# Bug still in: 4.4-145-g8327f83
++use i3test;
++
++my $i3 = i3(get_socket_path());
++
++sub get_floating_hidden () {
++    my $sock = i3(get_socket_path())->get_tree;
++    sync_with_i3;
++    return $sock->recv->{floating_hidden};
++}
++
++sub clear_scratchpad () {
++    # Clear scratchpad
++    while (scalar @{get_ws('__i3_scratch')->{floating_nodes}}) {
++        cmd 'scratchpad show';
++        cmd 'kill';
++    }
++
++}
++
++###################################################################
++# Floating visibility toggle works globally
++###################################################################
++
++my $ws1 = fresh_workspace;
++my $ws2 = fresh_workspace;
++
++my $ws1_con = get_ws($ws1);
++ok(!$ws1_con->{floating_hidden}, 'ws1 floating cons are not hidden by default');
++
++cmd 'floating toggle_hide';
++$ws1_con = get_ws($ws1);
++ok(get_floating_hidden(), 'ws1 floating cons are now hidden');
++
++my $ws2_con = get_ws($ws2);
++ok(get_floating_hidden(), 'ws2 should have the same floating hidden status');
++
++# Show floating again
++cmd 'floating toggle_hide';
++
++###################################################################
++# Floating windows mapped property should match !floating_hidden
++###################################################################
++
++$ws1 = fresh_workspace;
++$ws1_con = get_ws($ws1);
++my $ws1_window = open_floating_window;
++$ws2 = fresh_workspace;
++my $ws2_window = open_floating_window;
++
++cmd "workspace $ws1";
++ok($ws1_window->mapped, 'ws1 window is mapped');
++
++cmd 'floating hide';
++ok(!$ws1_window->mapped, 'ws1 window is not mapped');
++
++cmd "workspace $ws2";
++ok(!$ws2_window->mapped, 'ws2 window is not mapped');
++
++cmd 'floating show';
++ok($ws2_window->mapped, 'ws2 window is mapped');
++
++cmd "workspace $ws1";
++ok($ws1_window->mapped, 'ws1 window is mapped');
++
++###################################################################
++# Focus must be relocated if it was on a hidden floating window
++###################################################################
++
++$ws1 = fresh_workspace;
++$ws1_window = open_window;
++cmd 'focus tiling';
++my $ws1_focused = get_focused($ws1);
++my $ws1_floating_window = open_floating_window;
++cmd 'focus floating';
++my $ws1_floating_focused = get_focused($ws1);
++
++is(get_focused($ws1), $ws1_floating_focused, 'the floating window is now focused');
++
++cmd 'floating hide';
++is(get_focused($ws1), $ws1_focused, 'the focus changed to the tiling window');
++
++cmd 'floating show';
++
++###################################################################
++# Don't mess with focus when its on a tiling window
++###################################################################
++
++$ws1 = fresh_workspace;
++open_floating_window;
++my $ws1_win = open_window;
++cmd 'focus tiling';
++my $tiling_win_focused = get_focused($ws1);
++
++cmd 'floating hide';
++is(get_focused($ws1), $tiling_win_focused, 'the focus remained on the tiling window');
++
++cmd 'floating show';
++
++###################################################################
++# Floating enable must focus tiling if floating cons are hidden
++###################################################################
++
++$ws1 = fresh_workspace;
++my $ws1_win1 = open_window;
++my $ws1_win1_focused = get_focused($ws1);
++my $ws1_win2 = open_window;
++my $ws1_win2_focused = get_focused($ws1);
++
++cmd 'floating hide';
++cmd 'floating enable';
++is(get_focused($ws1), $ws1_win1_focused, 'the focus changed to the tiling window');
++
++cmd 'floating show';
++
++###################################################################
++# Don't mess with focus when its on a scratchpad window
++###################################################################
++
++$ws1 = fresh_workspace;
++open_floating_window;
++open_floating_window;
++open_window;
++open_window;
++
++clear_scratchpad();
++
++my $scratch_win = open_window;
++cmd 'focus tiling';
++cmd 'scratchpad move';
++cmd 'scratchpad show';
++my $scratch_win_focused = get_focused($ws1);
++
++cmd 'floating hide';
++is(get_focused($ws1), $scratch_win_focused, 'the focus remained on the scratchpad window');
++
++###################################################################
++# Don't mess with scratchpad window mapping
++###################################################################
++
++ok($scratch_win->mapped, 'scratchpad window remained mapped after hidding floating ones');
++
++###################################################################
++# Scratchpad must remain on top of re-displayed floating cons
++###################################################################
++
++cmd 'floating show';
++(my $nodes) = get_ws_content($ws1);
++is($scratch_win->id, $nodes->[-1]->{window}, 'scratchpad is on top');
++
++done_testing;
+-- 
+1.8.2
+

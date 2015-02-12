@@ -1,0 +1,31 @@
+From fb7f02fb43d559dd74f800b3853fccc76f7954d1 Mon Sep 17 00:00:00 2001
+From: Kevin Pulo <kev@…>
+Date: Mon, 10 Feb 2014 14:46:10 +1100
+Subject: [PATCH] Pad wifi bitrate.
+
+---
+ src/print_wireless_info.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/src/print_wireless_info.c b/src/print_wireless_info.c
+index 18f6580..6dcc6f3 100644
+--- a/src/print_wireless_info.c
++++ b/src/print_wireless_info.c
+@@ -406,7 +406,13 @@ void print_wireless_info(yajl_gen json_gen, char *buffer, const char *interface,
+ 
+                         iw_print_bitrate(br_buffer, sizeof(br_buffer), info.bitrate);
+ 
+-                        outwalk += sprintf(outwalk, "%s", br_buffer);
++                        if (strlen(br_buffer) >= 3 &&
++                                br_buffer[0] >= '0' && br_buffer[0] <= '9' &&
++                                br_buffer[1] >= '0' && br_buffer[1] <= '9' &&
++                                br_buffer[2] == ' ')
++                            outwalk += sprintf(outwalk, "0%s", br_buffer);
++                        else
++                            outwalk += sprintf(outwalk, "%s", br_buffer);
+                         walk += strlen("bitrate");
+                 }
+ #endif
+-- 
+1.8.1.2
+

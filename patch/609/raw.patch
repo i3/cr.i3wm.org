@@ -1,0 +1,239 @@
+From 48256429973b7b9581a8b83c9b5b0a870c2efbe2 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Wed, 25 Jun 2014 18:42:46 -0400
+Subject: [PATCH] i3bar: implement custom mouse wheel commands
+
+Users can specify a command to run when a button was pressed on i3bar to
+override the default behavior. Currently only the mouse wheel buttons
+are supported. This is useful for disabling the scroll wheel action or
+running scripts that implement custom behavior for these buttons.
+
+Example:
+
+bar {
+    wheel_up_cmd nop
+    wheel_down_cmd exec ~/.i3/scripts/custom_wheel_down
+}
+
+fixes #1104
+---
+ docs/userguide              | 21 +++++++++++++++++++++
+ i3bar/include/config.h      |  2 ++
+ i3bar/src/config.c          | 14 ++++++++++++++
+ i3bar/src/xcb.c             | 16 ++++++++++++++++
+ include/config.h            |  8 ++++++++
+ include/config_directives.h |  2 ++
+ parser-specs/config.spec    | 10 ++++++++++
+ src/config_directives.c     | 10 ++++++++++
+ src/ipc.c                   | 10 ++++++++++
+ 9 files changed, 93 insertions(+)
+
+diff --git a/docs/userguide b/docs/userguide
+index 804877d..e752ec8 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -1104,6 +1104,27 @@ bar {
+ 
+ Available modifiers are Mod1-Mod5, Shift, Control (see +xmodmap(1)+).
+ 
++=== Mouse button commands
++
++Specifies a command to run when a button was pressed on i3bar to override the
++default behavior. Currently only the mouse wheel buttons are supported. This is
++useful for disabling the scroll wheel action or running scripts that implement
++custom behavior for these buttons.
++
++*Syntax*:
++---------------------
++wheel_up_cmd <command>
++wheel_down_cmd <command>
++---------------------
++
++*Example*:
++---------------------
++bar {
++    wheel_up_cmd nop
++    wheel_down_cmd exec ~/.i3/scripts/custom_wheel_down
++}
++---------------------
++
+ === Bar ID
+ 
+ Specifies the bar ID for the configured bar instance. If this option is missing,
+diff --git a/i3bar/include/config.h b/i3bar/include/config.h
+index 730d3ef..2c39930 100644
+--- a/i3bar/include/config.h
++++ b/i3bar/include/config.h
+@@ -24,6 +24,8 @@ typedef enum { M_DOCK = 0,
+ 
+ typedef struct config_t {
+     int modifier;
++    char *wheel_up_cmd;
++    char *wheel_down_cmd;
+     position_t position;
+     int verbose;
+     struct xcb_color_strings_t colors;
+diff --git a/i3bar/src/config.c b/i3bar/src/config.c
+index 1f0c2a8..658c05d 100644
+--- a/i3bar/src/config.c
++++ b/i3bar/src/config.c
+@@ -112,6 +112,20 @@ static int config_string_cb(void *params_, const unsigned char *val, size_t _len
+         return 1;
+     }
+ 
++    if (!strcmp(cur_key, "wheel_up_cmd")) {
++        DLOG("wheel_up_cmd = %.*s\n", len, val);
++        FREE(config.wheel_up_cmd);
++        sasprintf(&config.wheel_up_cmd, "%.*s", len, val);
++        return 1;
++    }
++
++    if (!strcmp(cur_key, "wheel_down_cmd")) {
++        DLOG("wheel_down_cmd = %.*s\n", len, val);
++        FREE(config.wheel_down_cmd);
++        sasprintf(&config.wheel_down_cmd, "%.*s", len, val);
++        return 1;
++    }
++
+     if (!strcmp(cur_key, "position")) {
+         DLOG("position = %.*s\n", len, val);
+         config.position = (len == 3 && !strncmp((const char *)val, "top", strlen("top")) ? POS_TOP : POS_BOT);
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index 37a1334..5bbec13 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -370,6 +370,14 @@ void handle_button(xcb_button_press_event_t *event) {
+              * If there is no more workspace, don’t even send the workspace
+              * command, otherwise (with workspace auto_back_and_forth) we’d end
+              * up on the wrong workspace. */
++
++            /* If `wheel_up_cmd [COMMAND]` was specified, it should override
++             * the default behavior */
++            if (config.wheel_up_cmd) {
++                i3_send_msg(I3_IPC_MESSAGE_TYPE_COMMAND, config.wheel_up_cmd);
++                return;
++            }
++
+             if (cur_ws == TAILQ_FIRST(walk->workspaces))
+                 return;
+ 
+@@ -380,6 +388,14 @@ void handle_button(xcb_button_press_event_t *event) {
+              * If there is no more workspace, don’t even send the workspace
+              * command, otherwise (with workspace auto_back_and_forth) we’d end
+              * up on the wrong workspace. */
++
++            /* if `wheel_down_cmd [COMMAND]` was specified, it should override
++             * the default behavior */
++            if (config.wheel_down_cmd) {
++                i3_send_msg(I3_IPC_MESSAGE_TYPE_COMMAND, config.wheel_down_cmd);
++                return;
++            }
++
+             if (cur_ws == TAILQ_LAST(walk->workspaces, ws_head))
+                 return;
+ 
+diff --git a/include/config.h b/include/config.h
+index 22110eb..b0f2241 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -261,6 +261,14 @@ struct Barconfig {
+         M_MOD5 = 7
+     } modifier;
+ 
++    /** Command that should be run when mouse wheel up button is pressed over
++     * i3bar to override the default behavior. */
++    char *wheel_up_cmd;
++
++    /** Command that should be run when mouse wheel down button is pressed over
++     * i3bar to override the default behavior. */
++    char *wheel_down_cmd;
++
+     /** Bar position (bottom by default). */
+     enum { P_BOTTOM = 0,
+            P_TOP = 1 } position;
+diff --git a/include/config_directives.h b/include/config_directives.h
+index 7fdca8c..af7b9a9 100644
+--- a/include/config_directives.h
++++ b/include/config_directives.h
+@@ -73,6 +73,8 @@ CFGFUN(bar_id, const char *bar_id);
+ CFGFUN(bar_output, const char *output);
+ CFGFUN(bar_verbose, const char *verbose);
+ CFGFUN(bar_modifier, const char *modifier);
++CFGFUN(bar_wheel_up_cmd, const char *command);
++CFGFUN(bar_wheel_down_cmd, const char *command);
+ CFGFUN(bar_position, const char *position);
+ CFGFUN(bar_i3bar_command, const char *i3bar_command);
+ CFGFUN(bar_color, const char *colorclass, const char *border, const char *background, const char *text);
+diff --git a/parser-specs/config.spec b/parser-specs/config.spec
+index f1021b2..bdd0356 100644
+--- a/parser-specs/config.spec
++++ b/parser-specs/config.spec
+@@ -358,6 +358,8 @@ state BAR:
+   'hidden_state'           -> BAR_HIDDEN_STATE
+   'id'                     -> BAR_ID
+   'modifier'               -> BAR_MODIFIER
++  'wheel_up_cmd'           -> BAR_WHEEL_UP_CMD
++  'wheel_down_cmd'         -> BAR_WHEEL_DOWN_CMD
+   'position'               -> BAR_POSITION
+   'output'                 -> BAR_OUTPUT
+   'tray_output'            -> BAR_TRAY_OUTPUT
+@@ -403,6 +405,14 @@ state BAR_MODIFIER:
+   modifier = 'Mod1', 'Mod2', 'Mod3', 'Mod4', 'Mod5', 'Control', 'Ctrl', 'Shift'
+       -> call cfg_bar_modifier($modifier); BAR
+ 
++state BAR_WHEEL_UP_CMD:
++  command = string
++      -> call cfg_bar_wheel_up_cmd($command); BAR
++
++state BAR_WHEEL_DOWN_CMD:
++  command = string
++      -> call cfg_bar_wheel_down_cmd($command); BAR
++
+ state BAR_POSITION:
+   position = 'top', 'bottom'
+       -> call cfg_bar_position($position); BAR
+diff --git a/src/config_directives.c b/src/config_directives.c
+index 6dfd369..b5e4a32 100644
+--- a/src/config_directives.c
++++ b/src/config_directives.c
+@@ -459,6 +459,16 @@ CFGFUN(bar_modifier, const char *modifier) {
+         current_bar.modifier = M_SHIFT;
+ }
+ 
++CFGFUN(bar_wheel_up_cmd, const char *command) {
++    FREE(current_bar.wheel_up_cmd);
++    current_bar.wheel_up_cmd = sstrdup(command);
++}
++
++CFGFUN(bar_wheel_down_cmd, const char *command) {
++    FREE(current_bar.wheel_down_cmd);
++    current_bar.wheel_down_cmd = sstrdup(command);
++}
++
+ CFGFUN(bar_position, const char *position) {
+     current_bar.position = (strcmp(position, "top") == 0 ? P_TOP : P_BOTTOM);
+ }
+diff --git a/src/ipc.c b/src/ipc.c
+index 4c8e61a..910ebad 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -512,6 +512,16 @@ static void dump_bar_config(yajl_gen gen, Barconfig *config) {
+             break;
+     }
+ 
++    if (config->wheel_up_cmd) {
++        ystr("wheel_up_cmd");
++        ystr(config->wheel_up_cmd);
++    }
++
++    if (config->wheel_down_cmd) {
++        ystr("wheel_down_cmd");
++        ystr(config->wheel_down_cmd);
++    }
++
+     ystr("position");
+     if (config->position == P_BOTTOM)
+         ystr("bottom");
+-- 
+2.0.0
+

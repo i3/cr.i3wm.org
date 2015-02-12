@@ -1,0 +1,25 @@
+From d77f601d29ffed70dd7aeec4a8057010a2a51c71 Mon Sep 17 00:00:00 2001
+From: jeroentbt <jeroen@…>
+Date: Mon, 17 Mar 2014 01:24:15 +0100
+Subject: [PATCH 2/2] docs: fix typo
+
+---
+ docs/userguide | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/docs/userguide b/docs/userguide
+index dd937fe..d303b53 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -866,7 +866,7 @@ inferior Xinerama API explicitly and therefore don’t provide support for
+ reconfiguring your screens on the fly (they are read only once on startup and
+ that’s it).
+ 
+-For people who do cannot modify their +~/.xsession+ to add the
++For people who cannot modify their +~/.xsession+ to add the
+ +--force-xinerama+ commandline parameter, a configuration option is provided:
+ 
+ *Syntax*:
+-- 
+1.9.0
+

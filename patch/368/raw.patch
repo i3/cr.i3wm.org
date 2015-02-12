@@ -1,0 +1,25 @@
+From 15b0b87764ff4f99e4c5f6ca80bcc0487f82c0ff Mon Sep 17 00:00:00 2001
+From: Wieland Hoffmann <themineo@…>
+Date: Sun, 5 Jan 2014 23:43:02 +0100
+Subject: [PATCH 2/2] Add a format_down example for battery
+
+---
+ man/i3status.man | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/man/i3status.man b/man/i3status.man
+index 5e8229c..c36694a 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -270,6 +270,8 @@ colored red. The low_threshold type can be of threshold_type "time" or
+ 
+ *Example format*: +%status %remaining (%emptytime %consumption)+
+ 
++*Example format_down*: +No battery+
++
+ *Example low_threshold*: +30+
+ 
+ *Example threshold_type*: +time+
+-- 
+1.8.5.2
+

@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 17,
+    "Comment": "*As far as I can tell* the behavior of the bar is exactly the same without all this confusing logic, except that it fixes (my own) issue #1101. It even passes that crappy bar test I made. However, since this aspect of bar hide mode seems to be outside the technological feasibility of the tests right now, there might be some quirks I overlooked, but I did my best to test everything manually.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 17,
+    "Comment": "Aside, I think `draw_bars` should not have the `unhide` argument. It doesn't seem to be used except when the caller thinks a workspace is urgent, which is handled here now.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

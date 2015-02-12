@@ -1,0 +1,90 @@
+From e4a89fc9d4a2871bc775d30cb2e295f9a9cb4e8b Mon Sep 17 00:00:00 2001
+From: Yuxuan Shui <yshuiv7@…>
+Date: Fri, 22 Mar 2013 01:36:40 +0800
+Subject: [PATCH] Use a saner sanity check for floating_reposition.
+
+The function contained_by_output checks whether any output contains any
+parts of a give rect. Rather than relying on the central point of the rect.
+---
+ include/randr.h | 10 ++++++++++
+ src/floating.c  |  6 +-----
+ src/randr.c     | 25 +++++++++++++++++++++++++
+ 3 files changed, 36 insertions(+), 5 deletions(-)
+
+diff --git a/include/randr.h b/include/randr.h
+index 8222b99..dadcfd6 100644
+--- a/include/randr.h
++++ b/include/randr.h
+@@ -87,6 +87,16 @@ Output *get_output_by_name(const char *name);
+  */
+ Output *get_output_containing(int x, int y);
+ 
++/*
++ * In contained_by_output, we check if any active output contains part of the container.
++ * We do this by checking if the output rect is intersected by the Rect.
++ * This is the 2-dimensional counterpart of get_output_containing.
++ * Since we don't actually need the outputs intersected by the given Rect (There could
++ * be many), we just return true or false for convenience.
++ *
++ */
++bool contained_by_output(Rect rect);
++
+ /**
+  * Gets the output which is the next one in the given direction.
+  *
+diff --git a/src/floating.c b/src/floating.c
+index 49a4122..b7bf3ff 100644
+--- a/src/floating.c
++++ b/src/floating.c
+@@ -659,11 +659,7 @@ void drag_pointer(Con *con, const xcb_button_press_event_t *event, xcb_window_t
+ void floating_reposition(Con *con, Rect newrect) {
+     /* Sanity check: Are the new coordinates on any output? If not, we
+      * ignore that request. */
+-    Output *output = get_output_containing(
+-        newrect.x + (newrect.width / 2),
+-        newrect.y + (newrect.height / 2));
+-
+-    if (!output) {
++    if (!contained_by_output(newrect)) {
+         ELOG("No output found at destination coordinates. Not repositioning.\n");
+         return;
+     }
+diff --git a/src/randr.c b/src/randr.c
+index 10b085c..1aef9c9 100644
+--- a/src/randr.c
++++ b/src/randr.c
+@@ -93,6 +93,31 @@ Output *get_output_containing(int x, int y) {
+ }
+ 
+ /*
++ * In contained_by_output, we check if any active output contains part of the container.
++ * We do this by checking if the output rect is intersected by the Rect.
++ * This is the 2-dimensional counterpart of get_output_containing.
++ * Since we don't actually need the outputs intersected by the given Rect (There could
++ * be many), we just return true or false for convenience.
++ *
++ */
++bool contained_by_output(Rect rect){
++    Output *output;
++    int lx = rect.x, uy = rect.y;
++    int rx = rect.x + rect.width, by = rect.y + rect.height;
++    TAILQ_FOREACH(output, &outputs, outputs) {
++        if (!output->active)
++            continue;
++        DLOG("comparing x=%d y=%d with x=%d and y=%d width %d height %d\n",
++                        rect.x, rect.y, output->rect.x, output->rect.y, output->rect.width, output->rect.height);
++        if (rx >= (int)output->rect.x && lx <= (int)(output->rect.x + output->rect.width) &&
++            by >= (int)output->rect.y && uy <= (int)(output->rect.y + output->rect.height))
++            return true;
++    }
++    return false;
++
++}
++
++/*
+  * Like get_output_next with close_far == CLOSEST_OUTPUT, but wraps.
+  *
+  * For example if get_output_next(D_DOWN, x, FARTHEST_OUTPUT) = NULL, then
+-- 
+1.8.2
+

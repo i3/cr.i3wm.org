@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 33,
+    "Comment": "Added this check for branches. The pixmap of a branch will never be in the way. This should be safe from any sort of regression like #1170.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 20,
+    "Comment": "In the commit message, \"(really) need a pixmap\" should be \"(really) have a pixmap\". Sorry about that mistake.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

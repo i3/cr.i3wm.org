@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 15,
+    "Comment": "The patch title is a bit long. Could you fix that? Also, there are no testsuite changes (the patch doesn’t break any test, but I’d like a test for this).",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 21,
+    "Comment": "I think it’d be better to check the -\u003escratchpad_state member here. Also, please do the check in the scratchpad_show() function itself.",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 21,
+    "Comment": "I saw that Philippe is already working on a patch for this. You can close this patch if you want since he only needs to add a test case for it.",
+    "EmailHash": ""
+  }
+]

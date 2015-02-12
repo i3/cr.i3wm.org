@@ -1,0 +1,27 @@
+From 42c83c484a0a265389da1352b006b6ec77e18491 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 11 Oct 2013 15:52:25 -0400
+Subject: [PATCH] Testcases: ignore Xorg config dir when starting Xdummy
+
+Start Xdummy with '-configdir /dev/null' to avoid conflicting settings
+in xorg.conf.d.
+---
+ testcases/lib/StartXDummy.pm | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/testcases/lib/StartXDummy.pm b/testcases/lib/StartXDummy.pm
+index f2ebcad..592feb8 100644
+--- a/testcases/lib/StartXDummy.pm
++++ b/testcases/lib/StartXDummy.pm
+@@ -113,7 +113,7 @@ sub start_xdummy {
+         # actual system X configuration.
+         my $socket = fork_xserver($keep_xdummy_output, $displaynum,
+                 './Xdummy', ":$displaynum", '-config', '/dev/null',
+-                '-nolisten', 'tcp');
++                '-configdir', '/dev/null', '-nolisten', 'tcp');
+         push(@displays, ":$displaynum");
+         push(@sockets_waiting, $socket);
+         $displaynum++;
+-- 
+1.8.4
+

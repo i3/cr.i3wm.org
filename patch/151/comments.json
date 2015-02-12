@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 36,
+    "Comment": "I commented on http://bugs.i3wm.org/query/ticket/787#comment:12 — essentially I think this is not the right approach. Please follow up there. I’ll set this review to needinfo until we have a solution, in which case I can either merge this review or you can follow up with a new patch.",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  }
+]

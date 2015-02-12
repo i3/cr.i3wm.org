@@ -1,0 +1,30 @@
+From e5fb647c36c56fe6f66a951525d7debc5e2d915e Mon Sep 17 00:00:00 2001
+From: Axel Wagner <mail@…>
+Date: Tue, 11 Jun 2013 16:08:14 +0200
+Subject: [PATCH] Bugfix: In term-output, clear line before drawing new one
+
+If we don't do this, the output of i3status will remain on the terminal,
+which is really ugly if the statusline becomes shorter after a while
+(for example a connection get's lost), because there will be garbage.
+---
+ i3status.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index c6973f7..ded5799 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -442,8 +442,8 @@ int main(int argc, char *argv[]) {
+                 if (output_format == O_I3BAR)
+                         yajl_gen_array_open(json_gen);
+                 else if (output_format == O_TERM)
+-                        /* Restore the cursor-position */
+-                        printf("\033[u");
++                        /* Restore the cursor-position, clear line */
++                        printf("\033[u\033[K");
+                 for (j = 0; j < cfg_size(cfg, "order"); j++) {
+                         if (j > 0)
+                                 print_seperator();
+-- 
+1.7.10.4
+

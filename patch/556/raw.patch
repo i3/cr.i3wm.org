@@ -1,0 +1,377 @@
+From a1305423da82aa305a0ec25d52b9edbbe24c4e89 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sun, 18 May 2014 05:55:02 -0400
+Subject: [PATCH] Abstract wm event sending to wm_events.[ch]
+
+Abstract handling of sending general wm events to wm_events.[ch]. These
+functions will send notifications to listeners through the i3ipc and by
+updating supported EWMH properties on the root window.
+---
+ include/all.h       |  1 +
+ include/wm_events.h | 54 ++++++++++++++++++++++++++++++++++++
+ src/commands.c      |  8 +++---
+ src/con.c           |  4 +--
+ src/handlers.c      |  6 ++--
+ src/manage.c        |  2 +-
+ src/move.c          |  2 +-
+ src/wm_events.c     | 79 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ src/workspace.c     | 11 +++-----
+ src/x.c             |  6 ++--
+ 10 files changed, 151 insertions(+), 22 deletions(-)
+ create mode 100644 include/wm_events.h
+ create mode 100644 src/wm_events.c
+
+diff --git a/include/all.h b/include/all.h
+index a355d3d..0d695d7 100644
+--- a/include/all.h
++++ b/include/all.h
+@@ -72,6 +72,7 @@
+ #include "move.h"
+ #include "output.h"
+ #include "ewmh.h"
++#include "wm_events.h"
+ #include "assignments.h"
+ #include "regex.h"
+ #include "libi3.h"
+diff --git a/include/wm_events.h b/include/wm_events.h
+new file mode 100644
+index 0000000..43ec147
+--- /dev/null
++++ b/include/wm_events.h
+@@ -0,0 +1,54 @@
++/*
++ * vim:ts=4:sw=4:expandtab
++ *
++ * i3 - an improved dynamic tiling window manager
++ * © 2009-2014 Michael Stapelberg and contributors (see also: LICENSE)
++ *
++ * wm_events.c: Functions to send window manager events through the ipc and
++ * update the properties of the root window to indicate changes in window
++ * manager state.
++ */
++#pragma once
++
++/**
++ * The "detail" of an event corresponds to the "change" field in the event to
++ * send.
++ */
++typedef enum {
++    EVENT_DETAIL_0,
++
++    E_CHANGE_FOCUS,
++    E_CHANGE_INIT,
++    E_CHANGE_RELOAD,
++    E_CHANGE_RENAME,
++    E_CHANGE_EMPTY,
++    E_CHANGE_UNSPECIFIED,
++    E_CHANGE_TITLE,
++    E_CHANGE_NEW,
++    E_CHANGE_URGENT,
++    E_CHANGE_MOVE,
++    E_CHANGE_FULLSCREEN_MODE,
++
++    N_EVENT_DETAILS,
++} event_detail_t;
++
++/**
++ * Sends a "workspace" event to ipc listeners with the "change" field set to
++ * the corresponding detail string and changes supported EWMH "desktop"
++ * properties on the root window.
++ */
++void send_workspace_event(event_detail_t detail, Con *current, Con *old);
++
++/**
++ * Sends a "window" event to ipc listeners with the "change" field set to the
++ * corresponding detail string and changes supported EWMH properties on the
++ * root window (currently only _NET_ACTIVE_WINDOW is supported).
++ */
++void send_window_event(event_detail_t detail, Con *con);
++
++/**
++ * Sends an "output" event to ipc listeners with the "change" field set to the
++ * corresponding detail string and changes supported EWMH properties on the
++ * root window (currently none are supported).
++ */
++void send_output_event(event_detail_t detail);
+diff --git a/src/commands.c b/src/commands.c
+index 201c76e..5b5b3ad 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -1232,7 +1232,7 @@ void cmd_move_workspace_to_output(I3_CMD, char *name) {
+                 create_workspace_on_output(current_output, ws->parent);
+ 
+             /* notify the IPC listeners */
+-            ipc_send_event("workspace", I3_IPC_EVENT_WORKSPACE, "{\"change\":\"init\"}");
++            send_workspace_event(E_CHANGE_INIT, NULL, NULL);
+         }
+         DLOG("Detaching\n");
+ 
+@@ -1253,7 +1253,7 @@ void cmd_move_workspace_to_output(I3_CMD, char *name) {
+         TAILQ_FOREACH(floating_con, &(ws->floating_head), floating_windows)
+             floating_fix_coordinates(floating_con, &(old_content->rect), &(content->rect));
+ 
+-        ipc_send_event("workspace", I3_IPC_EVENT_WORKSPACE, "{\"change\":\"move\"}");
++        send_workspace_event(E_CHANGE_MOVE, NULL, NULL);
+         if (workspace_was_visible) {
+             /* Focus the moved workspace on the destination output. */
+             workspace_show(ws);
+@@ -1662,7 +1662,7 @@ void cmd_reload(I3_CMD) {
+     load_configuration(conn, NULL, true);
+     x_set_i3_atoms();
+     /* Send an IPC event just in case the ws names have changed */
+-    ipc_send_event("workspace", I3_IPC_EVENT_WORKSPACE, "{\"change\":\"reload\"}");
++    send_workspace_event(E_CHANGE_RELOAD, NULL, NULL);
+     /* Send an update event for the barconfig just in case it has changed */
+     update_barconfig();
+ 
+@@ -1932,7 +1932,7 @@ void cmd_rename_workspace(I3_CMD, char *old_name, char *new_name) {
+     cmd_output->needs_tree_render = true;
+     ysuccess(true);
+ 
+-    ipc_send_event("workspace", I3_IPC_EVENT_WORKSPACE, "{\"change\":\"rename\"}");
++    send_workspace_event(E_CHANGE_RENAME, NULL, NULL);
+ }
+ 
+ /*
+diff --git a/src/con.c b/src/con.c
+index 4b47b18..b5ea95d 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -621,7 +621,7 @@ void con_toggle_fullscreen(Con *con, int fullscreen_mode) {
+     DLOG("mode now: %d\n", con->fullscreen_mode);
+ 
+     /* Send an ipc window "fullscreen_mode" event */
+-    ipc_send_window_event("fullscreen_mode", con);
++    send_window_event(E_CHANGE_FULLSCREEN_MODE, con);
+ 
+     /* update _NET_WM_STATE if this container has a window */
+     /* TODO: when a window is assigned to a container which is already
+@@ -1385,7 +1385,7 @@ static void con_on_remove_child(Con *con) {
+         if (TAILQ_EMPTY(&(con->focus_head)) && !workspace_is_visible(con)) {
+             LOG("Closing old workspace (%p / %s), it is empty\n", con, con->name);
+             tree_close(con, DONT_KILL_WINDOW, false, false);
+-            ipc_send_event("workspace", I3_IPC_EVENT_WORKSPACE, "{\"change\":\"empty\"}");
++            send_workspace_event(E_CHANGE_EMPTY, NULL, NULL);
+         }
+         return;
+     }
+diff --git a/src/handlers.c b/src/handlers.c
+index d6e8891..70cc3c8 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -440,7 +440,7 @@ static void handle_screen_change(xcb_generic_event_t *e) {
+ 
+     scratchpad_fix_resolution();
+ 
+-    ipc_send_event("output", I3_IPC_EVENT_OUTPUT, "{\"change\":\"unspecified\"}");
++    send_output_event(E_CHANGE_UNSPECIFIED);
+ 
+     return;
+ }
+@@ -556,7 +556,7 @@ static bool handle_windowname_change(void *data, xcb_connection_t *conn, uint8_t
+     x_push_changes(croot);
+ 
+     if (window_name_changed(con->window, old_name))
+-        ipc_send_window_event("title", con);
++        send_window_event(E_CHANGE_TITLE, con);
+ 
+     FREE(old_name);
+ 
+@@ -581,7 +581,7 @@ static bool handle_windowname_change_legacy(void *data, xcb_connection_t *conn,
+     x_push_changes(croot);
+ 
+     if (window_name_changed(con->window, old_name))
+-        ipc_send_window_event("title", con);
++        send_window_event(E_CHANGE_TITLE, con);
+ 
+     FREE(old_name);
+ 
+diff --git a/src/manage.c b/src/manage.c
+index c8253f4..934e61c 100644
+--- a/src/manage.c
++++ b/src/manage.c
+@@ -484,7 +484,7 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+     tree_render();
+ 
+     /* Send an event about window creation */
+-    ipc_send_window_event("new", nc);
++    send_window_event(E_CHANGE_NEW, nc);
+ 
+     /* Defer setting focus after the 'new' event has been sent to ensure the
+      * proper window event sequence. */
+diff --git a/src/move.c b/src/move.c
+index baca4ce..5344ef0 100644
+--- a/src/move.c
++++ b/src/move.c
+@@ -127,7 +127,7 @@ static void move_to_output_directed(Con *con, direction_t direction) {
+ 
+     tree_flatten(croot);
+ 
+-    ipc_send_workspace_focus_event(ws, old_ws);
++    send_workspace_event(E_CHANGE_FOCUS, ws, old_ws);
+ }
+ 
+ /*
+diff --git a/src/wm_events.c b/src/wm_events.c
+new file mode 100644
+index 0000000..7e10508
+--- /dev/null
++++ b/src/wm_events.c
+@@ -0,0 +1,79 @@
++/*
++ * vim:ts=4:sw=4:expandtab
++ *
++ * i3 - an improved dynamic tiling window manager
++ * © 2009-2014 Michael Stapelberg and contributors (see also: LICENSE)
++ *
++ * wm_events.c: Functions to send window manager events through the ipc and
++ * update the properties of the root window to indicate changes in window
++ * manager state.
++ */
++
++#include "all.h"
++
++static const char *detail_strings[] = {
++    NULL,
++
++    "focus",
++    "init",
++    "reload",
++    "rename",
++    "empty",
++    "unspecified",
++    "title",
++    "new",
++    "urgent",
++    "move",
++    "fullscreen_mode",
++};
++
++static const char *detail_to_payload(event_detail_t detail) {
++    static char *payloads[N_EVENT_DETAILS];
++    char *format = "{\"change\":\"%s\"}";
++
++    if (payloads[detail] != NULL)
++        return payloads[detail];
++
++    char *payload = smalloc(sizeof(format) + sizeof(detail_strings[detail]));
++    sasprintf(&payload, format, detail_strings[detail]);
++
++    payloads[detail] = payload;
++
++    return payloads[detail];
++}
++
++/*
++ * Sends a "workspace" event to ipc listeners with the "change" field set to
++ * the corresponding detail string and changes supported EWMH "desktop"
++ * properties on the root window.
++ */
++void send_workspace_event(event_detail_t detail, Con *current, Con *old) {
++    if (detail == E_CHANGE_FOCUS) {
++        ipc_send_workspace_focus_event(current, old);
++        ewmh_update_current_desktop();
++    }
++    else {
++        ipc_send_event("workspace", I3_IPC_EVENT_WORKSPACE, detail_to_payload(detail));
++    }
++}
++
++/*
++ * Sends a "window" event to ipc listeners with the "change" field set to the
++ * corresponding detail string and changes supported EWMH properties on the
++ * root window (currently only _NET_ACTIVE_WINDOW is supported).
++ */
++void send_window_event(event_detail_t detail, Con *con) {
++    if (detail == E_CHANGE_FOCUS && con_has_managed_window(con))
++        ewmh_update_active_window(con->window->id);
++
++    ipc_send_window_event(detail_strings[detail], con);
++}
++
++/*
++ * Sends an "output" event to ipc listeners with the "change" field set to the
++ * corresponding detail string and changes supported EWMH properties on the
++ * root window (currently none are supported).
++ */
++void send_output_event(event_detail_t detail) {
++    ipc_send_event("output", I3_IPC_EVENT_OUTPUT, detail_to_payload(detail));
++}
+diff --git a/src/workspace.c b/src/workspace.c
+index 99c2166..5f758d2 100644
+--- a/src/workspace.c
++++ b/src/workspace.c
+@@ -91,7 +91,7 @@ Con *workspace_get(const char *num, bool *created) {
+ 
+         con_attach(workspace, content, false);
+ 
+-        ipc_send_event("workspace", I3_IPC_EVENT_WORKSPACE, "{\"change\":\"init\"}");
++        send_workspace_event(E_CHANGE_INIT, NULL, NULL);
+         if (created != NULL)
+             *created = true;
+     }
+@@ -411,7 +411,7 @@ static void _workspace_show(Con *workspace) {
+     } else
+         con_focus(next);
+ 
+-    ipc_send_workspace_focus_event(workspace, current);
++    send_workspace_event(E_CHANGE_FOCUS, workspace, current);
+ 
+     DLOG("old = %p / %s\n", old, (old ? old->name : "(null)"));
+     /* Close old workspace if necessary. This must be done *after* doing
+@@ -424,7 +424,7 @@ static void _workspace_show(Con *workspace) {
+         if (!workspace_is_visible(old)) {
+             LOG("Closing old workspace (%p / %s), it is empty\n", old, old->name);
+             tree_close(old, DONT_KILL_WINDOW, false, false);
+-            ipc_send_event("workspace", I3_IPC_EVENT_WORKSPACE, "{\"change\":\"empty\"}");
++            send_workspace_event(E_CHANGE_EMPTY, NULL, NULL);
+         }
+     }
+ 
+@@ -436,9 +436,6 @@ static void _workspace_show(Con *workspace) {
+     if (old_output != new_output) {
+         x_set_warp_to(&next->rect);
+     }
+-
+-    /* Update the EWMH hints */
+-    ewmh_update_current_desktop();
+ }
+ 
+ /*
+@@ -766,7 +763,7 @@ void workspace_update_urgent_flag(Con *ws) {
+     DLOG("Workspace urgency flag changed from %d to %d\n", old_flag, ws->urgent);
+ 
+     if (old_flag != ws->urgent)
+-        ipc_send_event("workspace", I3_IPC_EVENT_WORKSPACE, "{\"change\":\"urgent\"}");
++        send_workspace_event(E_CHANGE_URGENT, NULL, NULL);
+ }
+ 
+ /*
+diff --git a/src/x.c b/src/x.c
+index 8e7a710..93c0fd0 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -1014,7 +1014,7 @@ void x_push_changes(Con *con) {
+                 send_take_focus(to_focus, last_timestamp);
+ 
+                 if (to_focus != last_focused && is_con_attached(focused))
+-                   ipc_send_window_event("focus", focused);
++                    send_window_event(E_CHANGE_FOCUS, focused);
+             } else {
+                 DLOG("Updating focus (focused: %p / %s) to X11 window 0x%08x\n", focused, focused->name, to_focus);
+                 /* We remove XCB_EVENT_MASK_FOCUS_CHANGE from the event mask to get
+@@ -1030,10 +1030,8 @@ void x_push_changes(Con *con) {
+                     xcb_change_window_attributes(conn, focused->window->id, XCB_CW_EVENT_MASK, values);
+                 }
+ 
+-                ewmh_update_active_window(to_focus);
+-
+                 if (to_focus != XCB_NONE && to_focus != last_focused && focused->window != NULL && is_con_attached(focused))
+-                   ipc_send_window_event("focus", focused);
++                    send_window_event(E_CHANGE_FOCUS, focused);
+             }
+ 
+             focused_id = last_focused = to_focus;
+-- 
+1.9.2
+

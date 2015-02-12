@@ -1,0 +1,34 @@
+From a00c184c9e3e89aa1ac2517e62653f1b28d88dc2 Mon Sep 17 00:00:00 2001
+From: Bas Pape <baspape@…>
+Date: Sun, 18 Aug 2013 18:12:19 +0200
+Subject: [PATCH] Initialize variables to prevent (false) warnings.
+
+---
+ src/commands.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/commands.c b/src/commands.c
+index cde1cd7..9686dfe 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -1950,7 +1950,7 @@ void cmd_rename_workspace(I3_CMD, char *old_name, char *new_name) {
+  *
+  */
+ bool cmd_bar_mode(char *bar_mode, char *bar_id) {
+-    int mode;
++    int mode = M_DOCK;
+     bool toggle = false;
+     if (strcmp(bar_mode, "dock") == 0)
+         mode = M_DOCK;
+@@ -1995,7 +1995,7 @@ bool cmd_bar_mode(char *bar_mode, char *bar_id) {
+  *
+  */
+ bool cmd_bar_hidden_state(char *bar_hidden_state, char *bar_id) {
+-    int hidden_state;
++    int hidden_state = S_SHOW;
+     bool toggle = false;
+     if (strcmp(bar_hidden_state, "hide") == 0)
+         hidden_state = S_HIDE;
+-- 
+1.8.3.4
+

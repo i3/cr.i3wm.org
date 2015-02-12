@@ -1,0 +1,26 @@
+From f640c0cbf56b131b09c61927db5112bbc3456099 Mon Sep 17 00:00:00 2001
+From: Diego Ongaro <ongardie@…>
+Date: Tue, 30 Apr 2013 22:14:14 -0700
+Subject: [PATCH 2/2] contrib/dump-asy.pl: Display nicer double-quotes
+
+The right way to do this in LaTeX is ``foo'', not "foo".
+---
+ contrib/dump-asy.pl |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/contrib/dump-asy.pl b/contrib/dump-asy.pl
+index 44a4022..c16e88d 100755
+--- a/contrib/dump-asy.pl
++++ b/contrib/dump-asy.pl
+@@ -39,7 +39,7 @@ sub dump_node {
+     if (!defined($n->{window})) {
+         $type = $n->{orientation} . '-split';
+     }
+-    my $name = qq|\\"$na\\" ($type)|;
++    my $name = qq|``$na'' ($type)|;
+ 
+     print $tmp "TreeNode n" . $n->{id} . " = makeNode(";
+ 
+-- 
+1.7.10.4
+

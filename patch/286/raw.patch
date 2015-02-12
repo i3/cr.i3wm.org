@@ -1,0 +1,52 @@
+From 7dcb9a9611fd203065f47a5cd5d35c80d0aec773 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 29 Oct 2013 22:03:37 -0400
+Subject: [PATCH] Improve drag-cancel UnmapNotify policy
+
+Only cancel a drag operation on UnmapNotify when the unmapping window is
+managed on the current workspace.
+
+fixes #1108
+---
+ src/floating.c | 17 ++++++++++++++---
+ 1 file changed, 14 insertions(+), 3 deletions(-)
+
+diff --git a/src/floating.c b/src/floating.c
+index ae1a919..ec885b4 100644
+--- a/src/floating.c
++++ b/src/floating.c
+@@ -629,6 +629,7 @@ drag_result_t drag_pointer(Con *con, const xcb_button_press_event_t *event, xcb_
+     xcb_flush(conn);
+ 
+     xcb_generic_event_t *inside_event, *last_motion_notify = NULL;
++    Con *inside_con = NULL;
+     bool loop_done = false;
+     /* The return value, set to DRAG_CANCEL on user cancel */
+     drag_result_t drag_result = DRAG_SUCCESS;
+@@ -656,10 +657,20 @@ drag_result_t drag_pointer(Con *con, const xcb_button_press_event_t *event, xcb_
+                     break;
+ 
+                 case XCB_UNMAP_NOTIFY:
+-                    DLOG("Unmap-notify, aborting\n");
++                    inside_con = con_by_window_id(((xcb_unmap_notify_event_t*)inside_event)->window);
++
++                    /* cancel the drag if a window is unmapped on the focused workspace */
++                    if (inside_con != NULL && inside_con->type != CT_DOCKAREA && (
++                            con_get_workspace(inside_con) == NULL ||
++                            con_get_workspace(focused) == NULL ||
++                            strcasecmp(con_get_workspace(inside_con)->name, con_get_workspace(focused)->name) == 0)
++                       ) {
++                        DLOG("Unmap-notify on focused workspace, aborting\n");
++                        loop_done = true;
++                        drag_result = DRAG_CANCEL;
++                    }
++
+                     handle_event(type, inside_event);
+-                    loop_done = true;
+-                    drag_result = DRAG_CANCEL;
+                     break;
+ 
+                 case XCB_KEY_PRESS:
+-- 
+1.8.4.1
+

@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Mats",
+    "Line": 29,
+    "Comment": "This is a follow-up on http://cr.i3wm.org/patch/634.\n\nI replied to Michael's comments with some questions but it seems that no one has seen them since :)\n\nDoes cr.i3wm.org notify about status changes only -- no comments?",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 29,
+    "Comment": "I’ve seen them, I’m just terribly slow at catching up with patch reviews. Will reply to this later.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

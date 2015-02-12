@@ -1,0 +1,129 @@
+From 605753b92273de6de6d2502ba28a2a59c45c0fcf Mon Sep 17 00:00:00 2001
+From: oblique <psyberbits@…>
+Date: Sun, 24 Feb 2013 13:56:06 +0200
+Subject: [PATCH] Add client.focused_float color
+
+---
+ docs/userguide                  | 2 ++
+ include/config.h                | 1 +
+ parser-specs/config.spec        | 2 +-
+ src/config.c                    | 1 +
+ src/config_directives.c         | 1 +
+ src/x.c                         | 9 ++++++---
+ testcases/t/201-config-parser.t | 4 +++-
+ 7 files changed, 15 insertions(+), 5 deletions(-)
+
+diff --git a/docs/userguide b/docs/userguide
+index a0f521c..1de9c76 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -718,6 +718,8 @@ Where colorclass can be one of:
+ 
+ client.focused::
+ 	A client which currently has the focus.
++client.focused_float::
++	A client which currently has the focus, but is a floating window.
+ client.focused_inactive::
+ 	A client which is the focused one of its container, but it does not have
+ 	the focus at the moment.
+diff --git a/include/config.h b/include/config.h
+index 7056af8..c29ef8f 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -177,6 +177,7 @@ struct Config {
+     struct config_client {
+         uint32_t background;
+         struct Colortriple focused;
++        struct Colortriple focused_float;
+         struct Colortriple focused_inactive;
+         struct Colortriple unfocused;
+         struct Colortriple urgent;
+diff --git a/parser-specs/config.spec b/parser-specs/config.spec
+index 9a4bf55..d8a1b9d 100644
+--- a/parser-specs/config.spec
++++ b/parser-specs/config.spec
+@@ -44,7 +44,7 @@ state INITIAL:
+   exectype = 'exec_always', 'exec'         -> EXEC
+   colorclass = 'client.background'
+       -> COLOR_SINGLE
+-  colorclass = 'client.focused_inactive', 'client.focused', 'client.unfocused', 'client.urgent'
++  colorclass = 'client.focused_inactive', 'client.focused_float', 'client.focused', 'client.unfocused', 'client.urgent'
+       -> COLOR_BORDER
+ 
+ # We ignore comments and 'set' lines (variables).
+diff --git a/src/config.c b/src/config.c
+index 595aa43..ba4e6a6 100644
+--- a/src/config.c
++++ b/src/config.c
+@@ -409,6 +409,7 @@ void load_configuration(xcb_connection_t *conn, const char *override_configpath,
+ 
+     config.client.background = get_colorpixel("#000000");
+     INIT_COLOR(config.client.focused, "#4c7899", "#285577", "#ffffff", "#2e9ef4");
++    INIT_COLOR(config.client.focused_float, "#4c7899", "#285577", "#ffffff", "#2e9ef4");
+     INIT_COLOR(config.client.focused_inactive, "#333333", "#5f676a", "#ffffff", "#484e50");
+     INIT_COLOR(config.client.unfocused, "#333333", "#222222", "#888888", "#292d2e");
+     INIT_COLOR(config.client.urgent, "#2f343a", "#900000", "#ffffff", "#900000");
+diff --git a/src/config_directives.c b/src/config_directives.c
+index 0a83d46..c76379b 100644
+--- a/src/config_directives.c
++++ b/src/config_directives.c
+@@ -415,6 +415,7 @@ CFGFUN(color, const char *colorclass, const char *border, const char *background
+     } while (0)
+ 
+     APPLY_COLORS(focused_inactive);
++    APPLY_COLORS(focused_float);
+     APPLY_COLORS(focused);
+     APPLY_COLORS(unfocused);
+     APPLY_COLORS(urgent);
+diff --git a/src/x.c b/src/x.c
+index fcb63c3..2229f4a 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -334,9 +334,12 @@ void x_draw_decoration(Con *con) {
+     /* find out which colors to use */
+     if (con->urgent)
+         p->color = &config.client.urgent;
+-    else if (con == focused || con_inside_focused(con))
+-        p->color = &config.client.focused;
+-    else if (con == TAILQ_FIRST(&(parent->focus_head)))
++    else if (con == focused || con_inside_focused(con)) {
++        if (con_is_floating(con))
++            p->color = &config.client.focused_float;
++        else
++            p->color = &config.client.focused;
++    } else if (con == TAILQ_FIRST(&(parent->focus_head)))
+         p->color = &config.client.focused_inactive;
+     else
+         p->color = &config.client.unfocused;
+diff --git a/testcases/t/201-config-parser.t b/testcases/t/201-config-parser.t
+index 182d775..5b7eb96 100644
+--- a/testcases/t/201-config-parser.t
++++ b/testcases/t/201-config-parser.t
+@@ -366,6 +366,7 @@ is(parser_calls($config),
+ 
+ $config = <<'EOT';
+ client.focused          #4c7899 #285577 #ffffff #2e9ef4
++client.focused_float    #4c7899 #285577 #ffffff #2e9ef4
+ client.focused_inactive #333333 #5f676a #ffffff #484e50
+ client.unfocused        #333333 #222222 #888888 #292d2e
+ client.urgent           #2f343a #900000 #ffffff #900000
+@@ -373,6 +374,7 @@ EOT
+ 
+ $expected = <<'EOT';
+ cfg_color(client.focused, #4c7899, #285577, #ffffff, #2e9ef4)
++cfg_color(client.focused_float, #4c7899, #285577, #ffffff, #2e9ef4)
+ cfg_color(client.focused_inactive, #333333, #5f676a, #ffffff, #484e50)
+ cfg_color(client.unfocused, #333333, #222222, #888888, #292d2e)
+ cfg_color(client.urgent, #2f343a, #900000, #ffffff, #900000)
+@@ -392,7 +394,7 @@ client.focused          #4c7899 #285577 #ffffff #2e9ef4
+ EOT
+ 
+ my $expected_all_tokens = <<'EOT';
+-ERROR: CONFIG: Expected one of these tokens: <end>, '#', 'set', 'bindsym', 'bindcode', 'bind', 'bar', 'font', 'mode', 'floating_minimum_size', 'floating_maximum_size', 'floating_modifier', 'default_orientation', 'workspace_layout', 'new_window', 'new_float', 'hide_edge_borders', 'for_window', 'assign', 'focus_follows_mouse', 'force_focus_wrapping', 'force_xinerama', 'force-xinerama', 'workspace_auto_back_and_forth', 'fake_outputs', 'fake-outputs', 'force_display_urgency_hint', 'workspace', 'ipc_socket', 'ipc-socket', 'restart_state', 'popup_during_fullscreen', 'exec_always', 'exec', 'client.background', 'client.focused_inactive', 'client.focused', 'client.unfocused', 'client.urgent'
++ERROR: CONFIG: Expected one of these tokens: <end>, '#', 'set', 'bindsym', 'bindcode', 'bind', 'bar', 'font', 'mode', 'floating_minimum_size', 'floating_maximum_size', 'floating_modifier', 'default_orientation', 'workspace_layout', 'new_window', 'new_float', 'hide_edge_borders', 'for_window', 'assign', 'focus_follows_mouse', 'force_focus_wrapping', 'force_xinerama', 'force-xinerama', 'workspace_auto_back_and_forth', 'fake_outputs', 'fake-outputs', 'force_display_urgency_hint', 'workspace', 'ipc_socket', 'ipc-socket', 'restart_state', 'popup_during_fullscreen', 'exec_always', 'exec', 'client.background', 'client.focused_inactive', 'client.focused_float', 'client.focused', 'client.unfocused', 'client.urgent'
+ EOT
+ 
+ my $expected_end = <<'EOT';
+-- 
+1.8.1.3
+

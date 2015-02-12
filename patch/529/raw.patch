@@ -1,0 +1,67 @@
+From 0bbef73fbb271f15c63abcd2259eac5858ac6485 Mon Sep 17 00:00:00 2001
+From: Alexander Berntsen <alexander@…>
+Date: Wed, 30 Apr 2014 11:12:22 +0200
+Subject: [PATCH] Make all workspaces starting with "__" internal
+
+Workspaces won't work properly if they start with "__", so reserve that
+namespace altogether. Disallow renaming workspaces to reserved namespace
+and using reserved namespace in configuration.
+
+Fixes #1209.
+---
+ src/commands.c  | 9 +++++++--
+ src/workspace.c | 4 ++++
+ 2 files changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/src/commands.c b/src/commands.c
+index e1aa063..2ff3ee1 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -483,7 +483,7 @@ void cmd_move_con_to_workspace_back_and_forth(I3_CMD) {
+  *
+  */
+ void cmd_move_con_to_workspace_name(I3_CMD, char *name) {
+-    if (strncasecmp(name, "__i3_", strlen("__i3_")) == 0) {
++    if (strncasecmp(name, "__", strlen("__")) == 0) {
+         LOG("You cannot switch to the i3 internal workspaces.\n");
+         ysuccess(false);
+         return;
+@@ -998,7 +998,7 @@ void cmd_workspace_back_and_forth(I3_CMD) {
+  *
+  */
+ void cmd_workspace_name(I3_CMD, char *name) {
+-    if (strncasecmp(name, "__i3_", strlen("__i3_")) == 0) {
++    if (strncasecmp(name, "__", strlen("__")) == 0) {
+         LOG("You cannot switch to the i3 internal workspaces.\n");
+         ysuccess(false);
+         return;
+@@ -1867,6 +1867,11 @@ void cmd_scratchpad_show(I3_CMD) {
+  *
+  */
+ void cmd_rename_workspace(I3_CMD, char *old_name, char *new_name) {
++    if (strncasecmp(new_name, "__", strlen("__")) == 0) {
++        LOG("You cannot switch to the i3 internal workspaces.\n");
++        ysuccess(false);
++        return;
++    }
+     if (old_name) {
+         LOG("Renaming workspace \"%s\" to \"%s\"\n", old_name, new_name);
+     } else {
+diff --git a/src/workspace.c b/src/workspace.c
+index 670322a..5f8ec0b 100644
+--- a/src/workspace.c
++++ b/src/workspace.c
+@@ -142,6 +142,10 @@ Con *create_workspace_on_output(Output *output, Con *content) {
+             continue;
+         if (*target == '"')
+             target++;
++        if (strncasecmp(target, "__", strlen("__")) == 0) {
++            LOG("Cannot create workspace. '__' is a reserved prefix.\n");
++            continue;
++        }
+         FREE(ws->name);
+         ws->name = strdup(target);
+         if (ws->name[strlen(ws->name)-1] == '"')
+-- 
+1.8.3.2
+

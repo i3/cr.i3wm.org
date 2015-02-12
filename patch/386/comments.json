@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 108,
+    "Comment": "You can directly “return mode;” here and then get rid of the conditional below.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 139,
+    "Comment": "This leaks new_binding.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 65,
+    "Comment": "While we don’t have a fix limit for the length of lines, I think a line break after input_code would be good here :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 57,
+    "Comment": "In general, it is preferable to use a symbol instead of a #define, i.e. “const char *DEFAULT_BINDING_MODE = \"default\";”. I’m not sure if that works with our current build infrastructure, but I think it should, so please give it a go :).\n\nThe advantage of using a symbol is that the debugger can actually understand that, i.e. you’ll retain the information that one string constant is used in three different places, whereas with a #define the preprocessor replaces the string and the debugger will not be able to tell.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

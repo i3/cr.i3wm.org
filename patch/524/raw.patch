@@ -1,0 +1,514 @@
+From d617c77024556353d312e1260197f362507c499d Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 29 Apr 2014 13:09:56 -0400
+Subject: [PATCH] Feature: EWMH desktop properties
+
+Implement the following EWMH desktop properties:
+
+* _NET_WM_DESKTOP
+* _NET_DESKTOP_VIEWPORT
+* _NET_DESKTOP_NAMES
+* _NET_NUMBER_OF_DESKTOPS
+
+And one client message:
+
+* _NET_CURRENT_DESKTOP
+
+For more information see the EWMH spec at:
+
+http://standards.freedesktop.org/wm-spec/latest
+
+This should enable most of the features of most taskbars and pagers such
+as wkline, xfce4-panel, tint2, and others.
+
+fixes #1241
+---
+ include/atoms.xmacro            |   3 +
+ include/data.h                  |   5 +
+ include/ewmh.h                  |   7 +-
+ src/ewmh.c                      |  74 ++++++++++--
+ src/handlers.c                  |  23 ++++
+ src/tree.c                      |   3 +
+ src/workspace.c                 |   3 -
+ testcases/t/518-ewmh-desktops.t | 249 ++++++++++++++++++++++++++++++++++++++++
+ 8 files changed, 352 insertions(+), 15 deletions(-)
+ create mode 100644 testcases/t/518-ewmh-desktops.t
+
+diff --git a/include/atoms.xmacro b/include/atoms.xmacro
+index 90b0261..cb928dc 100644
+--- a/include/atoms.xmacro
++++ b/include/atoms.xmacro
+@@ -16,6 +16,9 @@ xmacro(_NET_WM_STRUT_PARTIAL)
+ xmacro(_NET_CLIENT_LIST)
+ xmacro(_NET_CLIENT_LIST_STACKING)
+ xmacro(_NET_CURRENT_DESKTOP)
++xmacro(_NET_NUMBER_OF_DESKTOPS)
++xmacro(_NET_DESKTOP_NAMES)
++xmacro(_NET_DESKTOP_VIEWPORT)
+ xmacro(_NET_ACTIVE_WINDOW)
+ xmacro(_NET_STARTUP_ID)
+ xmacro(_NET_WORKAREA)
+diff --git a/include/data.h b/include/data.h
+index 6fc7b40..dcf48b5 100644
+--- a/include/data.h
++++ b/include/data.h
+@@ -498,6 +498,11 @@ struct Con {
+      * workspace is not a named workspace (for named workspaces, num == -1) */
+     int num;
+ 
++    /** if this is a workspace, this is the index of the desktop in the context
++     * of ewmh standards compliance. See:
++     * http://standards.freedesktop.org/wm-spec/latest */
++    uint32_t ewmh_desktop_index;
++
+     struct Con *parent;
+ 
+     struct Rect rect;
+diff --git a/include/ewmh.h b/include/ewmh.h
+index 46d6c98..29336f9 100644
+--- a/include/ewmh.h
++++ b/include/ewmh.h
+@@ -10,10 +10,9 @@
+ #pragma once
+ 
+ /**
+- * Updates _NET_CURRENT_DESKTOP with the current desktop number.
+- *
+- * EWMH: The index of the current desktop. This is always an integer between 0
+- * and _NET_NUMBER_OF_DESKTOPS - 1.
++ * Updates EWMH properties of the root and managed windows related to
++ * _NET_CURRENT_DESKTOP so that other clients such as taskbars and pagers can
++ * find information about the state of the managed windows.
+  *
+  */
+ void ewmh_update_current_desktop(void);
+diff --git a/src/ewmh.c b/src/ewmh.c
+index 16c9858..79d62f3 100644
+--- a/src/ewmh.c
++++ b/src/ewmh.c
+@@ -11,33 +11,91 @@
+  */
+ #include "all.h"
+ 
++static void update_wm_desktop_recursive(Con *con, uint32_t idx) {
++    /* _NET_WM_DESKTOP
++     * Cardinal to determine the desktop the window is in (or wants to
++     * be) starting with 0 for the first desktop.
++     * http://standards.freedesktop.org/wm-spec/latest/ar01s05.html#idm140251368061040
++     */
++    if (con->window) {
++        xcb_change_property(conn, XCB_PROP_MODE_REPLACE, con->window->id,
++                A__NET_WM_DESKTOP, XCB_ATOM_CARDINAL, 32, 1, &idx);
++    } else {
++        NODES_FOREACH(con) {
++            update_wm_desktop_recursive(child, idx);
++        }
++    }
++}
++
+ /*
+- * Updates _NET_CURRENT_DESKTOP with the current desktop number.
+- *
+- * EWMH: The index of the current desktop. This is always an integer between 0
+- * and _NET_NUMBER_OF_DESKTOPS - 1.
++ * Updates EWMH properties of the root and managed windows related to
++ * _NET_CURRENT_DESKTOP so that other clients such as taskbars and pagers can
++ * find information about the state of the managed windows.
+  *
+  */
+ void ewmh_update_current_desktop(void) {
+     Con *focused_ws = con_get_workspace(focused);
+     Con *output;
+     uint32_t idx = 0;
+-    /* We count to get the index of this workspace because named workspaces
+-     * don’t have the ->num property */
++
+     TAILQ_FOREACH(output, &(croot->nodes_head), nodes) {
+         Con *ws;
+         TAILQ_FOREACH(ws, &(output_get_content(output)->nodes_head), nodes) {
+             if (STARTS_WITH(ws->name, "__"))
+                 continue;
+ 
++            /* this index can be used in the context of client requests
++             * specified by ewmh for simple window manager commands */
++            ws->ewmh_desktop_index = idx;
++
++            /* _NET_CURRENT_DESKTOP
++             * The index of the current desktop. This is always an integer
++             * between 0 and _NET_NUMBER_OF_DESKTOPS - 1.
++             * http://standards.freedesktop.org/wm-spec/latest/ar01s03.html#idm140251368135008
++             */
+             if (ws == focused_ws) {
+                 xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root,
+                         A__NET_CURRENT_DESKTOP, XCB_ATOM_CARDINAL, 32, 1, &idx);
+-                return;
+             }
++
++            /* The index is stored on each of the child nodes of the workspace.
++             * This is the primary way other clients have of discovering the
++             * structure of i3's managed windows. */
++            NODES_FOREACH(ws) {
++                update_wm_desktop_recursive(child, idx);
++            }
++
++            /* _NET_DESKTOP_VIEWPORT
++             * Array of pairs of cardinals that define the top left corner of each desktop's viewport.
++             * http://standards.freedesktop.org/wm-spec/latest/ar01s03.html#idm140251368138800
++             */
++            static uint32_t viewport[2];
++
++            viewport[0] = output->rect.x;
++            viewport[1] = output->rect.y;
++
++            xcb_change_property(conn,
++                    (idx == 0 ? XCB_PROP_MODE_REPLACE : XCB_PROP_MODE_APPEND),
++                    root, A__NET_DESKTOP_VIEWPORT, XCB_ATOM_CARDINAL, 32, 2, viewport);
++
++            /* _NET_DESKTOP_NAMES
++             * The names of all virtual desktops
++             * http://standards.freedesktop.org/wm-spec/latest/ar01s03.html#idm140251368131760
++             */
++            xcb_change_property(conn,
++                    (idx == 0 ? XCB_PROP_MODE_REPLACE : XCB_PROP_MODE_APPEND),
++                    root, A__NET_DESKTOP_NAMES, A_UTF8_STRING, 8,
++                    strlen(ws->name) + 1, ws->name);
++
+             ++idx;
+         }
+     }
++
++    /* _NET_NUMBER_OF_DESKTOPS
++     * http://standards.freedesktop.org/wm-spec/latest/ar01s03.html#idm140251368147520
++     */
++    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root,
++            A__NET_NUMBER_OF_DESKTOPS, XCB_ATOM_CARDINAL, 32, 1, &idx);
+ }
+ 
+ /*
+@@ -138,5 +196,5 @@ void ewmh_setup_hints(void) {
+     /* I’m not entirely sure if we need to keep _NET_WM_NAME on root. */
+     xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_WM_NAME, A_UTF8_STRING, 8, strlen("i3"), "i3");
+ 
+-    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_SUPPORTED, XCB_ATOM_ATOM, 32, 19, supported_atoms);
++    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_SUPPORTED, XCB_ATOM_ATOM, 35, 19, supported_atoms);
+ }
+diff --git a/src/handlers.c b/src/handlers.c
+index 8c3bb48..4735453 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -765,6 +765,29 @@ static void handle_client_message(xcb_client_message_event_t *event) {
+                 XCB_ATOM_CARDINAL, 32, 4,
+                 &r);
+         xcb_flush(conn);
++    } else if (event->type == A__NET_CURRENT_DESKTOP) {
++        if (event->format != 32)
++            return;
++
++        DLOG("_NET_CURRENT_DESKTOP for ewmh desktop index %d\n", event->data.data32[0]);
++
++        Con *output;
++        TAILQ_FOREACH(output, &(croot->nodes_head), nodes) {
++            Con *ws;
++            TAILQ_FOREACH(ws, &(output_get_content(output)->nodes_head), nodes) {
++                if (STARTS_WITH(ws->name, "__"))
++                    continue;
++
++                if (event->data.data32[0] == ws->ewmh_desktop_index) {
++                    DLOG("Client message requests \"%s\" become the current desktop (con = %p). \n",
++                            ws->name, ws);
++
++                    workspace_show(ws);
++                    tree_render();
++                    return;
++                }
++            }
++        }
+     } else {
+         DLOG("unhandled clientmessage\n");
+         return;
+diff --git a/src/tree.c b/src/tree.c
+index d493629..e450d18 100644
+--- a/src/tree.c
++++ b/src/tree.c
+@@ -521,6 +521,9 @@ void tree_render(void) {
+     render_con(croot, false);
+ 
+     x_push_changes(croot);
++
++    /* broadcast the changes to other clients with ewmh properties */
++    ewmh_update_current_desktop();
+     DLOG("-- END RENDERING --\n");
+ }
+ 
+diff --git a/src/workspace.c b/src/workspace.c
+index 670322a..c4a6360 100644
+--- a/src/workspace.c
++++ b/src/workspace.c
+@@ -432,9 +432,6 @@ static void _workspace_show(Con *workspace) {
+     if (old_output != new_output) {
+         x_set_warp_to(&next->rect);
+     }
+-
+-    /* Update the EWMH hints */
+-    ewmh_update_current_desktop();
+ }
+ 
+ /*
+diff --git a/testcases/t/518-ewmh-desktops.t b/testcases/t/518-ewmh-desktops.t
+new file mode 100644
+index 0000000..f1deb0d
+--- /dev/null
++++ b/testcases/t/518-ewmh-desktops.t
+@@ -0,0 +1,249 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Tests that EWMH desktop hints and client messages work well enough for a
++# pager or taskbar like wkline, xfce4-panel, tint2, etc.
++# Ticket: #1241
++# Bug still in: 4.7.2-149-g708996b
++use i3test i3_autostart => 0;
++
++my $config = <<EOT;
++# i3 config file (v4)
++font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
++
++workspace "1:op1" output fake-1
++workspace "2:op0" output fake-0
++workspace "3:op1" output fake-1
++workspace "4:op0" output fake-0
++
++fake-outputs 1000x500+1+2,1000x500+1000+500
++EOT
++
++my $pid = launch_with_config($config);
++
++# constants for readability
++my $OUTPUT_0_X = 1;
++my $OUTPUT_0_Y = 2;
++my $OUTPUT_1_X = 1000;
++my $OUTPUT_1_Y = 500;
++
++# boilerplate for property access
++sub x_get_property {
++    my ($prop, $prop_type, $win_id) = @_;
++
++    $win_id = $x->get_root_window() unless $win_id;
++
++    my $cookie = $x->get_property(
++        0,
++        $win_id,
++        $x->atom(name => $prop)->id,
++        $x->atom(name => $prop_type)->id,
++        0,
++        4096,
++    );
++    return $x->get_property_reply($cookie->{sequence});
++}
++
++# _NET_NUMBER_OF_DESKTOPS
++# http://standards.freedesktop.org/wm-spec/latest/ar01s03.html#idm140251368147520
++sub get_number_of_desktops {
++    my $reply = x_get_property('_NET_NUMBER_OF_DESKTOPS', 'CARDINAL');
++    my $len = $reply->{length};
++
++    return -1 if $len == 0;
++
++    return unpack("L", $reply->{value});
++}
++
++# _NET_DESKTOP_NAMES
++# The names of all virtual desktops
++# http://standards.freedesktop.org/wm-spec/latest/ar01s03.html#idm140251368131760
++sub get_desktop_names {
++    my $reply = x_get_property('_NET_DESKTOP_NAMES', 'UTF8_STRING');
++    my $len = $reply->{value_len} - 1;
++
++    return () if $len < 1;
++
++    return split(/\0/, unpack("a$len", $reply->{value}));
++}
++
++# _NET_CURRENT_DESKTOP
++# The index of the current desktop. This is always an integer
++# between 0 and _NET_NUMBER_OF_DESKTOPS - 1.
++# http://standards.freedesktop.org/wm-spec/latest/ar01s03.html#idm140251368135008
++sub get_current_desktop {
++    my $reply = x_get_property('_NET_CURRENT_DESKTOP', 'CARDINAL');
++
++    my $len = $reply->{length};
++    return -1 if $len == 0;
++
++    return unpack("L", $reply->{value});
++}
++
++# _NET_DESKTOP_VIEWPORT
++# Array of pairs of cardinals that define the top left corner of each desktop's viewport.
++# http://standards.freedesktop.org/wm-spec/latest/ar01s03.html#idm140251368138800
++sub get_desktop_viewports {
++    my $reply = x_get_property('_NET_DESKTOP_VIEWPORT', 'CARDINAL');
++
++    my $len = $reply->{length};
++    return () if $len == 0;
++
++    my @value = unpack("L$len", $reply->{value});
++    my @viewports = ();
++
++    while (@value) {
++        my %vp = (
++            'x' => shift @value,
++            'y' => shift @value,
++        );
++        push @viewports, \%vp;
++    }
++
++    return @viewports;
++}
++
++# _NET_WM_DESKTOP
++# Cardinal to determine the desktop the window is in (or wants to
++# be) starting with 0 for the first desktop.
++# http://standards.freedesktop.org/wm-spec/latest/ar01s05.html#idm140251368061040
++sub get_desktop_for_window {
++    my ($win) = @_;
++    my $reply = x_get_property('_NET_WM_DESKTOP', 'CARDINAL', $win->{id});
++
++    my $len = $reply->{length};
++    return -1 if $len == 0;
++
++    return unpack("L", $reply->{value});
++}
++
++sub send_current_desktop_message {
++    my ($desktop_index) = @_;
++
++    my $msg = pack "CCSLLLLLLL",
++        X11::XCB::CLIENT_MESSAGE, # response_type
++        32, # format
++        0,
++        0,
++        $x->atom(name => '_NET_CURRENT_DESKTOP')->id,
++        $desktop_index,
++        0,
++        0,
++        0,
++        0;
++
++    $x->send_event(0, $x->get_root_window(), X11::XCB::EVENT_MASK_SUBSTRUCTURE_REDIRECT, $msg);
++}
++
++# The point of these hints is so any application such as a taskbar or pager can
++# look at the properties of the root window and have enough to meaningfully
++# display information for the user and send us some basic commands based on the
++# user input they receive, so this objective will guide the tests.
++
++#####################################################################
++# Get basic layout information with ewmh hints, such as the names of the
++# workspaces, where they are on the screen, which one is active, and so on.
++#####################################################################
++
++# Open a window on each of our two outputs
++cmd 'workspace "2:op0"';
++my $win_ws2 = open_window;
++
++cmd 'workspace "1:op1"';
++my $win_ws1 = open_window;
++
++my $desktop_count = get_number_of_desktops();
++is($desktop_count, 2, 'correct number of desktops');
++
++# The current desktop is an index that is not related to the i3 concept of a
++# "workspace number"
++my $current_desktop = get_current_desktop();
++
++# This index should be the same on every window within the respective workspace
++is($current_desktop, get_desktop_for_window($win_ws1), 'ws1: its window has the correct ws index');
++
++# We know the current desktop is named "1:op1", so if we put the desktop
++# index into the array of workspace names, it should give us that name.
++my @desktop_names = get_desktop_names();
++is_deeply(\@desktop_names, get_workspace_names(), 'desktop names match workspace names');
++is($desktop_names[$current_desktop], focused_ws(), 'ws1: correct active desktop name');
++
++# The hints should also tell us a little about where the workspaces are
++# positioned on the screen
++my @desktop_viewports = get_desktop_viewports();
++is($desktop_viewports[$current_desktop]{x}, $OUTPUT_1_X, 'ws1: correct viewport x');
++is($desktop_viewports[$current_desktop]{y}, $OUTPUT_1_Y, 'ws1: correct viewport y');
++
++#####################################################################
++# Send basic commands, like switching to a particular workspace
++#####################################################################
++
++# Now we should be able to switch to a workspace based on the index of an
++# arbitrary window and retest
++send_current_desktop_message(get_desktop_for_window($win_ws2));
++sync_with_i3;
++
++$current_desktop = get_current_desktop();
++
++@desktop_names = get_desktop_names();
++is_deeply(\@desktop_names, get_workspace_names(), 'desktop names match workspace names');
++
++is($desktop_names[$current_desktop], focused_ws(), 'ws2: correct active desktop name');
++is($current_desktop, get_desktop_for_window($win_ws2),
++    'ws2: its window has the correct index');
++
++@desktop_viewports = get_desktop_viewports();
++is($desktop_viewports[$current_desktop]{x}, $OUTPUT_0_X, 'ws2: correct viewport x');
++is($desktop_viewports[$current_desktop]{y}, $OUTPUT_0_Y, 'ws2: correct viewport y');
++
++#####################################################################
++# The list should dynamically expand for an arbitrary number of workspaces
++#####################################################################
++
++cmd 'workspace "3:op1"';
++my $win_ws3 = open_window;
++
++cmd 'workspace "4:op0"';
++my $win_ws4 = open_window;
++
++send_current_desktop_message(get_desktop_for_window($win_ws3));
++sync_with_i3;
++
++$current_desktop = get_current_desktop();
++
++@desktop_names = get_desktop_names();
++is_deeply(\@desktop_names, get_workspace_names(), 'desktop names match workspace names');
++
++is($desktop_names[$current_desktop], focused_ws(), 'ws3: correct active desktop name');
++is($current_desktop, get_desktop_for_window($win_ws3), 'ws3: its window has the correct ws index');
++
++@desktop_viewports = get_desktop_viewports();
++is($desktop_viewports[$current_desktop]{x}, $OUTPUT_1_X, 'ws3: correct viewport x');
++is($desktop_viewports[$current_desktop]{y}, $OUTPUT_1_Y, 'ws3: correct viewport y');
++
++#####################################################################
++# Changes in the workspace names should be reflected in ewmh properties
++# immediately
++#####################################################################
++
++cmd 'rename workspace "4:op0" to "8:web"';
++@desktop_names = get_desktop_names();
++is(@desktop_names[get_desktop_for_window($win_ws4)], "8:web",
++    'renaming a workspace changes the ewmh property right away');
++
++exit_gracefully($pid);
++
++done_testing;
+-- 
+1.9.2
+

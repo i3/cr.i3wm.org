@@ -1,0 +1,44 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 30,
+    "Comment": "You did not update the syntax and example section a few lines below.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 82,
+    "Comment": "spurious newline, please fix",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 93,
+    "Comment": "please remove this newline",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 95,
+    "Comment": "style: use “if (mark == NULL) {”",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 106,
+    "Comment": "your indentation is misleading. the curly brace belongs to one level above.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 110,
+    "Comment": "I’m not sure this needs to be set to true, but you can leave it as-is for now.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 17,
+    "Comment": "Please add a testcase in the same patch.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

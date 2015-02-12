@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 22,
+    "Comment": "Did you read http://i3wm.org/i3status/manpage.html#_what_about_memory_usage_or_cpu_frequency before writing this patch? It seems to me like the functionality you’ve added does not fit into the philosophy of i3status that is described in that paragraph. I.e., why would you ever want to look at what your different cores (not threads) are doing, unless you are tuning a specific program’s thread usage?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 22,
+    "Comment": "I read it just now. For example when I am run multithread program with 3 threads on 4 cores, it 's important to me that usage of 3 cores will be full.  And run separate programm for this (such as htop) not convenient for me.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 22,
+    "Comment": "I read it just now. For example when I am run multithread program with 3 threads on 4 cores, it 's important to me that usage of 3 cores will be full.  And run separate programm for this (such as htop) not convenient for me.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 22,
+    "Comment": "I don’t agree, sorry. It’s an edge case that I don’t want to have in the i3status source code.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 22,
+    "Comment": "Ok, understand.",
+    "EmailHash": ""
+  }
+]

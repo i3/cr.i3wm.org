@@ -1,0 +1,44 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 106,
+    "Comment": "I just noticed this. At least it consistently fails.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 136,
+    "Comment": "I was wrong about this. The bar does not actually do this.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 104,
+    "Comment": "I don't think these `wait_for_unmap` calls are doing what I think they are doing, but if i replace them with `sync_with_i3` the test fails spuriously about 1/10 times. I don't know how to hook into this event.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 104,
+    "Comment": "wait_for_unmap waits until an UNMAP_NOTIFY event is received, which will never happen since no window that is controlled by the testcase is unmapped here (i3bar is outside of the testcase).\n\nMy guess is that the implicit timeout of 2 seconds is what makes the test succeed.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 61,
+    "Comment": "This is a private method of AE::I3. Don’t call it.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 42,
+    "Comment": "I would probably check whether the top/bottom pixels of the screen are occupied by a window that has i3bar as its class.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 18,
+    "Comment": "I am not entirely sure why you submitted the test, it seems still work in progress to me. I have added a few comments; hope that helps. Let me know if I missed some part that you wanted my opinion on. Thanks.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

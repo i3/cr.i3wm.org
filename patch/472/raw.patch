@@ -1,0 +1,139 @@
+From f2140c9ae67581e416808f127cfc22c6bff7b0d2 Mon Sep 17 00:00:00 2001
+From: Richard Leitner <me@…>
+Date: Sat, 15 Mar 2014 22:22:02 +0100
+Subject: [PATCH 1/2] adding option (-C) to enable centering of an image
+
+---
+ i3lock.1           |  7 +++++++
+ i3lock.c           | 14 ++++++++++++--
+ unlock_indicator.c | 18 ++++++++++++++----
+ 3 files changed, 33 insertions(+), 6 deletions(-)
+
+diff --git a/i3lock.1 b/i3lock.1
+index e95340c..f673bd5 100644
+--- a/i3lock.1
++++ b/i3lock.1
+@@ -24,6 +24,7 @@ i3lock \- improved screen locker
+ .RB [\|\-c
+ .IR color \|]
+ .RB [\|\-t\|]
++.RB [\|\-C\|]
+ .RB [\|\-p
+ .IR pointer\|]
+ .RB [\|\-u\|]
+@@ -90,6 +91,12 @@ If an image is specified (via \-i) it will display the image tiled all over the
+ (if it is a multi-monitor setup, the image is visible on all screens).
+ 
+ .TP
++.B \-C, \-\-centering
++If an image is specified (via \-i) it will display the image centered.
++(if it is a multi-monitor setup, the image is centered over all screens).
++If tiling (-t) and centering (-C) is specified, only tiling will be used.
++
++.TP
+ .BI \-p\  win|default \fR,\ \fB\-\-pointer= win|default
+ If you specify "default",
+ .B i3lock
+diff --git a/i3lock.c b/i3lock.c
+index 1599282..588d72c 100644
+--- a/i3lock.c
++++ b/i3lock.c
+@@ -68,6 +68,7 @@ static struct xkb_keymap *xkb_keymap;
+ 
+ cairo_surface_t *img = NULL;
+ bool tile = false;
++bool center = false;
+ bool ignore_empty_password = false;
+ 
+ /* isutf, u8_dec © 2005 Jeff Bezanson, public domain */
+@@ -659,6 +660,7 @@ int main(int argc, char *argv[]) {
+         {"no-unlock-indicator", no_argument, NULL, 'u'},
+         {"image", required_argument, NULL, 'i'},
+         {"tiling", no_argument, NULL, 't'},
++        {"centering", no_argument, NULL, 'C'},
+         {"ignore-empty-password", no_argument, NULL, 'e'},
+         {NULL, no_argument, NULL, 0}
+     };
+@@ -666,7 +668,7 @@ int main(int argc, char *argv[]) {
+     if ((username = getenv("USER")) == NULL)
+         errx(1, "USER environment variable not set, please set it.\n");
+ 
+-    while ((o = getopt_long(argc, argv, "hvnbdc:p:ui:te", longopts, &optind)) != -1) {
++    while ((o = getopt_long(argc, argv, "hvnbdc:p:ui:tCe", longopts, &optind)) != -1) {
+         switch (o) {
+         case 'v':
+             errx(EXIT_SUCCESS, "version " VERSION " © 2010-2012 Michael Stapelberg");
+@@ -700,6 +702,9 @@ int main(int argc, char *argv[]) {
+         case 't':
+             tile = true;
+             break;
++        case 'C':
++            center = true;
++            break;
+         case 'p':
+             if (!strcmp(optarg, "win")) {
+                 curs_choice = CURS_WIN;
+@@ -718,11 +723,16 @@ int main(int argc, char *argv[]) {
+             break;
+         default:
+             errx(1, "Syntax: i3lock [-v] [-n] [-b] [-d] [-c color] [-u] [-p win|default]"
+-            " [-i image.png] [-t] [-e]"
++            " [-i image.png] [-t|C] [-e]"
+             );
+         }
+     }
+ 
++    /* warn if tile and center is set */
++    if (tile && center) {
++        fprintf(stderr, "You have specified tile (-t) and center (-C), so center will be ignored!\n");
++    }
++
+     /* We need (relatively) random numbers for highlighting a random part of
+      * the unlock indicator upon keypresses. */
+     srand(time(NULL));
+diff --git a/unlock_indicator.c b/unlock_indicator.c
+index daaeeb1..cb43cac 100644
+--- a/unlock_indicator.c
++++ b/unlock_indicator.c
+@@ -45,6 +45,8 @@ extern cairo_surface_t *img;
+ 
+ /* Whether the image should be tiled. */
+ extern bool tile;
++/* Whether the image should be centered. */
++extern bool center;
+ /* The background color to use (in hex). */
+ extern char color[7];
+ 
+@@ -81,10 +83,7 @@ xcb_pixmap_t draw_image(uint32_t *resolution) {
+     cairo_t *xcb_ctx = cairo_create(xcb_output);
+ 
+     if (img) {
+-        if (!tile) {
+-            cairo_set_source_surface(xcb_ctx, img, 0, 0);
+-            cairo_paint(xcb_ctx);
+-        } else {
++        if (tile) {
+             /* create a pattern and fill a rectangle as big as the screen */
+             cairo_pattern_t *pattern;
+             pattern = cairo_pattern_create_for_surface(img);
+@@ -93,6 +92,17 @@ xcb_pixmap_t draw_image(uint32_t *resolution) {
+             cairo_rectangle(xcb_ctx, 0, 0, resolution[0], resolution[1]);
+             cairo_fill(xcb_ctx);
+             cairo_pattern_destroy(pattern);
++        } else if (center) {
++            /* draw the image at the center of the screen */
++            cairo_set_source_surface(xcb_ctx, img,
++                    resolution[0]/2 - (int) cairo_image_surface_get_width(img)/2,
++                    resolution[1]/2 - (int) cairo_image_surface_get_height(img)/2
++                    );
++            cairo_paint(xcb_ctx);
++        } else {
++            /* draw image "normally" */
++            cairo_set_source_surface(xcb_ctx, img, 0, 0);
++            cairo_paint(xcb_ctx);
+         }
+     } else {
+         char strgroups[3][3] = {{color[0], color[1], '\0'},
+-- 
+1.9.0
+

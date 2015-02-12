@@ -1,0 +1,295 @@
+From 1b46f016f64d0a560bb51c4b65f6a9384c714e32 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Wed, 28 May 2014 02:01:50 -0400
+Subject: [PATCH] Refactor parse_command
+
+parse_command returns a struct that contains useful information about
+the result of a command as a whole (instead of the intermediate
+representation used during parsing).
+
+parse_command now requires the caller to allocate the yajl_gen used for
+generating a json reply. This is passed as the second parameter to
+parse_command. If NULL is passed, no json reply will be generated.
+---
+ include/commands_parser.h | 31 +++++++++++++++++++++++++++++--
+ src/assignments.c         |  6 +++---
+ src/commands.c            | 28 ++++++++++++++++------------
+ src/commands_parser.c     | 42 +++++++++++++++++++++++++++++++++++-------
+ src/ipc.c                 | 12 ++++++++----
+ src/key_press.c           | 12 ++++++++----
+ 6 files changed, 99 insertions(+), 32 deletions(-)
+
+diff --git a/include/commands_parser.h b/include/commands_parser.h
+index 8c733db..6e531e9 100644
+--- a/include/commands_parser.h
++++ b/include/commands_parser.h
+@@ -17,7 +17,7 @@
+  * internally use this struct when calling cmd_floating and cmd_border.
+  */
+ struct CommandResultIR {
+-    /* The JSON generator to append a reply to. */
++    /* The JSON generator to append a reply to (may be NULL). */
+     yajl_gen json_gen;
+ 
+     /* The next state to transition to. Passed to the function so that we can
+@@ -29,4 +29,31 @@ struct CommandResultIR {
+     bool needs_tree_render;
+ };
+ 
+-struct CommandResultIR *parse_command(const char *input);
++typedef struct CommandResult CommandResult;
++
++/**
++ * A struct that contains useful information about the result of a command as a
++ * whole (e.g. a compound command like "floating enable, border none").
++ * needs_tree_render is true if needs_tree_render of any individual command was
++ * true.
++ */
++struct CommandResult {
++    bool parse_error;
++    /* the error_message is currently only set for parse errors */
++    char *error_message;
++    bool needs_tree_render;
++};
++
++/**
++ * Parses and executes the given command. If a caller-allocated yajl_gen is
++ * passed, a json reply will be generated in the format specified by the ipc
++ * protocol. Pass NULL if no json reply is required.
++ *
++ * Free the returned CommandResult with command_result_free().
++ */
++CommandResult *parse_command(const char *input, yajl_gen gen);
++
++/**
++ * Frees a CommandResult
++ */
++void command_result_free(CommandResult *result);
+diff --git a/src/assignments.c b/src/assignments.c
+index dbd4dfc..23c9108 100644
+--- a/src/assignments.c
++++ b/src/assignments.c
+@@ -45,13 +45,13 @@ void run_assignments(i3Window *window) {
+             DLOG("execute command %s\n", current->dest.command);
+             char *full_command;
+             sasprintf(&full_command, "[id=\"%d\"] %s", window->id, current->dest.command);
+-            struct CommandResultIR *command_output = parse_command(full_command);
++            CommandResult *result = parse_command(full_command, NULL);
+             free(full_command);
+ 
+-            if (command_output->needs_tree_render)
++            if (result->needs_tree_render)
+                 needs_tree_render = true;
+ 
+-            yajl_gen_free(command_output->json_gen);
++            command_result_free(result);
+         }
+ 
+         /* Store that we ran this assignment to not execute it again */
+diff --git a/src/commands.c b/src/commands.c
+index 6d8db6f..73dba4f 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -16,21 +16,25 @@
+ #include "shmlog.h"
+ 
+ // Macros to make the YAJL API a bit easier to use.
+-#define y(x, ...) yajl_gen_ ## x (cmd_output->json_gen, ##__VA_ARGS__)
+-#define ystr(str) yajl_gen_string(cmd_output->json_gen, (unsigned char*)str, strlen(str))
++#define y(x, ...) (cmd_output->json_gen != NULL ? yajl_gen_ ## x (cmd_output->json_gen, ##__VA_ARGS__) : 0)
++#define ystr(str) (cmd_output->json_gen != NULL ? yajl_gen_string(cmd_output->json_gen, (unsigned char*)str, strlen(str)) : 0)
+ #define ysuccess(success) do { \
+-    y(map_open); \
+-    ystr("success"); \
+-    y(bool, success); \
+-    y(map_close); \
++    if (cmd_output->json_gen != NULL) { \
++        y(map_open); \
++        ystr("success"); \
++        y(bool, success); \
++        y(map_close); \
++    } \
+ } while (0)
+ #define yerror(message) do { \
+-    y(map_open); \
+-    ystr("success"); \
+-    y(bool, false); \
+-    ystr("error"); \
+-    ystr(message); \
+-    y(map_close); \
++    if (cmd_output->json_gen != NULL) { \
++        y(map_open); \
++        ystr("success"); \
++        y(bool, false); \
++        ystr("error"); \
++        ystr(message); \
++        y(map_close); \
++    } \
+ } while (0)
+ 
+ /** When the command did not include match criteria (!), we use the currently
+diff --git a/src/commands_parser.c b/src/commands_parser.c
+index 0723c27..ca3d931 100644
+--- a/src/commands_parser.c
++++ b/src/commands_parser.c
+@@ -35,8 +35,8 @@
+ #include "all.h"
+ 
+ // Macros to make the YAJL API a bit easier to use.
+-#define y(x, ...) yajl_gen_ ## x (command_output.json_gen, ##__VA_ARGS__)
+-#define ystr(str) yajl_gen_string(command_output.json_gen, (unsigned char*)str, strlen(str))
++#define y(x, ...) (command_output.json_gen != NULL ? yajl_gen_ ## x (command_output.json_gen, ##__VA_ARGS__) : 0)
++#define ystr(str) (command_output.json_gen != NULL ? yajl_gen_string(command_output.json_gen, (unsigned char*)str, strlen(str)) : 0)
+ 
+ /*******************************************************************************
+  * The data structures used for parsing. Essentially the current state and a
+@@ -205,12 +205,20 @@ static void next_state(const cmdp_token *token) {
+     }
+ }
+ 
+-struct CommandResultIR *parse_command(const char *input) {
++/*
++ * Parses and executes the given command. If a caller-allocated yajl_gen is
++ * passed, a json reply will be generated in the format specified by the ipc
++ * protocol. Pass NULL if no json reply is required.
++ *
++ * Free the returned CommandResult with command_result_free().
++ */
++CommandResult *parse_command(const char *input, yajl_gen gen) {
+     DLOG("COMMAND: *%s*\n", input);
+     state = INITIAL;
++    CommandResult *result = scalloc(sizeof(CommandResult));
+ 
+     /* A YAJL JSON generator used for formatting replies. */
+-    command_output.json_gen = yajl_gen_alloc(NULL);
++    command_output.json_gen = (gen != NULL ? gen : NULL);
+ 
+     y(array_open);
+     command_output.needs_tree_render = false;
+@@ -378,6 +386,9 @@ struct CommandResultIR *parse_command(const char *input) {
+             ELOG("Your command: %s\n", input);
+             ELOG("              %s\n", position);
+ 
++            result->parse_error = true;
++            result->error_message = errormessage;
++
+             /* Format this error message as a JSON reply. */
+             y(map_open);
+             ystr("success");
+@@ -396,7 +407,6 @@ struct CommandResultIR *parse_command(const char *input) {
+             y(map_close);
+ 
+             free(position);
+-            free(errormessage);
+             clear_stack();
+             break;
+         }
+@@ -404,7 +414,19 @@ struct CommandResultIR *parse_command(const char *input) {
+ 
+     y(array_close);
+ 
+-    return &command_output;
++    result->needs_tree_render = command_output.needs_tree_render;
++    return result;
++}
++
++/*
++ * Frees a CommandResult
++ */
++void command_result_free(CommandResult *result) {
++    if (result == NULL)
++        return;
++
++    FREE(result->error_message);
++    FREE(result);
+ }
+ 
+ /*******************************************************************************
+@@ -442,6 +464,12 @@ int main(int argc, char *argv[]) {
+         fprintf(stderr, "Syntax: %s <command>\n", argv[0]);
+         return 1;
+     }
+-    parse_command(argv[1]);
++    yajl_gen gen = yajl_gen_alloc(NULL);
++
++    CommandResult *result = parse_command(argv[1], gen);
++
++    command_result_free(result);
++
++    yajl_gen_free(gen);
+ }
+ #endif
+diff --git a/src/ipc.c b/src/ipc.c
+index c3b82b5..0d2c92b 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -117,20 +117,24 @@ IPC_HANDLER(command) {
+     char *command = scalloc(message_size + 1);
+     strncpy(command, (const char*)message, message_size);
+     LOG("IPC: received: *%s*\n", command);
+-    struct CommandResultIR *command_output = parse_command((const char*)command);
++    yajl_gen gen = yajl_gen_alloc(NULL);
++
++    CommandResult *result = parse_command((const char*)command, gen);
+     free(command);
+ 
+-    if (command_output->needs_tree_render)
++    if (result->needs_tree_render)
+         tree_render();
+ 
++    command_result_free(result);
++
+     const unsigned char *reply;
+     ylength length;
+-    yajl_gen_get_buf(command_output->json_gen, &reply, &length);
++    yajl_gen_get_buf(gen, &reply, &length);
+ 
+     ipc_send_message(fd, length, I3_IPC_REPLY_TYPE_COMMAND,
+                      (const uint8_t*)reply);
+ 
+-    yajl_gen_free(command_output->json_gen);
++    yajl_gen_free(gen);
+ }
+ 
+ static void dump_rect(yajl_gen gen, const char *name, Rect r) {
+diff --git a/src/key_press.c b/src/key_press.c
+index 2dd676d..5335610 100644
+--- a/src/key_press.c
++++ b/src/key_press.c
+@@ -72,19 +72,23 @@ void handle_key_press(xcb_key_press_event_t *event) {
+     if (bind == NULL)
+         return;
+ 
++    yajl_gen gen = yajl_gen_alloc(NULL);
++
+     char *command_copy = sstrdup(bind->command);
+-    struct CommandResultIR *command_output = parse_command(command_copy);
++    CommandResult *result = parse_command(command_copy, gen);
+     free(command_copy);
+ 
+-    if (command_output->needs_tree_render)
++    if (result->needs_tree_render)
+         tree_render();
+ 
++    command_result_free(result);
++
+     /* We parse the JSON reply to figure out whether there was an error
+      * ("success" being false in on of the returned dictionaries). */
+     const unsigned char *reply;
+     size_t length;
+     yajl_handle handle = yajl_alloc(&command_error_callbacks, NULL, NULL);
+-    yajl_gen_get_buf(command_output->json_gen, &reply, &length);
++    yajl_gen_get_buf(gen, &reply, &length);
+ 
+     current_nesting_level = 0;
+     parse_error_key = false;
+@@ -116,5 +120,5 @@ void handle_key_press(xcb_key_press_event_t *event) {
+ 
+     yajl_free(handle);
+ 
+-    yajl_gen_free(command_output->json_gen);
++    yajl_gen_free(gen);
+ }
+-- 
+1.9.3
+

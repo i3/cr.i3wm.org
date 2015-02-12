@@ -1,0 +1,29 @@
+From 97966e9d12b710e937c0088377d89fb48822883d Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Mon, 23 Jun 2014 15:03:06 -0400
+Subject: [PATCH] Bugfix: don't focus unmapped container on manage
+
+A window may become unmapped on manage when an assignment command unmaps
+the window, such as moving it to the scratchpad or killing it.
+
+fixes #1283
+---
+ src/manage.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/manage.c b/src/manage.c
+index 202b064..61ca040 100644
+--- a/src/manage.c
++++ b/src/manage.c
+@@ -505,7 +505,7 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+ 
+     /* Defer setting focus after the 'new' event has been sent to ensure the
+      * proper window event sequence. */
+-    if (set_focus && !nc->window->doesnt_accept_focus) {
++    if (set_focus && !nc->window->doesnt_accept_focus && nc->mapped) {
+         DLOG("Now setting focus.\n");
+         con_focus(nc);
+     }
+-- 
+2.0.0
+

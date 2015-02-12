@@ -1,0 +1,107 @@
+From fdc71a838dd7d13638945511e4bac69e30448e70 Mon Sep 17 00:00:00 2001
+From: syl20bnr <sylvain.benner@…>
+Date: Mon, 23 Sep 2013 21:52:31 -0400
+Subject: [PATCH] Draw Binding mode indicator before workspace buttons.
+
+This feel more natural to me since the total width for the
+workspace buttons constantly changes. By drawing the indicator
+first, it is alway at the same absolute position.
+Moreover, on small screens, it makes sense to not have the
+indicator mode overlaping the status info displayed on the
+left side of the bar.
+---
+ i3bar/src/xcb.c | 71 +++++++++++++++++++++++++++++----------------------------
+ 1 file changed, 36 insertions(+), 35 deletions(-)
+
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index f407c9b..73c0f93 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -1670,6 +1670,42 @@ void draw_bars(bool unhide) {
+                           MIN(outputs_walk->rect.w - traypx - 4, statusline_width), font.height + 2);
+         }
+ 
++        if (binding.name && !config.disable_binding_mode_indicator) {
++            uint32_t fg_color = colors.urgent_ws_fg;
++            uint32_t bg_color = colors.urgent_ws_bg;
++            uint32_t mask = XCB_GC_FOREGROUND | XCB_GC_BACKGROUND;
++
++            uint32_t vals_border[] = { colors.urgent_ws_border, colors.urgent_ws_border };
++            xcb_change_gc(xcb_connection,
++                          outputs_walk->bargc,
++                          mask,
++                          vals_border);
++            xcb_rectangle_t rect_border = { i, 1, binding.width + 10, font.height + 4 };
++            xcb_poly_fill_rectangle(xcb_connection,
++                                    outputs_walk->buffer,
++                                    outputs_walk->bargc,
++                                    1,
++                                    &rect_border);
++
++            uint32_t vals[] = { bg_color, bg_color };
++            xcb_change_gc(xcb_connection,
++                          outputs_walk->bargc,
++                          mask,
++                          vals);
++            xcb_rectangle_t rect = { i + 1, 2, binding.width + 8, font.height + 2 };
++            xcb_poly_fill_rectangle(xcb_connection,
++                                    outputs_walk->buffer,
++                                    outputs_walk->bargc,
++                                    1,
++                                    &rect);
++
++            set_font_colors(outputs_walk->bargc, fg_color, bg_color);
++            draw_text(binding.name, outputs_walk->buffer, outputs_walk->bargc, i + 5, 3, binding.width);
++
++            unhide = true;
++            i += 1 + binding.width + 10;
++        }
++
+         if (!config.disable_ws) {
+             i3_ws *ws_walk;
+             TAILQ_FOREACH(ws_walk, outputs_walk->workspaces, tailq) {
+@@ -1734,41 +1770,6 @@ void draw_bars(bool unhide) {
+             }
+         }
+ 
+-        if (binding.name && !config.disable_binding_mode_indicator) {
+-            uint32_t fg_color = colors.urgent_ws_fg;
+-            uint32_t bg_color = colors.urgent_ws_bg;
+-            uint32_t mask = XCB_GC_FOREGROUND | XCB_GC_BACKGROUND;
+-
+-            uint32_t vals_border[] = { colors.urgent_ws_border, colors.urgent_ws_border };
+-            xcb_change_gc(xcb_connection,
+-                          outputs_walk->bargc,
+-                          mask,
+-                          vals_border);
+-            xcb_rectangle_t rect_border = { i, 1, binding.width + 10, font.height + 4 };
+-            xcb_poly_fill_rectangle(xcb_connection,
+-                                    outputs_walk->buffer,
+-                                    outputs_walk->bargc,
+-                                    1,
+-                                    &rect_border);
+-
+-            uint32_t vals[] = { bg_color, bg_color };
+-            xcb_change_gc(xcb_connection,
+-                          outputs_walk->bargc,
+-                          mask,
+-                          vals);
+-            xcb_rectangle_t rect = { i + 1, 2, binding.width + 8, font.height + 2 };
+-            xcb_poly_fill_rectangle(xcb_connection,
+-                                    outputs_walk->buffer,
+-                                    outputs_walk->bargc,
+-                                    1,
+-                                    &rect);
+-
+-            set_font_colors(outputs_walk->bargc, fg_color, bg_color);
+-            draw_text(binding.name, outputs_walk->buffer, outputs_walk->bargc, i + 5, 3, binding.width);
+-
+-            unhide = true;
+-        }
+-
+         i = 0;
+     }
+ 
+-- 
+1.8.1.2
+

@@ -1,0 +1,340 @@
+From 29f6b31c3341818074cc9d6c556f07f5d1bc2763 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Mon, 5 May 2014 09:20:59 -0400
+Subject: [PATCH] Implement sticky windows
+
+Sticky windows will always be on a visible workspace.
+
+fixes #11
+---
+ include/commands.h                |   6 +++
+ include/data.h                    |   3 ++
+ include/util.h                    |   4 ++
+ parser-specs/commands.spec        |   6 +++
+ src/commands.c                    |  31 +++++++++++
+ src/workspace.c                   |  62 ++++++++++++++++++++++
+ testcases/t/187-commands-parser.t |   2 +-
+ testcases/t/518-sticky-windows.t  | 106 ++++++++++++++++++++++++++++++++++++++
+ 8 files changed, 219 insertions(+), 1 deletion(-)
+ create mode 100644 testcases/t/518-sticky-windows.t
+
+diff --git a/include/commands.h b/include/commands.h
+index e7d2781..57fe7b1 100644
+--- a/include/commands.h
++++ b/include/commands.h
+@@ -139,6 +139,12 @@ void cmd_move_con_to_output(I3_CMD, char *name);
+ void cmd_floating(I3_CMD, char *floating_mode);
+ 
+ /**
++ * Implementation of 'sticky enable|disable|toggle'
++ *
++ */
++void cmd_sticky(I3_CMD, char *sticky_mode);
++
++/**
+  * Implementation of 'move workspace to [output] <str>'.
+  *
+  */
+diff --git a/include/data.h b/include/data.h
+index f6dc0d7..3311351 100644
+--- a/include/data.h
++++ b/include/data.h
+@@ -538,6 +538,9 @@ struct Con {
+ 
+     struct Window *window;
+ 
++    /* whether or not this is a sticky window */
++    bool is_sticky;
++
+     /* timer used for disabling urgency */
+     struct ev_timer *urgency_timer;
+ 
+diff --git a/include/util.h b/include/util.h
+index 53ea68e..230d49d 100644
+--- a/include/util.h
++++ b/include/util.h
+@@ -33,6 +33,10 @@
+     for (Con *child = (Con*)-1; (child == (Con*)-1) && ((child = 0), true);) \
+         TAILQ_FOREACH_REVERSE(child, &((head)->nodes_head), nodes_head, nodes)
+ 
++#define FLOATING_FOREACH(head) \
++    for (Con *child = (Con*)-1; (child == (Con*)-1) && ((child = 0), true);) \
++        TAILQ_FOREACH(child, &((head)->floating_head), nodes)
++
+ /* greps the ->nodes of the given head and returns the first node that matches the given condition */
+ #define GREP_FIRST(dest, head, condition) \
+     NODES_FOREACH(head) { \
+diff --git a/parser-specs/commands.spec b/parser-specs/commands.spec
+index e3da62c..4095327 100644
+--- a/parser-specs/commands.spec
++++ b/parser-specs/commands.spec
+@@ -31,6 +31,7 @@ state INITIAL:
+   'fullscreen' -> FULLSCREEN
+   'split' -> SPLIT
+   'floating' -> FLOATING
++  'sticky' -> STICKY
+   'mark' -> MARK
+   'unmark' -> UNMARK
+   'resize' -> RESIZE
+@@ -173,6 +174,11 @@ state FLOATING:
+   floating = 'enable', 'disable', 'toggle'
+       -> call cmd_floating($floating)
+ 
++# sticky enable|disable|toggle
++state STICKY:
++  sticky = 'enable', 'disable', 'toggle'
++      -> call cmd_sticky($sticky)
++
+ # mark <mark>
+ state MARK:
+   mark = string
+diff --git a/src/commands.c b/src/commands.c
+index 201c76e..beb83ff 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -1168,6 +1168,37 @@ void cmd_floating(I3_CMD, char *floating_mode) {
+ }
+ 
+ /*
++ * Implementation of 'sticky enable|disable|toggle'
++ *
++ */
++void cmd_sticky(I3_CMD, char *sticky_mode) {
++    owindow *current;
++
++    DLOG("sticky_mode=%s\n", sticky_mode);
++
++    HANDLE_EMPTY_MATCH;
++
++    TAILQ_FOREACH(current, &owindows, owindows) {
++        DLOG("matching: %p / %s\n", current->con, current->con->name);
++        if (strcmp(sticky_mode, "toggle") == 0) {
++            DLOG("should toggle mode\n");
++            current->con->is_sticky = !current->con->is_sticky;
++        } else {
++            DLOG("should switch mode to %s\n", sticky_mode);
++            if (strcmp(sticky_mode, "enable") == 0) {
++                current->con->is_sticky = true;
++            } else {
++                current->con->is_sticky = false;
++            }
++        }
++    }
++
++    cmd_output->needs_tree_render = true;
++    // XXX: default reply for now, make this a better reply
++    ysuccess(true);
++}
++
++/*
+  * Implementation of 'move workspace to [output] <str>'.
+  *
+  */
+diff --git a/src/workspace.c b/src/workspace.c
+index 99c2166..c68634e 100644
+--- a/src/workspace.c
++++ b/src/workspace.c
+@@ -336,6 +336,60 @@ static void workspace_defer_update_urgent_hint_cb(EV_P_ ev_timer *w, int revents
+     FREE(con->urgency_timer);
+ }
+ 
++static bool collect_sticky_recursive(Con *con, Con *ws);
++
++/*
++ * Collects all the sticky containers within the tree and puts them on the
++ * given workspace.
++ */
++static bool workspace_collect_sticky(Con *ws) {
++    Con *output;
++    TAILQ_FOREACH(output, &(croot->nodes_head), nodes) {
++        /* iterate through all the workspaces on the outputs */
++        Con *current;
++        TAILQ_FOREACH(current, &(output_get_content(output)->nodes_head), nodes) {
++            /* iterate through all the containers on the workspaces */
++            NODES_FOREACH(current) {
++                /* The recursive func returns true if a sticky window was
++                 * indeed collected. */
++                if (collect_sticky_recursive(child, ws)) {
++                    /* If a container was moved from one workspace to another,
++                     * our lists are invalidated and we start from the
++                     * beginning of this function */
++                    workspace_collect_sticky(ws);
++                    return true;
++                }
++            }
++            FLOATING_FOREACH(current) {
++                if (collect_sticky_recursive(child, ws)) {
++                    workspace_collect_sticky(ws);
++                    return true;
++                }
++            }
++        }
++    }
++
++    return false;
++}
++
++static bool collect_sticky_recursive(Con *con, Con *ws) {
++    if (con->is_sticky) {
++        Con *current = con_get_workspace(con);
++
++        if (current != ws && !workspace_is_visible(current)) {
++            con_move_to_workspace(con, ws, true, false);
++            return true;
++        }
++    }
++
++    NODES_FOREACH(con) {
++        if (collect_sticky_recursive(child, ws))
++            return true;
++    }
++
++    return false;
++}
++
+ static void _workspace_show(Con *workspace) {
+     Con *current, *old = NULL;
+ 
+@@ -437,6 +491,14 @@ static void _workspace_show(Con *workspace) {
+         x_set_warp_to(&next->rect);
+     }
+ 
++    Con *focused_before = focused;
++    /* move all the sticky containers within the tree to this workspace */
++    if (workspace_collect_sticky(workspace)) {
++        /* set focus back to where it was, given that there now could be some new
++         * containers */
++        con_focus(con_descend_focused(focused_before));
++    }
++
+     /* Update the EWMH hints */
+     ewmh_update_current_desktop();
+ }
+diff --git a/testcases/t/187-commands-parser.t b/testcases/t/187-commands-parser.t
+index 5ee94f8..fb38381 100644
+--- a/testcases/t/187-commands-parser.t
++++ b/testcases/t/187-commands-parser.t
+@@ -144,7 +144,7 @@ is(parser_calls("\nworkspace test"),
+ ################################################################################
+ 
+ is(parser_calls('unknown_literal'),
+-   "ERROR: Expected one of these tokens: <end>, '[', 'move', 'exec', 'exit', 'restart', 'reload', 'shmlog', 'debuglog', 'border', 'layout', 'append_layout', 'workspace', 'focus', 'kill', 'open', 'fullscreen', 'split', 'floating', 'mark', 'unmark', 'resize', 'rename', 'nop', 'scratchpad', 'mode', 'bar'\n" .
++   "ERROR: Expected one of these tokens: <end>, '[', 'move', 'exec', 'exit', 'restart', 'reload', 'shmlog', 'debuglog', 'border', 'layout', 'append_layout', 'workspace', 'focus', 'kill', 'open', 'fullscreen', 'split', 'floating', 'sticky', 'mark', 'unmark', 'resize', 'rename', 'nop', 'scratchpad', 'mode', 'bar'\n" .
+    "ERROR: Your command: unknown_literal\n" .
+    "ERROR:               ^^^^^^^^^^^^^^^",
+    'error for unknown literal ok');
+diff --git a/testcases/t/518-sticky-windows.t b/testcases/t/518-sticky-windows.t
+new file mode 100644
+index 0000000..26cbf2b
+--- /dev/null
++++ b/testcases/t/518-sticky-windows.t
+@@ -0,0 +1,106 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# TODO: Description of this file.
++# Ticket: #999
++# Bug still in: 4.7.2-163-g7dedc66
++use i3test i3_autostart => 0;
++use X11::XCB qw(PROP_MODE_REPLACE);
++
++my $config = <<EOT;
++# i3 config file (v4)
++font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
++
++workspace 1:L output fake-0
++workspace 2:R output fake-1
++workspace 3:L output fake-0
++workspace 4:R output fake-1
++
++fake-outputs 1024x768+0+0,1024x768+1024+0
++EOT
++
++my $pid = launch_with_config($config);
++
++# The sticky window
++my $sticky1;
++my $sticky2;
++
++sub cmd_win {
++    my ($win, $cmd) = @_;
++    cmd "[id=" . $win->{id} . "] $cmd";
++}
++
++# Start on workspace 1 on the Left output
++cmd 'workspace 1:L';
++
++$sticky1 = open_window;
++cmd_win($sticky1, 'sticky enable');
++
++# Move to a workspace on the same output (the Left output), which would cause
++# the sticky window to be hidden but for its stickiness
++cmd 'workspace 3:L';
++
++is(@{get_ws_content('3:L')}, 1,
++    'sticky windows should stick to the focused workspace when they would become hidden');
++
++# Zero to many sticky windows should each work as sticky windows in concert
++$sticky2 = open_window;
++cmd_win($sticky2, 'sticky enable');
++
++# Move to a workspace on the same output as the sticky windows
++cmd 'workspace 1:L';
++
++is(@{get_ws_content('1:L')}, 2, 'sticky windows should stick together');
++
++# Move to a workspace on other output (the Right output) and no stickiness
++# should happen, because the windows were never going to be hidden.
++cmd 'workspace 2:R';
++is(@{get_ws_content('1:L')}, 2, 'sticky windows should only restick when they would be hidden');
++
++# Test that the 'sticky toggle' command works to disable sticky mode
++cmd_win($sticky2, 'sticky toggle, move to workspace 2:R');
++
++# Moving to the other workspace on the Right output should not trigger any stickiness
++cmd 'workspace 4:R';
++is(@{get_ws_content('4:R')}, 0,
++    'stickiness should be disabled when "sticky toggle" is commanded of a sticky window');
++
++cmd_win($sticky2, 'kill');
++
++# Test that 'sticky disable' command works to disable sticky mode
++cmd_win($sticky1, 'sticky disable');
++cmd 'workspace 3:L';
++is(@{get_ws_content('3:L')}, 0,
++    'stickiness should be disabled when "sticky disable" is commanded of a sticky window');
++
++cmd_win($sticky1, 'kill');
++
++# Opening on 3:L
++my $window = open_window;
++$sticky1 = open_floating_window;
++cmd_win($sticky1, 'sticky enable');
++
++# Moving from 3:L to 1:L
++cmd 'workspace 1:L';
++is(@{get_ws('1:L')->{floating_nodes}}, 1, 'floating windows should have the ability to become sticky');
++
++cmd 'workspace 3:L';
++is(@{get_ws_content('3:L')}[0]->{id}, get_focused('3:L'),
++    'sticky windows that move because of stickiness should not take focus');
++
++exit_gracefully($pid);
++
++done_testing;
+-- 
+1.9.2
+

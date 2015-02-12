@@ -1,0 +1,62 @@
+[
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 23,
+    "Comment": "With this patch, things are finally working perfectly regarding app title change notification and ticket #1168 can be closed.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 23,
+    "Comment": "On that, I kind of wish we got a window event when switching to an empty workspace as well.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 23,
+    "Comment": "Why a window event? There are no (application) windows involved when switching to an empty workspace. What's the intended use case?",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 28,
+    "Comment": "I suggest s/ws_empty/ws_was_empty/ since this stores historical state for later usage in the function.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 46,
+    "Comment": "I suggest s/is now/became/",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 101,
+    "Comment": "This line seems to be unnecessary, you’re not using “first”.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 100,
+    "Comment": "Why are you using i3_autostart =\u003e 0 and why are you launching i3bar in the config you specify below? I think this is not related to the test you’re writing here, is it?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 159,
+    "Comment": "Subtle detail: you need to create a new connection for subscriptions to work reliably, otherwise there may be race conditions.\n\nAlso, I think a good strategy here is to have an array of all workspace events, then force sending a workspace event by switching to a different workspace and afterwards verifying that there are no “empty” workspace events in the array.\n\nTry something like this (untested):\n\nmy @events;\nmy $ws_event_conn = i3(get_socket_path(0));\n$ws_event_conn-\u003econnect()-\u003erecv;\n$ws_event_conn-\u003esubscribe({\n  workspace =\u003e sub {\n    my ($event) = @_;\n    push @events, $event;\n  }\n});\n\n# …\n\n# Wait for the workspace event on a new connection. Events will be delivered to older connections earlier, so by the time it arrives here, it should be in @events already.\nmy $ws_event_block_conn = i3(get_socket_path(0));\n$ws_event_block_conn-\u003econnect()-\u003erecv;\n$ws_event_block_conn-\u003esubscribe({ workspace =\u003e sub { $cond-\u003esend(1) }});\n$cond-\u003erecv;\n\nmy @expected_events = grep { $_-\u003e{change} eq 'focus' } @events;\nmy @empty_events = grep { $_-\u003e{change} eq 'empty' } @events;\nis(@expected_events, 1, 'Expected event found');\nis(@empty_events, 0, 'No \"empty\" events');",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 100,
+    "Comment": "I've copied it from another testcase. IIRC without it the test failed, but I might be wrong.\n\nI've added the i3bar instance in order to better resemble a real-life scenario. It's not an absolute necessity.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 159,
+    "Comment": "Thanks again for your insightful feedback. I will try that.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  }
+]

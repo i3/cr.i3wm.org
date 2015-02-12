@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 39,
+    "Comment": "The goal here is to generalize the stuff in the key press handler so it can be reused for mouse bindings.\n\nOf course tying together command parsing and yajl is a bad idea, so that is why the new CommandResult will include only the needed info for handling errors.\n\nNagbar should be shown on parse errors, possibly with the error message.\n\nThe actual code that runs nagbar I think should be in util.c",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 91,
+    "Comment": "s/result of a command/result of a command as a whole (e.g. “floating enable, border none”). needs_tree_render is true if needs_tree_render of any individual command was true/",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 192,
+    "Comment": "Your changes make the macro more fragile. See http://en.wikibooks.org/wiki/More_C%2B%2B_Idioms/Multi-statement_Macro on why the do { } while (0) (note the lack of a trailing semicolon) is necessary and why it needs to be outside of any potential if statements :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 39,
+    "Comment": "Not entirely sure about your last two sentences: they describe the status quo, don’t they? nagbar is already launched on parse errors and the code to do that is in util.c (see start_nagbar()).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 36,
+    "Comment": "Looks good apart from the macro issue.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

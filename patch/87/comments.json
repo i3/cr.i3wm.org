@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Adrien Schildknecht",
+    "Line": 23,
+    "Comment": "You can repoduce this bug with :\n#! /bin/sh\n\nurxvt -name my_term \u0026\nsleep 1\nurxvt -name my_scratchpad \u0026\nsleep 1\ni3-msg '[instance=\"my_scratchpad\"] move scratchpad'\nurxvt -name my_floating \u0026\nsleep 1\ni3-msg '[instance=\"my_floating\"] floating enable'\ni3-msg '[instance=\"my_term\"] focus'\nsleep 1\ni3-msg scratchpad show\nsleep 1\ni3-msg scratchpad show\n# my_term should be focus instead of my_floating",
+    "EmailHash": "6c45883b677b1cd8a1d99ff629d03be6"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "Uhm, I think this patch merely reverses the situation: Now i3 will try to focus a tiling window all the time. That’s still not necessarily the last focused window, right? :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Adrien Schildknecht",
+    "Line": 20,
+    "Comment": "I just made some tests, and everything work as expected, both with a floating window and a tilling window.\nMaybe I should add comments and/or testcases.",
+    "EmailHash": "6c45883b677b1cd8a1d99ff629d03be6"
+  }
+]

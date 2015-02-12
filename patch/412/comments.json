@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 80,
+    "Comment": "The only way `add_hint` and `remove_hint` are used right now is for the UrgencyHint, which is a WM_HINTS flag.\n\nI would acknowledge this is a little magical since the argument param could be anything, but it works.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 71,
+    "Comment": "This test still passes without your changes to src/x.c. Is that intentional?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 71,
+    "Comment": "Yes, the changes to this test are required for this test to pass because of the changes to src/x.c.\n\nInputHint now overrides the WM_TAKE_FOCUS protocol. When the InputHint is set, WM_TAKE_FOCUS is ignored.\n\nInputHint is a flag on the WM_HINTS property. When WM_HINTS is not present, i3 treats the window as if the InputHint is set. Thus when WM_HINTS is not present, the WM_TAKE_FOCUS protocol is ignored. `open_window` does not set the WM_HINTS property on the window. `delete_hint` works by adding an empty WM_HINTS property where the InputHint is unset so that the protocol will not be ignored.\n\nIf that behavior does not sound correct to you, I can make an argument of why it is. But in general, I believe WM_HINTS can be expected to be set.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

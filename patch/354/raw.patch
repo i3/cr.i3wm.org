@@ -1,0 +1,49 @@
+From 8855aa8544e42fd47b829188ebce2a0fcdc65831 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Thu, 26 Dec 2013 00:30:21 -0500
+Subject: [PATCH] i3bar: Set `mapped` flag on trayclient creation
+
+When a trayclient is first created as a structure in memory, explicitly
+set the `mapped` flag to false. Otherwise it may initialize to `true` in
+some circumstances without actually being mapped, causing a request to
+be mapped from the client to be ignored.
+
+Create the trayclient in memory before handling a request to be mapped
+immediately.
+
+fixes #1138
+---
+ i3bar/src/xcb.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index d3dc948..8286103 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -603,17 +603,18 @@ static void handle_client_message(xcb_client_message_event_t* event) {
+              * exits/crashes. */
+             xcb_change_save_set(xcb_connection, XCB_SET_MODE_INSERT, client);
+ 
++            trayclient *tc = smalloc(sizeof(trayclient));
++            tc->win = client;
++            tc->xe_version = xe_version;
++            tc->mapped = false;
++            TAILQ_INSERT_TAIL(output->trayclients, tc, tailq);
++
+             if (map_it) {
+                 DLOG("Mapping dock client\n");
+                 xcb_map_window(xcb_connection, client);
+             } else {
+                 DLOG("Not mapping dock client yet\n");
+             }
+-            trayclient *tc = smalloc(sizeof(trayclient));
+-            tc->win = client;
+-            tc->xe_version = xe_version;
+-            TAILQ_INSERT_TAIL(output->trayclients, tc, tailq);
+-
+             /* Trigger an update to copy the statusline text to the appropriate
+              * position */
+             configure_trayclients();
+-- 
+1.8.5.2
+

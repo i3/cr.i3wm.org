@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 14,
+    "Comment": "I think the commit description is wrong. Ticket #733 is unrelated.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 39,
+    "Comment": "Please add a comment to the function to describe what it does. Also give it a better name. Code style: space is missing after the closing paren and before the opening curly brace (“){” → “) {”)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 48,
+    "Comment": "Please don’t just remove that empty line.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 78,
+    "Comment": "Instead of communicating via a pipe, why don’t you make the child process exit(0) ONLY if pam succeeds, and exit(1) or some other error code if pam fails?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "koebi",
+    "Line": 14,
+    "Comment": "My bad. It's supposed to fix #895.",
+    "EmailHash": "47d3165a20fd385f7c75cdacd6f2b477"
+  }
+]

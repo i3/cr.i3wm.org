@@ -1,0 +1,104 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 207,
+    "Comment": "Please just use ipc_send_window_event() directly instead of having these trivial wrappers you define below.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 206,
+    "Comment": "Please keep the comment, it should be both in the header file and in the source.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 144,
+    "Comment": "Ugh, globals. Please don’t do this and check whether the window title changed in the handle_windowname_change{,_legacy} functions.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 153,
+    "Comment": "Please don’t define this as a function if you’re only going to use it once. Especially, even if it was a legitimate function definiton, get_title() is very vague, not namespaced and in the wrong file :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 157,
+    "Comment": "Same here, please kill the function and put this code into send_window_title_event() directly.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 172,
+    "Comment": "s/void/static void/, since this function should not be used outside this file.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 162,
+    "Comment": "We use true/false, not TRUE/FALSE.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 166,
+    "Comment": "s/strdup/sstrdup/",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 104,
+    "Comment": "I think con_focus() is the wrong place to send this. See src/x.c instead, there is a place where focus is really updated (i.e. not every con_focus() call corresponds to an actual focus change).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 34,
+    "Comment": "Please don’t put patch history in your git commit description, each patch should stand on its own, even if it supersedes another one.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 104,
+    "Comment": "Thanks. Moving the notification into x.c works equally well.\n\nI see only one difference regarding an interesting edge case. Switching to a workspace without any windows triggered a window event with the notification done in con.c. This was actually desirable for my intended use case, but not 100% clean.\n\n",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 104,
+    "Comment": "Correction. If I simply move the notification into x.c (into x_push_changes() after the call to xcb_set_input_focus) I'm starting to receive focus notifications when I switch tabs in a window (e.g. gedit)!\n\nSo either it's over my head, or con.c could be the better place after all?\n\n",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 104,
+    "Comment": "The behavior you are seeing is called click-to-focus, i.e. a click will always set focus to the window. See also bug #1167 for a related discussion.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 104,
+    "Comment": "I see. Makes perfect sense.\n\nI've already adjusted the rest of the code as per your recommendations. I will try to find a way to properly handle this one as well and send a new patch. Thanks.\n\n",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 104,
+    "Comment": "I don't seem to be able to make this work in src/x.c. Sending the ipc event occasionally causes i3 to crash. From the backtrace I see that the call\n\n    i3string_as_utf8(con-\u003ewindow-\u003ename)\n\nis the culprit (src/ipc.c, line 295). But it's not clear to me what exactly causes this behavior and I'm not well versed enough with C tooling to be able to debug this further right away.\n\nI can force a crash by closing an application. But IIRC crashes occurred at other times as well. All is working perfectly (for my use case) if I trigger ipc events in src/con.c#con_focus(), so I'm not sure how to go forward.\n\nI could send you the crashlog and/or logfile when desired. Thanks.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 104,
+    "Comment": "Sure, feel free to send the log + backtrace + patch you are using via email and I can have a look.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 104,
+    "Comment": "I've tried to debug this further and ultimately have been able to circumvent the issue. I will forward a new patch to the review queue.\n\nAs it turns out, i3 eventually sets the input focus to windows that have been already detached (which leads to a crash when the window name gets converted). I've therefore now check whether the window is attached to its parent and only send the event if indeed so.\n\nIt feels wrong to me that the input focus is set to detached windows and maybe this could be changed/addressed and therefore eliminate the additional check. But that would be up to you to decide.\n\nThanks again for your help and patience.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  }
+]

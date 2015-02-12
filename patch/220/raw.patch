@@ -1,0 +1,445 @@
+From 38d92be692ddbb70fe59063f56cbd1d3e9445833 Mon Sep 17 00:00:00 2001
+From: syl20bnr <sylvain.benner@…>
+Date: Thu, 8 Aug 2013 23:30:14 -0400
+Subject: [PATCH] Add new bar.binding_mode_indicator configuration.
+
+i3 current behavior hides the binding mode indicator when
+workspace buttons are disabled.
+This patch adds a new configuration for i3bar called
+'binding_mode_indicator' which acts like the workspace_buttons.
+It is now possible to configure i3bar to hide the
+workspace buttons and keep showing the binding mode indicator.
+This should make the hide workspace buttons configuration
+more convenient for those who are heavily using binding
+modes.
+Default value for binding_mode_indicator is true.
+---
+ docs/ipc                        |   3 +
+ docs/userguide                  |  25 ++++++++-
+ i3bar/include/config.h          |   3 +-
+ i3bar/src/config.c              |   6 ++
+ i3bar/src/xcb.c                 | 121 ++++++++++++++++++++--------------------
+ include/config.h                |   4 ++
+ include/config_directives.h     |   1 +
+ parser-specs/config.spec        |  33 ++++++-----
+ src/config_directives.c         |   4 ++
+ src/ipc.c                       |   3 +
+ testcases/t/177-bar-config.t    |  11 +++-
+ testcases/t/201-config-parser.t |   2 +-
+ 12 files changed, 135 insertions(+), 81 deletions(-)
+
+diff --git a/docs/ipc b/docs/ipc
+index 913899c..85e5e77 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -494,6 +494,8 @@ font (string)::
+ 	The font to use for text on the bar.
+ workspace_buttons (boolean)::
+ 	Display workspace buttons or not? Defaults to true.
++binding_mode_indicator (boolean)::
++	Display the mode indicator or not? Defaults to true.
+ verbose (boolean)::
+ 	Should the bar enable verbose output for debugging? Defaults to false.
+ colors (map)::
+@@ -539,6 +541,7 @@ urgent_workspace_text/urgent_workspace_bar::
+  "status_command": "i3status",
+  "font": "-misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1",
+  "workspace_buttons": true,
++ "binding_mode_indicator": true,
+  "verbose": false,
+  "colors": {
+    "background": "#c0c0c0",
+diff --git a/docs/userguide b/docs/userguide
+index ae3bda2..0cc147c 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -1180,11 +1180,32 @@ workspace_buttons <yes|no>
+ --------------------------
+ 
+ *Example*:
+---------------------
++------------------------
+ bar {
+     workspace_buttons no
+ }
+---------------------
++------------------------
++
++=== Binding Mode indicator
++
++Specifies whether the current binding mode indicator should be shown or not.
++This is useful if you want to hide the workspace buttons but still be able
++to see the current binding mode indicator.
++For an example of a +mode+ definition, see <<resizingconfig>>.
++
++The default is to show the mode indicator.
++
++*Syntax*:
++-------------------------------
++binding_mode_indicator <yes|no>
++-------------------------------
++
++*Example*:
++-----------------------------
++bar {
++    binding_mode_indicator no
++}
++-----------------------------
+ 
+ === Colors
+ 
+diff --git a/i3bar/include/config.h b/i3bar/include/config.h
+index 4c01d68..c648671 100644
+--- a/i3bar/include/config.h
++++ b/i3bar/include/config.h
+@@ -23,7 +23,8 @@ typedef struct config_t {
+     position_t   position;
+     int          verbose;
+     struct xcb_color_strings_t colors;
+-    int          disable_ws;
++    bool         disable_binding_mode_indicator;
++    bool         disable_ws;
+     char         *bar_id;
+     char         *command;
+     char         *fontname;
+diff --git a/i3bar/src/config.c b/i3bar/src/config.c
+index f5a2a34..5ac31b1 100644
+--- a/i3bar/src/config.c
++++ b/i3bar/src/config.c
+@@ -193,6 +193,12 @@ static int config_string_cb(void *params_, const unsigned char *val, unsigned in
+  *
+  */
+ static int config_boolean_cb(void *params_, int val) {
++    if (!strcmp(cur_key, "binding_mode_indicator")) {
++        DLOG("binding_mode_indicator = %d\n", val);
++        config.disable_binding_mode_indicator = !val;
++        return 1;
++    }
++
+     if (!strcmp(cur_key, "workspace_buttons")) {
+         DLOG("workspace_buttons = %d\n", val);
+         config.disable_ws = !val;
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index 36c2e47..f407c9b 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -1670,72 +1670,71 @@ void draw_bars(bool unhide) {
+                           MIN(outputs_walk->rect.w - traypx - 4, statusline_width), font.height + 2);
+         }
+ 
+-        if (config.disable_ws) {
+-            continue;
+-        }
+-
+-        i3_ws *ws_walk;
+-
+-        TAILQ_FOREACH(ws_walk, outputs_walk->workspaces, tailq) {
+-            DLOG("Drawing Button for WS %s at x = %d, len = %d\n", i3string_as_utf8(ws_walk->name), i, ws_walk->name_width);
+-            uint32_t fg_color = colors.inactive_ws_fg;
+-            uint32_t bg_color = colors.inactive_ws_bg;
+-            uint32_t border_color = colors.inactive_ws_border;
+-            if (ws_walk->visible) {
+-                if (!ws_walk->focused) {
+-                    fg_color = colors.active_ws_fg;
+-                    bg_color = colors.active_ws_bg;
+-                    border_color = colors.active_ws_border;
+-                } else {
+-                    fg_color = colors.focus_ws_fg;
+-                    bg_color = colors.focus_ws_bg;
+-                    border_color = colors.focus_ws_border;
+-                    if (last_urgent_ws && strcmp(i3string_as_utf8(ws_walk->name), last_urgent_ws) == 0)
+-                        walks_away = false;
++        if (!config.disable_ws) {
++            i3_ws *ws_walk;
++            TAILQ_FOREACH(ws_walk, outputs_walk->workspaces, tailq) {
++                DLOG("Drawing Button for WS %s at x = %d, len = %d\n",
++                     i3string_as_utf8(ws_walk->name), i, ws_walk->name_width);
++                uint32_t fg_color = colors.inactive_ws_fg;
++                uint32_t bg_color = colors.inactive_ws_bg;
++                uint32_t border_color = colors.inactive_ws_border;
++                if (ws_walk->visible) {
++                    if (!ws_walk->focused) {
++                        fg_color = colors.active_ws_fg;
++                        bg_color = colors.active_ws_bg;
++                        border_color = colors.active_ws_border;
++                    } else {
++                        fg_color = colors.focus_ws_fg;
++                        bg_color = colors.focus_ws_bg;
++                        border_color = colors.focus_ws_border;
++                        if (last_urgent_ws && strcmp(i3string_as_utf8(ws_walk->name),
++                                                     last_urgent_ws) == 0)
++                            walks_away = false;
++                    }
+                 }
+-            }
+-            if (ws_walk->urgent) {
+-                DLOG("WS %s is urgent!\n", i3string_as_utf8(ws_walk->name));
+-                fg_color = colors.urgent_ws_fg;
+-                bg_color = colors.urgent_ws_bg;
+-                border_color = colors.urgent_ws_border;
+-                unhide = true;
+-                if (!ws_walk->focused) {
+-                    FREE(last_urgent_ws);
+-                    last_urgent_ws = sstrdup(i3string_as_utf8(ws_walk->name));
++                if (ws_walk->urgent) {
++                    DLOG("WS %s is urgent!\n", i3string_as_utf8(ws_walk->name));
++                    fg_color = colors.urgent_ws_fg;
++                    bg_color = colors.urgent_ws_bg;
++                    border_color = colors.urgent_ws_border;
++                    unhide = true;
++                    if (!ws_walk->focused) {
++                        FREE(last_urgent_ws);
++                        last_urgent_ws = sstrdup(i3string_as_utf8(ws_walk->name));
++                    }
+                 }
+-            }
+-            uint32_t mask = XCB_GC_FOREGROUND | XCB_GC_BACKGROUND;
+-            uint32_t vals_border[] = { border_color, border_color };
+-            xcb_change_gc(xcb_connection,
+-                          outputs_walk->bargc,
+-                          mask,
+-                          vals_border);
+-            xcb_rectangle_t rect_border = { i, 1, ws_walk->name_width + 10, font.height + 4 };
+-            xcb_poly_fill_rectangle(xcb_connection,
+-                                    outputs_walk->buffer,
+-                                    outputs_walk->bargc,
+-                                    1,
+-                                    &rect_border);
+-            uint32_t vals[] = { bg_color, bg_color };
+-            xcb_change_gc(xcb_connection,
+-                          outputs_walk->bargc,
+-                          mask,
+-                          vals);
+-            xcb_rectangle_t rect = { i + 1, 2, ws_walk->name_width + 8, font.height + 2 };
+-            xcb_poly_fill_rectangle(xcb_connection,
+-                                    outputs_walk->buffer,
+-                                    outputs_walk->bargc,
+-                                    1,
+-                                    &rect);
+-            set_font_colors(outputs_walk->bargc, fg_color, bg_color);
+-            draw_text(ws_walk->name, outputs_walk->buffer, outputs_walk->bargc, i + 5, 3, ws_walk->name_width);
+-            i += 10 + ws_walk->name_width + 1;
++                uint32_t mask = XCB_GC_FOREGROUND | XCB_GC_BACKGROUND;
++                uint32_t vals_border[] = { border_color, border_color };
++                xcb_change_gc(xcb_connection,
++                              outputs_walk->bargc,
++                              mask,
++                              vals_border);
++                xcb_rectangle_t rect_border = { i, 1, ws_walk->name_width + 10, font.height + 4 };
++                xcb_poly_fill_rectangle(xcb_connection,
++                                        outputs_walk->buffer,
++                                        outputs_walk->bargc,
++                                        1,
++                                        &rect_border);
++                uint32_t vals[] = { bg_color, bg_color };
++                xcb_change_gc(xcb_connection,
++                              outputs_walk->bargc,
++                              mask,
++                              vals);
++                xcb_rectangle_t rect = { i + 1, 2, ws_walk->name_width + 8, font.height + 2 };
++                xcb_poly_fill_rectangle(xcb_connection,
++                                        outputs_walk->buffer,
++                                        outputs_walk->bargc,
++                                        1,
++                                        &rect);
++                set_font_colors(outputs_walk->bargc, fg_color, bg_color);
++                draw_text(ws_walk->name, outputs_walk->buffer, outputs_walk->bargc,
++                          i + 5, 3, ws_walk->name_width);
++                i += 10 + ws_walk->name_width + 1;
+ 
++            }
+         }
+ 
+-        if (binding.name) {
+-
++        if (binding.name && !config.disable_binding_mode_indicator) {
+             uint32_t fg_color = colors.urgent_ws_fg;
+             uint32_t bg_color = colors.urgent_ws_bg;
+             uint32_t mask = XCB_GC_FOREGROUND | XCB_GC_BACKGROUND;
+diff --git a/include/config.h b/include/config.h
+index c7479b3..4267dcf 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -267,6 +267,10 @@ struct Barconfig {
+      * zero. */
+     bool hide_workspace_buttons;
+ 
++    /** Hide mode button? Configuration option is 'binding_mode_indicator no'
++     * but we invert the bool for the same reason as hide_workspace_buttons.*/
++    bool hide_binding_mode_indicator;
++
+     /** Enable verbose mode? Useful for debugging purposes. */
+     bool verbose;
+ 
+diff --git a/include/config_directives.h b/include/config_directives.h
+index f9b7a47..9569a7b 100644
+--- a/include/config_directives.h
++++ b/include/config_directives.h
+@@ -74,6 +74,7 @@ CFGFUN(bar_socket_path, const char *socket_path);
+ CFGFUN(bar_tray_output, const char *output);
+ CFGFUN(bar_color_single, const char *colorclass, const char *color);
+ CFGFUN(bar_status_command, const char *command);
++CFGFUN(bar_binding_mode_indicator, const char *value);
+ CFGFUN(bar_workspace_buttons, const char *value);
+ CFGFUN(bar_finish);
+ 
+diff --git a/parser-specs/config.spec b/parser-specs/config.spec
+index fd13797..dfd6401 100644
+--- a/parser-specs/config.spec
++++ b/parser-specs/config.spec
+@@ -345,20 +345,21 @@ state BAR:
+   error ->
+   '#' -> BAR_IGNORE_LINE
+   'set' -> BAR_IGNORE_LINE
+-  'i3bar_command'     -> BAR_BAR_COMMAND
+-  'status_command'    -> BAR_STATUS_COMMAND
+-  'socket_path'       -> BAR_SOCKET_PATH
+-  'mode'              -> BAR_MODE
+-  'hidden_state'      -> BAR_HIDDEN_STATE
+-  'id'                -> BAR_ID
+-  'modifier'          -> BAR_MODIFIER
+-  'position'          -> BAR_POSITION
+-  'output'            -> BAR_OUTPUT
+-  'tray_output'       -> BAR_TRAY_OUTPUT
+-  'font'              -> BAR_FONT
+-  'workspace_buttons' -> BAR_WORKSPACE_BUTTONS
+-  'verbose'           -> BAR_VERBOSE
+-  'colors'            -> BAR_COLORS_BRACE
++  'i3bar_command'          -> BAR_BAR_COMMAND
++  'status_command'         -> BAR_STATUS_COMMAND
++  'socket_path'            -> BAR_SOCKET_PATH
++  'mode'                   -> BAR_MODE
++  'hidden_state'           -> BAR_HIDDEN_STATE
++  'id'                     -> BAR_ID
++  'modifier'               -> BAR_MODIFIER
++  'position'               -> BAR_POSITION
++  'output'                 -> BAR_OUTPUT
++  'tray_output'            -> BAR_TRAY_OUTPUT
++  'font'                   -> BAR_FONT
++  'binding_mode_indicator' -> BAR_BINDING_MODE_INDICATOR
++  'workspace_buttons'      -> BAR_WORKSPACE_BUTTONS
++  'verbose'                -> BAR_VERBOSE
++  'colors'                 -> BAR_COLORS_BRACE
+   '}'
+       -> call cfg_bar_finish(); INITIAL
+ 
+@@ -411,6 +412,10 @@ state BAR_FONT:
+   font = string
+       -> call cfg_bar_font($font); BAR
+ 
++state BAR_BINDING_MODE_INDICATOR:
++  value = word
++      -> call cfg_bar_binding_mode_indicator($value); BAR
++
+ state BAR_WORKSPACE_BUTTONS:
+   value = word
+       -> call cfg_bar_workspace_buttons($value); BAR
+diff --git a/src/config_directives.c b/src/config_directives.c
+index 0fac700..2bd4c90 100644
+--- a/src/config_directives.c
++++ b/src/config_directives.c
+@@ -550,6 +550,10 @@ CFGFUN(bar_status_command, const char *command) {
+     current_bar.status_command = sstrdup(command);
+ }
+ 
++CFGFUN(bar_binding_mode_indicator, const char *value) {
++    current_bar.hide_binding_mode_indicator = !eval_boolstr(value);
++}
++
+ CFGFUN(bar_workspace_buttons, const char *value) {
+     current_bar.hide_workspace_buttons = !eval_boolstr(value);
+ }
+diff --git a/src/ipc.c b/src/ipc.c
+index 4c41465..a928dba 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -686,6 +686,9 @@ IPC_HANDLER(get_bar_config) {
+         ystr("workspace_buttons");
+         y(bool, !config->hide_workspace_buttons);
+ 
++        ystr("binding_mode_indicator");
++        y(bool, !config->hide_binding_mode_indicator);
++
+         ystr("verbose");
+         y(bool, config->verbose);
+ 
+diff --git a/testcases/t/177-bar-config.t b/testcases/t/177-bar-config.t
+index 762e52b..8675dd7 100644
+--- a/testcases/t/177-bar-config.t
++++ b/testcases/t/177-bar-config.t
+@@ -63,6 +63,7 @@ my $bar_config = $i3->get_bar_config($bar_id)->recv;
+ is($bar_config->{status_command}, 'i3status --foo', 'status_command correct');
+ ok(!$bar_config->{verbose}, 'verbose off by default');
+ ok($bar_config->{workspace_buttons}, 'workspace buttons enabled per default');
++ok($bar_config->{binding_mode_indicator}, 'mode indicator enabled per default');
+ is($bar_config->{mode}, 'dock', 'dock mode by default');
+ is($bar_config->{position}, 'bottom', 'position bottom by default');
+ 
+@@ -85,7 +86,8 @@ $config = <<EOT;
+ font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
+ 
+ bar {
+-    # Start a default instance of i3bar which provides workspace buttons.
++    # Start a default instance of i3bar which does not provide
++    # workspace buttons.
+     # Additionally, i3status will provide a statusline.
+     status_command i3status --bar
+ 
+@@ -98,6 +100,7 @@ bar {
+     mode dock
+     font Terminus
+     workspace_buttons no
++    binding_mode_indicator no
+     verbose yes
+     socket_path /tmp/foobar
+ 
+@@ -125,6 +128,7 @@ $bar_config = $i3->get_bar_config($bar_id)->recv;
+ is($bar_config->{status_command}, 'i3status --bar', 'status_command correct');
+ ok($bar_config->{verbose}, 'verbose on');
+ ok(!$bar_config->{workspace_buttons}, 'workspace buttons disabled');
++ok(!$bar_config->{binding_mode_indicator}, 'mode indicator disabled');
+ is($bar_config->{mode}, 'dock', 'dock mode');
+ is($bar_config->{position}, 'top', 'position top');
+ is_deeply($bar_config->{outputs}, [ 'HDMI1', 'HDMI2' ], 'outputs ok');
+@@ -230,7 +234,8 @@ $config = <<EOT;
+ font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
+ 
+ bar {
+-    # Start a default instance of i3bar which provides workspace buttons.
++    # Start a default instance of i3bar which does not provide
++    # workspace buttons.
+     # Additionally, i3status will provide a statusline.
+     status_command i3status --bar
+ 
+@@ -243,6 +248,7 @@ bar {
+     mode dock
+     font Terminus
+     workspace_buttons no
++    binding_mode_indicator yes
+     verbose yes
+     socket_path /tmp/foobar
+ 
+@@ -271,6 +277,7 @@ $bar_config = $i3->get_bar_config($bar_id)->recv;
+ is($bar_config->{status_command}, 'i3status --bar', 'status_command correct');
+ ok($bar_config->{verbose}, 'verbose on');
+ ok(!$bar_config->{workspace_buttons}, 'workspace buttons disabled');
++ok($bar_config->{binding_mode_indicator}, 'mode indicator enabled');
+ is($bar_config->{mode}, 'dock', 'dock mode');
+ is($bar_config->{position}, 'top', 'position top');
+ is_deeply($bar_config->{outputs}, [ 'HDMI1', 'HDMI2' ], 'outputs ok');
+diff --git a/testcases/t/201-config-parser.t b/testcases/t/201-config-parser.t
+index 06588b1..55239c6 100644
+--- a/testcases/t/201-config-parser.t
++++ b/testcases/t/201-config-parser.t
+@@ -627,7 +627,7 @@ EOT
+ 
+ $expected = <<'EOT';
+ cfg_bar_output(LVDS-1)
+-ERROR: CONFIG: Expected one of these tokens: <end>, '#', 'set', 'i3bar_command', 'status_command', 'socket_path', 'mode', 'hidden_state', 'id', 'modifier', 'position', 'output', 'tray_output', 'font', 'workspace_buttons', 'verbose', 'colors', '}'
++ERROR: CONFIG: Expected one of these tokens: <end>, '#', 'set', 'i3bar_command', 'status_command', 'socket_path', 'mode', 'hidden_state', 'id', 'modifier', 'position', 'output', 'tray_output', 'font', 'binding_mode_indicator', 'workspace_buttons', 'verbose', 'colors', '}'
+ ERROR: CONFIG: (in file <stdin>)
+ ERROR: CONFIG: Line   1: bar {
+ ERROR: CONFIG: Line   2:     output LVDS-1
+-- 
+1.8.1.2
+

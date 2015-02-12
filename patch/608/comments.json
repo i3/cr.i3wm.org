@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 20,
+    "Comment": "right now the concept of pixmap creation is tied up with changes in the rect.\n\nI could probably do this more cleanly, but it would require some more extensive refactoring.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

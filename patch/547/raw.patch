@@ -1,0 +1,215 @@
+From 47f6378eeb46cfd1fb5cdde94ddb693b2d433710 Mon Sep 17 00:00:00 2001
+From: Aleksi Blinnikka <aleksi.blinnikka@…>
+Date: Fri, 9 May 2014 19:33:38 +0300
+Subject: [PATCH] Separate border width for floating windows
+
+Floating windows already had their own border style, but the width was
+the same for all windows.
+
+The configuration directives 'new_window' and 'new_float' can now be
+used simultaneously to have different border widths for floating and
+tiled windows.
+
+fixes #1244
+---
+ include/config.h                |  1 +
+ src/con.c                       |  9 +++-
+ src/config.c                    |  1 +
+ src/config_directives.c         |  9 ++--
+ src/manage.c                    |  6 ++-
+ testcases/t/228-border-widths.t | 91 +++++++++++++++++++++++++++++++++++++++++
+ 6 files changed, 109 insertions(+), 8 deletions(-)
+ create mode 100644 testcases/t/228-border-widths.t
+
+diff --git a/include/config.h b/include/config.h
+index 7598241..367eee6 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -98,6 +98,7 @@ struct Config {
+     int container_stack_limit;
+     int container_stack_limit_value;
+     int default_border_width;
++    int default_floating_border_width;
+ 
+     /** Default orientation for new containers */
+     int default_orientation;
+diff --git a/src/con.c b/src/con.c
+index 66c9db6..4b47b18 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -1090,8 +1090,13 @@ Rect con_border_style_rect(Con *con) {
+     int border_width = con->current_border_width;
+     DLOG("The border width for con is set to: %d\n", con->current_border_width);
+     Rect result;
+-    if (con->current_border_width < 0)
+-        border_width = config.default_border_width;
++    if (con->current_border_width < 0) {
++        if (con_is_floating(con)) {
++            border_width = config.default_floating_border_width;
++        } else {
++            border_width = config.default_border_width;
++        }
++    }
+     DLOG("Effective border width is set to: %d\n", border_width);
+     /* Shortcut to avoid calling con_adjacent_borders() on dock containers. */
+     int border_style = con_border_style(con);
+diff --git a/src/config.c b/src/config.c
+index bbfae9d..99901e0 100644
+--- a/src/config.c
++++ b/src/config.c
+@@ -255,6 +255,7 @@ void load_configuration(xcb_connection_t *conn, const char *override_configpath,
+     config.default_border = BS_NORMAL;
+     config.default_floating_border = BS_NORMAL;
+     config.default_border_width = logical_px(2);
++    config.default_floating_border_width = logical_px(2);
+     /* Set default_orientation to NO_ORIENTATION for auto orientation. */
+     config.default_orientation = NO_ORIENTATION;
+ 
+diff --git a/src/config_directives.c b/src/config_directives.c
+index f5a592f..4676265 100644
+--- a/src/config_directives.c
++++ b/src/config_directives.c
+@@ -252,9 +252,6 @@ CFGFUN(workspace_layout, const char *layout) {
+ }
+ 
+ CFGFUN(new_window, const char *windowtype, const char *border, const long width) {
+-    // FIXME: when using new_float *and* new_window with different border
+-    // types, this breaks because default_border_width gets overwritten.
+-
+     int border_style;
+     int border_width;
+ 
+@@ -273,12 +270,14 @@ CFGFUN(new_window, const char *windowtype, const char *border, const long width)
+     }
+ 
+     if (strcmp(windowtype, "new_window") == 0) {
++        DLOG("default tiled border style = %d and border width = %d\n", border_style, border_width);
+         config.default_border = border_style;
++        config.default_border_width = border_width;
+     } else {
++        DLOG("default floating border style = %d and border width = %d\n", border_style, border_width);
+         config.default_floating_border = border_style;
++        config.default_floating_border_width = border_width;
+     }
+-
+-    config.default_border_width = border_width;
+ }
+ 
+ CFGFUN(hide_edge_borders, const char *borders) {
+diff --git a/src/manage.c b/src/manage.c
+index 773c3df..c8253f4 100644
+--- a/src/manage.c
++++ b/src/manage.c
+@@ -430,7 +430,11 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+ 
+     if (motif_border_style != BS_NORMAL) {
+         DLOG("MOTIF_WM_HINTS specifies decorations (border_style = %d)\n", motif_border_style);
+-        con_set_border_style(nc, motif_border_style, config.default_border_width);
++        if (want_floating) {
++            con_set_border_style(nc, motif_border_style, config.default_floating_border_width);
++        } else {
++            con_set_border_style(nc, motif_border_style, config.default_border_width);
++        }
+     }
+ 
+     /* to avoid getting an UnmapNotify event due to reparenting, we temporarily
+diff --git a/testcases/t/228-border-widths.t b/testcases/t/228-border-widths.t
+new file mode 100644
+index 0000000..e236fe6
+--- /dev/null
++++ b/testcases/t/228-border-widths.t
+@@ -0,0 +1,91 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Tests that the border widths can be set separately for floating and
++# tiled windows
++# Ticket: #1244
++# Bug still in: 4.7.2-166-gb69b3fc
++
++use i3test i3_autostart => 0;
++
++#####################################################################
++# 1: check that the border widths can be different for floating and
++# tiled windows
++#####################################################################
++
++my $config = <<EOT;
++# i3 config file (v4)
++font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
++
++new_window pixel 5
++new_float pixel 10
++EOT
++
++my $pid = launch_with_config($config);
++
++my $tmp = fresh_workspace;
++
++ok(@{get_ws_content($tmp)} == 0, 'no containers yet');
++
++my $tilewindow = open_window;
++my $floatwindow = open_floating_window;
++
++my $wscontent = get_ws($tmp);
++
++my @tiled = @{$wscontent->{nodes}};
++ok(@tiled == 1, 'one tiled container opened');
++is($tilewindow->rect->width, $tiled[0]->{rect}->{width} - 2*5, 'tiled border width 5');
++
++my @floating = @{$wscontent->{floating_nodes}};
++ok(@floating == 1, 'one floating container opened');
++is($floatwindow->rect->width, $floating[0]->{rect}->{width} - 2*10, 'floating border width 10');
++
++exit_gracefully($pid);
++
++#####################################################################
++# 2: make sure the order can also be reverse
++#####################################################################
++
++$config = <<EOT;
++# i3 config file (v4)
++font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
++
++new_float pixel 7
++new_window pixel 3
++EOT
++
++$pid = launch_with_config($config);
++
++$tmp = fresh_workspace;
++
++ok(@{get_ws_content($tmp)} == 0, 'no containers yet');
++
++$tilewindow = open_window;
++$floatwindow = open_floating_window;
++
++$wscontent = get_ws($tmp);
++
++@tiled = @{$wscontent->{nodes}};
++ok(@tiled == 1, 'one tiled container opened');
++is($tilewindow->rect->width, $tiled[0]->{rect}->{width} - 2*3, 'tiled border width 3');
++
++@floating = @{$wscontent->{floating_nodes}};
++ok(@floating == 1, 'one floating container opened');
++is($floatwindow->rect->width, $floating[0]->{rect}->{width} - 2*7, 'floating border width 7');
++
++exit_gracefully($pid);
++
++done_testing;
+-- 
+1.9.2
+

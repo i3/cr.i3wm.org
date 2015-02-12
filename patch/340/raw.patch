@@ -1,0 +1,82 @@
+From b4454b3191ca4ee16121d6b3cafda77ce7e11a4e Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Mon, 2 Dec 2013 11:23:52 -0500
+Subject: [PATCH] Refactor and improve test 514
+
+Split test 514's assertion into three assertions to make it more
+explicit what is being tested, and why a run might fail.
+
+Move critical test code out of the event handler to clarify flow and
+allow a query of the actual current workspace to use in assertions.
+
+Works around an issue which caused this test to fail spurriously because
+of pointer-related quirks in the i3 test suite which would sometimes
+cause i3 to open on workspace 2 (However, the test is now agnostic to
+the initial workspace or output).
+---
+ testcases/t/514-ipc-workspace-multi-monitor.t | 24 +++++++++++++++---------
+ 1 file changed, 15 insertions(+), 9 deletions(-)
+
+diff --git a/testcases/t/514-ipc-workspace-multi-monitor.t b/testcases/t/514-ipc-workspace-multi-monitor.t
+index 360bd42..61622ab 100644
+--- a/testcases/t/514-ipc-workspace-multi-monitor.t
++++ b/testcases/t/514-ipc-workspace-multi-monitor.t
+@@ -19,6 +19,10 @@
+ 
+ use i3test i3_autostart => 0;
+ 
++# Ensure the pointer is at (0, 0) so that we really start on the first
++# (the left) workspace.
++$x->root->warp_pointer(0, 0);
++
+ my $config = <<EOT;
+ # i3 config file (v4)
+ font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
+@@ -35,7 +39,7 @@ $i3->connect()->recv;
+ # Workspaces requests and events
+ ################################
+ 
+-my $focused = get_ws(focused_ws());
++my $old_ws = get_ws(focused_ws);
+ 
+ # Events
+ 
+@@ -46,17 +50,11 @@ $i3->subscribe({
+     workspace => sub {
+         my ($event) = @_;
+         if ($event->{change} eq 'focus') {
+-            # Check that we have the old and new workspace
+-            $focus->send(
+-                $event->{current}->{name} == '2' &&
+-                $event->{old}->{name} == $focused->{name}
+-            );
++            $focus->send($event);
+         }
+     }
+ })->recv;
+ 
+-cmd 'focus output right';
+-
+ my $t;
+ $t = AnyEvent->timer(
+     after => 0.5,
+@@ -65,7 +63,15 @@ $t = AnyEvent->timer(
+     }
+ );
+ 
+-ok($focus->recv, 'Workspace "focus" event received');
++cmd 'focus output right';
++
++my $event = $focus->recv;
++
++my $current_ws = get_ws(focused_ws);
++
++ok($event, 'Workspace "focus" event received');
++is($event->{current}->{id}, $current_ws->{id}, 'Event gave correct current workspace');
++is($event->{old}->{id}, $old_ws->{id}, 'Event gave correct old workspace');
+ 
+ exit_gracefully($pid);
+ 
+-- 
+1.8.4.2
+

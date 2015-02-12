@@ -1,0 +1,38 @@
+From 89a63aa46442139058aa4b0e2ba94493ddfcb142 Mon Sep 17 00:00:00 2001
+From: Philip Dexter <philip.dexter@…>
+Date: Tue, 12 Mar 2013 16:32:44 -0400
+Subject: [PATCH 2/2] added ctrl+u functionality for clearing passwords
+
+---
+ i3lock.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/i3lock.c b/i3lock.c
+index 96bd6d7..855bdea 100644
+--- a/i3lock.c
++++ b/i3lock.c
+@@ -238,8 +238,11 @@ static void handle_key_press(xcb_key_press_event_t *event) {
+     xkb_keysym_t ksym;
+     char buffer[128];
+     int n;
++    int ctrl;
++    char ctrl_string_buffer[8] = "Control";
+ 
+     ksym = xkb_state_key_get_one_sym(xkb_state, event->detail);
++    ctrl = xkb_state_mod_name_is_active(xkb_state, ctrl_string_buffer, XKB_STATE_MODS_DEPRESSED);
+     xkb_state_update_key(xkb_state, event->detail, XKB_KEY_DOWN);
+ 
+     /* The buffer will be null-terminated, so n >= 2 for 1 actual character. */
+@@ -254,6 +257,9 @@ static void handle_key_press(xcb_key_press_event_t *event) {
+         unlock_state = STATE_KEY_PRESSED;
+         redraw_screen();
+         input_done();
++    case XKB_KEY_u:
++        if(!ctrl)
++            break;
+     case XKB_KEY_Escape:
+         input_position = 0;
+         clear_password_memory();
+-- 
+1.8.1.5
+

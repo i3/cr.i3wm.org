@@ -1,0 +1,116 @@
+From c873e596852f10d90784e0f4e66996e9b60cfecf Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Wed, 18 Jun 2014 04:23:00 -0400
+Subject: [PATCH] Handle WM_CHANGE_STATE requests for iconic state
+
+http://tronche.com/gui/x/icccm/sec-4.html#s-4.1.4
+
+ > IconicState - The client's top-level window is iconic (whatever that
+ > means for this window manager). The client can assume that its
+ > top-level window is not viewable, its icon_window (if any) will be
+ > viewable and, failing that, its icon_pixmap (if any) or its
+ > WM_ICON_NAME will be displayed.
+
+For these requests, we just close the window.
+
+fixes #1279
+---
+ include/atoms.xmacro              |  1 +
+ src/handlers.c                    | 15 ++++++++++++
+ testcases/t/231-wm-change-state.t | 49 +++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 65 insertions(+)
+ create mode 100644 testcases/t/231-wm-change-state.t
+
+diff --git a/include/atoms.xmacro b/include/atoms.xmacro
+index 90b0261..7ec87ba 100644
+--- a/include/atoms.xmacro
++++ b/include/atoms.xmacro
+@@ -34,3 +34,4 @@ xmacro(I3_PID)
+ xmacro(_NET_REQUEST_FRAME_EXTENTS)
+ xmacro(_NET_FRAME_EXTENTS)
+ xmacro(_MOTIF_WM_HINTS)
++xmacro(WM_CHANGE_STATE)
+diff --git a/src/handlers.c b/src/handlers.c
+index c217cbb..b32ce25 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -791,6 +791,21 @@ static void handle_client_message(xcb_client_message_event_t *event) {
+             XCB_ATOM_CARDINAL, 32, 4,
+             &r);
+         xcb_flush(conn);
++    } else if (event->type == A_WM_CHANGE_STATE) {
++        /* http://tronche.com/gui/x/icccm/sec-4.html#s-4.1.4 */
++        Con *con = con_by_window_id(event->window);
++
++        if (con && event->data.data32[0] == 3) {
++            /* this request is so we can play some animiation showing the
++             * window physically moving to the tray before we close it (I
++             * think) */
++            DLOG("Client has requested iconic state. Closing this con. (con = %p)\n", con);
++            tree_close(con, DONT_KILL_WINDOW, false, false);
++            tree_render();
++        } else {
++            DLOG("Not handling WM_CHANGE_STATE request. (window = %d, state = %d)\n", event->window, event->data.data32[0]);
++        }
++
+     } else {
+         DLOG("unhandled clientmessage\n");
+         return;
+diff --git a/testcases/t/231-wm-change-state.t b/testcases/t/231-wm-change-state.t
+new file mode 100644
+index 0000000..92992b4
+--- /dev/null
++++ b/testcases/t/231-wm-change-state.t
+@@ -0,0 +1,49 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Correctly handle WM_CHANGE_STATE requests for the iconic state
++# See http://tronche.com/gui/x/icccm/sec-4.html#s-4.1.4
++# Ticket: #1279
++# Bug still in: 4.8-7-gf4a8253
++use i3test;
++
++sub send_iconic_state_request {
++    my ($win) = @_;
++
++    my $msg = pack "CCSLLLLLL",
++        X11::XCB::CLIENT_MESSAGE, # response_type
++        32, # format
++        0, # sequence
++        $win->id, # window
++        $x->atom(name => 'WM_CHANGE_STATE')->id, # message type
++        3, # data32[0]
++        0, # data32[1]
++        0, # data32[2]
++        0, # data32[3]
++        0; # data32[4]
++
++    $x->send_event(0, $x->get_root_window(), X11::XCB::EVENT_MASK_SUBSTRUCTURE_REDIRECT, $msg);
++}
++
++my $ws = fresh_workspace;
++my $win = open_window;
++
++send_iconic_state_request($win);
++sync_with_i3;
++
++is(@{get_ws($ws)->{nodes}}, 0, 'When a window requests the iconic state, the container should be closed');
++
++done_testing;
+-- 
+2.0.0
+

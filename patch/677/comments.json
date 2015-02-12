@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 66,
+    "Comment": "Same question as in #673: why are we introducing a nested format instead of making format_up understand %g and %c? The latter seems simpler to me.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Enrico Carlesso",
+    "Line": 66,
+    "Comment": "Maybe, but will force you to use printf-like syntax instead of using %bitrate, although your hint make sense. ",
+    "EmailHash": "13d35cfcb64d83bd4019053045cd95b4"
+  }
+]

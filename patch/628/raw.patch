@@ -1,0 +1,141 @@
+From d75a0ab8c211ceb129e31f0950b0c42474194301 Mon Sep 17 00:00:00 2001
+From: Luke Heberling <luke+i3@…>
+Date: Sat, 19 Jul 2014 22:05:39 +0200
+Subject: [PATCH] Add file_contents module to print arbitrary file data.
+
+This can be used to replace external wrapper scripts with single-purpose
+scripts, easily distributable in contrib.
+---
+ i3status.c                | 15 +++++++++++++++
+ include/i3status.h        |  1 +
+ man/i3status.man          | 10 ++++++++++
+ src/print_file_contents.c | 30 ++++++++++++++++++++++++++++++
+ 4 files changed, 56 insertions(+)
+ create mode 100644 src/print_file_contents.c
+
+diff --git a/i3status.c b/i3status.c
+index befe1d6..f58043b 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -402,6 +402,14 @@ int main(int argc, char *argv[]) {
+                 CFG_END()
+         };
+ 
++        cfg_opt_t file_contents_opts[] = {
++                CFG_STR("file", NULL, CFGF_NONE),
++                CFG_CUSTOM_ALIGN_OPT,
++                CFG_CUSTOM_COLOR_OPTS,
++                CFG_CUSTOM_MIN_WIDTH_OPT,
++                CFG_END()
++        };
++
+         cfg_opt_t opts[] = {
+                 CFG_STR_LIST("order", "{}", CFGF_NONE),
+                 CFG_SEC("general", general_opts, CFGF_NONE),
+@@ -419,6 +427,7 @@ int main(int argc, char *argv[]) {
+                 CFG_SEC("ddate", ddate_opts, CFGF_NONE),
+                 CFG_SEC("load", load_opts, CFGF_NONE),
+                 CFG_SEC("cpu_usage", usage_opts, CFGF_NONE),
++                CFG_SEC("file_contents", file_contents_opts, CFGF_TITLE | CFGF_MULTI),
+                 CFG_END()
+         };
+ 
+@@ -652,6 +661,12 @@ int main(int argc, char *argv[]) {
+                                 print_cpu_usage(json_gen, buffer, cfg_getstr(sec, "format"));
+                                 SEC_CLOSE_MAP;
+                         }
++
++                        CASE_SEC_TITLE("file_contents") {
++                                SEC_OPEN_MAP("file_contents");
++                                print_file_contents(json_gen, buffer, title, cfg_getstr(sec, "file"));
++                                SEC_CLOSE_MAP;
++                        }
+                 }
+                 if (output_format == O_I3BAR) {
+                         yajl_gen_array_close(json_gen);
+diff --git a/include/i3status.h b/include/i3status.h
+index 4c63305..96afeea 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -184,6 +184,7 @@ void print_cpu_usage(yajl_gen json_gen, char *buffer, const char *format);
+ void print_eth_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
+ void print_load(yajl_gen json_gen, char *buffer, const char *format, const float max_threshold);
+ void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *fmt_muted, const char *device, const char *mixer, int mixer_idx);
++void print_file_contents(yajl_gen json_gen, char *buffer, const char *title, const char *file);
+ bool process_runs(const char *path);
+ 
+ /* socket file descriptor for general purposes */
+diff --git a/man/i3status.man b/man/i3status.man
+index 27a76ed..f7e10e1 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -47,6 +47,7 @@ general {
+         interval = 5
+ }
+ 
++order += "file_contents motd"
+ order += "ipv6"
+ order += "disk /"
+ order += "run_watch DHCP"
+@@ -60,6 +61,10 @@ order += "load"
+ order += "tztime local"
+ order += "tztime berlin"
+ 
++file_contents motd {
++	path = "/etc/motd"
++}
++
+ wireless wlan0 {
+         format_up = "W: (%quality at %essid, %bitrate) %ip"
+         format_down = "W: down"
+@@ -196,6 +201,11 @@ disk "/" {
+ }
+ -------------------------------------------------------------
+ 
++=== File Contents
++This module gets the first line of a file, up to 128 characters.
++
++*Example path*: +/etc/motd+
++
+ === IPv6
+ 
+ This module gets the IPv6 address used for outgoing connections (that is, the
+diff --git a/src/print_file_contents.c b/src/print_file_contents.c
+new file mode 100644
+index 0000000..c9498f4
+--- /dev/null
++++ b/src/print_file_contents.c
+@@ -0,0 +1,30 @@
++#include <stdio.h>
++#include <string.h>
++#include <glob.h>
++#include <yajl/yajl_gen.h>
++#include <yajl/yajl_version.h>
++#include "i3status.h"
++
++void print_file_contents(yajl_gen json_gen, char *buffer, const char *title, const char *file) {
++	char *outwalk = buffer;
++
++	INSTANCE(title);
++
++	static glob_t globbuf;
++
++	if (glob(file, GLOB_NOCHECK | GLOB_TILDE, NULL, &globbuf) < 0)
++		die("glob() failed\n");
++	// We can't access actual size of buffer here, but it's 4096 currently
++	if (!slurp((globbuf.gl_pathc > 0 ? globbuf.gl_pathv[0] : file), outwalk, 128))
++		*outwalk = '\0';
++	// slurp zero-terminates the buffer
++
++	globfree(&globbuf);
++	char *eol = strchr(outwalk, '\n');
++	if (eol != NULL) {
++		outwalk = eol;
++	} else {
++		outwalk = strchr(outwalk, '\0');
++	}
++	OUTPUT_FULL_TEXT(buffer);
++}
+-- 
+2.0.0.526.g5318336
+

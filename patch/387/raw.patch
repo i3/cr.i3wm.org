@@ -1,0 +1,285 @@
+From cf221a5cc69a239d285aba7472132faa4f2bbd94 Mon Sep 17 00:00:00 2001
+From: Marco Hunsicker <i3@…>
+Date: Fri, 24 Jan 2014 23:19:51 +0100
+Subject: [PATCH] Send IPC window events for focus and title changes
+
+This patch provides an implementation for ticket #1168: 'Add IPC
+window events for focus and title changes'. To support more use cases
+for client programming, i3 should send IPC events for window focus
+and title changes.
+
+With this patch, window events are send whenever a window gains focus
+or changes its title.
+
+All window events use the same, already established format. The change
+field that holds the type of the window event. And the container field
+that provides the serialized window container.
+
+This patch supersedes the earlier patch 'Add IPC event for window title
+changes' which only added support for window title change notification.
+Unlike the old patch that added a whole new event type, this patch
+merely extends the existing window event with new properties.
+---
+ docs/ipc       |   17 +++++++++--------
+ include/ipc.h  |   18 ++++++++++++++++++
+ src/con.c      |   10 +++++++++-
+ src/handlers.c |   30 ++++++++++++++++++++++++++++++
+ src/ipc.c      |   36 ++++++++++++++++++++++++++++++++++++
+ src/manage.c   |   29 -----------------------------
+ 6 files changed, 102 insertions(+), 38 deletions(-)
+
+diff --git a/docs/ipc b/docs/ipc
+index e4f1e80..6b78770 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -1,7 +1,7 @@
+ IPC interface (interprocess communication)
+ ==========================================
+ Michael Stapelberg <michael@i3wm.org>
+-October 2012
++January 2014
+ 
+ This document describes how to interface with i3 from a separate process. This
+ is useful for example to remote-control i3 (to write test cases for example) or
+@@ -632,7 +632,8 @@ mode (2)::
+ 	Sent whenever i3 changes its binding mode.
+ window (3)::
+ 	Sent when a client's window is successfully reparented (that is when i3
+-	has finished fitting it into a container).
++	has finished fitting it into a container), when a window received input
++	focus or when a window title was upated.
+ barconfig_update (4)::
+     Sent when the hidden_state or mode field in the barconfig of any bar
+     instance was updated.
+@@ -712,14 +713,14 @@ mode is simply named default.
+ === window event
+ 
+ This event consists of a single serialized map containing a property
+-+change (string)+ which currently can indicate only that a new window
+-has been successfully reparented (the value will be "new").
+++change (string)+ which indicates the type of the change ("focus", "new",
++"title").
+ 
+ Additionally a +container (object)+ field will be present, which consists
+-of the window's parent container. Be aware that the container will hold
+-the initial name of the newly reparented window (e.g. if you run urxvt
+-with a shell that changes the title, you will still at this point get the
+-window title as "urxvt").
++of the window's parent container. Be aware that for the "new" event, the
++container will hold the initial name of the newly reparented window (e.g.
++if you run urxvt with a shell that changes the title, you will still at
++this point get the window title as "urxvt").
+ 
+ *Example:*
+ ---------------------------
+diff --git a/include/ipc.h b/include/ipc.h
+index cbbec8e..305cfdd 100644
+--- a/include/ipc.h
++++ b/include/ipc.h
+@@ -87,3 +87,21 @@ void dump_node(yajl_gen gen, Con *con, bool inplace_restart);
+  * respectively.
+  */
+ void ipc_send_workspace_focus_event(Con *current, Con *old);
++
++/**
++ * For the window "focus" event we send, along the usual "change" field,
++ * also the window container, in "container".
++ */
++void ipc_send_window_focus_event(Con *con);
++
++/**
++ * For the window "new" event we send, along the usual "change" field,
++ * also the window container, in "container".
++ */
++void ipc_send_window_new_event(Con *con);
++
++/**
++ * For the window "title" event we send, along the usual "change" field,
++ * also the window container, in "container".
++ */
++void ipc_send_window_title_event(Con *con);
+diff --git a/src/con.c b/src/con.c
+index 5a3c88d..4a47793 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -213,6 +213,8 @@ void con_focus(Con *con) {
+     assert(con != NULL);
+     DLOG("con_focus = %p\n", con);
+ 
++    bool already_focused = (con == focused);
++
+     /* 1: set focused-pointer to the new con */
+     /* 2: exchange the position of the container in focus stack of the parent all the way up */
+     TAILQ_REMOVE(&(con->parent->focus_head), con, focused);
+@@ -221,15 +223,21 @@ void con_focus(Con *con) {
+         con_focus(con->parent);
+ 
+     focused = con;
++
++    if (con_is_leaf(con)) {
++        if (!already_focused)
++            ipc_send_window_focus_event(con);
++
+     /* We can't blindly reset non-leaf containers since they might have
+      * other urgent children. Therefore we only reset leafs and propagate
+      * the changes upwards via con_update_parents_urgency() which does proper
+      * checks before resetting the urgency.
+      */
+-    if (con->urgent && con_is_leaf(con)) {
++        if (con->urgent) {
+         con->urgent = false;
+         con_update_parents_urgency(con);
+         workspace_update_urgent_flag(con_get_workspace(con));
++        }
+     }
+ }
+ 
+diff --git a/src/handlers.c b/src/handlers.c
+index 312372a..b589590 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -22,6 +22,8 @@
+ 
+ int randr_base = -1;
+ 
++char *current_windowtitle = NULL;
++
+ /* After mapping/unmapping windows, a notify event is generated. However, we don’t want it,
+    since it’d trigger an infinite loop of switching between the different windows when
+    changing workspaces */
+@@ -528,6 +530,30 @@ static void handle_destroy_notify_event(xcb_destroy_notify_event_t *event) {
+     handle_unmap_notify_event(&unmap);
+ }
+ 
++const char* get_title(Con *con) {
++    return (con != NULL && con->window != NULL && con->window->name != NULL) ? i3string_as_utf8(con->window->name) : "";
++}
++
++bool is_title_changed(Con *con) {
++    if (con == focused ) {
++        const char* title = get_title(con);
++
++        if (current_windowtitle != NULL && strcmp(current_windowtitle, title) == 0)
++            return FALSE;
++
++        FREE(current_windowtitle);
++
++        current_windowtitle = strdup(title);
++    }
++
++    return TRUE;
++}
++
++void send_window_title_event(Con *con) {
++    if (is_title_changed(con))
++        ipc_send_window_title_event(con);
++}
++
+ /*
+  * Called when a window changes its title
+  *
+@@ -542,6 +568,8 @@ static bool handle_windowname_change(void *data, xcb_connection_t *conn, uint8_t
+ 
+     x_push_changes(croot);
+ 
++    send_window_title_event(con);
++
+     return true;
+ }
+ 
+@@ -560,6 +588,8 @@ static bool handle_windowname_change_legacy(void *data, xcb_connection_t *conn,
+ 
+     x_push_changes(croot);
+ 
++    send_window_title_event(con);
++
+     return true;
+ }
+ 
+diff --git a/src/ipc.c b/src/ipc.c
+index f1e9019..1fc88d7 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -1056,3 +1056,39 @@ void ipc_send_workspace_focus_event(Con *current, Con *old) {
+     y(free);
+     setlocale(LC_NUMERIC, "");
+ }
++
++void ipc_send_window_event(const char *property, Con *con) {
++    setlocale(LC_NUMERIC, "C");
++    yajl_gen gen = ygenalloc();
++
++    y(map_open);
++
++    ystr("change");
++    ystr(property);
++
++    ystr("container");
++    dump_node(gen, con, false);
++
++    y(map_close);
++
++    const unsigned char *payload;
++    ylength length;
++    y(get_buf, &payload, &length);
++
++    ipc_send_event("window", I3_IPC_EVENT_WINDOW, (const char *)payload);
++    y(free);
++    setlocale(LC_NUMERIC, "");
++}
++
++void ipc_send_window_focus_event(Con *con) {
++    ipc_send_window_event("focus", con);
++}
++
++void ipc_send_window_new_event(Con *con) {
++    ipc_send_window_event("new", con);
++}
++
++void ipc_send_window_title_event(Con *con) {
++    ipc_send_window_event("title", con);
++}
++
+diff --git a/src/manage.c b/src/manage.c
+index d84ba1b..6e78e95 100644
+--- a/src/manage.c
++++ b/src/manage.c
+@@ -76,35 +76,6 @@ void restore_geometry(void) {
+ }
+ 
+ /*
+- * The following function sends a new window event, which consists
+- * of fields "change" and "container", the latter containing a dump
+- * of the window's container.
+- *
+- */
+-static void ipc_send_window_new_event(Con *con) {
+-    setlocale(LC_NUMERIC, "C");
+-    yajl_gen gen = ygenalloc();
+-
+-    y(map_open);
+-
+-    ystr("change");
+-    ystr("new");
+-
+-    ystr("container");
+-    dump_node(gen, con, false);
+-
+-    y(map_close);
+-
+-    const unsigned char *payload;
+-    ylength length;
+-    y(get_buf, &payload, &length);
+-
+-    ipc_send_event("window", I3_IPC_EVENT_WINDOW, (const char *)payload);
+-    y(free);
+-    setlocale(LC_NUMERIC, "");
+-}
+-
+-/*
+  * Do some sanity checks and then reparent the window.
+  *
+  */
+-- 
+1.7.10.4
+

@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 23,
+    "Comment": "I don’t like how this patch needs to introduce an additional state and needs to modify existing test cases, even though I specifically said that #1035 should be implemented without modifying existing test cases.\n\nIn general, I am not convinced that the behavior needs to be changed at all. Will reply to the bug in a second.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Philippe Virouleau",
+    "Line": 23,
+    "Comment": "I may not have been optimal in term of changes, though. I think there is another way to achieve this by popping and pushing back the windows in the scratchpad until the just added window is on top. It will reduce the changes but the existing testcase will still need to be modified.\nJust let me know if you want me to look more at this solution or if you still want to give up on this feature.",
+    "EmailHash": "73e4ef48030de3c30ccb5a5c05b20e66"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 23,
+    "Comment": "If the testcases need to be modified it changes existing behavior, and I’d like to avoid that. Especially with the scratchpad, it feels like a lot of people use it for many different things that it wasn’t intended to be used. Each change we make risks breaking somebody else’s workflow…\n\nSo in conclusion: no, further patches are not necessary, I think.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

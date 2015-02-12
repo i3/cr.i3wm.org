@@ -1,0 +1,132 @@
+From f6d46275f5dc0dd0c704640311801a51806c2481 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 20 Jun 2014 07:44:08 -0400
+Subject: [PATCH] Implement the window::floating event
+
+The window::floating event should be emitted when a window transitions
+to or from the floating state.
+---
+ docs/ipc                             |  1 +
+ src/floating.c                       | 12 ++++++--
+ testcases/t/231-ipc-floating-event.t | 59 ++++++++++++++++++++++++++++++++++++
+ 3 files changed, 70 insertions(+), 2 deletions(-)
+ create mode 100644 testcases/t/231-ipc-floating-event.t
+
+diff --git a/docs/ipc b/docs/ipc
+index 0560d4e..db3910f 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -722,6 +722,7 @@ This event consists of a single serialized map containing a property
+ * +title+ - the window's title has changed
+ * +fullscreen_mode+ - the window has entered or exited fullscreen mode
+ * +move+ - the window has changed its position in the tree
++* +floating+ - the window has transitioned to or from floating
+ 
+ Additionally a +container (object)+ field will be present, which consists
+ of the window's parent container. Be aware that for the "new" event, the
+diff --git a/src/floating.c b/src/floating.c
+index f993595..8a2fde2 100644
+--- a/src/floating.c
++++ b/src/floating.c
+@@ -298,16 +298,22 @@ void floating_enable(Con *con, bool automatic) {
+ 
+     /* Check if we need to re-assign it to a different workspace because of its
+      * coordinates and exit if that was done successfully. */
+-    if (floating_maybe_reassign_ws(nc))
++    if (floating_maybe_reassign_ws(nc)) {
++        ipc_send_window_event("floating", con);
+         return;
++    }
+ 
+     /* Sanitize coordinates: Check if they are on any output */
+-    if (get_output_containing(nc->rect.x, nc->rect.y) != NULL)
++    if (get_output_containing(nc->rect.x, nc->rect.y) != NULL) {
++        ipc_send_window_event("floating", con);
+         return;
++    }
+ 
+     ELOG("No output found at destination coordinates, centering floating window on current ws\n");
+     nc->rect.x = ws->rect.x + (ws->rect.width / 2) - (nc->rect.width / 2);
+     nc->rect.y = ws->rect.y + (ws->rect.height / 2) - (nc->rect.height / 2);
++
++    ipc_send_window_event("floating", con);
+ }
+ 
+ void floating_disable(Con *con, bool automatic) {
+@@ -351,6 +357,8 @@ void floating_disable(Con *con, bool automatic) {
+ 
+     if (set_focus)
+         con_focus(con);
++
++    ipc_send_window_event("floating", con);
+ }
+ 
+ /*
+diff --git a/testcases/t/231-ipc-floating-event.t b/testcases/t/231-ipc-floating-event.t
+new file mode 100644
+index 0000000..c2de64e
+--- /dev/null
++++ b/testcases/t/231-ipc-floating-event.t
+@@ -0,0 +1,59 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Test that the window::floating event works correctly. This event should be
++# emitted when a window transitions to or from the floating state.
++# Bug still in: 4.8-7-gf4a8253
++use i3test;
++
++my $i3 = i3(get_socket_path());
++$i3->connect->recv;
++
++my $cv = AnyEvent->condvar;
++
++$i3->subscribe({
++        window => sub {
++            my ($event) = @_;
++            $cv->send($event) if $event->{change} eq 'floating';
++        }
++    })->recv;
++
++my $t;
++$t = AnyEvent->timer(
++    after => 0.5,
++    cb => sub {
++        $cv->send(0);
++    }
++);
++
++my $win = open_window();
++
++cmd '[id="' . $win->{id} . '"] floating enable';
++my $e = $cv->recv;
++
++isnt($e, 0, 'floating a container should send an ipc window event');
++is($e->{container}->{window}, $win->{id}, 'the event should contain information about the window');
++is($e->{container}->{floating}, 'user_on', 'the container should be floating');
++
++$cv = AnyEvent->condvar;
++cmd '[id="' . $win->{id} . '"] floating disable';
++my $e = $cv->recv;
++
++isnt($e, 0, 'disabling floating on a container should send an ipc window event');
++is($e->{container}->{window}, $win->{id}, 'the event should contain information about the window');
++is($e->{container}->{floating}, 'user_off', 'the container should not be floating');
++
++done_testing;
+-- 
+2.0.0
+

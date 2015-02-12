@@ -1,0 +1,253 @@
+From 324744e18e8d3336e3da637682b904c5225908fc Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Mon, 27 Jan 2014 22:45:01 -0500
+Subject: [PATCH] Abstract binding configuration to bindings.[ch]
+
+Create files bindings.[ch] to contain functions for configuring,
+finding, and running bindings.
+
+Use the new function `configure_binding` for binding configuration. This
+function adds a binding from config parameters.
+
+Export the function `modifiers_from_str` from config_directives.h.
+
+This change is made in preparation for the new bindmouse functionality.
+---
+ include/all.h               |  1 +
+ include/bindings.h          | 25 ++++++++++++++++
+ include/config_directives.h |  6 ++++
+ src/bindings.c              | 71 +++++++++++++++++++++++++++++++++++++++++++++
+ src/config_directives.c     | 55 ++++++++---------------------------
+ 5 files changed, 115 insertions(+), 43 deletions(-)
+ create mode 100644 include/bindings.h
+ create mode 100644 src/bindings.c
+
+diff --git a/include/all.h b/include/all.h
+index 9ba4c1d..a355d3d 100644
+--- a/include/all.h
++++ b/include/all.h
+@@ -79,6 +79,7 @@
+ #include "scratchpad.h"
+ #include "commands.h"
+ #include "commands_parser.h"
++#include "bindings.h"
+ #include "config_directives.h"
+ #include "config_parser.h"
+ #include "fake_outputs.h"
+diff --git a/include/bindings.h b/include/bindings.h
+new file mode 100644
+index 0000000..49711a9
+--- /dev/null
++++ b/include/bindings.h
+@@ -0,0 +1,25 @@
++/*
++ * vim:ts=4:sw=4:expandtab
++ *
++ * i3 - an improved dynamic tiling window manager
++ * © 2009-2014 Michael Stapelberg and contributors (see also: LICENSE)
++ *
++ * bindings.h: Functions for configuring, finding, and running bindings.
++ *
++ */
++#pragma once
++
++/**
++ * The name of the default mode.
++ *
++ */
++const char *DEFAULT_BINDING_MODE;
++
++/**
++ * Adds a binding from config parameters given as strings and returns a
++ * pointer to the binding structure. Returns NULL if the input code could not
++ * be parsed.
++ *
++ */
++Binding *configure_binding(const char *bindtype, const char *modifiers, const char *input_code,
++        const char *release, const char *command, const char *mode);
+diff --git a/include/config_directives.h b/include/config_directives.h
+index e6b792c..a95a647 100644
+--- a/include/config_directives.h
++++ b/include/config_directives.h
+@@ -11,6 +11,12 @@
+ 
+ #include "config_parser.h"
+ 
++/**
++ * A utility function to convert a string of modifiers to the corresponding bit
++ * mask.
++ */
++uint32_t modifiers_from_str(const char *str);
++
+ /** The beginning of the prototype for every cfg_ function. */
+ #define I3_CFG Match *current_match, struct ConfigResult *result
+ 
+diff --git a/src/bindings.c b/src/bindings.c
+new file mode 100644
+index 0000000..511e899
+--- /dev/null
++++ b/src/bindings.c
+@@ -0,0 +1,71 @@
++/*
++ * vim:ts=4:sw=4:expandtab
++ *
++ * i3 - an improved dynamic tiling window manager
++ * © 2009-2014 Michael Stapelberg and contributors (see also: LICENSE)
++ *
++ * bindings.c: Functions for configuring, finding and, running bindings.
++ */
++#include "all.h"
++
++/*
++ * The name of the default mode.
++ *
++ */
++const char *DEFAULT_BINDING_MODE = "default";
++
++/*
++ * Returns the mode specified by `name` or creates a new mode and adds it to
++ * the list of modes.
++ *
++ */
++static struct Mode *mode_from_name(const char *name) {
++    struct Mode *mode;
++
++    /* Try to find the mode in the list of modes and return it */
++    SLIST_FOREACH(mode, &modes, modes) {
++        if (strcmp(mode->name, name) == 0)
++            return mode;
++    }
++
++    /* If the mode was not found, create a new one */
++    mode = scalloc(sizeof(struct Mode));
++    mode->name = sstrdup(name);
++    mode->bindings = scalloc(sizeof(struct bindings_head));
++    TAILQ_INIT(mode->bindings);
++    SLIST_INSERT_HEAD(&modes, mode, modes);
++
++    return mode;
++}
++
++/*
++ * Adds a binding from config parameters given as strings and returns a
++ * pointer to the binding structure. Returns NULL if the input code could not
++ * be parsed.
++ *
++ */
++Binding *configure_binding(const char *bindtype, const char *modifiers, const char *input_code,
++        const char *release, const char *command, const char *modename) {
++    Binding *new_binding = scalloc(sizeof(Binding));
++    DLOG("bindtype %s, modifiers %s, input code %s, release %s\n", bindtype, modifiers, input_code, release);
++    new_binding->release = (release != NULL ? B_UPON_KEYRELEASE : B_UPON_KEYPRESS);
++    if (strcmp(bindtype, "bindsym") == 0) {
++        new_binding->symbol = sstrdup(input_code);
++    } else {
++        // TODO: strtol with proper error handling
++        new_binding->keycode = atoi(input_code);
++        if (new_binding->keycode == 0) {
++            ELOG("Could not parse \"%s\" as an input code, ignoring this binding.\n", input_code);
++            FREE(new_binding);
++            return NULL;
++        }
++    }
++    new_binding->mods = modifiers_from_str(modifiers);
++    new_binding->command = sstrdup(command);
++    new_binding->input_type = B_KEYBOARD;
++
++    struct Mode *mode = mode_from_name(modename);
++    TAILQ_INSERT_TAIL(mode->bindings, new_binding, bindings);
++
++    return new_binding;
++}
+diff --git a/src/config_directives.c b/src/config_directives.c
+index 96d29ee..f5a592f 100644
+--- a/src/config_directives.c
++++ b/src/config_directives.c
+@@ -130,7 +130,11 @@ static bool eval_boolstr(const char *str) {
+             strcasecmp(str, "active") == 0);
+ }
+ 
+-static uint32_t modifiers_from_str(const char *str) {
++/*
++ * A utility function to convert a string of modifiers to the corresponding bit
++ * mask.
++ */
++uint32_t modifiers_from_str(const char *str) {
+     /* It might be better to use strtok() here, but the simpler strstr() should
+      * do for now. */
+     uint32_t result = 0;
+@@ -167,24 +171,8 @@ CFGFUN(font, const char *font) {
+ 	font_pattern = sstrdup(font);
+ }
+ 
+-// TODO: refactor with mode_binding
+ CFGFUN(binding, const char *bindtype, const char *modifiers, const char *key, const char *release, const char *command) {
+-    Binding *new_binding = scalloc(sizeof(Binding));
+-    DLOG("bindtype %s, modifiers %s, key %s, release %s\n", bindtype, modifiers, key, release);
+-    new_binding->release = (release != NULL ? B_UPON_KEYRELEASE : B_UPON_KEYPRESS);
+-    if (strcmp(bindtype, "bindsym") == 0) {
+-        new_binding->symbol = sstrdup(key);
+-    } else {
+-        // TODO: strtol with proper error handling
+-        new_binding->keycode = atoi(key);
+-        if (new_binding->keycode == 0) {
+-            ELOG("Could not parse \"%s\" as a keycode, ignoring this binding.\n", key);
+-            return;
+-        }
+-    }
+-    new_binding->mods = modifiers_from_str(modifiers);
+-    new_binding->command = sstrdup(command);
+-    TAILQ_INSERT_TAIL(bindings, new_binding, bindings);
++    configure_binding(bindtype, modifiers, key, release, command, DEFAULT_BINDING_MODE);
+ }
+ 
+ 
+@@ -192,39 +180,20 @@ CFGFUN(binding, const char *bindtype, const char *modifiers, const char *key, co
+  * Mode handling
+  ******************************************************************************/
+ 
+-static struct bindings_head *current_bindings;
++static char *current_mode;
+ 
+ CFGFUN(mode_binding, const char *bindtype, const char *modifiers, const char *key, const char *release, const char *command) {
+-    Binding *new_binding = scalloc(sizeof(Binding));
+-    DLOG("bindtype %s, modifiers %s, key %s, release %s\n", bindtype, modifiers, key, release);
+-    new_binding->release = (release != NULL ? B_UPON_KEYRELEASE : B_UPON_KEYPRESS);
+-    if (strcmp(bindtype, "bindsym") == 0) {
+-        new_binding->symbol = sstrdup(key);
+-    } else {
+-        // TODO: strtol with proper error handling
+-        new_binding->keycode = atoi(key);
+-        if (new_binding->keycode == 0) {
+-            ELOG("Could not parse \"%s\" as a keycode, ignoring this binding.\n", key);
+-            return;
+-        }
+-    }
+-    new_binding->mods = modifiers_from_str(modifiers);
+-    new_binding->command = sstrdup(command);
+-    TAILQ_INSERT_TAIL(current_bindings, new_binding, bindings);
++    configure_binding(bindtype, modifiers, key, release, command, current_mode);
+ }
+ 
+ CFGFUN(enter_mode, const char *modename) {
+-    if (strcasecmp(modename, "default") == 0) {
+-        ELOG("You cannot use the name \"default\" for your mode\n");
++    if (strcasecmp(modename, DEFAULT_BINDING_MODE) == 0) {
++        ELOG("You cannot use the name %s for your mode\n", DEFAULT_BINDING_MODE);
+         exit(1);
+     }
+     DLOG("\t now in mode %s\n", modename);
+-    struct Mode *mode = scalloc(sizeof(struct Mode));
+-    mode->name = sstrdup(modename);
+-    mode->bindings = scalloc(sizeof(struct bindings_head));
+-    TAILQ_INIT(mode->bindings);
+-    current_bindings = mode->bindings;
+-    SLIST_INSERT_HEAD(&modes, mode, modes);
++    FREE(current_mode);
++    current_mode = sstrdup(modename);
+ }
+ 
+ CFGFUN(exec, const char *exectype, const char *no_startup_id, const char *command) {
+-- 
+1.8.5.3
+

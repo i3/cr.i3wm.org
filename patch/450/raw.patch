@@ -1,0 +1,57 @@
+From 3203f8dccdc374c941622bcae03ef930d9907786 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 7 Mar 2014 23:56:25 -0500
+Subject: [PATCH] Bugfix: ipc_receive_message reply leak
+
+The function ipc_recv_message in libi3 allocates memory to the location
+of the `message` reply in src/ipc_receive_message.c with malloc and must
+be freed.
+
+This memory leak was found using valgrind.
+---
+ src/ipc.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/src/ipc.c b/src/ipc.c
+index 74df77f..82ab142 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -894,14 +894,16 @@ handler_t handlers[8] = {
+ static void ipc_receive_message(EV_P_ struct ev_io *w, int revents) {
+     uint32_t message_type;
+     uint32_t message_length;
+-    uint8_t *message;
++    uint8_t *message = NULL;
+ 
+     int ret = ipc_recv_message(w->fd, &message_type, &message_length, &message);
+     /* EOF or other error */
+     if (ret < 0) {
+         /* Was this a spurious read? See ev(3) */
+-        if (ret == -1 && errno == EAGAIN)
++        if (ret == -1 && errno == EAGAIN) {
++            FREE(message);
+             return;
++        }
+ 
+         /* If not, there was some kind of error. We don’t bother
+          * and close the connection */
+@@ -924,6 +926,7 @@ static void ipc_receive_message(EV_P_ struct ev_io *w, int revents) {
+ 
+         ev_io_stop(EV_A_ w);
+         free(w);
++        FREE(message);
+ 
+         DLOG("IPC: client disconnected\n");
+         return;
+@@ -935,6 +938,8 @@ static void ipc_receive_message(EV_P_ struct ev_io *w, int revents) {
+         handler_t h = handlers[message_type];
+         h(w->fd, message, 0, message_length, message_type);
+     }
++
++    FREE(message);
+ }
+ 
+ /*
+-- 
+1.9.0
+

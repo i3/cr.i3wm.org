@@ -1,0 +1,27 @@
+From b50f12c620438b92f15895685bb53bd7e25e4332 Mon Sep 17 00:00:00 2001
+From: Neodyblue <sieramsn@…>
+Date: Mon, 13 Oct 2014 11:39:13 +0100
+Subject: [PATCH] Ignore password validation is pam is in wrong state
+
+This add a protection against wrong password spamming
+---
+ i3lock.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/i3lock.c b/i3lock.c
+index 64e4600..71b02ee 100644
+--- a/i3lock.c
++++ b/i3lock.c
+@@ -299,6 +299,9 @@ static void handle_key_press(xcb_key_press_event_t *event) {
+     case XKB_KEY_Return:
+     case XKB_KEY_KP_Enter:
+     case XKB_KEY_XF86ScreenSaver:
++        if (pam_state == STATE_PAM_WRONG)
++            return;
++
+         if (skip_without_validation()) {
+             clear_input();
+             return;
+-- 
+2.1.0
+

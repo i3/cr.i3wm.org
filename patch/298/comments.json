@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 153,
+    "Comment": "code style: please align the “(type” with the pam_state.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 40,
+    "Comment": "Ugh. Please just use bool as return type and return false on error.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 15,
+    "Comment": "Did you test this patch? Decreasing the ringbuffer size to something like 5 should make it doable to test whether events are properly dropped when the buffer is full.\n\nBonus points for testing with valgrind, too, and fixing any new errors.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 113,
+    "Comment": "code style: move the \u0026\u0026 to the previous line",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Philippe Virouleau",
+    "Line": 15,
+    "Comment": "Of course I did test this patch !\nI did some tests to ensure the correct behaviour when buffering caps lock and num lock, and to test the behaviour of the buffer when it's full.\nThe general cases are fine, however there is one edge case that is a bit annoying : \nif the buffer size is even, hitting shift+a letter as the last 2 events of the buffer will cause the release of the shift to be drop, therefore all the upcoming letters will be \"shifted\". The workaround is to use caps lock to \"shift-back\" the events. If you think it's worth it to avoid it, I will look into this case.\n\nThere is a bunch of similar edge cases using caps lock and num lock if the buffer size is odd, but I will just assume it will stay even.\n\nI also valgrinded it (that's how I spotted the wrong calloc of child_watcher, and shame on me not to have spotted the previous leak you noticed), and there is quite a lot of definitely/possibly lost (coming from draw_image and FcConfigParseAndLoad) but they were there before this patch. If there are not expected I could look into these after this patch.",
+    "EmailHash": "73e4ef48030de3c30ccb5a5c05b20e66"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 15,
+    "Comment": "I was just checking :). Thanks for the careful valgrinding. I think the draw_image things are safe to ignore.\n\nWith regards to the behavior when KeyReleases are dropped, I think that’s unfortunate but hopefully not a big deal in practice. To be safe, increasing the buffer to 1024 events should be enough to make the amount of keypresses necessary to hit it fairly unrealistic. If you want to be extra careful, you could add it as a known problem to the manpage.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

@@ -1,0 +1,94 @@
+From a247731eb57d138062f999fc26131c1c900c58d4 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Mon, 7 Jul 2014 18:42:15 -0400
+Subject: [PATCH] bugfix: default floating border regression
+
+Fixes a bug where a normal floating default border is not applied when
+the default tiling border is set to a pixel value.
+
+This bug was introduced in this commit:
+
+43b447855df095c56e860117d53acd0dd09ac42b
+
+Consider motif border for floating geometry
+
+Fixes a comment that claimed default floating border could override
+motif hints, which was never the case.
+
+fixes #1305
+---
+ src/manage.c                                      |  7 ++--
+ testcases/t/234-regress-default-floating-border.t | 43 +++++++++++++++++++++++
+ 2 files changed, 46 insertions(+), 4 deletions(-)
+ create mode 100644 testcases/t/234-regress-default-floating-border.t
+
+diff --git a/src/manage.c b/src/manage.c
+index d86eb06..5148d3f 100644
+--- a/src/manage.c
++++ b/src/manage.c
+@@ -447,10 +447,9 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+ 
+     if (want_floating) {
+         DLOG("geometry = %d x %d\n", nc->geometry.width, nc->geometry.height);
+-        /* motif hints will be applied only when `new_float` is `normal` or not
+-         * specified */
+-        bool automatic_border = (config.default_floating_border != BS_NORMAL &&
+-                                 motif_border_style == BS_NORMAL);
++        /* automatically set the border to the default value if a motif border
++         * was not specified */
++        bool automatic_border = (motif_border_style == BS_NORMAL);
+ 
+         floating_enable(nc, automatic_border);
+     }
+diff --git a/testcases/t/234-regress-default-floating-border.t b/testcases/t/234-regress-default-floating-border.t
+new file mode 100644
+index 0000000..d5994f5
+--- /dev/null
++++ b/testcases/t/234-regress-default-floating-border.t
+@@ -0,0 +1,43 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# This is a regression test for a bug where a normal floating default border is
++# not applied when the default tiling border is set to a pixel value.
++# Ticket: #1305
++# Bug still in: 4.8-62-g7381b50
++use i3test i3_autostart => 0;
++
++my $config = <<EOT;
++# i3 config file (v4)
++font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
++
++new_window pixel 5
++new_float normal
++EOT
++
++my $pid = launch_with_config($config);
++
++my $ws = fresh_workspace;
++
++my $float_window = open_floating_window;
++
++my @floating = @{get_ws($ws)->{floating_nodes}};
++
++is($floating[0]->{nodes}[0]->{border}, 'normal', 'default floating border is `normal`');
++
++exit_gracefully($pid);
++
++done_testing;
+-- 
+2.0.1
+

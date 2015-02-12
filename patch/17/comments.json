@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 36,
+    "Comment": "This seems racy and error-prone and ugly. No way we are going to ship with such a kludge.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 36,
+    "Comment": "Also, I don’t really see what is the benefit of using all your changes instead of just launching gnome-settings-daemon in i3?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

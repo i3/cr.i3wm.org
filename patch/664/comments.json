@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 18,
+    "Comment": "We don’t want such code in i3status because there are many subtleties to process management, that are better left to shells (or other high-level languages). Also, spawning an external program on every iteration defeats the entire purpose of i3status using as few system calls as possible in order to save battery life.\n\nOur recommendation is to wrap i3status instead.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

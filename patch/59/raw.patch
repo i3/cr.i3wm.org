@@ -1,0 +1,30 @@
+From 6267ae7e0beae5632cc01856a489da60c74bbb82 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Andr=C3=A1s=20Mohari?= <andras.mohari@…>
+Date: Mon, 25 Feb 2013 17:09:10 +0100
+Subject: [PATCH 2/2] Bugfix: Set separator color properly when drawing
+
+Set the colors in the GC directly since set_font_colors() does not do it
+when using a Pango font, resulting in i3bar drawing separators in the
+wrong color.
+---
+ i3bar/src/xcb.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index d354d59..d5d4eb8 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -179,7 +179,9 @@ void refresh_statusline(void) {
+         if (TAILQ_NEXT(block, blocks) != NULL && !block->no_separator && block->sep_block_width > 0) {
+             /* This is not the last block, draw a separator. */
+             uint32_t sep_offset = block->sep_block_width/2 + block->sep_block_width % 2;
+-            set_font_colors(statusline_ctx, colors.sep_fg, colors.bar_bg);
++            uint32_t mask = XCB_GC_FOREGROUND | XCB_GC_BACKGROUND;
++            uint32_t values[] = { colors.sep_fg, colors.bar_bg };
++            xcb_change_gc(xcb_connection, statusline_ctx, mask, values);
+             xcb_poly_line(xcb_connection, XCB_COORD_MODE_ORIGIN, statusline_pm,
+                           statusline_ctx, 2,
+                           (xcb_point_t[]){ { x - sep_offset, 2 },
+-- 
+1.8.1.4
+

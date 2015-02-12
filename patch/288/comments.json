@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 22,
+    "Comment": "I am not convinced this is the right thing to do. Can you provide some more explanation? From a logical point of view, the drag was cancelled by the vanishing window. Returning DRAG_SUCCESS (the default) just seems wrong.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 22,
+    "Comment": "The terminology here is not the best.\n\nWe mean \"cancel\" in the \"ok/cancel\" form box sense of the word, as in \"do not apply the changes\". This is briefly explained in the comments. So on UnmapNotify, i3 attempts to recover the state before the drag in response, which is incorrect because things  are not supposed to be the way they were before. It tries to reposition an unmapped window, which is an impossible task.\n\nSo here we tell a white lie and tell it everything went fine by returning DRAG_SUCCESS. It would not be difficult to add DRAG_ABORT to the enum and return that, although there is currently not anything that would make a distinction between DRAG_SUCCESS and DRAG_ABORT.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

@@ -1,0 +1,25 @@
+From f570a06bc846838205c3eced293f9435eab088de Mon Sep 17 00:00:00 2001
+From: Diego Ongaro <ongardie@…>
+Date: Tue, 30 Apr 2013 22:12:33 -0700
+Subject: [PATCH 1/2] contrib/dump-asy.pl: Fix $ in window titles
+
+This would produce an asy/LaTeX parse error before.
+---
+ contrib/dump-asy.pl |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/contrib/dump-asy.pl b/contrib/dump-asy.pl
+index 47239f2..44a4022 100755
+--- a/contrib/dump-asy.pl
++++ b/contrib/dump-asy.pl
+@@ -32,6 +32,7 @@ sub dump_node {
+     my $w = (defined($n->{window}) ? $n->{window} : "N");
+     my $na = $n->{name};
+     $na =~ s/#/\\#/g;
++    $na =~ s/\$/\\\$/g;
+     $na =~ s/_/\\_/g;
+     $na =~ s/~/\\textasciitilde{}/g;
+     my $type = 'leaf';
+-- 
+1.7.10.4
+

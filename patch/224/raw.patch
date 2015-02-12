@@ -1,0 +1,294 @@
+From 98e90305802868dab5a92ab6c4ac61cc518f21b1 Mon Sep 17 00:00:00 2001
+From: Bastian <bastian-i3@…>
+Date: Thu, 19 Sep 2013 08:21:28 +0200
+Subject: [PATCH] new commandline argument for i3-input -c with options
+ "default", "focused" or ${W}x${H}+${X}+${Y}
+
+"default": legacy method, place the input box at 500x(${fontheight} +8)+50+50
+"focused": place the input box at the top of the window with input focuse
+"${W}x${H}+${X}+${Y}" : specify fixed geometry, use h=0 to calculate height by
+font width
+---
+ i3-input/i3-input.h |    7 +++
+ i3-input/main.c     |  123 +++++++++++++++++++++++++++++++++++++++++----------
+ 2 files changed, 106 insertions(+), 24 deletions(-)
+
+diff --git a/i3-input/i3-input.h b/i3-input/i3-input.h
+index f1d5f07..a266699 100644
+--- a/i3-input/i3-input.h
++++ b/i3-input/i3-input.h
+@@ -12,6 +12,13 @@
+ } \
+ while (0)
+ 
++typedef struct coordinates {
++  int x;
++  int y;
++  int w;
++  int h;
++} coordinates_t;
++
+ extern xcb_window_t root;
+ 
+ #endif
+diff --git a/i3-input/main.c b/i3-input/main.c
+index 49db4df..23a7db5 100644
+--- a/i3-input/main.c
++++ b/i3-input/main.c
+@@ -55,6 +55,7 @@ xcb_window_t root;
+ xcb_connection_t *conn;
+ xcb_screen_t *root_screen;
+ static xcb_get_input_focus_cookie_t focus_cookie;
++static xcb_get_input_focus_reply_t* focus_reply;
+ 
+ /*
+  * Having verboselog() and errorlog() is necessary when using libi3.
+@@ -84,13 +85,7 @@ void errorlog(char *fmt, ...) {
+  *
+  */
+ static void restore_input_focus(void) {
+-    xcb_generic_error_t *error;
+-    xcb_get_input_focus_reply_t *reply = xcb_get_input_focus_reply(conn, focus_cookie, &error);
+-    if (error != NULL) {
+-        fprintf(stderr, "[i3-input] ERROR: Could not restore input focus (X error %d)\n", error->error_code);
+-        return;
+-    }
+-    xcb_set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT, reply->focus, XCB_CURRENT_TIME);
++    xcb_set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT, focus_reply->focus, XCB_CURRENT_TIME);
+     xcb_flush(conn);
+ }
+ 
+@@ -122,11 +117,11 @@ static uint8_t *concat_strings(char **glyphs, int max) {
+  * be called from the code with event == NULL or from X with event != NULL.
+  *
+  */
+-static int handle_expose(void *data, xcb_connection_t *conn, xcb_expose_event_t *event) {
++static int handle_expose(void *data, xcb_connection_t *conn, xcb_expose_event_t *event, coordinates_t* coord) {
+     printf("expose!\n");
+ 
+     /* re-draw the background */
+-    xcb_rectangle_t border = {0, 0, 500, font.height + 8}, inner = {2, 2, 496, font.height + 8 - 4};
++    xcb_rectangle_t border = {0, 0, coord->w, coord->h}, inner = {2, 2, coord->w-4, coord->h - 4};
+     xcb_change_gc(conn, pixmap_gc, XCB_GC_FOREGROUND, (uint32_t[]){ get_colorpixel("#FF0000") });
+     xcb_poly_fill_rectangle(conn, pixmap, pixmap_gc, 1, &border);
+     xcb_change_gc(conn, pixmap_gc, XCB_GC_FOREGROUND, (uint32_t[]){ get_colorpixel("#000000") });
+@@ -137,18 +132,18 @@ static int handle_expose(void *data, xcb_connection_t *conn, xcb_expose_event_t
+ 
+     /* draw the prompt … */
+     if (prompt != NULL) {
+-        draw_text(prompt, pixmap, pixmap_gc, 4, 4, 492);
++        draw_text(prompt, pixmap, pixmap_gc, 4, 4, coord->w-8);
+     }
+     /* … and the text */
+     if (input_position > 0)
+     {
+         i3String *input = i3string_from_ucs2(glyphs_ucs, input_position);
+-        draw_text(input, pixmap, pixmap_gc, prompt_offset + 4, 4, 492);
++        draw_text(input, pixmap, pixmap_gc, prompt_offset + 4, 4, coord->w-8);
+         i3string_free(input);
+     }
+ 
+     /* Copy the contents of the pixmap to the real window */
+-    xcb_copy_area(conn, pixmap, win, pixmap_gc, 0, 0, 0, 0, /* */ 500, font.height + 8);
++    xcb_copy_area(conn, pixmap, win, pixmap_gc, 0, 0, 0, 0, /* */ coord->w, coord->h);
+     xcb_flush(conn);
+ 
+     return 1;
+@@ -227,7 +222,7 @@ static void finish_input() {
+  * command to i3).
+  *
+  */
+-static int handle_key_press(void *ignored, xcb_connection_t *conn, xcb_key_press_event_t *event) {
++static int handle_key_press(void *ignored, xcb_connection_t *conn, xcb_key_press_event_t *event, coordinates_t* coordinates) {
+     printf("Keypress %d, state raw = %d\n", event->detail, event->state);
+ 
+     /* See the documentation of xcb_key_symbols_get_keysym for this one.
+@@ -257,7 +252,7 @@ static int handle_key_press(void *ignored, xcb_connection_t *conn, xcb_key_press
+         input_position--;
+         free(glyphs_utf8[input_position]);
+ 
+-        handle_expose(NULL, conn, NULL);
++        handle_expose(NULL, conn, NULL, coordinates);
+         return 1;
+     }
+     if (sym == XK_Escape) {
+@@ -302,15 +297,76 @@ static int handle_key_press(void *ignored, xcb_connection_t *conn, xcb_key_press
+     if (input_position == limit)
+         finish_input();
+ 
+-    handle_expose(NULL, conn, NULL);
++    handle_expose(NULL, conn, NULL, coordinates);
+     return 1;
+ }
+ 
++
++coordinates_t* compute_coordinates(char* coordinate_arg) {
++    xcb_get_geometry_reply_t* focused_geometry_reply;
++    xcb_translate_coordinates_reply_t *trans_reply;
++    xcb_generic_error_t *error;
++    coordinates_t* coordinates = malloc( sizeof (coordinates_t) );
++    int w, h, x, y;
++
++    /* set default coordinates */
++    x=50; y=50;
++    w=500; h=0; /* if h==0: h=font.size + 8 */
++    coordinates->x=x;
++    coordinates->y=y;
++    coordinates->w=w;
++    coordinates->h=h;
++
++
++    if( strcmp(coordinate_arg, "default") == 0 ) {
++        fprintf(stderr, "[i3-input] INFO: using default coordinates\n");
++    } else if( sscanf(coordinate_arg, "%dx%d+%d+%d", &w, &h, &x, &y) == 4 ) {
++        fprintf(stderr, "[i3-input] INFO: using coordinates from argument %dx%d+%d+%d\n", w, h, x, y);
++    } else if( strcmp(coordinate_arg, "focused") == 0 ) {
++        fprintf(stderr, "[i3-input] INFO: using coordinates from focused window, if any\n");
++        focused_geometry_reply  = xcb_get_geometry_reply (conn, xcb_get_geometry(conn, focus_reply->focus), &error);
++        if (error != NULL) {
++            fprintf(stderr, "[i3-input] ERROR: Could not get geometry of focused window (X error %d)\n", error->error_code);
++            return coordinates;
++        }
++        printf("Geometry of focused window is: %dx%d%+d%+d\n", 
++                focused_geometry_reply->width, focused_geometry_reply->height,
++                focused_geometry_reply->x, focused_geometry_reply->y);
++        trans_reply = xcb_translate_coordinates_reply(
++                conn, 
++                xcb_translate_coordinates(conn, focus_reply->focus, root, 
++                    focused_geometry_reply->x, focused_geometry_reply->y),
++                &error);
++        if (error != NULL) {
++            fprintf(stderr, "[i3-input] ERROR: Could not translate coordiantes for focused window (X error %d)\n", error->error_code);
++            return coordinates;
++        }
++        printf("Translated coordinates are: %+d%+d\n", trans_reply->dst_x, trans_reply->dst_y);
++        w=focused_geometry_reply->width - 10;
++        h=0;
++        x=trans_reply->dst_x + 5;
++        y=trans_reply->dst_y + 5;
++    } else { 
++        fprintf(stderr, "[i3-input] ERROR: could not understand coordinate argument %s.\n", coordinate_arg);
++        return coordinates;
++    }
++    if(w<0) w=500; /* somehow i get on firefox a dimension of -1 -1, workaround here: */
++    if(h<0) h=0;
++    coordinates->x=x;
++    coordinates->y=y;
++    coordinates->w=w;
++    coordinates->h=h;
++    return coordinates;
++}
++
+ int main(int argc, char *argv[]) {
+     format = strdup("%s");
+     socket_path = getenv("I3SOCK");
+     char *pattern = sstrdup("-misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1");
+     int o, option_index = 0;
++    xcb_generic_error_t *error;
++    char* coordinate_arg = strdup("default");
++    coordinates_t* coordinates;
+ 
+     static struct option long_options[] = {
+         {"socket", required_argument, 0, 's'},
+@@ -321,10 +377,11 @@ int main(int argc, char *argv[]) {
+         {"format", required_argument, 0, 'F'},
+         {"font", required_argument, 0, 'f'},
+         {"help", no_argument, 0, 'h'},
++        {"coordinates", required_argument, 0, 'c'},
+         {0, 0, 0, 0}
+     };
+ 
+-    char *options_string = "s:p:P:f:l:F:vh";
++    char *options_string = "s:p:P:f:l:F:vhc:";
+ 
+     while ((o = getopt_long(argc, argv, options_string, long_options, &option_index)) != -1) {
+         switch (o) {
+@@ -356,9 +413,13 @@ int main(int argc, char *argv[]) {
+                 FREE(format);
+                 format = strdup(optarg);
+                 break;
++            case 'c':
++                FREE(coordinate_arg);
++                coordinate_arg=strdup(optarg);
++                break;                                
+             case 'h':
+                 printf("i3-input " I3_VERSION "\n");
+-                printf("i3-input [-s <socket>] [-F <format>] [-l <limit>] [-P <prompt>] [-f <font>] [-v]\n");
++                printf("i3-input [-s <socket>] [-F <format>] [-l <limit>] [-P <prompt>] [-f <font>] [-v] [-c <default|focused|WxH+X+Y>]\n");
+                 printf("\n");
+                 printf("Example:\n");
+                 printf("    i3-input -F 'workspace \"%%s\"' -P 'Switch to workspace: '\n");
+@@ -381,17 +442,30 @@ int main(int argc, char *argv[]) {
+     if (!conn || xcb_connection_has_error(conn))
+         die("Cannot open display\n");
+ 
+-    /* Request the current InputFocus to restore when i3-input exits. */
+-    focus_cookie = xcb_get_input_focus(conn);
+-
+     root_screen = xcb_aux_get_screen(conn, screens);
+     root = root_screen->root;
+ 
++    /* Request the current InputFocus to restore when i3-input exits. */
++    focus_cookie = xcb_get_input_focus(conn);
++    focus_reply = xcb_get_input_focus_reply(conn, focus_cookie, &error);
++    if (error != NULL) {
++        fprintf(stderr, "[i3-input] ERROR: Could not restore input focus (X error %d)\n", error->error_code);
++    }
++
+     symbols = xcb_key_symbols_alloc(conn);
+ 
+     font = load_font(pattern, true);
+     set_font(&font);
+ 
++    
++    coordinates =  compute_coordinates(coordinate_arg);
++    if ( coordinates->h == 0 ) {
++        coordinates->h = font.height + 8;
++    }
++    fprintf(stderr, "[i3-input] INFO: using coordinates %dx%d+%d+%d\n", 
++            coordinates->w, coordinates->h,
++            coordinates->x, coordinates->y);
++
+     if (prompt != NULL)
+         prompt_offset = predict_text_width(prompt);
+ 
+@@ -402,7 +476,7 @@ int main(int argc, char *argv[]) {
+         XCB_COPY_FROM_PARENT,
+         win, /* the window id */
+         root, /* parent == root */
+-        50, 50, 500, font.height + 8, /* dimensions */
++        coordinates->x, coordinates->y, coordinates->w, coordinates->h, /* dimensions */
+         0, /* X11 border = 0, we draw our own */
+         XCB_WINDOW_CLASS_INPUT_OUTPUT,
+         XCB_WINDOW_CLASS_COPY_FROM_PARENT, /* copy visual from parent */
+@@ -419,7 +493,8 @@ int main(int argc, char *argv[]) {
+     /* Create pixmap */
+     pixmap = xcb_generate_id(conn);
+     pixmap_gc = xcb_generate_id(conn);
+-    xcb_create_pixmap(conn, root_screen->root_depth, pixmap, win, 500, font.height + 8);
++    xcb_create_pixmap(conn, root_screen->root_depth, pixmap, win, 
++            coordinates->w, coordinates->h);
+     xcb_create_gc(conn, pixmap_gc, pixmap, 0, 0);
+ 
+     /* Set input focus (we have override_redirect=1, so the wm will not do
+@@ -462,7 +537,7 @@ int main(int argc, char *argv[]) {
+ 
+         switch (type) {
+             case XCB_KEY_PRESS:
+-                handle_key_press(NULL, conn, (xcb_key_press_event_t*)event);
++                handle_key_press(NULL, conn, (xcb_key_press_event_t*)event, coordinates);
+                 break;
+ 
+             case XCB_KEY_RELEASE:
+@@ -470,7 +545,7 @@ int main(int argc, char *argv[]) {
+                 break;
+ 
+             case XCB_EXPOSE:
+-                handle_expose(NULL, conn, (xcb_expose_event_t*)event);
++                handle_expose(NULL, conn, (xcb_expose_event_t*)event, coordinates);
+                 break;
+         }
+ 
+-- 
+1.7.10.4
+

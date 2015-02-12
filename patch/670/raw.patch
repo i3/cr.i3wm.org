@@ -1,0 +1,184 @@
+From 6b163e59b1a24126082413bc59f129506ce33d4a Mon Sep 17 00:00:00 2001
+From: Timo Buhrmester <timo@…>
+Date: Mon, 17 Nov 2014 00:01:47 +0100
+Subject: [PATCH 1/2] Add support for mail notification for local maildirs
+
+---
+ i3status.c          |   20 ++++++++++
+ include/i3status.h  |    1 +
+ src/print_maildir.c |  106 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 127 insertions(+)
+ create mode 100644 src/print_maildir.c
+
+diff --git a/i3status.c b/i3status.c
+index fc16c49..28d7719 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -405,6 +405,18 @@ int main(int argc, char *argv[]) {
+                 CFG_END()
+         };
+ 
++        cfg_opt_t maildir_opts[] = {
++                CFG_STR("format", "%num new %mail", CFGF_NONE), /* format to use when there is new mail */
++                CFG_STR("format_nomail", "no mail", CFGF_NONE), /* format to use when there is NO new mail */
++                CFG_STR("path", "Maildir", CFGF_NONE), /* Path to maildir, absolute or relative to homedir */
++                CFG_STR("name", "INBOX", CFGF_NONE), /* Arbitrary name (for displaying purposes only) */
++                CFG_INT("max", 9, CFGF_NONE), /* Max. number of new mails to count (for huge maildirs) */
++                CFG_CUSTOM_ALIGN_OPT,
++                CFG_CUSTOM_COLOR_OPTS,
++                CFG_CUSTOM_MIN_WIDTH_OPT,
++                CFG_END()
++        };
++
+         cfg_opt_t opts[] = {
+                 CFG_STR_LIST("order", "{}", CFGF_NONE),
+                 CFG_SEC("general", general_opts, CFGF_NONE),
+@@ -416,6 +428,7 @@ int main(int argc, char *argv[]) {
+                 CFG_SEC("cpu_temperature", temp_opts, CFGF_TITLE | CFGF_MULTI),
+                 CFG_SEC("disk", disk_opts, CFGF_TITLE | CFGF_MULTI),
+                 CFG_SEC("volume", volume_opts, CFGF_TITLE | CFGF_MULTI),
++                CFG_SEC("maildir", maildir_opts, CFGF_TITLE | CFGF_MULTI),
+                 CFG_SEC("ipv6", ipv6_opts, CFGF_NONE),
+                 CFG_SEC("time", time_opts, CFGF_NONE),
+                 CFG_SEC("tztime", tztime_opts, CFGF_TITLE | CFGF_MULTI),
+@@ -644,6 +657,13 @@ int main(int argc, char *argv[]) {
+                                 SEC_CLOSE_MAP;
+                         }
+ 
++                        CASE_SEC_TITLE("maildir") {
++                                SEC_OPEN_MAP("maildir");
++                                print_maildir(json_gen, buffer, cfg_getstr(sec, "format"), cfg_getstr(sec, "format_nomail"),
++                                             cfg_getstr(sec, "path"), cfg_getstr(sec, "name"), cfg_getint(sec, "max"));
++                                SEC_CLOSE_MAP;
++                        }
++
+                         CASE_SEC_TITLE("cpu_temperature") {
+                                 SEC_OPEN_MAP("cpu_temperature");
+                                 print_cpu_temperature_info(json_gen, buffer, atoi(title), cfg_getstr(sec, "path"), cfg_getstr(sec, "format"), cfg_getint(sec, "max_threshold"));
+diff --git a/include/i3status.h b/include/i3status.h
+index d816f0a..a8b97d1 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -184,6 +184,7 @@ void print_cpu_usage(yajl_gen json_gen, char *buffer, const char *format);
+ void print_eth_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
+ void print_load(yajl_gen json_gen, char *buffer, const char *format, const float max_threshold);
+ void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *fmt_muted, const char *device, const char *mixer, int mixer_idx);
++void print_maildir(yajl_gen json_gen, char *buffer, const char *fmt, const char *fmt_nomail, const char *path, const char *name, int max);
+ bool process_runs(const char *path);
+ 
+ /* socket file descriptor for general purposes */
+diff --git a/src/print_maildir.c b/src/print_maildir.c
+new file mode 100644
+index 0000000..a287611
+--- /dev/null
++++ b/src/print_maildir.c
+@@ -0,0 +1,106 @@
++// vim:ts=8:expandtab
++#include <time.h>
++#include <string.h>
++#include <stdbool.h>
++#include <stdlib.h>
++#include <stdio.h>
++#include <yajl/yajl_gen.h>
++#include <yajl/yajl_version.h>
++
++#include <fcntl.h>
++#include <unistd.h>
++#include <dirent.h>
++#include <pwd.h>
++
++#include "i3status.h"
++#include "queue.h"
++
++void print_maildir(yajl_gen json_gen, char *buffer, const char *fmt, const char *fmt_nomail, const char *path, const char *name, int max) {
++        char *outwalk = buffer;
++
++        if (output_format == O_I3BAR) {
++                INSTANCE(path);
++        }
++
++        /* If `path' is relative, look up user's home dir and store in `pathpfx' */
++        char pathpfx[128];
++        if (path[0] != '/') {
++                /* path is relative, look up user's home dir */
++                struct passwd *pw = getpwuid(geteuid());
++                if (!pw) {
++                        fprintf(stderr, "Failed to query user information for uid %d\n", geteuid());
++                        return;
++                }
++
++                snprintf(pathpfx, sizeof pathpfx, "%s/", pw->pw_dir);
++        } else {
++                pathpfx[0] = '\0';
++        }
++
++        char fullpath[512]; /* full path to <maildir>/new */
++        snprintf(fullpath, sizeof fullpath, "%s%s/new", pathpfx, path);
++
++        DIR *d = opendir(fullpath);
++        if (!d) {
++                fprintf(stderr, "Failed to opendir('%s')\n", fullpath);
++                return;
++        }
++
++        /* Count files in 'new', but don't count more than `max' */
++        int cnt = -2; /* start w/ -2 because of . and .. */
++        bool overmax = false;
++        struct dirent *de;
++        while ((de = readdir(d))) {
++                if (++cnt > max && max) {
++                        /* if we have a maximum, stop listing to preserve resources */
++                        overmax = true;
++                        break;
++                }
++        }
++
++        closedir(d);
++
++        if (!cnt) {
++                fmt = fmt_nomail;
++        }
++
++        /* no news is good news */
++        START_COLOR(!cnt ? "color_good" : "color_bad");
++
++        const char *walk = fmt;
++        for (; *walk != '\0'; walk++) {
++                if (*walk != '%') {
++                        *(outwalk++) = *walk;
++                        continue;
++                }
++
++                if (BEGINS_WITH(walk+1, "%")) {
++                        outwalk += sprintf(outwalk, "%%");
++                        walk += strlen("%");
++                }
++
++                /* %num expands to the amount of new mail
++                 * However, if `max' is >0, and there are more than `max' new mails, %num expands to `max'+ instead */
++                if (BEGINS_WITH(walk+1, "num")) {
++                        outwalk += sprintf(outwalk, "%d%s", cnt - overmax, overmax ? "+" : "");
++                        walk += strlen("num");
++                }
++
++                /* %mail expands to "mail" or "mails", depending on whether we need singular or plural */
++                if (BEGINS_WITH(walk+1, "mail")) {
++                        outwalk += sprintf(outwalk, "mail%s", cnt == 1 ? "" : "s");
++                        walk += strlen("mail");
++                }
++
++                /* %name expands to the (arbitrary) name specified for this maildir in i3status.conf */
++                if (BEGINS_WITH(walk+1, "name")) {
++                        outwalk += sprintf(outwalk, "%s", name);
++                        walk += strlen("name");
++                }
++        }
++
++        *outwalk = '\0';
++        OUTPUT_FULL_TEXT(buffer);
++
++        END_COLOR;
++}
+-- 
+1.7.10.4
+

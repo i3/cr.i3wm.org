@@ -1,0 +1,187 @@
+From 9df8d6fe6e9a67ef2889c87babf1dcdc453153f4 Mon Sep 17 00:00:00 2001
+From: "haptix@web.de" <haptix@…>
+Date: Mon, 29 Apr 2013 14:11:00 +0200
+Subject: [PATCH] Fix problem when moving fullscreen window to scratchpad
+
+When moving a fullscreen window to scratchpad with 'move scratchpad', the
+focused window would stay fullscreen.
+
+Also, when having a container in fullscreen mode and then focusing a child of
+this container and moving it to scratchpad, it would enable fullscreen for
+the child window.
+
+This patch fixes both problems, so the scratchpad window is always floating.
+---
+ src/scratchpad.c                        |   26 +++++---
+ testcases/t/206-fullscreen-scratchpad.t |  108 +++++++++++++++++++++++++++++++
+ 2 files changed, 124 insertions(+), 10 deletions(-)
+ create mode 100644 testcases/t/206-fullscreen-scratchpad.t
+
+diff --git a/src/scratchpad.c b/src/scratchpad.c
+index 9997f17..d6c1a09 100644
+--- a/src/scratchpad.c
++++ b/src/scratchpad.c
+@@ -39,6 +39,12 @@ void scratchpad_move(Con *con) {
+         return;
+     }
+ 
++    /* If the current con is in fullscreen mode, we need to disable that,
++     *  as a scratchpad window should never be in fullscreen mode */
++    if (focused && focused->type != CT_WORKSPACE && focused->fullscreen_mode != CF_NONE) {
++        con_toggle_fullscreen(focused, CF_OUTPUT);
++    }
++
+     /* 1: Ensure the window or any parent is floating. From now on, we deal
+      * with the CT_FLOATING_CON. We use automatic == false because the user
+      * made the choice that this window should be a scratchpad (and floating).
+@@ -78,16 +84,6 @@ void scratchpad_show(Con *con) {
+     Con *__i3_scratch = workspace_get("__i3_scratch", NULL);
+     Con *floating;
+ 
+-    /* If the current con or any of its parents are in fullscreen mode, we
+-     * first need to disable it before showing the scratchpad con. */
+-    Con *fs = focused;
+-    while (fs && fs->fullscreen_mode == CF_NONE)
+-        fs = fs->parent;
+-
+-    if (fs->type != CT_WORKSPACE) {
+-        con_toggle_fullscreen(focused, CF_OUTPUT);
+-    }
+-
+     /* If this was 'scratchpad show' without criteria, we check if the
+      * currently focused window is a scratchpad window and should be hidden
+      * again. */
+@@ -99,6 +95,16 @@ void scratchpad_show(Con *con) {
+         return;
+     }
+ 
++    /* If the current con or any of its parents are in fullscreen mode, we
++     * first need to disable it before showing the scratchpad con. */
++    Con *fs = focused;
++    while (fs && fs->fullscreen_mode == CF_NONE)
++        fs = fs->parent;
++
++    if (fs && fs->type != CT_WORKSPACE) {
++        con_toggle_fullscreen(fs, CF_OUTPUT);
++    }
++
+     /* If this was 'scratchpad show' without criteria, we check if there is a
+      * unfocused scratchpad on the current workspace and focus it */
+     Con *walk_con;
+diff --git a/testcases/t/206-fullscreen-scratchpad.t b/testcases/t/206-fullscreen-scratchpad.t
+new file mode 100644
+index 0000000..3a525e9
+--- /dev/null
++++ b/testcases/t/206-fullscreen-scratchpad.t
+@@ -0,0 +1,108 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++#   Assure that no window is in fullscreen mode after showing a scratchpad window
++# Bug still in: 4.5.1-54-g0f6b5fe
++
++use i3test i3_autostart => 0;
++use List::Util qw(first);
++
++my $config = <<EOT;
++# i3 config file (v4)
++font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
++workspace_layout stacked
++EOT
++
++my $pid = launch_with_config($config);
++
++my $tmp = fresh_workspace;
++
++sub fullscreen_windows {
++    my $ws = $tmp;
++    $ws = shift if @_;
++
++    my $nodes = scalar grep { $_->{fullscreen_mode} != 0 } @{get_ws_content($ws)->[0]->{nodes}};
++    my $cons = scalar grep { $_->{fullscreen_mode} != 0 } @{get_ws_content($ws)};
++    return $nodes + $cons;
++}
++
++##########################################################################################
++# map two windows in one container, fullscreen one of them and then move it to scratchpad
++##########################################################################################
++
++my $first_win = open_window;
++my $second_win = open_window;
++
++# fullscreen the focused window
++cmd 'fullscreen';
++
++sync_with_i3;
++
++# see if the window really is in fullscreen mode
++is(fullscreen_windows(), 1, 'amount of fullscreen windows after enabling fullscreen');
++
++# move window to scratchpad
++cmd 'move scratchpad';
++
++###############################################################################
++# show the scratchpad window again; it should not be in fullscreen mode anymore
++###############################################################################
++
++# show window from scratchpad
++cmd 'scratchpad show';
++
++# switch window back to tiling mode
++cmd 'floating toggle';
++
++sync_with_i3;
++
++# see if no window is in fullscreen mode
++is(fullscreen_windows(), 0, 'amount of fullscreen windows after showing previously fullscreened scratchpad window');
++
++########################################################################################
++# move a window to scratchpad, focus parent container, make it fullscreen, focus a child
++########################################################################################
++
++# move one window to scratchpad
++cmd 'move scratchpad';
++
++# focus parent
++cmd 'focus parent';
++
++# fullscreen the container
++cmd 'fullscreen';
++
++# focus child
++cmd 'focus child';
++
++sync_with_i3;
++
++# see if the window really is in fullscreen mode
++is(fullscreen_windows(), 1, 'amount of fullscreen windows after enabling fullscreen on parent');
++
++##########################################################################
++# show a scratchpad window; no window should be in fullscreen mode anymore
++##########################################################################
++
++# show the scratchpad window
++cmd 'scratchpad show';
++
++sync_with_i3;
++
++# see if no window is in fullscreen mode
++is(fullscreen_windows(), 0, 'amount of fullscreen windows after showing a scratchpad window while a parent container was in fullscreen mode');
++
++done_testing;
+-- 
+1.7.9.5
+

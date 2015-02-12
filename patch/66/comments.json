@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 56,
+    "Comment": "Instead of adding _another_ attribute to the already overused struct Con, I’d suggest making this a global flag. This also simplifies the user interface (global instead of per-workspace).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 287,
+    "Comment": "Without looking into it very closely, I believe changing this function like you did breaks rendering subtly in some cases.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 108,
+    "Comment": "Please make this a sub-command of the existing floating command.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 56,
+    "Comment": "Agreed, I've been using this for a while and I feel this will enhance user experience.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 108,
+    "Comment": "I'm thinking into adding the \"hide\", \"show\" and \"toggle_hidden\" params to the floating command. That way one can do some customization like, show floating windows after moving to another workspace with:\n\n    bindsym $mod+a workspace prev_on_output; floating show",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 287,
+    "Comment": "I'm really new to this, so I'm not sure how rendering could be broken by this. Could you explain a bit more?\n\nSince I sent the patch I've been using it and yet didn't found something wrong, but that may be just luck, if there's some way to ensure correct rendering, show me the path and I'll go down the road :)",
+    "EmailHash": ""
+  }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 40,
+    "Comment": "I’d rather have this be called “strip_workspace_numbers”",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 83,
+    "Comment": "Why are you removing this? If we want to remove those, we should do it in a single cleanup commit, not in random other commits.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 100,
+    "Comment": "Use smalloc()",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 101,
+    "Comment": "Use snprintf()",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 108,
+    "Comment": "I’d say we don’t need to support more than one delimiter here, since users who want to strip this should just use the one true strippable delimiter (I suggest colon, since that is what we have in our examples).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 115,
+    "Comment": "Instead of displaying a space, why not fall back on displaying the number?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 36,
+    "Comment": "Update to the userguide is missing.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 115,
+    "Comment": "For one, the space looks cool and might make sense in some contexts, such as with a script I wrote to automatically renumber workspaces to prevent gaps (I think bspwm might do something like this automatically)\n\nAnd also if the option is called \"strip workspace numbers\" or something similar, then you would expect it to do something like this.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 115,
+    "Comment": "This idea is actually kind of growing on me, but I can't think of a good way to simply describe it as a config directive",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 115,
+    "Comment": "If you displayed the number as a fallback, you could use it without completely rewriting your config. But \"strip_workspace_numbers\" isn't really what it would be doing.\n\nDo you have any ideas?",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

@@ -1,0 +1,148 @@
+From 6ddba71caa169949fb4c36352a70a631f28b6226 Mon Sep 17 00:00:00 2001
+From: Bill Kolokithas <kolokithas.b@…>
+Date: Sat, 15 Mar 2014 13:26:13 +0200
+Subject: [PATCH] restore original DPMS state after succesful screen unlock
+
+---
+ i3lock.c | 57 ++++++++++++++++++++++++++++++++++++++++++++-------------
+ xcb.c    |  6 +++++-
+ xcb.h    |  3 ++-
+ 3 files changed, 51 insertions(+), 15 deletions(-)
+
+diff --git a/i3lock.c b/i3lock.c
+index 1599282..21f156b 100644
+--- a/i3lock.c
++++ b/i3lock.c
+@@ -54,6 +54,7 @@ static char password[512];
+ static bool beep = false;
+ bool debug_mode = false;
+ static bool dpms = false;
++static bool dpms_original_state = false;
+ bool unlock_indicator = true;
+ static bool dont_fork = false;
+ struct ev_loop *main_loop;
+@@ -70,6 +71,8 @@ cairo_surface_t *img = NULL;
+ bool tile = false;
+ bool ignore_empty_password = false;
+ 
++#define DPMS_STATE_IGNORE true
++
+ /* isutf, u8_dec © 2005 Jeff Bezanson, public domain */
+ #define isutf(c) (((c) & 0xC0) != 0x80)
+ 
+@@ -83,12 +86,46 @@ void u8_dec(char *s, int *i) {
+ 
+ static void turn_monitors_on(void) {
+     if (dpms)
+-        dpms_set_mode(conn, XCB_DPMS_DPMS_MODE_ON);
++        dpms_set_mode(conn, XCB_DPMS_DPMS_MODE_ON, dpms_original_state);
+ }
+ 
+ static void turn_monitors_off(void) {
+     if (dpms)
+-        dpms_set_mode(conn, XCB_DPMS_DPMS_MODE_OFF);
++        dpms_set_mode(conn, XCB_DPMS_DPMS_MODE_OFF, DPMS_STATE_IGNORE);
++}
++
++/*
++ * Find out if DPMS capability is supported
++ *
++ */
++static bool dpms_capable(void) {
++    bool capable = false;
++
++    xcb_dpms_capable_cookie_t dpmsc = xcb_dpms_capable(conn);
++    xcb_dpms_capable_reply_t *dpmsr;
++    if ((dpmsr = xcb_dpms_capable_reply(conn, dpmsc, NULL))) {
++        capable = dpmsr->capable;
++        free(dpmsr);
++        if (!capable && debug_mode)
++            fprintf(stderr, "Disabling DPMS, X server not DPMS capable\n");
++    }
++    return capable;
++}
++
++/*
++ * Check the state of DPMS before we alter it, so we can restore it later
++ *
++ */
++static bool dpms_state(void) {
++    bool state = false;
++
++    xcb_dpms_info_cookie_t dpmsc = xcb_dpms_info(conn);
++    xcb_dpms_info_reply_t *dpmsr;
++    if ((dpmsr = xcb_dpms_info_reply(conn, dpmsc, NULL))) {
++        state = dpmsr->state;
++        free(dpmsr);
++    }
++    return state;
+ }
+ 
+ /*
+@@ -760,18 +797,12 @@ int main(int argc, char *argv[]) {
+     xinerama_init();
+     xinerama_query_screens();
+ 
+-    /* if DPMS is enabled, check if the X server really supports it */
++    /* if DPMS is enabled, check if the X server really supports it and store the original state */
+     if (dpms) {
+-        xcb_dpms_capable_cookie_t dpmsc = xcb_dpms_capable(conn);
+-        xcb_dpms_capable_reply_t *dpmsr;
+-        if ((dpmsr = xcb_dpms_capable_reply(conn, dpmsc, NULL))) {
+-            if (!dpmsr->capable) {
+-                if (debug_mode)
+-                    fprintf(stderr, "Disabling DPMS, X server not DPMS capable\n");
+-                dpms = false;
+-            }
+-            free(dpmsr);
+-        }
++        if (dpms_capable())
++            dpms_original_state = dpms_state();
++        else
++            dpms = false;
+     }
+ 
+     screen = xcb_setup_roots_iterator(xcb_get_setup(conn)).data;
+diff --git a/xcb.c b/xcb.c
+index fc27d0b..4a61913 100644
+--- a/xcb.c
++++ b/xcb.c
+@@ -159,9 +159,13 @@ xcb_window_t open_fullscreen_window(xcb_connection_t *conn, xcb_screen_t *scr, c
+  * Set the dpms level to 'mode'.
+  *
+  */
+-void dpms_set_mode(xcb_connection_t *conn, xcb_dpms_dpms_mode_t mode) {
++void dpms_set_mode(xcb_connection_t *conn, xcb_dpms_dpms_mode_t mode, bool dpms_original_state) {
+     xcb_dpms_enable(conn);
+     xcb_dpms_force_level(conn, mode);
++
++    if (dpms_original_state == 0)
++        xcb_dpms_disable(conn);
++
+     xcb_flush(conn);
+ }
+ 
+diff --git a/xcb.h b/xcb.h
+index 1e0cbb1..8359ffa 100644
+--- a/xcb.h
++++ b/xcb.h
+@@ -3,6 +3,7 @@
+ 
+ #include <xcb/xcb.h>
+ #include <xcb/dpms.h>
++#include <stdbool.h>
+ 
+ extern xcb_connection_t *conn;
+ extern xcb_screen_t *screen;
+@@ -11,7 +12,7 @@ xcb_visualtype_t *get_root_visual_type(xcb_screen_t *s);
+ xcb_pixmap_t create_bg_pixmap(xcb_connection_t *conn, xcb_screen_t *scr, u_int32_t *resolution, char *color);
+ xcb_window_t open_fullscreen_window(xcb_connection_t *conn, xcb_screen_t *scr, char *color, xcb_pixmap_t pixmap);
+ void grab_pointer_and_keyboard(xcb_connection_t *conn, xcb_screen_t *screen, xcb_cursor_t cursor);
+-void dpms_set_mode(xcb_connection_t *conn, xcb_dpms_dpms_mode_t mode);
++void dpms_set_mode(xcb_connection_t *conn, xcb_dpms_dpms_mode_t mode, bool dpms_original_state);
+ xcb_cursor_t create_cursor(xcb_connection_t *conn, xcb_screen_t *screen, xcb_window_t win, int choice);
+ 
+ #endif
+-- 
+1.9.0
+

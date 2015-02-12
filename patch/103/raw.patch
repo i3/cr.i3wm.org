@@ -1,0 +1,26 @@
+From c13db0b3553ab1fea76a45af7ae8060a06e0db87 Mon Sep 17 00:00:00 2001
+From: Baptiste Daroussin <bapt@…>
+Date: Wed, 20 Mar 2013 17:48:21 +0100
+Subject: [PATCH] Use ev_loop_fork after fork, this fix forking on kqueue based
+ OSes
+
+---
+ i3lock.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/i3lock.c b/i3lock.c
+index df07d90..581ea10 100644
+--- a/i3lock.c
++++ b/i3lock.c
+@@ -478,6 +478,8 @@ static void xcb_check_cb(EV_P_ ev_check *w, int revents) {
+                     /* In the parent process, we exit */
+                     if (fork() != 0)
+                         exit(0);
++
++                    ev_loop_fork(EV_DEFAULT);
+                 }
+                 break;
+ 
+-- 
+1.8.1.3
+

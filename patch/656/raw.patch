@@ -1,0 +1,32 @@
+From 37b03b59aaa146998a41714d32e0605c00b2a8ae Mon Sep 17 00:00:00 2001
+From: Romuald Brunet <romuald@…>
+Date: Fri, 26 Sep 2014 16:58:59 +0200
+Subject: [PATCH 1/4] First draft to center the given image
+
+---
+ unlock_indicator.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/unlock_indicator.c b/unlock_indicator.c
+index e543f96..e359e3d 100644
+--- a/unlock_indicator.c
++++ b/unlock_indicator.c
+@@ -112,7 +112,14 @@ xcb_pixmap_t draw_image(uint32_t *resolution) {
+ 
+     if (img) {
+         if (!tile) {
+-            cairo_set_source_surface(xcb_ctx, img, 0, 0);
++            // XXX handle multiple screens
++            int x = (resolution[0] / 2);
++            int y = (resolution[1] / 2);
++
++            x -=   cairo_image_surface_get_width(img) / 2;
++            y -=   cairo_image_surface_get_height(img) / 2;
++
++            cairo_set_source_surface(xcb_ctx, img, x, y);
+             cairo_paint(xcb_ctx);
+         } else {
+             /* create a pattern and fill a rectangle as big as the screen */
+-- 
+2.1.1
+

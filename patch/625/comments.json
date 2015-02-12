@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 26,
+    "Comment": "Why are you changing these variable names?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 66,
+    "Comment": "Why are you introducing a waitpid() call here? Unless I misunderstand what it does in this specific situation, it seems to me like it defeats the purpose of the fork option of i3lock, which is to _not_ block but rather allow the user to execute e.g. a suspend-to-ram command.\n\nIf you want blocking behavior, why not just use -n?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 66,
+    "Comment": "Sorry Michael, I was trying to wrap the i3lock with a script and I got carried away. Please close this PR as it's not necessary. Thanks!",
+    "EmailHash": ""
+  }
+]

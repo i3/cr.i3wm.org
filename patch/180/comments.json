@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 26,
+    "Comment": "Please apply all the points which I listed in http://c.i3wm.org/71dfcbc here, too.",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 67,
+    "Comment": "use get_debug_logging(void);",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 81,
+    "Comment": "I’d prefer debuglog to be more specific about what this does.",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  }
+]

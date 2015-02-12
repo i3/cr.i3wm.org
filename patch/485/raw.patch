@@ -1,0 +1,144 @@
+From fa5a0e32c091b7313fb87adab87711fbdfd9eb67 Mon Sep 17 00:00:00 2001
+From: Marco Hunsicker <i3@…>
+Date: Fri, 21 Mar 2014 23:05:07 +0100
+Subject: [PATCH] Send IPC workspace empty event after last window closed
+
+This patch sends the workspace empty after the last container in
+a workspace has been closed and the workspace becomes empty again.
+---
+ src/tree.c                            |   10 +++-
+ testcases/t/223-ipc-empty-workspace.t |   87 +++++++++++++++++++++++++++++++++
+ 2 files changed, 95 insertions(+), 2 deletions(-)
+ create mode 100644 testcases/t/223-ipc-empty-workspace.t
+
+diff --git a/src/tree.c b/src/tree.c
+index 80af522..c7cfffb 100644
+--- a/src/tree.c
++++ b/src/tree.c
+@@ -229,6 +229,9 @@ bool tree_close(Con *con, kill_window_t kill_window, bool dont_kill_parent, bool
+         return false;
+     }
+ 
++    Con *ws = con_get_workspace(con);
++    bool ws_empty = !ws || con_is_leaf(ws);
++
+     if (con->window != NULL) {
+         if (kill_window != DONT_KILL_WINDOW) {
+             x_window_kill(con->window->id, kill_window);
+@@ -264,8 +267,6 @@ bool tree_close(Con *con, kill_window_t kill_window, bool dont_kill_parent, bool
+         FREE(con->window);
+     }
+ 
+-    Con *ws = con_get_workspace(con);
+-
+     /* Figure out which container to focus next before detaching 'con'. */
+     if (con_is_floating(con)) {
+         if (con == focused) {
+@@ -321,6 +322,11 @@ bool tree_close(Con *con, kill_window_t kill_window, bool dont_kill_parent, bool
+     TAILQ_REMOVE(&all_cons, con, all_cons);
+     free(con);
+ 
++    /* if the workspace is now empty, notify any interested parties. */
++    if (ws && !ws_empty && con_is_leaf(ws)) {
++        ipc_send_event("workspace", I3_IPC_EVENT_WORKSPACE, "{\"change\":\"empty\"}");
++    }
++
+     /* in the case of floating windows, we already focused another container
+      * when closing the parent, so we can exit now. */
+     if (!next) {
+diff --git a/testcases/t/223-ipc-empty-workspace.t b/testcases/t/223-ipc-empty-workspace.t
+new file mode 100644
+index 0000000..ae93ac4
+--- /dev/null
++++ b/testcases/t/223-ipc-empty-workspace.t
+@@ -0,0 +1,87 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Check if the workspace empty event is correctly send after window close.
++#
++use i3test;
++use List::Util qw(first);
++
++SKIP: {
++
++    skip "AnyEvent::I3 too old (need >= 0.15)", 1 if $AnyEvent::I3::VERSION < 0.15;
++
++my $i3 = i3(get_socket_path());
++$i3->connect()->recv;
++
++##############################################################
++# check that the empty event is send when last window closes
++##############################################################
++
++my $tmp = fresh_workspace;
++
++my $cond = AnyEvent->condvar;
++
++$i3->subscribe({
++    workspace => sub {
++        my ($event) = @_;
++        $cond->send($event);
++    }
++})->recv;
++
++my $w1 = open_window();
++
++cmd '[id="' . $w1->id . '"] kill';
++sync_with_i3;
++
++my $event = $cond->recv;
++is($event->{change}, 'empty', 'Empty workspace event received after last window close');
++
++
++##############################################################
++# check that no empty event is send when workspace is not
++# empty after window close
++##############################################################
++
++$tmp = fresh_workspace;
++
++$cond = AnyEvent->condvar;
++
++$i3->subscribe({
++    workspace => sub {
++        my ($event) = @_;
++        ok($event->{change} ne 'empty', 'No empty workspace event received');
++        $cond->send($event);
++    },
++    window => sub {
++        my ($event) = @_;
++        $cond->send($event);
++    }
++})->recv;
++
++$w1 = open_window(name => 'Window 1');
++my $w2 = open_window(name => 'Window 2');
++
++cmd '[id="' . $w2->id . '"] kill';
++sync_with_i3;
++
++$event = $cond->recv;
++
++is($event->{change}, 'focus', 'Window focus event received');
++is($event->{container}->{name}, 'Window 1', 'Window 1 focused');
++
++}
++
++done_testing;
+-- 
+1.7.10.4
+

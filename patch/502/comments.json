@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 32,
+    "Comment": "Original patch (I probably should have credited the original author):\n\ncr.i3wm.org/patch/407\n\nIt's pretty much the same but I simplified the logic quite a bit.\n\nPrevious test patch:\n\ncr.i3wm.org/patch/476",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 98,
+    "Comment": "There is a lot of noise in the diff from these being renamed",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 234,
+    "Comment": "Changed per suggestion in the previous patch.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

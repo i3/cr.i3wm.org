@@ -1,0 +1,26 @@
+From 21f72389eb1a931ffcb90c8dde2d66792c485caf Mon Sep 17 00:00:00 2001
+From: Jasper Lievisse Adriaanse <jasper@…>
+Date: Mon, 10 Mar 2014 10:22:47 +0100
+Subject: [PATCH] For the %percentage display of batteries, drop the leading
+ '0' for values < 10.
+
+---
+ src/print_battery_info.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/print_battery_info.c b/src/print_battery_info.c
+index bd3ff5c..aa79a5a 100644
+--- a/src/print_battery_info.c
++++ b/src/print_battery_info.c
+@@ -292,7 +292,7 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+ 	}
+ 
+ 	(void)snprintf(statusbuf, sizeof(statusbuf), "%s", BATT_STATUS_NAME(status));
+-        (void)snprintf(percentagebuf, sizeof(percentagebuf), "%02d%%", apm_info.battery_life);
++        (void)snprintf(percentagebuf, sizeof(percentagebuf), "%.00d%%", apm_info.battery_life);
+ 
+ 	if (status == CS_DISCHARGING && low_threshold > 0) {
+ 		if (strncmp(threshold_type, "percentage", strlen(threshold_type)) == 0
+-- 
+1.8.4
+

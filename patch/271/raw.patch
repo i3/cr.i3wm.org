@@ -1,0 +1,48 @@
+From 907273e571419c9eb370cf3905cd4b514cc626d0 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Thu, 17 Oct 2013 07:20:35 -0400
+Subject: [PATCH] Testcases: new-test prints usage without input
+
+Prevent the accidental creation of new tests with empty names by
+printing usage information for new-test when the test name would be
+empty.
+---
+ testcases/new-test | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/testcases/new-test b/testcases/new-test
+index c254615..14465d2 100755
+--- a/testcases/new-test
++++ b/testcases/new-test
+@@ -15,6 +15,16 @@ use File::Basename qw(basename);
+ use Getopt::Long;
+ use v5.10;
+ 
++my $usage = <<'EOF';
++Script to create a new testcase from a template.
++
++    # Create (and edit) a new test for moving floating windows
++    ./new-test floating move
++
++    # Create (and edit) a multi-monitor test for moving workspaces
++    ./new-test -m move workspaces
++EOF
++
+ my $multi_monitor;
+ 
+ my $result = GetOptions(
+@@ -24,6 +34,11 @@ my $result = GetOptions(
+ my $testname = join(' ', @ARGV);
+ $testname =~ s/ /-/g;
+ 
++unless (length $testname) {
++    say $usage;
++    exit(0);
++}
++
+ my $header = <<'EOF';
+ #!perl
+ # vim:ts=4:sw=4:expandtab
+-- 
+1.8.4.1
+

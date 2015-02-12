@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 20,
+    "Comment": "On some further research, I think height is greater than zero for floating containers because of the assumption that floating containers have a minimum size with height greater than zero.\n\nBecause of the different rendering models, I think adding this exception is appropriate here. It seems like the intention is to not create a pixmap for these kinds of containers.\n\nIt does seem like freeing an already created pixmap is necessary to completely get the intended effect. I'm not exactly sure where this pixmap is originally created yet.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 20,
+    "Comment": "fyi, I intended to also fix this issue with Compton you may be interested to know about, but I am unfortunately not any closer to that.\n\ngithub.com/chjj/compton/wiki/faq#3-why-does-transparency-not-work-correctly-in-i3",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 28,
+    "Comment": "I think non-negated expressions are easier to understand. Can you make this\n\nbool has_rect_changed = (state-\u003erect.width == rect.width ||\n                         state-\u003erect.height == rect.height);\n\nplease?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 34,
+    "Comment": "Actually, why not is_pixmap_needed = (con-\u003eborder_style != BS_NONE);? I tested this and it seems like there is no negative side effect. Regardless of whether the container is floating or tiling, we don’t need a pixmap when there are no borders.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 28,
+    "Comment": "s/==/!=/g of course :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 45,
+    "Comment": "I don’t like code with statements like this. Can you figure out when the pixmap is created please and either fix it in the right place or accurately document it?\n\nThanks.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

@@ -1,0 +1,25 @@
+From bcfbf2afb7c60e376d0894b012324d91c3df8de7 Mon Sep 17 00:00:00 2001
+From: Wieland Hoffmann <themineo@…>
+Date: Sun, 5 Jan 2014 23:36:18 +0100
+Subject: [PATCH 1/2] man: Add a missing colon
+
+---
+ man/i3status.man | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/man/i3status.man b/man/i3status.man
+index 5694943..5e8229c 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -175,7 +175,7 @@ best available public IPv6 address on your computer).
+ 
+ *Example format_up*: +%ip+
+ 
+-*Example format_down* +no IPv6+
++*Example format_down*: +no IPv6+
+ 
+ === Disk
+ 
+-- 
+1.8.5.2
+

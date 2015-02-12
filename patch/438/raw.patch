@@ -1,0 +1,122 @@
+From d5b3fd8cde5c710a9462a702d211329f83ed454f Mon Sep 17 00:00:00 2001
+From: Matt Schwager <schwag09@…>
+Date: Fri, 28 Feb 2014 16:58:42 -0500
+Subject: [PATCH] i3status: Allow cpu temperature to be specified in celsius,
+ fahrenheit, or kelvin
+
+---
+ i3status.c                  |  3 ++-
+ include/i3status.h          |  2 +-
+ man/i3status.man            |  6 +++++-
+ src/print_cpu_temperature.c | 21 ++++++++++++++++++---
+ 4 files changed, 26 insertions(+), 6 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index 09379e6..35a17fd 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -282,6 +282,7 @@ int main(int argc, char *argv[]) {
+         cfg_opt_t temp_opts[] = {
+                 CFG_STR("format", "%degrees C", CFGF_NONE),
+                 CFG_STR("path", NULL, CFGF_NONE),
++                CFG_STR("scale", NULL, CFGF_NONE),
+                 CFG_INT("max_threshold", 75, CFGF_NONE),
+                 CFG_CUSTOM_COLOR_OPTS,
+                 CFG_END()
+@@ -539,7 +540,7 @@ int main(int argc, char *argv[]) {
+ 
+                         CASE_SEC_TITLE("cpu_temperature") {
+                                 SEC_OPEN_MAP("cpu_temperature");
+-                                print_cpu_temperature_info(json_gen, buffer, atoi(title), cfg_getstr(sec, "path"), cfg_getstr(sec, "format"), cfg_getint(sec, "max_threshold"));
++                                print_cpu_temperature_info(json_gen, buffer, atoi(title), cfg_getstr(sec, "path"), cfg_getstr(sec, "format"), cfg_getint(sec, "max_threshold"), cfg_getstr(sec, "scale"));
+                                 SEC_CLOSE_MAP;
+                         }
+ 
+diff --git a/include/i3status.h b/include/i3status.h
+index e1246b9..a62d4d0 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -153,7 +153,7 @@ const char *get_ip_addr();
+ void print_wireless_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
+ void print_run_watch(yajl_gen json_gen, char *buffer, const char *title, const char *pidfile, const char *format);
+ void print_path_exists(yajl_gen json_gen, char *buffer, const char *title, const char *path, const char *format);
+-void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const char *path, const char *format, int);
++void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const char *path, const char *format, int, const char *scale);
+ void print_cpu_usage(yajl_gen json_gen, char *buffer, const char *format);
+ void print_eth_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
+ void print_load(yajl_gen json_gen, char *buffer, const char *format, const float max_threshold);
+diff --git a/man/i3status.man b/man/i3status.man
+index 614e22c..edb53cc 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -283,7 +283,9 @@ colored red. The low_threshold type can be of threshold_type "time" or
+ 
+ Gets the temperature of the given thermal zone. It is possible to
+ define a max_threshold that will color the temperature red in case the
+-specified thermal zone is getting too hot. Defaults to 75 degrees C.
++specified thermal zone is getting too hot. Defaults to 75 degrees C. The scale
++argument can be defined as F or K to get the temperature in Fahrenheit or Kelvin
++respectively.
+ 
+ *Example order*: +cpu_temperature 0+
+ 
+@@ -293,6 +295,8 @@ specified thermal zone is getting too hot. Defaults to 75 degrees C.
+ 
+ *Example path*: +/sys/devices/platform/coretemp.0/temp1_input+
+ 
++*Example scale*: +F+
++
+ === CPU Usage
+ 
+ Gets the percentual CPU usage from +/proc/stat+ (Linux) or +sysctl(3)+ (FreeBSD/OpenBSD).
+diff --git a/src/print_cpu_temperature.c b/src/print_cpu_temperature.c
+index 306ad1d..2acdd4a 100644
+--- a/src/print_cpu_temperature.c
++++ b/src/print_cpu_temperature.c
+@@ -36,13 +36,19 @@
+ #define MUKTOC(v) ((v - 273150000) / 1000000.0)
+ #endif
+ 
++long celsius_to_fahrenheit(long temp) {
++    return (long) ((9.0/5.0 * (double) temp) + 32.0);
++}
++long celsius_to_kelvin(long temp) {
++    return temp + 273;
++}
+ 
+ /*
+  * Reads the CPU temperature from /sys/class/thermal/thermal_zone%d/temp (or
+  * the user provided path) and returns the temperature in degree celcius.
+  *
+  */
+-void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const char *path, const char *format, int max_threshold) {
++void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const char *path, const char *format, int max_threshold, const char *scale) {
+         char *outwalk = buffer;
+ #ifdef THERMAL_ZONE
+         const char *walk;
+@@ -72,11 +78,20 @@ void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const
+                         if (temp == LONG_MIN || temp == LONG_MAX || temp <= 0)
+                                 *(outwalk++) = '?';
+                         else {
+-                                if ((temp/1000) >= max_threshold) {
++                                temp /= 1000;
++                                if (scale) {
++                                    if (!strncmp(scale, "F", sizeof(char))) {
++                                        temp = celsius_to_fahrenheit(temp);
++                                    }
++                                    if (!strncmp(scale, "K", sizeof(char))) {
++                                        temp = celsius_to_kelvin(temp);
++                                    }
++                                }
++                                if ((temp) >= max_threshold) {
+                                         START_COLOR("color_bad");
+                                         colorful_output = true;
+                                 }
+-                                outwalk += sprintf(outwalk, "%ld", (temp/1000));
++                                outwalk += sprintf(outwalk, "%ld", (temp));
+                                 if (colorful_output) {
+                                         END_COLOR;
+                                         colorful_output = false;
+-- 
+1.8.1.2
+

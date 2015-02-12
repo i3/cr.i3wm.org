@@ -1,0 +1,44 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 28,
+    "Comment": "I'm not really so into the idea of this event because it would be a subset of the (presently unimplemented) window::close event. Once we get that event, this will not actually add anything new to the ipc (except documentation and maintenance).\n\nIf we had a window::close event, you could easily create a convenience function to find out if the workspace it was on is empty in an ipc library (such as my ipc library, which now builds on Debian Wheezy).",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 28,
+    "Comment": "I was not aware that a window:close event is planned. It could certainly work equally well for my use case. Maybe let the event provide an indication whether the workspace is now empty (to avoid an additional round trip)? \n\nBut semantically I don't find a blank event wrong (although having a blank event and the ill-named empty event feels a bit clunky). A client only interested in workspace events, would have to subscribe to window events as well. But if the consensus is to go the window:event route, fine with me.\n\nAnd many thanks for supporting older platforms as well with your IPC project. Much appreciated :)",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 28,
+    "Comment": "I do agree that it is a little awkward sometimes that the window event does not contain information about the workspace. In the scripts I've been writing, I sometimes have to do another request to find the name of the workspace.\n\nIt is also surprisingly difficult to tell if a workspace is empty because you have to test for a lack of non-internal leaf containers.\n\nIf you brought up those issues on the bug tracker, I could share some ideas I have on how to fix that and we could probably come up with something good.\n\nGiven the other window events, a \"close\" event seems like a no-brainer. And it seems like you've done most of the heavy lifting here.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 28,
+    "Comment": "Including at least the workspace name with window events would be trivial and should not break anything I think. It might be a good thing to include it with workspace events as well.\n\nIf a window \"close\" event should be used instead of the workspace \"blank\" event, I would strongly advocate to include a property with the workspace empty state. As you say it's not that easy to do on the client side, but trivially done in i3 with virtually no overhead.\n\nI leave it up to Michael to decide which event solution he sees as the better fit. I think a \"blank\" event would have its merits, but having the \"close\" event could serve the same purpose with additional benefits (maybe even the workspace \"empty\" event handling could be unified and move to the same place).",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 28,
+    "Comment": "What I would like to see would be a property added to the `get_workspaces` reply object that can indicate whether the workspace is empty (either the number of containers or a boolean value) and then include one of these workspace reply objects in the window event. I think that would essentially accomplish the same thing as this event but with more use cases and cleaner documentation. I think a lot of the awkwardness here ('empty' vs 'blank') is a sign that this is really a window event.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 28,
+    "Comment": "Sounds like a good plan. This would be a clean, comprehensive solution and I sense Michael can agree with that.\n\nIf there is a window::close event, maybe there should be a workspace::close event as well to be consistent. For a transition period, the then deprecated workspace::empty event could be issued as well, until it will be removed at some point in the future.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 28,
+    "Comment": "For the record: Tony’s suggestion sounds good. I’ll mark this patch as rejected since we are going for a different strategy.\n\nThanks to both of you!",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

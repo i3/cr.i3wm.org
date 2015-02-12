@@ -1,0 +1,72 @@
+From aa4ce138727e56955442c39351c4dbcdf0d592c2 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Mon, 10 Mar 2014 04:47:40 -0400
+Subject: [PATCH] Add valgrind suppression file to testcases
+
+The suppression file makes valgrind output more readable by hiding
+reports of memory leaks for GObject-related initialization functions in
+Pango and Cairo.
+---
+ testcases/lib/SocketActivation.pm |  1 +
+ testcases/valgrind.supp           | 37 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 38 insertions(+)
+ create mode 100644 testcases/valgrind.supp
+
+diff --git a/testcases/lib/SocketActivation.pm b/testcases/lib/SocketActivation.pm
+index 228caaa..d32f605 100644
+--- a/testcases/lib/SocketActivation.pm
++++ b/testcases/lib/SocketActivation.pm
+@@ -110,6 +110,7 @@ sub activate_i3 {
+         if ($args{valgrind}) {
+             $i3cmd =
+                 qq|valgrind -v --log-file="$outdir/valgrind-for-$test.log" | .
++                qq|--suppressions="./valgrind.supp" | .
+                 qq|--leak-check=full --track-origins=yes --num-callers=20 | .
+                 qq|--tool=memcheck -- $i3cmd|;
+         }
+diff --git a/testcases/valgrind.supp b/testcases/valgrind.supp
+new file mode 100644
+index 0000000..150e3a6
+--- /dev/null
++++ b/testcases/valgrind.supp
+@@ -0,0 +1,37 @@
++#
++# Valgrind suppression file for i3 testcases
++#
++# Format specification:
++# http://valgrind.org/docs/manual/manual-core.html#manual-core.suppress
++#
++
++#
++# GLib
++#
++{
++    Ignore fundamental GType registration
++    Memcheck:Leak
++    ...
++    fun:g_type_register_fundamental
++    ...
++}
++
++{
++    Ignore static GType registration
++    Memcheck:Leak
++    match-leak-kinds: possible
++    ...
++    fun:g_type_register_static
++    ...
++}
++
++{
++    Ignore GObject init function
++    Memcheck:Leak
++    match-leak-kinds: possible
++    ...
++    obj:/usr/lib/libgobject-2.0*
++    ...
++    fun:call_init.part.0
++    ...
++}
+-- 
+1.9.0
+

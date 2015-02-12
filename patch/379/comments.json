@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 34,
+    "Comment": "I wish you would reconsider the issue of setting these windows to floating. While it may not be exactly specified by Motif hints, it seems to be heavily implied by them.\n\nThe only application that sets these hints and benefits from tiling that I found was Chromium, and I doubt anyone will actually set that option once they see what it looks like. In that case, they could set a `for_window` command for Chromium to enable tiling, where it would be more difficult in other applications.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 34,
+    "Comment": "Here are some of the uses of Motif hints that I have found so far:\n\nEclipse: Splash screen and overlays. The overlays open floating but the splash screen does not.\n\nXfce4-notifyd: Notifications expect to be opened floating, but do not.\n\nSteam (wine): If not set to floating, menus are broken. The application itself opens with a pixel border, and clearly expects a minimum width greater than what is provided in a splith workspace container. Game splash screens open tiling.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 34,
+    "Comment": "The implication “no title bar/border implies floating” is not something I want to have in i3’s code. If an application needs to be floating, it needs to set the proper hint, full stop. It’s an upstream bug in the application if they don’t, and I don’t care if it’s xeyes, steam, eclipse or the pope’s personal finance application. In case users really cannot get upstream to fix this, they should use for_window, but we won’t add such workarounds to i3 itself.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

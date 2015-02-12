@@ -1,0 +1,50 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 171,
+    "Comment": "Why are you caching this? The mapping from interface names to numbers may well change at runtime. Think of USB wireless adapters for example. I don’t think this is worth caching, so please remove it.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 100,
+    "Comment": "The signal strength reporting code doesn’t work for me — it only shows me “?” on my intel 5100agn wifi card. I think we’ll need code like this: http://sources.debian.net/src/network-manager/0.9.10.0-3/src/platform/wifi/wifi-utils-nl80211.c/?hl=269#L269 (see http://sources.debian.net/src/network-manager/0.9.10.0-3/src/platform/wifi/wifi-utils-nl80211.c/?hl=360#L360 for the callsite).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Alexander Monakov",
+    "Line": 100,
+    "Comment": "That's odd.  Does your config specify %signal or %quality (note that it's %signal implemented here, not %quality)? Does `/usr/sbin/iw dev wlan0 link` show signal strength for you?",
+    "EmailHash": "16414e3fe37df64231d46cda4bcda47a"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 100,
+    "Comment": "the format I’m using is “W: %quality %essid %ip”. In “iw dev wlan0 link” I see -33 dbm, yeah.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Alexander Monakov",
+    "Line": 171,
+    "Comment": "Because otherwise it doubles the amount if syscalls performed to retrieve basic wireless info (excluding %bitrate), and has a measurable effect on cpu consumption: on my laptop 500000 cycles with only wireless info go from 4.2s (2.4/1.8 user/kernel) to 5.4 (2.7/2.7 user/kernel).  As I understand, after we have successfully retrieved ifidx, it can only change when the interface is totally gone, and another interface has taken its place (so you'd need to, like, shuffle two usb adapters to achieve that).  If you insist on handling that, how about dropping the cache only when scan results are empty?",
+    "EmailHash": "16414e3fe37df64231d46cda4bcda47a"
+  },
+  {
+    "Author": "Alexander Monakov",
+    "Line": 100,
+    "Comment": "Then it works as expected, %signal is implemented, %quality is not.",
+    "EmailHash": "16414e3fe37df64231d46cda4bcda47a"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 171,
+    "Comment": "Yes, please handle it. Invalidating the cache when we don’t get data about the interface sounds good to me.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 100,
+    "Comment": "Then this breaks existing configs, which we really want to avoid. Can you please implement %quality?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

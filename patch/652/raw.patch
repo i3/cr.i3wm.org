@@ -1,0 +1,307 @@
+From 8182680cc837d96497d7c98aaff37caa2493ef5b Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sat, 4 Oct 2014 15:01:22 -0400
+Subject: [PATCH] Testcases: rename StartXDummy to StartXServer
+
+Rename the package StartXDummy to StartXServer in the testcases library
+because XDummy is no longer used.
+
+No logic changes.
+---
+ testcases/complete-run.pl     |   6 +--
+ testcases/lib/StartXDummy.pm  | 122 ------------------------------------------
+ testcases/lib/StartXServer.pm | 122 ++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 125 insertions(+), 125 deletions(-)
+ delete mode 100644 testcases/lib/StartXDummy.pm
+ create mode 100644 testcases/lib/StartXServer.pm
+
+diff --git a/testcases/complete-run.pl b/testcases/complete-run.pl
+index 9592c76..61f2ef5 100755
+--- a/testcases/complete-run.pl
++++ b/testcases/complete-run.pl
+@@ -19,7 +19,7 @@ use Time::HiRes qw(time);
+ use IO::Handle;
+ # these are shipped with the testsuite
+ use lib qw(lib);
+-use StartXDummy;
++use StartXServer;
+ use StatusLine;
+ use TestWorker;
+ # the following modules are not shipped with Perl
+@@ -133,7 +133,7 @@ for my $display (@displays) {
+ 
+ # Read previous timing information, if available. We will be able to roughly
+ # predict the test duration and schedule a good order for the tests.
+-my $timingsjson = StartXDummy::slurp('.last_run_timings.json');
++my $timingsjson = StartXServer::slurp('.last_run_timings.json');
+ %timings = %{decode_json($timingsjson)} if length($timingsjson) > 0;
+ 
+ # Re-order the files so that those which took the longest time in the previous
+@@ -222,7 +222,7 @@ printf("\t%s with %.2f seconds\n", $_, $timings{$_})
+ if ($numtests == 1) {
+     say '';
+     say 'Test output:';
+-    say StartXDummy::slurp($logfile);
++    say StartXServer::slurp($logfile);
+ }
+ 
+ END { cleanup() }
+diff --git a/testcases/lib/StartXDummy.pm b/testcases/lib/StartXDummy.pm
+deleted file mode 100644
+index 444f630..0000000
+--- a/testcases/lib/StartXDummy.pm
++++ /dev/null
+@@ -1,122 +0,0 @@
+-package StartXDummy;
+-# vim:ts=4:sw=4:expandtab
+-
+-use strict;
+-use warnings;
+-use Exporter 'import';
+-use Time::HiRes qw(sleep);
+-use v5.10;
+-
+-our @EXPORT = qw(start_xserver);
+-
+-my @pids;
+-my $x_socketpath = '/tmp/.X11-unix/X';
+-
+-# reads in a whole file
+-sub slurp {
+-    open(my $fh, '<', shift) or return '';
+-    local $/;
+-    <$fh>;
+-}
+-
+-# forks an X server process
+-sub fork_xserver {
+-    my $keep_xserver_output = shift;
+-    my $displaynum = shift;
+-    my $pid = fork();
+-    die "Could not fork: $!" unless defined($pid);
+-    if ($pid == 0) {
+-        # Child, close stdout/stderr, then start Xephyr
+-        if (!$keep_xserver_output) {
+-            close STDOUT;
+-            close STDERR;
+-        }
+-
+-        exec @_;
+-        exit 1;
+-    }
+-    push(@complete_run::CLEANUP, sub {
+-        kill(15, $pid);
+-        # Unlink the X11 socket, Xdmx seems to leave it there.
+-        unlink($x_socketpath . $displaynum);
+-    });
+-
+-    push @pids, $pid;
+-
+-    return $x_socketpath . $displaynum;
+-}
+-
+-# Blocks until the socket paths specified in the given array reference actually
+-# exist.
+-sub wait_for_x {
+-    my ($sockets_waiting) = @_;
+-
+-    # Wait until Xdmx actually runs. Pretty ugly solution, but as long as we
+-    # can’t socket-activate X11…
+-    while (1) {
+-        @$sockets_waiting = grep { ! -S $_ } @$sockets_waiting;
+-        last unless @$sockets_waiting;
+-        sleep 0.1;
+-    }
+-}
+-
+-=head2 start_xserver($parallel)
+-
+-Starts C<$parallel> (or number of cores * 2 if undef) Xephyr processes (see
+-http://www.freedesktop.org/wiki/Software/Xephyr/) and returns two arrayrefs: a
+-list of X11 display numbers to the Xephyr processes and a list of PIDs of the
+-processes.
+-
+-=cut
+-
+-sub start_xserver {
+-    my ($parallel, $numtests, $keep_xserver_output) = @_;
+-
+-    my @displays = ();
+-    my @childpids = ();
+-
+-    $SIG{CHLD} = sub {
+-        my $child = waitpid -1, POSIX::WNOHANG;
+-        @pids = grep { $_ != $child } @pids;
+-        return unless @pids == 0;
+-        print STDERR "All X server processes died.\n";
+-        print STDERR "Use ./complete-run.pl --parallel 1 --keep-xserver-output\n";
+-        exit 1;
+-    };
+-
+-    # Yeah, I know it’s non-standard, but Perl’s POSIX module doesn’t have
+-    # _SC_NPROCESSORS_CONF.
+-    my $cpuinfo = slurp('/proc/cpuinfo');
+-    my $num_cores = scalar grep { /model name/ } split("\n", $cpuinfo);
+-    # If /proc/cpuinfo does not exist, we fall back to 2 cores.
+-    $num_cores ||= 2;
+-
+-    # If unset, we use num_cores * 2.
+-    $parallel ||= ($num_cores * 2);
+-
+-    # If we are running a small number of tests, don’t over-parallelize.
+-    $parallel = $numtests if $numtests < $parallel;
+-
+-    # First get the last used display number, then increment it by one.
+-    # Effectively falls back to 1 if no X server is running.
+-    my ($displaynum) = map { /(\d+)$/ } reverse sort glob($x_socketpath . '*');
+-    $displaynum++;
+-
+-    say "Starting $parallel Xephyr instances, starting at :$displaynum...";
+-
+-    my @sockets_waiting;
+-    for (1 .. $parallel) {
+-        my $socket = fork_xserver($keep_xserver_output, $displaynum,
+-                'Xephyr', ":$displaynum", '-screen', '1280x800',
+-                '-nolisten', 'tcp');
+-        push(@displays, ":$displaynum");
+-        push(@sockets_waiting, $socket);
+-        $displaynum++;
+-    }
+-
+-    wait_for_x(\@sockets_waiting);
+-
+-    return @displays;
+-}
+-
+-1
+diff --git a/testcases/lib/StartXServer.pm b/testcases/lib/StartXServer.pm
+new file mode 100644
+index 0000000..032f58c
+--- /dev/null
++++ b/testcases/lib/StartXServer.pm
+@@ -0,0 +1,122 @@
++package StartXServer;
++# vim:ts=4:sw=4:expandtab
++
++use strict;
++use warnings;
++use Exporter 'import';
++use Time::HiRes qw(sleep);
++use v5.10;
++
++our @EXPORT = qw(start_xserver);
++
++my @pids;
++my $x_socketpath = '/tmp/.X11-unix/X';
++
++# reads in a whole file
++sub slurp {
++    open(my $fh, '<', shift) or return '';
++    local $/;
++    <$fh>;
++}
++
++# forks an X server process
++sub fork_xserver {
++    my $keep_xserver_output = shift;
++    my $displaynum = shift;
++    my $pid = fork();
++    die "Could not fork: $!" unless defined($pid);
++    if ($pid == 0) {
++        # Child, close stdout/stderr, then start Xephyr
++        if (!$keep_xserver_output) {
++            close STDOUT;
++            close STDERR;
++        }
++
++        exec @_;
++        exit 1;
++    }
++    push(@complete_run::CLEANUP, sub {
++        kill(15, $pid);
++        # Unlink the X11 socket, Xdmx seems to leave it there.
++        unlink($x_socketpath . $displaynum);
++    });
++
++    push @pids, $pid;
++
++    return $x_socketpath . $displaynum;
++}
++
++# Blocks until the socket paths specified in the given array reference actually
++# exist.
++sub wait_for_x {
++    my ($sockets_waiting) = @_;
++
++    # Wait until Xdmx actually runs. Pretty ugly solution, but as long as we
++    # can’t socket-activate X11…
++    while (1) {
++        @$sockets_waiting = grep { ! -S $_ } @$sockets_waiting;
++        last unless @$sockets_waiting;
++        sleep 0.1;
++    }
++}
++
++=head2 start_xserver($parallel)
++
++Starts C<$parallel> (or number of cores * 2 if undef) Xephyr processes (see
++http://www.freedesktop.org/wiki/Software/Xephyr/) and returns two arrayrefs: a
++list of X11 display numbers to the Xephyr processes and a list of PIDs of the
++processes.
++
++=cut
++
++sub start_xserver {
++    my ($parallel, $numtests, $keep_xserver_output) = @_;
++
++    my @displays = ();
++    my @childpids = ();
++
++    $SIG{CHLD} = sub {
++        my $child = waitpid -1, POSIX::WNOHANG;
++        @pids = grep { $_ != $child } @pids;
++        return unless @pids == 0;
++        print STDERR "All X server processes died.\n";
++        print STDERR "Use ./complete-run.pl --parallel 1 --keep-xserver-output\n";
++        exit 1;
++    };
++
++    # Yeah, I know it’s non-standard, but Perl’s POSIX module doesn’t have
++    # _SC_NPROCESSORS_CONF.
++    my $cpuinfo = slurp('/proc/cpuinfo');
++    my $num_cores = scalar grep { /model name/ } split("\n", $cpuinfo);
++    # If /proc/cpuinfo does not exist, we fall back to 2 cores.
++    $num_cores ||= 2;
++
++    # If unset, we use num_cores * 2.
++    $parallel ||= ($num_cores * 2);
++
++    # If we are running a small number of tests, don’t over-parallelize.
++    $parallel = $numtests if $numtests < $parallel;
++
++    # First get the last used display number, then increment it by one.
++    # Effectively falls back to 1 if no X server is running.
++    my ($displaynum) = map { /(\d+)$/ } reverse sort glob($x_socketpath . '*');
++    $displaynum++;
++
++    say "Starting $parallel Xephyr instances, starting at :$displaynum...";
++
++    my @sockets_waiting;
++    for (1 .. $parallel) {
++        my $socket = fork_xserver($keep_xserver_output, $displaynum,
++                'Xephyr', ":$displaynum", '-screen', '1280x800',
++                '-nolisten', 'tcp');
++        push(@displays, ":$displaynum");
++        push(@sockets_waiting, $socket);
++        $displaynum++;
++    }
++
++    wait_for_x(\@sockets_waiting);
++
++    return @displays;
++}
++
++1
+-- 
+2.1.2
+

@@ -1,0 +1,27 @@
+From 0b7f75eb51b1b6108455a2db8778cefaff563bea Mon Sep 17 00:00:00 2001
+From: "Kacper Kowalik (Xarthisius)" <xarthisius@…>
+Date: Thu, 8 Aug 2013 20:48:21 +0200
+Subject: [PATCH] Include float.h for DBL_EPSILON
+
+https://bugs.gentoo.org/show_bug.cgi?id=480272
+
+Patch was written by Jeroen Roovers <jer@gentoo.org>
+---
+ src/handlers.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/handlers.c b/src/handlers.c
+index 133d85d..36c8339 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -13,6 +13,7 @@
+ #include "all.h"
+ 
+ #include <time.h>
++#include <float.h>
+ #include <sys/time.h>
+ #include <xcb/randr.h>
+ #include <X11/XKBlib.h>
+-- 
+1.7.10.2
+

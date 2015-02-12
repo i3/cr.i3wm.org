@@ -1,0 +1,164 @@
+From 138da6f1a29ca00d3ad6ff2ce2070261b5957c62 Mon Sep 17 00:00:00 2001
+From: Marco Hunsicker <marco@…>
+Date: Mon, 20 Jan 2014 06:44:40 +0100
+Subject: [PATCH] Add IPC event for window title changes
+
+---
+ include/i3/ipc.h |    3 +++
+ include/ipc.h    |    6 ++++++
+ src/con.c        |   27 ++++++++++++++++++---------
+ src/handlers.c   |    4 ++++
+ src/ipc.c        |   41 +++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 72 insertions(+), 9 deletions(-)
+
+diff --git a/include/i3/ipc.h b/include/i3/ipc.h
+index 94a3990..174fa9f 100644
+--- a/include/i3/ipc.h
++++ b/include/i3/ipc.h
+@@ -100,3 +100,6 @@ typedef struct i3_ipc_header {
+ 
+ /** Bar config update will be triggered to update the bar config */
+ #define I3_IPC_EVENT_BARCONFIG_UPDATE           (I3_IPC_EVENT_MASK | 4)
++
++/* The window title event will be triggered upon window title changes */
++#define I3_IPC_EVENT_WINDOW_TITLE               (I3_IPC_EVENT_MASK | 5)
+diff --git a/include/ipc.h b/include/ipc.h
+index cbbec8e..894c88b 100644
+--- a/include/ipc.h
++++ b/include/ipc.h
+@@ -87,3 +87,9 @@ void dump_node(yajl_gen gen, Con *con, bool inplace_restart);
+  * respectively.
+  */
+ void ipc_send_workspace_focus_event(Con *current, Con *old);
++
++/*
++ * For the window "window_title" event we send, along the usual "change" field,
++ * also the changed title, in "title".
++ */
++void ipc_send_window_title_event(Con *current);
+diff --git a/src/con.c b/src/con.c
+index 5a3c88d..98fc041 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -213,6 +213,8 @@ void con_focus(Con *con) {
+     assert(con != NULL);
+     DLOG("con_focus = %p\n", con);
+ 
++    bool already_focused = (con == focused);
++
+     /* 1: set focused-pointer to the new con */
+     /* 2: exchange the position of the container in focus stack of the parent all the way up */
+     TAILQ_REMOVE(&(con->parent->focus_head), con, focused);
+@@ -221,15 +223,22 @@ void con_focus(Con *con) {
+         con_focus(con->parent);
+ 
+     focused = con;
+-    /* We can't blindly reset non-leaf containers since they might have
+-     * other urgent children. Therefore we only reset leafs and propagate
+-     * the changes upwards via con_update_parents_urgency() which does proper
+-     * checks before resetting the urgency.
+-     */
+-    if (con->urgent && con_is_leaf(con)) {
+-        con->urgent = false;
+-        con_update_parents_urgency(con);
+-        workspace_update_urgent_flag(con_get_workspace(con));
++
++    if (con_is_leaf(con))
++    {
++        if (!already_focused)
++            ipc_send_window_title_event(con);
++
++        /* We can't blindly reset non-leaf containers since they might have
++         * other urgent children. Therefore we only reset leafs and propagate
++         * the changes upwards via con_update_parents_urgency() which does proper
++         * checks before resetting the urgency.
++         */
++        if (con->urgent) {
++            con->urgent = false;
++            con_update_parents_urgency(con);
++            workspace_update_urgent_flag(con_get_workspace(con));
++        }
+     }
+ }
+ 
+diff --git a/src/handlers.c b/src/handlers.c
+index 312372a..d7753d6 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -540,6 +540,8 @@ static bool handle_windowname_change(void *data, xcb_connection_t *conn, uint8_t
+ 
+     window_update_name(con->window, prop, false);
+ 
++    ipc_send_window_title_event(con);
++
+     x_push_changes(croot);
+ 
+     return true;
+@@ -558,6 +560,8 @@ static bool handle_windowname_change_legacy(void *data, xcb_connection_t *conn,
+ 
+     window_update_name_legacy(con->window, prop, false);
+ 
++    ipc_send_window_title_event(con);
++
+     x_push_changes(croot);
+ 
+     return true;
+diff --git a/src/ipc.c b/src/ipc.c
+index f1e9019..714563b 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -21,6 +21,7 @@
+ #include <yajl/yajl_parse.h>
+ 
+ char *current_socketpath = NULL;
++char *current_windowtitle = NULL;
+ 
+ TAILQ_HEAD(ipc_client_head, ipc_client) all_clients = TAILQ_HEAD_INITIALIZER(all_clients);
+ 
+@@ -1056,3 +1057,43 @@ void ipc_send_workspace_focus_event(Con *current, Con *old) {
+     y(free);
+     setlocale(LC_NUMERIC, "");
+ }
++
++const char* get_window_title(Con *con) {
++    return (con != NULL && con->window != NULL && con->window->name != NULL) ? i3string_as_utf8(con->window->name) : "";
++}
++
++void ipc_send_window_title_event(Con *con) {
++    const char* title = get_window_title(con);
++
++    if (con != focused || (current_windowtitle != NULL && strcmp(current_windowtitle, title) == 0)) {
++        return;
++    }
++
++    FREE(current_windowtitle);
++
++    current_windowtitle = strdup(title);
++
++    setlocale(LC_NUMERIC, "C");
++    yajl_gen gen = ygenalloc();
++
++    y(map_open);
++
++    ystr("change");
++    ystr("window_title");
++
++    ystr("title");
++    ystr(title);
++
++    ystr("current");
++    dump_node(gen, con, false);
++
++    y(map_close);
++
++    const unsigned char *payload;
++    ylength length;
++    y(get_buf, &payload, &length);
++
++    ipc_send_event("window_title", I3_IPC_EVENT_WINDOW_TITLE, (const char *)payload);
++    y(free);
++    setlocale(LC_NUMERIC, "");
++}
+-- 
+1.7.10.4
+

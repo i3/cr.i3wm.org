@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Axel Wagner",
+    "Line": 107,
+    "Comment": "Maybe the comma should be a fullstop, it looks wrong to me this way…",
+    "EmailHash": "1856cb79382de6bb817158042d0e063b"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 108,
+    "Comment": "Sorry for taking so long to respond, I was busy with real life.\n\nThe positive effect of that is that I lost context, which is good when proof-reading documentation. I don’t really get what invisible mode is for. Could you try to make the docs more clear on that? Maybe name an example use case for each of these modes/states.",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 117,
+    "Comment": "Can you rename this to hidden_state please? I think just “state” is too generic — I found it confusing.",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 108,
+    "Comment": "I will make a more verbose version of the documentation. Invisible mode is helpful when you want to hide the bar eventhough an urgency hint occurs or the bar_modifier key is pressed. This might be the case, when, e.g., using i3lock/slock and you want to prevent i3bar from showing up.",
+    "EmailHash": ""
+  }
+]

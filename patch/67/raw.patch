@@ -1,0 +1,57 @@
+From 70399319b4c70d89b0aa3258bc93a092f89620ad Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Fabi=C3=A1n=20Ezequiel=20Gallina?= <galli.87@…>
+Date: Mon, 4 Mar 2013 18:18:40 -0300
+Subject: [PATCH 2/2] Make i3bar aware of the new floating_hidden attribute
+
+---
+ i3bar/include/workspaces.h | 1 +
+ i3bar/src/workspaces.c     | 9 ++++++++-
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/i3bar/include/workspaces.h b/i3bar/include/workspaces.h
+index 5fe1ba1..67c87cd 100644
+--- a/i3bar/include/workspaces.h
++++ b/i3bar/include/workspaces.h
+@@ -32,6 +32,7 @@ void free_workspaces(void);
+ 
+ struct i3_ws {
+     int                num;         /* The internal number of the ws */
++    bool               floating_hidden; /* If floating windows are hidden */
+     i3String           *name;       /* The name of the ws */
+     int                name_width;  /* The rendered width of the name */
+     bool               visible;     /* If the ws is currently visible on an output */
+diff --git a/i3bar/src/workspaces.c b/i3bar/src/workspaces.c
+index 5e01b98..4cd6126 100644
+--- a/i3bar/src/workspaces.c
++++ b/i3bar/src/workspaces.c
+@@ -25,12 +25,18 @@ struct workspaces_json_params {
+ };
+ 
+ /*
+- * Parse a boolean value (visible, focused, urgent)
++ * Parse a boolean value (floating_hidden, visible, focused, urgent)
+  *
+  */
+ static int workspaces_boolean_cb(void *params_, int val) {
+     struct workspaces_json_params *params = (struct workspaces_json_params*) params_;
+ 
++    if (!strcmp(params->cur_key, "floating_hidden")) {
++        params->workspaces_walk->floating_hidden = val;
++        FREE(params->cur_key);
++        return 1;
++    }
++
+     if (!strcmp(params->cur_key, "visible")) {
+         params->workspaces_walk->visible = val;
+         FREE(params->cur_key);
+@@ -162,6 +168,7 @@ static int workspaces_start_map_cb(void *params_) {
+     if (params->cur_key == NULL) {
+         new_workspace = smalloc(sizeof(i3_ws));
+         new_workspace->num = -1;
++        new_workspace->floating_hidden = 0;
+         new_workspace->name = NULL;
+         new_workspace->visible = 0;
+         new_workspace->focused = 0;
+-- 
+1.8.1.4
+

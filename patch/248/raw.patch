@@ -1,0 +1,292 @@
+From fdaff62031f0cd5d900aeffd52c473cb48dd2c0d Mon Sep 17 00:00:00 2001
+From: Philippe Virouleau <philippe.virouleau@…>
+Date: Fri, 4 Oct 2013 14:59:16 +0200
+Subject: [PATCH] move scratchpad on a scratchpad windows inserts in head
+
+Implement the behaviour described in #1035 : 'scratchpad show' cycles
+between windows, 'scratchpad move' on a scratchpad window makes it the
+next to be displayed by 'scratchpad show'.
+---
+ include/data.h               |    6 ++-
+ include/scratchpad.h         |    2 +-
+ src/commands.c               |    2 +-
+ src/con.c                    |    7 +++-
+ src/ipc.c                    |    3 ++
+ src/load_layout.c            |    2 +
+ src/scratchpad.c             |   19 +++++++--
+ testcases/t/185-scratchpad.t |   95 ++++++++++++++++++++++++++++++++++++------
+ 8 files changed, 116 insertions(+), 20 deletions(-)
+
+diff --git a/include/data.h b/include/data.h
+index ea1d324..81f4d1d 100644
+--- a/include/data.h
++++ b/include/data.h
+@@ -585,7 +585,11 @@ struct Con {
+         SCRATCHPAD_FRESH = 1,
+ 
+         /* The user changed position/size of the scratchpad window. */
+-        SCRATCHPAD_CHANGED = 2
++        SCRATCHPAD_CHANGED = 2,
++
++        /* A scratchpad window moving to scratchpad again through an
++         * actual 'scratchpad move'. */
++        SCRATCHPAD_MOVE = 3
+     } scratchpad_state;
+ 
+     /* The ID of this container before restarting. Necessary to correctly
+diff --git a/include/scratchpad.h b/include/scratchpad.h
+index c615705..1702620 100644
+--- a/include/scratchpad.h
++++ b/include/scratchpad.h
+@@ -17,7 +17,7 @@
+  * Gets called upon the command 'move scratchpad'.
+  *
+  */
+-void scratchpad_move(Con *con);
++void scratchpad_move(Con *con, bool from_show);
+ 
+ /**
+  * Either shows the top-most scratchpad window (con == NULL) or shows the
+diff --git a/src/commands.c b/src/commands.c
+index 9631923..238b1f5 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -1786,7 +1786,7 @@ void cmd_move_scratchpad(I3_CMD) {
+ 
+     TAILQ_FOREACH(current, &owindows, owindows) {
+         DLOG("matching: %p / %s\n", current->con, current->con->name);
+-        scratchpad_move(current->con);
++        scratchpad_move(current->con, false);
+     }
+ 
+     cmd_output->needs_tree_render = true;
+diff --git a/src/con.c b/src/con.c
+index 5b68481..337804d 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -138,7 +138,12 @@ void con_attach(Con *con, Con *parent, bool ignore_focus) {
+ 
+     if (con->type == CT_FLOATING_CON) {
+         DLOG("Inserting into floating containers\n");
+-        TAILQ_INSERT_TAIL(&(parent->floating_head), con, floating_windows);
++        Con *floating;
++        if ((floating = con_inside_floating(con))
++                && floating->scratchpad_state == SCRATCHPAD_MOVE)
++            TAILQ_INSERT_HEAD(&(parent->floating_head), con, floating_windows);
++        else
++            TAILQ_INSERT_TAIL(&(parent->floating_head), con, floating_windows);
+     } else {
+         if (!ignore_focus) {
+             /* Get the first tiling container in focus stack */
+diff --git a/src/ipc.c b/src/ipc.c
+index a928dba..b7bfe2e 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -176,6 +176,9 @@ void dump_node(yajl_gen gen, struct Con *con, bool inplace_restart) {
+         case SCRATCHPAD_CHANGED:
+             ystr("changed");
+             break;
++        case SCRATCHPAD_MOVE:
++            ystr("move");
++            break;
+     }
+ 
+     ystr("percent");
+diff --git a/src/load_layout.c b/src/load_layout.c
+index 1b08f8c..8d1f80f 100644
+--- a/src/load_layout.c
++++ b/src/load_layout.c
+@@ -254,6 +254,8 @@ static int json_string(void *ctx, const unsigned char *val, unsigned int len) {
+                 json_node->scratchpad_state = SCRATCHPAD_FRESH;
+             else if (strcasecmp(buf, "changed") == 0)
+                 json_node->scratchpad_state = SCRATCHPAD_CHANGED;
++            else if (strcasecmp(buf, "move") == 0)
++                json_node->scratchpad_state = SCRATCHPAD_MOVE;
+             free(buf);
+         }
+     }
+diff --git a/src/scratchpad.c b/src/scratchpad.c
+index 17df77d..d852368 100644
+--- a/src/scratchpad.c
++++ b/src/scratchpad.c
+@@ -18,7 +18,7 @@
+  * Gets called upon the command 'move scratchpad'.
+  *
+  */
+-void scratchpad_move(Con *con) {
++void scratchpad_move(Con *con, bool from_show) {
+     if (con->type == CT_WORKSPACE) {
+         LOG("'move scratchpad' used on a workspace \"%s\". Calling it "
+             "recursively on all windows on this workspace.\n", con->name);
+@@ -26,7 +26,7 @@ void scratchpad_move(Con *con) {
+         current = TAILQ_FIRST(&(con->focus_head));
+         while (current) {
+             Con *next = TAILQ_NEXT(current, focused);
+-            scratchpad_move(current);
++            scratchpad_move(current, from_show);
+             current = next;
+         }
+         return;
+@@ -57,10 +57,21 @@ void scratchpad_move(Con *con) {
+         con = maybe_floating_con;
+     }
+ 
++    /*
++     * If this is an actual 'scratchpad move' and the window is a scratchpad window,
++     * set the scratchpad_state to SCRATCHPAD_MOVE so that it's moved to
++     * top of the queue
++     */
++    int tmp_state = con->scratchpad_state;
++    if (!from_show && con->scratchpad_state != SCRATCHPAD_NONE)
++        con->scratchpad_state = SCRATCHPAD_MOVE;
++
+     /* 2: Send the window to the __i3_scratch workspace, mainting its
+      * coordinates and not warping the pointer. */
+     con_move_to_workspace(con, __i3_scratch, true, true);
+ 
++    con->scratchpad_state = tmp_state;
++
+     /* 3: If this is the first time this window is used as a scratchpad, we set
+      * the scratchpad_state to SCRATCHPAD_FRESH. The window will then be
+      * adjusted in size according to what the user specifies. */
+@@ -97,7 +108,7 @@ void scratchpad_show(Con *con) {
+         (floating = con_inside_floating(focused)) &&
+         floating->scratchpad_state != SCRATCHPAD_NONE) {
+         DLOG("Focused window is a scratchpad window, hiding it.\n");
+-        scratchpad_move(focused);
++        scratchpad_move(focused, true);
+         return;
+     }
+ 
+@@ -165,7 +176,7 @@ void scratchpad_show(Con *con) {
+          * it, otherwise we should move it to the active workspace. */
+         if (current == active) {
+             DLOG("Window is a scratchpad window, hiding it.\n");
+-            scratchpad_move(con);
++            scratchpad_move(con, true);
+             return;
+         }
+     }
+diff --git a/testcases/t/185-scratchpad.t b/testcases/t/185-scratchpad.t
+index 5901f99..b049456 100644
+--- a/testcases/t/185-scratchpad.t
++++ b/testcases/t/185-scratchpad.t
+@@ -398,10 +398,11 @@ sub verify_scratchpad_move_with_visible_scratch_con {
+     # hide window 1 again
+     cmd 'move scratchpad';
+ 
+-    # this should bring up window 2
++    # Since #1035
++    # this should bring up window 1
+     cmd "workspace $first";
+     cmd 'scratchpad show';
+-    is($x->input_focus, $window2->id, "showed the correct scratchpad window");
++    is($x->input_focus, $window1->id, "showed the correct scratchpad window");
+ }
+ 
+ # let's clear the scratchpad first
+@@ -428,21 +429,91 @@ does_i3_live;
+ # when another window on the same workspace has focus
+ ################################################################################
+ 
++sub test_scratchpad_show_moves_focus {
++    my $ws = fresh_workspace;
++    cmd "workspace $ws";
++
++    open_window;
++    my $scratch = get_focused($ws);
++    cmd 'move scratchpad';
++    cmd 'scratchpad show';
++
++    open_window;
++    my $not_scratch = get_focused($ws);
++    is(get_focused($ws), $not_scratch, 'not scratch window has focus');
++
++    cmd 'scratchpad show';
++
++    is(get_focused($ws), $scratch, 'scratchpad is focused');
++
++    #Kill the scratchpad window so that it doesn't interfere with other tests
++    cmd 'kill';
++
++    is(get_focused($ws), $not_scratch, 'not scratch window has focus');
++}
++
+ clear_scratchpad;
+-my $ws = fresh_workspace;
++is (scalar @{get_ws('__i3_scratch')->{floating_nodes}}, 0, "scratchpad is empty");
++test_scratchpad_show_moves_focus;
+ 
+-open_window;
+-my $scratch = get_focused($ws);
+-cmd 'move scratchpad';
+-cmd 'scratchpad show';
++################################################################################
++# 13bis: Test the following behaviour :
++# With multiple windows in the scratchpad, 'scratchpad_show' cycles between
++# them, and 'scratchpad move' on a scratchpad window makes it the next to be
++# displayed with 'scratchpad show'
++################################################################################
+ 
+-open_window;
+-my $not_scratch = get_focused($ws);
+-is(get_focused($ws), $not_scratch, 'not scratch window has focus');
++sub test_scratchpad_move_to_head {
+ 
+-cmd 'scratchpad show';
++    my $ws = fresh_workspace;
++    cmd "workspace $ws";
++
++    my $window1 = open_window;
++    cmd 'move scratchpad';
++
++    my $window2 = open_window;
++    cmd 'move scratchpad';
+ 
+-is(get_focused($ws), $scratch, 'scratchpad is focused');
++    # this should bring up window 1
++    cmd 'scratchpad show';
++
++    is(scalar @{get_ws($ws)->{floating_nodes}}, 1, 'one floating node on ws');
++    is($x->input_focus, $window1->id, "showed the correct scratchpad window1");
++
++    #this should hide window 1
++    cmd 'scratchpad show';
++
++    is(scalar @{get_ws($ws)->{floating_nodes}}, 0, 'no floating node on ws');
++
++    #this should show window 2
++    cmd 'scratchpad show';
++
++    is(scalar @{get_ws($ws)->{floating_nodes}}, 1, 'one floating node on ws');
++    is($x->input_focus, $window2->id, "showed the correct scratchpad window2");
++
++    #this should hide window 2 and make it the next window to be displayed
++    cmd 'move scratchpad';
++
++
++    is(scalar @{get_ws($ws)->{floating_nodes}}, 0, 'no floating node on ws');
++
++    #this should show window 2 (#1035)
++    cmd 'scratchpad show';
++
++    is(scalar @{get_ws($ws)->{floating_nodes}}, 1, 'one floating node on ws');
++    is($x->input_focus, $window2->id, "showed the correct scratchpad window2");
++
++    #clean
++    cmd 'kill';
++    cmd 'scratchpad show';
++    cmd 'kill';
++
++
++}
++
++clear_scratchpad;
++is (scalar @{get_ws('__i3_scratch')->{floating_nodes}}, 0, "scratchpad is empty");
++test_scratchpad_move_to_head;
+ 
+ # TODO: make i3bar display *something* when a window on the scratchpad has the urgency hint
+ 
+-- 
+1.7.10.4
+

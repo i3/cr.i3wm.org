@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 18,
+    "Comment": "Can you make this a constant instead? The advantage is that constants are properly displayed in debuggers. Also, default_shmlog_size seems like a good name.",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 31,
+    "Comment": "This comment is inconsistent with the rest of our code base, so please remove it :).",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  }
+]

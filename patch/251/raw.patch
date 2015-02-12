@@ -1,0 +1,34 @@
+From 3a923f73dd447d1e8495438ca232f8ff9bb6196e Mon Sep 17 00:00:00 2001
+From: Arnaud Degroote <degroote@…>
+Date: Sun, 6 Oct 2013 18:13:05 +0000
+Subject: [PATCH 2/3] Allow to print eth information on NetBSD
+
+---
+ src/print_eth_info.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/print_eth_info.c b/src/print_eth_info.c
+index 8af0dec..45a44a4 100644
+--- a/src/print_eth_info.c
++++ b/src/print_eth_info.c
+@@ -27,7 +27,7 @@
+ #define PART_ETHSPEED  "E: %s (%s)"
+ #endif
+ 
+-#if defined(__OpenBSD__)
++#if defined(__OpenBSD__) || defined(__NetBSD__)
+ #include <errno.h>
+ #include <net/if_media.h>
+ #endif
+@@ -69,7 +69,7 @@ static int print_eth_speed(char *outwalk, const char *interface) {
+         }
+         ethspeed = (desc->ifmt_string != NULL ? desc->ifmt_string : "?");
+         return sprintf(outwalk, "%s", ethspeed);
+-#elif defined(__OpenBSD__)
++#elif defined(__OpenBSD__) || defined(__NetBSD__)
+ 	char *ethspeed;
+ 	struct ifmediareq ifmr;
+ 
+-- 
+1.8.4
+

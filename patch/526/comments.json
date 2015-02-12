@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 56,
+    "Comment": "this test crashes i3 in the present branch",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 22,
+    "Comment": "This check is here for a reason. If we don’t do this, some windows will steal focus and switch workspaces, which is very irritating. I think we’ve seen this with Firefox and/or other browsers.\n\nSee commit 68a23b957717c995fd6569af535f2baf91b429b3 which introduced the check.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

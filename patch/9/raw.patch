@@ -1,0 +1,29 @@
+From 98ca5e239ce36bcc6486ca2f032cd44702659e04 Mon Sep 17 00:00:00 2001
+From: Adrien Schildknecht <adrien+dev@…>
+Date: Wed, 9 Jan 2013 02:23:47 +0100
+Subject: [PATCH] Ad-hoc network support for Linux
+
+---
+ src/print_wireless_info.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/print_wireless_info.c b/src/print_wireless_info.c
+index 9ab9c2f..df325a9 100644
+--- a/src/print_wireless_info.c
++++ b/src/print_wireless_info.c
+@@ -93,6 +93,12 @@ static int get_wireless_info(const char *interface, wireless_info_t *info) {
+                 info->essid[IW_ESSID_MAX_SIZE] = '\0';
+         }
+ 
++        /* Ad-Hoc network does not provide stats */
++        if (wcfg.mode == 1) {
++                close(skfd);
++                return 1;
++        }
++
+         /* Wireless quality is a relative value in a driver-specific range.
+            Signal and noise level can be either relative or absolute values
+            in dBm. Furthermore, noise and quality can be expressed directly
+-- 
+1.8.0.3
+

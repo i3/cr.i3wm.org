@@ -1,0 +1,35 @@
+From 2ae95c7a08fa2d1da3b2753d5ab476768ec3dd0d Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 28 Feb 2014 13:45:22 -0500
+Subject: [PATCH] Update ipc COMMAND reply documentation
+
+The COMMAND reply consists of a list of results for each command that
+was parsed.
+---
+ docs/ipc | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/docs/ipc b/docs/ipc
+index e548c07..2f3ea7e 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -140,12 +140,13 @@ VERSION (7)::
+ 
+ === COMMAND reply
+ 
+-The reply consists of a single serialized map. At the moment, the only
+-property is +success (bool)+, but this will be expanded in future versions.
++The reply consists of a list of serialized maps for each command that was
++parsed. Each has the property +success (bool)+ and may also include a
++human-readable error message in the property +error (string)+.
+ 
+ *Example:*
+ -------------------
+-{ "success": true }
++[{ "success": true }]
+ -------------------
+ 
+ === WORKSPACES reply
+-- 
+1.9.0
+

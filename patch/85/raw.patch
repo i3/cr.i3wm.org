@@ -1,0 +1,164 @@
+From 6cc7c3061661696dda92d591c81e4dbb92ea2f71 Mon Sep 17 00:00:00 2001
+From: Yuxuan Shui <yshuiv7@…>
+Date: Fri, 15 Mar 2013 22:40:26 +0800
+Subject: [PATCH] Fix restarting with 32bit depth windows (v3)
+
+Fix a typo in previous patch.
+---
+ include/con.h     | 11 ++++++++---
+ include/data.h    |  3 +++
+ src/con.c         | 22 +++++++++++++++-------
+ src/ipc.c         |  5 +++++
+ src/load_layout.c |  9 +++++++--
+ 5 files changed, 38 insertions(+), 12 deletions(-)
+
+diff --git a/include/con.h b/include/con.h
+index 62eb12d..fd50e80 100644
+--- a/include/con.h
++++ b/include/con.h
+@@ -12,10 +12,15 @@
+ #ifndef I3_CON_H
+ #define I3_CON_H
+ 
+-/**
++/*
+  * Create a new container (and attach it to the given parent, if not NULL).
+- * This function initializes the data structures and creates the appropriate
+- * X11 IDs using x_con_init().
++ * This function only initializes the data structures.
++ *
++ */
++Con *con_new_sketelon(Con *parent, i3Window *window);
++
++
++/* A wrapper for con_new_sketelon, to retain the old con_new behaviour
+  *
+  */
+ Con *con_new(Con *parent, i3Window *window);
+diff --git a/include/data.h b/include/data.h
+index 1632efc..13acc06 100644
+--- a/include/data.h
++++ b/include/data.h
+@@ -584,6 +584,9 @@ struct Con {
+     /* The ID of this container before restarting. Necessary to correctly
+      * interpret back-references in the JSON (such as the focus stack). */
+     int old_id;
++
++    /* Depth of the container window */
++    uint16_t depth;
+ };
+ 
+ #endif
+diff --git a/src/con.c b/src/con.c
+index 559c137..f60731d 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -44,11 +44,10 @@ static void con_force_split_parents_redraw(Con *con) {
+ 
+ /*
+  * Create a new container (and attach it to the given parent, if not NULL).
+- * This function initializes the data structures and creates the appropriate
+- * X11 IDs using x_con_init().
++ * This function only initializes the data structures.
+  *
+  */
+-Con *con_new(Con *parent, i3Window *window) {
++Con *con_new_sketelon(Con *parent, i3Window *window) {
+     Con *new = scalloc(sizeof(Con));
+     new->on_remove_child = con_on_remove_child;
+     TAILQ_INSERT_TAIL(&all_cons, new, all_cons);
+@@ -56,6 +55,10 @@ Con *con_new(Con *parent, i3Window *window) {
+     new->window = window;
+     new->border_style = config.default_border;
+     new->current_border_width = -1;
++    if (window)
++        new->depth = window->depth;
++    else
++        new->depth = XCB_COPY_FROM_PARENT;
+     static int cnt = 0;
+     DLOG("opening window %d\n", cnt);
+ 
+@@ -66,10 +69,6 @@ Con *con_new(Con *parent, i3Window *window) {
+     cnt++;
+     if ((cnt % (sizeof(colors) / sizeof(char*))) == 0)
+         cnt = 0;
+-    if (window)
+-        x_con_init(new, window->depth);
+-    else
+-        x_con_init(new, XCB_COPY_FROM_PARENT);
+ 
+     TAILQ_INIT(&(new->floating_head));
+     TAILQ_INIT(&(new->nodes_head));
+@@ -82,6 +81,15 @@ Con *con_new(Con *parent, i3Window *window) {
+     return new;
+ }
+ 
++/* A wrapper for con_new_sketelon, to retain the old con_new behaviour
++ *
++ */
++Con *con_new(Con *parent, i3Window *window) {
++    Con *new = con_new_sketelon(parent, window);
++    x_con_init(new, new->depth);
++    return new;
++}
++
+ /*
+  * Attaches the given container to the given parent. This happens when moving
+  * a container or when inserting a new container at a specific place in the
+diff --git a/src/ipc.c b/src/ipc.c
+index cf25357..8161b1d 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -354,6 +354,11 @@ void dump_node(yajl_gen gen, struct Con *con, bool inplace_restart) {
+     }
+     y(array_close);
+ 
++    if (inplace_restart && con->window != NULL) {
++        ystr("depth");
++        y(integer, con->depth);
++    }
++
+     y(map_close);
+ }
+ 
+diff --git a/src/load_layout.c b/src/load_layout.c
+index ca4c87e..42e7e77 100644
+--- a/src/load_layout.c
++++ b/src/load_layout.c
+@@ -51,12 +51,12 @@ static int json_start_map(void *ctx) {
+             if (last_key && strcasecmp(last_key, "floating_nodes") == 0) {
+                 DLOG("New floating_node\n");
+                 Con *ws = con_get_workspace(json_node);
+-                json_node = con_new(NULL, NULL);
++                json_node = con_new_sketelon(NULL, NULL);
+                 json_node->parent = ws;
+                 DLOG("Parent is workspace = %p\n", ws);
+             } else {
+                 Con *parent = json_node;
+-                json_node = con_new(NULL, NULL);
++                json_node = con_new_sketelon(NULL, NULL);
+                 json_node->parent = parent;
+             }
+         }
+@@ -69,6 +69,8 @@ static int json_end_map(void *ctx) {
+     if (!parsing_swallows && !parsing_rect && !parsing_window_rect && !parsing_geometry) {
+         LOG("attaching\n");
+         con_attach(json_node, json_node->parent, true);
++        LOG("Creating window\n");
++        x_con_init(json_node, json_node->depth);
+         json_node = json_node->parent;
+     }
+     if (parsing_rect)
+@@ -277,6 +279,9 @@ static int json_int(void *ctx, long val) {
+     if (strcasecmp(last_key, "current_border_width") == 0)
+         json_node->current_border_width = val;
+ 
++    if (strcasecmp(last_key, "depth") == 0)
++        json_node->depth = val;
++
+     if (!parsing_swallows && strcasecmp(last_key, "id") == 0)
+         json_node->old_id = val;
+ 
+-- 
+1.8.2
+

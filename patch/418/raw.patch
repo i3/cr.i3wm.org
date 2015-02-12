@@ -1,0 +1,92 @@
+From 795fbd5dfed16e3d767d85b7bd191fec56c9d7e9 Mon Sep 17 00:00:00 2001
+From: S0lll0s <S0lll0s@…>
+Date: Tue, 11 Feb 2014 14:39:06 +0100
+Subject: [PATCH 1/3] Add background color to i3bar segments
+
+---
+ i3bar/include/common.h |  1 +
+ i3bar/src/child.c      |  3 +++
+ i3bar/src/xcb.c        |  3 ++-
+ libi3/font.c           | 12 ++++++++++++
+ 4 files changed, 18 insertions(+), 1 deletion(-)
+
+diff --git a/i3bar/include/common.h b/i3bar/include/common.h
+index d63780d..e0d2977 100644
+--- a/i3bar/include/common.h
++++ b/i3bar/include/common.h
+@@ -38,6 +38,7 @@ struct status_block {
+     i3String *full_text;
+ 
+     char *color;
++    char *bgcolor;
+     uint32_t min_width;
+     blockalign_t align;
+ 
+diff --git a/i3bar/src/child.c b/i3bar/src/child.c
+index d19192f..88471e6 100644
+--- a/i3bar/src/child.c
++++ b/i3bar/src/child.c
+@@ -195,6 +195,9 @@ static int stdin_string(void *context, const unsigned char *val, unsigned int le
+     if (strcasecmp(ctx->last_map_key, "color") == 0) {
+         sasprintf(&(ctx->block.color), "%.*s", len, val);
+     }
++    if (strcasecmp(ctx->last_map_key, "background_color") == 0) {
++        sasprintf(&(ctx->block.bgcolor), "%.*s", len, val);
++    }
+     if (strcasecmp(ctx->last_map_key, "align") == 0) {
+         if (len == strlen("left") && !strncmp((const char*)val, "left", strlen("left"))) {
+             ctx->block.align = ALIGN_LEFT;
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index 928771d..dd06e85 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -178,7 +178,8 @@ void refresh_statusline(void) {
+             continue;
+ 
+         uint32_t colorpixel = (block->color ? get_colorpixel(block->color) : colors.bar_fg);
+-        set_font_colors(statusline_ctx, colorpixel, colors.bar_bg);
++        uint32_t bgcolorpix = (block->bgcolor ? get_colorpixel(block->bgcolor) : colors.bar_bg);
++        set_font_colors(statusline_ctx, colorpixel, bgcolorpix);
+         draw_text(block->full_text, statusline_pm, statusline_ctx, x + block->x_offset, 1, block->width);
+         x += block->width + block->x_offset + block->x_append;
+ 
+diff --git a/libi3/font.c b/libi3/font.c
+index e1e5b82..8c2c528 100644
+--- a/libi3/font.c
++++ b/libi3/font.c
+@@ -29,6 +29,9 @@ static xcb_visualtype_t *root_visual_type;
+ static double pango_font_red;
+ static double pango_font_green;
+ static double pango_font_blue;
++static double pango_bgfont_red;
++static double pango_bgfont_green;
++static double pango_bgfont_blue;
+ 
+ /* Necessary to track whether the dpi changes and trigger a LOG() message,
+  * which is more easily visible to users. */
+@@ -120,6 +123,10 @@ static void draw_text_pango(const char *text, size_t text_len,
+     pango_layout_set_text(layout, text, text_len);
+ 
+     /* Do the drawing */
++    cairo_set_source_rgb(cr, pango_bgfont_red, pango_bgfont_green, pango_bgfont_blue);
++    cairo_rectangle(cr, x, y, max_width, savedFont->height);
++    cairo_fill(cr);
++
+     cairo_set_source_rgb(cr, pango_font_red, pango_font_green, pango_font_blue);
+     pango_cairo_update_layout(cr, layout);
+     pango_layout_get_pixel_size(layout, NULL, &height);
+@@ -303,6 +310,11 @@ void set_font_colors(xcb_gcontext_t gc, uint32_t foreground, uint32_t background
+             pango_font_red = ((foreground >> 16) & 0xff) / 255.0;
+             pango_font_green = ((foreground >> 8) & 0xff) / 255.0;
+             pango_font_blue = (foreground & 0xff) / 255.0;
++
++            /* Save the background font */
++            pango_bgfont_red = ((background >> 16) & 0xff) / 255.0;
++            pango_bgfont_green = ((background >> 8) & 0xff) / 255.0;
++            pango_bgfont_blue = (background & 0xff) / 255.0;
+             break;
+ #endif
+         default:
+-- 
+1.8.5.3
+

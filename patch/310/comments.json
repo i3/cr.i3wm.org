@@ -1,0 +1,62 @@
+[
+  {
+    "Author": "Kinware AB",
+    "Line": 18,
+    "Comment": "The reason for this patch is that VPN tunnels managed by nmcli or nm-applet do not get a pidfile, and can thus not make use of the run_watch directive.\nChecking for the existance of the dynamic tun0 directory under /proc works however.\n\nI was considering generalizing this function to something like \"file_status\" adding support for checking more things, like contents of the file. But I don't have a clear use case so I started with this.\n\nFeedback appreciated.",
+    "EmailHash": "19ec62ff64922540d49fc700ef20e12f"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 18,
+    "Comment": "I’d rename file_exists to path_exists to make it clearer that it’s not just for files, also for directories, etc.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 94,
+    "Comment": "This comment (and the one above) could be clearer. This is not strictly speaking the “status of” anything :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 140,
+    "Comment": "Why did you add this trivial function to general.c, given that it’s only used by one other source file? Just inline the code there :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 174,
+    "Comment": "Indentation is wrong here.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 182,
+    "Comment": "and here. Please fix it everywhere.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Kinware AB",
+    "Line": 18,
+    "Comment": "Good point. Will fix. ",
+    "EmailHash": "19ec62ff64922540d49fc700ef20e12f"
+  },
+  {
+    "Author": "Kinware AB",
+    "Line": 140,
+    "Comment": "Was when I was thinking about having code comparing contents in the file, but never got around to it. Will move the stat() to cslling function instead. ",
+    "EmailHash": "19ec62ff64922540d49fc700ef20e12f"
+  },
+  {
+    "Author": "Kinware AB",
+    "Line": 182,
+    "Comment": "Will do. ",
+    "EmailHash": "19ec62ff64922540d49fc700ef20e12f"
+  },
+  {
+    "Author": "Kinware AB",
+    "Line": 94,
+    "Comment": "Will do. Thanks for the detailed code review! ",
+    "EmailHash": "19ec62ff64922540d49fc700ef20e12f"
+  }
+]

@@ -1,0 +1,268 @@
+From f68ba2d6db71c53fc4eaa05ad578d47fcdc9c426 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 2 May 2014 14:39:06 -0400
+Subject: [PATCH] i3bar: implement custom workspace numbers config
+
+Implement the configuration option within the bar config directive for
+custom workspace numbers with the directive `workspace_numbers custom`.
+
+This directive strips the workspace name of the number prefix and
+delimiter. When the workspace name consists only of the number, it will
+default to show the number.
+
+For example:
+
+* "2:5" -> "5"
+* "4:$" -> "$"
+* "8" -> "8"
+
+This allows customization of i3bar for alternate ordering of workspaces
+which has a legitimate use for alternate keyboard layouts such as
+Dvorak.
+
+fixes #1131
+---
+ docs/userguide                  | 25 +++++++++++++++++++++++++
+ i3bar/include/config.h          |  1 +
+ i3bar/include/workspaces.h      |  3 ++-
+ i3bar/src/config.c              |  8 ++++++++
+ i3bar/src/workspaces.c          | 31 ++++++++++++++++++++++++++++---
+ i3bar/src/xcb.c                 |  2 +-
+ include/config.h                |  4 ++++
+ parser-specs/config.spec        |  5 +++++
+ src/config_directives.c         |  5 +++++
+ src/ipc.c                       |  2 ++
+ testcases/t/201-config-parser.t |  2 +-
+ 11 files changed, 82 insertions(+), 6 deletions(-)
+
+diff --git a/docs/userguide b/docs/userguide
+index d303b53..d82b1bc 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -1191,6 +1191,31 @@ bar {
+ }
+ ------------------------
+ 
++=== Workspace numbers
++
++Specifies how workspace numbers should be displayed within the workspace
++buttons. This is useful if you want to have a named workspace that stays in
++order on the bar according to its number without displaying the number prefix.
++
++When +workspace_numbers+ is set to +custom+, any workspace that has a name of
++the form "[n]:[NAME]" will display only the name. You could use this, for
++instance, to display Roman numerals rather than digits by naming your
++workspaces to "1:I", "2:II", "3:III", "4:IV", ...
++
++The default is to display the full name within the workspace button.
++
++*Syntax*:
++----------------------------------
++workspace_numbers <default|custom>
++----------------------------------
++
++*Example*:
++----------------------------
++bar {
++    workspace_numbers custom
++}
++----------------------------
++
+ === Binding Mode indicator
+ 
+ Specifies whether the current binding mode indicator should be shown or not.
+diff --git a/i3bar/include/config.h b/i3bar/include/config.h
+index e0b0efe..631a747 100644
+--- a/i3bar/include/config.h
++++ b/i3bar/include/config.h
+@@ -27,6 +27,7 @@ typedef struct config_t {
+     struct xcb_color_strings_t colors;
+     bool         disable_binding_mode_indicator;
+     bool         disable_ws;
++    char         *ws_numbers;
+     char         *bar_id;
+     char         *command;
+     char         *fontname;
+diff --git a/i3bar/include/workspaces.h b/i3bar/include/workspaces.h
+index 9e9ecbb..d3d23c8 100644
+--- a/i3bar/include/workspaces.h
++++ b/i3bar/include/workspaces.h
+@@ -31,7 +31,8 @@ void free_workspaces(void);
+ 
+ struct i3_ws {
+     int                num;         /* The internal number of the ws */
+-    i3String           *name;       /* The name of the ws */
++    char          *canonical_name;  /* The true name of the ws according to the ipc */
++    i3String           *name;       /* The name of the ws that is displayed on the bar */
+     int                name_width;  /* The rendered width of the name */
+     bool               visible;     /* If the ws is currently visible on an output */
+     bool               focused;     /* If the ws is currently focused */
+diff --git a/i3bar/src/config.c b/i3bar/src/config.c
+index 0e6ba3f..4f060dd 100644
+--- a/i3bar/src/config.c
++++ b/i3bar/src/config.c
+@@ -154,6 +154,14 @@ static int config_string_cb(void *params_, const unsigned char *val, unsigned in
+         return 1;
+     }
+ 
++    if (!strcmp(cur_key, "workspace_numbers")) {
++        DLOG("workspace_numbers = %.*s\n",len, val);
++        FREE(config.ws_numbers);
++        sasprintf(&config.ws_numbers, "%.*s", len, val);
++        return 1;
++    }
++
++
+ #define COLOR(json_name, struct_name) \
+     do { \
+         if (!strcmp(cur_key, #json_name)) { \
+diff --git a/i3bar/src/workspaces.c b/i3bar/src/workspaces.c
+index e07a430..50be1fb 100644
+--- a/i3bar/src/workspaces.c
++++ b/i3bar/src/workspaces.c
+@@ -113,14 +113,38 @@ static int workspaces_string_cb(void *params_, const unsigned char *val, unsigne
+         char *output_name;
+ 
+         if (!strcmp(params->cur_key, "name")) {
+-            /* Save the name */
+-            params->workspaces_walk->name = i3string_from_utf8_with_length((const char *)val, len);
++            const char *ws_name = (const char*)val;
++            params->workspaces_walk->canonical_name = strndup(ws_name, len);
++
++            if (config.ws_numbers && strcmp(config.ws_numbers, "custom") == 0) {
++                /* Special case: strip off the workspace number */
++                static char ws_num[10];
++
++                snprintf(ws_num, sizeof(ws_num), "%d", atoi(ws_name));
++
++                /* Calculate the length of the number str in the name */
++                int offset = strspn(ws_name, ws_num);
++
++                /* Also strip off the conventional ws name delimiter */
++                if (offset && ws_name[offset] == ':')
++                    offset += 1;
++
++                /* Offset may be equal to length, in which case display the number */
++                params->workspaces_walk->name = (offset < len
++                        ? i3string_from_utf8_with_length(ws_name + offset, len - offset)
++                        : i3string_from_utf8(ws_num));
++
++            } else {
++                /* Default case: just save the name */
++                params->workspaces_walk->name = i3string_from_utf8_with_length(ws_name, len);
++            }
+ 
+             /* Save its rendered width */
+             params->workspaces_walk->name_width =
+                 predict_text_width(params->workspaces_walk->name);
+ 
+-            DLOG("Got Workspace %s, name_width: %d, glyphs: %zu\n",
++            DLOG("Got Workspace canonical: %s, name: '%s', name_width: %d, glyphs: %zu\n",
++                 params->workspaces_walk->canonical_name,
+                  i3string_as_utf8(params->workspaces_walk->name),
+                  params->workspaces_walk->name_width,
+                  i3string_get_num_glyphs(params->workspaces_walk->name));
+@@ -267,6 +291,7 @@ void free_workspaces(void) {
+         if (outputs_walk->workspaces != NULL && !TAILQ_EMPTY(outputs_walk->workspaces)) {
+             TAILQ_FOREACH(ws_walk, outputs_walk->workspaces, tailq) {
+                 I3STRING_FREE(ws_walk->name);
++                FREE(ws_walk->canonical_name);
+             }
+             FREE_TAILQ(outputs_walk->workspaces, i3_ws);
+         }
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index 97d13ec..da22066 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -418,7 +418,7 @@ void handle_button(xcb_button_press_event_t *event) {
+      * buffer, then we copy character by character. */
+     int num_quotes = 0;
+     size_t namelen = 0;
+-    const char *utf8_name = i3string_as_utf8(cur_ws->name);
++    const char *utf8_name = cur_ws->canonical_name;
+     for (const char *walk = utf8_name; *walk != '\0'; walk++) {
+         if (*walk == '"')
+             num_quotes++;
+diff --git a/include/config.h b/include/config.h
+index 7598241..e507db8 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -267,6 +267,10 @@ struct Barconfig {
+      * zero. */
+     bool hide_workspace_buttons;
+ 
++    /** Custom workspace numbers? Configuration option is 'workspace_numbers
++     * custom'. */
++    char *workspace_numbers;
++
+     /** Hide mode button? Configuration option is 'binding_mode_indicator no'
+      * but we invert the bool for the same reason as hide_workspace_buttons.*/
+     bool hide_binding_mode_indicator;
+diff --git a/parser-specs/config.spec b/parser-specs/config.spec
+index dfd6401..bb50cb8 100644
+--- a/parser-specs/config.spec
++++ b/parser-specs/config.spec
+@@ -358,6 +358,7 @@ state BAR:
+   'font'                   -> BAR_FONT
+   'binding_mode_indicator' -> BAR_BINDING_MODE_INDICATOR
+   'workspace_buttons'      -> BAR_WORKSPACE_BUTTONS
++  'workspace_numbers'      -> BAR_WORKSPACE_NUMBERS
+   'verbose'                -> BAR_VERBOSE
+   'colors'                 -> BAR_COLORS_BRACE
+   '}'
+@@ -420,6 +421,10 @@ state BAR_WORKSPACE_BUTTONS:
+   value = word
+       -> call cfg_bar_workspace_buttons($value); BAR
+ 
++state BAR_WORKSPACE_NUMBERS:
++  value = word
++      -> call cfg_bar_workspace_numbers($value); BAR
++
+ state BAR_VERBOSE:
+   value = word
+       -> call cfg_bar_verbose($value); BAR
+diff --git a/src/config_directives.c b/src/config_directives.c
+index f5a592f..0fabc19 100644
+--- a/src/config_directives.c
++++ b/src/config_directives.c
+@@ -517,6 +517,11 @@ CFGFUN(bar_workspace_buttons, const char *value) {
+     current_bar.hide_workspace_buttons = !eval_boolstr(value);
+ }
+ 
++CFGFUN(bar_workspace_numbers, const char *value) {
++    FREE(current_bar.workspace_numbers);
++    current_bar.workspace_numbers = sstrdup(value);
++}
++
+ CFGFUN(bar_finish) {
+     DLOG("\t new bar configuration finished, saving.\n");
+     /* Generate a unique ID for this bar if not already configured */
+diff --git a/src/ipc.c b/src/ipc.c
+index 66c63f7..94fda42 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -514,6 +514,8 @@ static void dump_bar_config(yajl_gen gen, Barconfig *config) {
+     ystr("workspace_buttons");
+     y(bool, !config->hide_workspace_buttons);
+ 
++    YSTR_IF_SET(workspace_numbers);
++
+     ystr("binding_mode_indicator");
+     y(bool, !config->hide_binding_mode_indicator);
+ 
+diff --git a/testcases/t/201-config-parser.t b/testcases/t/201-config-parser.t
+index 55239c6..b1e1d26 100644
+--- a/testcases/t/201-config-parser.t
++++ b/testcases/t/201-config-parser.t
+@@ -627,7 +627,7 @@ EOT
+ 
+ $expected = <<'EOT';
+ cfg_bar_output(LVDS-1)
+-ERROR: CONFIG: Expected one of these tokens: <end>, '#', 'set', 'i3bar_command', 'status_command', 'socket_path', 'mode', 'hidden_state', 'id', 'modifier', 'position', 'output', 'tray_output', 'font', 'binding_mode_indicator', 'workspace_buttons', 'verbose', 'colors', '}'
++ERROR: CONFIG: Expected one of these tokens: <end>, '#', 'set', 'i3bar_command', 'status_command', 'socket_path', 'mode', 'hidden_state', 'id', 'modifier', 'position', 'output', 'tray_output', 'font', 'binding_mode_indicator', 'workspace_buttons', 'workspace_numbers', 'verbose', 'colors', '}'
+ ERROR: CONFIG: (in file <stdin>)
+ ERROR: CONFIG: Line   1: bar {
+ ERROR: CONFIG: Line   2:     output LVDS-1
+-- 
+1.9.2
+

@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Lancelot SIX",
+    "Line": 14,
+    "Comment": "One patch follows but can't be submitted currently since it does not apply to the origin/next branch.\nIt is available here : https://home.lancelotsix.com/~lancelotsix/i3/0002-libi3-root_atom_contents-handle-data-of-arbitrary-le.patch",
+    "EmailHash": "27813521d7a3c04a3ad9a93f57d04417"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 14,
+    "Comment": "Please submit the other patch now :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

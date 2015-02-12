@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 35,
+    "Comment": "For consistency, please use parens around the expression.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 54,
+    "Comment": "I spent a minute trying to understand why you’re doing this (instead of just “num_visible != visible”, or “num_visible \u003e 0)”, or just leaving that condition out entirely, but couldn’t figure it out.\n\nCan you make the code be less clever, and document what it’s supposed to do please?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

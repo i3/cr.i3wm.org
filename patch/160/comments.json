@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 23,
+    "Comment": "It seems to me that leaving i = 1 here and replacing the i = 0; later on with i = 1; is a more elegant way to fix this.",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 31,
+    "Comment": "Your indentation is wrong. Please pay attention for the next iteration of this patch :).",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  },
+  {
+    "Author": "Thomas Adam",
+    "Line": 23,
+    "Comment": "Ah, I see that reassignment back to 0 buried deep in the code at the end.\n\nGreat.",
+    "EmailHash": "4392a1cea2ea0fd7a7145f686951a189"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 31,
+    "Comment": "Please mark this patch as SUPERSEDED since the second iteration of this patch has since been merged to 'next'. ",
+    "EmailHash": ""
+  }
+]

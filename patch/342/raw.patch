@@ -1,0 +1,179 @@
+From bf125b792612e9cd0280faf9d5053238a8a4fbae Mon Sep 17 00:00:00 2001
+From: Mats <d912e3@…>
+Date: Thu, 5 Dec 2013 22:12:17 +0100
+Subject: [PATCH] disk: Distinguish between IEC, SI and custom prefixes
+
+* IEC: Ki, Mi, Gi, Ti (powers of 1024)
+* SI: k, M, G, T (powers of 1000)
+* custom: K, M, G, T (powers of 1024)
+---
+ i3status.c            |  3 ++-
+ include/i3status.h    |  2 +-
+ man/i3status.man      | 14 +++++++++++++
+ src/print_disk_info.c | 54 ++++++++++++++++++++++++++++++++-------------------
+ 4 files changed, 51 insertions(+), 22 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index e2befbc..b359370 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -288,6 +288,7 @@ int main(int argc, char *argv[]) {
+ 
+         cfg_opt_t disk_opts[] = {
+                 CFG_STR("format", "%free", CFGF_NONE),
++                CFG_STR("prefix_type", "binary", CFGF_NONE),
+                 CFG_END()
+         };
+ 
+@@ -497,7 +498,7 @@ int main(int argc, char *argv[]) {
+ 
+                         CASE_SEC_TITLE("disk") {
+                                 SEC_OPEN_MAP("disk_info");
+-                                print_disk_info(json_gen, buffer, title, cfg_getstr(sec, "format"));
++                                print_disk_info(json_gen, buffer, title, cfg_getstr(sec, "format"), cfg_getstr(sec, "prefix_type"));
+                                 SEC_CLOSE_MAP;
+                         }
+ 
+diff --git a/include/i3status.h b/include/i3status.h
+index e64cde5..5ab310b 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -145,7 +145,7 @@ char *auto_detect_format();
+ void set_timezone(const char *tz);
+ 
+ void print_ipv6_info(yajl_gen json_gen, char *buffer, const char *format_up, const char *format_down);
+-void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format);
++void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format, const char *prefix_type);
+ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, const char *format_down, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity);
+ void print_time(yajl_gen json_gen, char *buffer, const char *format, const char *tz, time_t t);
+ void print_ddate(yajl_gen json_gen, char *buffer, const char *format, time_t t);
+diff --git a/man/i3status.man b/man/i3status.man
+index e18dbc7..88cb572 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -184,12 +184,26 @@ Gets used, free, available and total amount of bytes on the given mounted filesy
+ These values can also be expressed in percentages with the percentage_used,
+ percentage_free, percentage_avail and percentage_used_of_avail formats.
+ 
++Byte sizes are presented in a human readable format using a set of prefixes
++whose type can be specified via the "prefix_type" option. Three sets of
++prefixes are available:
++
++binary::
++IEC prefixes (Ki, Mi, Gi, Ti) represent multiples of powers of 1024.
++This is the default.
++decimal::
++SI prefixes (k, M, G, T) represent multiples of powers of 1000.
++custom::
++The custom prefixes (K, M, G, T) represent multiples of powers of 1024.
++
+ *Example order*: +disk /mnt/usbstick+
+ 
+ *Example format*: +%free (%avail)/ %total+
+ 
+ *Example format*: +%percentage_used used, %percentage_free free, %percentage_avail avail+
+ 
++*Example prefix_type*: +custom+
++
+ === Run-watch
+ 
+ Expands the given path to a pidfile and checks if the process ID found inside
+diff --git a/src/print_disk_info.c b/src/print_disk_info.c
+index f49fe66..2308305 100644
+--- a/src/print_disk_info.c
++++ b/src/print_disk_info.c
+@@ -15,26 +15,40 @@
+ 
+ #include "i3status.h"
+ 
+-#define TERABYTE (1024ULL * 1024 * 1024 * 1024)
+-#define GIGABYTE (1024ULL * 1024 * 1024)
+-#define MEGABYTE (1024ULL * 1024)
+-#define KILOBYTE (1024ULL)
++#define BINARY_BASE UINT64_C(1024)
++#define DECIMAL_BASE UINT64_C(1000)
++
++#define MAX_EXPONENT 4
++
++static const char * const iec_symbols[MAX_EXPONENT+1] = {"", "Ki", "Mi", "Gi", "Ti"};
++static const char * const si_symbols[MAX_EXPONENT+1] = {"", "k", "M", "G", "T"};
++static const char * const custom_symbols[MAX_EXPONENT+1] = {"", "K", "M", "G", "T"};
++
++/*
++ * Formats bytes according to the given base and set of symbols.
++ *
++ */
++static int format_bytes(char *outwalk, uint64_t bytes, uint64_t base, const char * const symbols[]) {
++        double size = bytes;
++        int exponent = 0;
++        while (size >= base && exponent < MAX_EXPONENT) {
++                size /= base;
++                exponent += 1;
++        }
++        return sprintf(outwalk, "%.1f %sB", size, symbols[exponent]);
++}
+ 
+ /*
+  * Prints the given amount of bytes in a human readable manner.
+  *
+  */
+-static int print_bytes_human(char *outwalk, uint64_t bytes) {
+-        if (bytes > TERABYTE)
+-                return sprintf(outwalk, "%.02f TB", (double)bytes / TERABYTE);
+-        else if (bytes > GIGABYTE)
+-                return sprintf(outwalk, "%.01f GB", (double)bytes / GIGABYTE);
+-        else if (bytes > MEGABYTE)
+-                return sprintf(outwalk, "%.01f MB", (double)bytes / MEGABYTE);
+-        else if (bytes > KILOBYTE)
+-                return sprintf(outwalk, "%.01f KB", (double)bytes / KILOBYTE);
+-        else {
+-                return sprintf(outwalk, "%.01f B", (double)bytes);
++static int print_bytes_human(char *outwalk, uint64_t bytes, const char *prefix_type) {
++        if (strncmp(prefix_type, "decimal", strlen(prefix_type)) == 0) {
++                return format_bytes(outwalk, bytes, DECIMAL_BASE, si_symbols);
++        } else if (strncmp(prefix_type, "custom", strlen(prefix_type)) == 0) {
++                return format_bytes(outwalk, bytes, BINARY_BASE, custom_symbols);
++        } else {
++                return format_bytes(outwalk, bytes, BINARY_BASE, iec_symbols);
+         }
+ }
+ 
+@@ -43,7 +57,7 @@ static int print_bytes_human(char *outwalk, uint64_t bytes) {
+  * human readable manner.
+  *
+  */
+-void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format) {
++void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format, const char *prefix_type) {
+         const char *walk;
+         char *outwalk = buffer;
+ 
+@@ -68,22 +82,22 @@ void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const ch
+                 }
+ 
+                 if (BEGINS_WITH(walk+1, "free")) {
+-                        outwalk += print_bytes_human(outwalk, (uint64_t)buf.f_bsize * (uint64_t)buf.f_bfree);
++                        outwalk += print_bytes_human(outwalk, (uint64_t)buf.f_bsize * (uint64_t)buf.f_bfree, prefix_type);
+                         walk += strlen("free");
+                 }
+ 
+                 if (BEGINS_WITH(walk+1, "used")) {
+-                        outwalk += print_bytes_human(outwalk, (uint64_t)buf.f_bsize * ((uint64_t)buf.f_blocks - (uint64_t)buf.f_bfree));
++                        outwalk += print_bytes_human(outwalk, (uint64_t)buf.f_bsize * ((uint64_t)buf.f_blocks - (uint64_t)buf.f_bfree), prefix_type);
+                         walk += strlen("used");
+                 }
+ 
+                 if (BEGINS_WITH(walk+1, "total")) {
+-                        outwalk += print_bytes_human(outwalk, (uint64_t)buf.f_bsize * (uint64_t)buf.f_blocks);
++                        outwalk += print_bytes_human(outwalk, (uint64_t)buf.f_bsize * (uint64_t)buf.f_blocks, prefix_type);
+                         walk += strlen("total");
+                 }
+ 
+                 if (BEGINS_WITH(walk+1, "avail")) {
+-                        outwalk += print_bytes_human(outwalk, (uint64_t)buf.f_bsize * (uint64_t)buf.f_bavail);
++                        outwalk += print_bytes_human(outwalk, (uint64_t)buf.f_bsize * (uint64_t)buf.f_bavail, prefix_type);
+                         walk += strlen("avail");
+                 }
+ 
+-- 
+1.8.4.2
+

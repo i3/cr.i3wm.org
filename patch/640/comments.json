@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Vivien Didelot",
+    "Line": 71,
+    "Comment": "There is a second patch, based after this one, here: http://ix.io/edg",
+    "EmailHash": "6e36a31a1dc5d87c1bf028e5b3816dbe"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 67,
+    "Comment": "Really? Did you not read “goto considered harmful” yet? :) see https://files.ifi.uzh.ch/rerg/arvo/courses/kvse/uebungen/Dijkstra_Goto.pdf",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 21,
+    "Comment": "I don’t think this patch is a good addition. i3-msg is supposed to be a simple reference implementation of _basic_ IPC communication. Subscribing to events is better left to third-party libraries and scripts in a high-level language. Doing what you propose in shell is definitely not a clean approach :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Vivien Didelot",
+    "Line": 67,
+    "Comment": "I know, this patch was more an RFC, where I used a label for less diff changes. In a better world, all that is moved to its own function.",
+    "EmailHash": "6e36a31a1dc5d87c1bf028e5b3816dbe"
+  },
+  {
+    "Author": "Vivien Didelot",
+    "Line": 21,
+    "Comment": "SUBSCRIBE is the only IPC message left not handled by i3-msg, and this is still very basic (it just requires a subsequent receive). Many command line tools such as dbus-monitor and inotifywait offer this capability, while the raw output is left to the user.\n\nI think SUBSCRIBE should be handled in a basic way. Is there another approach to this patch that may change your mind about this feature?",
+    "EmailHash": "6e36a31a1dc5d87c1bf028e5b3816dbe"
+  },
+  {
+    "Author": "Vivien Didelot",
+    "Line": 21,
+    "Comment": "BTW, this shew me that there may be a problem with '[ \"window\", \"focus\" ]': subscribing to this returns directly a \"title\" change, see: http://ix.io/edO",
+    "EmailHash": "6e36a31a1dc5d87c1bf028e5b3816dbe"
+  }
+]

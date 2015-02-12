@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 39,
+    "Comment": "For consistency, please use “change”, not “window”.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 22,
+    "Comment": "Could you also update the testsuite to verify that the new event works? See http://i3wm.org/docs/testsuite.html",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

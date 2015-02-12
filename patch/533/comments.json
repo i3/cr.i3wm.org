@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 138,
+    "Comment": "Sorry for not noticing this in the first review of this feature, but we must use the same code in both i3bar and i3, i.e. src/workspace.c:77 and following. Otherwise, what one considers as number will not be stripped by the other :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 45,
+    "Comment": "I don’t like “workspace numbers” as name for this feature :). And I dislike the possible options (default and custom) even more, as they aren’t very descriptive. Why not the suggested strip_workspace_numbers boolean? Or maybe hide_workspace_numbers.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 45,
+    "Comment": "(Note that I see where you’re coming from — “custom” allows users to have custom workspace names, sure. It’s just that those terms are _so_ overloaded in computing that they don’t mean anything unless you already know what the feature does. And I’d like names to work the other way around in i3 :).)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

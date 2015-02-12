@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 31,
+    "Comment": "This breaks the config, which is a dealbreaker for this patch.\n\nAlso, more generally speaking, I am against merging such behavior:\n\n1. Your desired feature can be achieved trivially by wrapping i3status.\n2. The behavior is not going to be used by a large number of users (you are the second person or so to ask about this).\n3. The code makes i3status’s runtime behavior slower, even when not using another time zone. Note that i3status’s goal is to use as few calls as possible per wake-up.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

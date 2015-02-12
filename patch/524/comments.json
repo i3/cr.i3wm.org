@@ -1,0 +1,74 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 99,
+    "Comment": "It strikes me as a little over the top to update a property on _every_ window (of the relevant workspace) on every workspace change. Could we re-use ewmh_desktop_index and only use xcb_change_property() when the idx changed?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 212,
+    "Comment": "I think we should use the STARTS_WITH macro in more places in the code. But that’s for another patch :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 216,
+    "Comment": "s/desktop/workspace/",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 238,
+    "Comment": "Why is it necessary to update all of this on every tree_render() call?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 40,
+    "Comment": "In general, submitting this in smaller chunks would have been good.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 40,
+    "Comment": "Yeah, all these changes seemed related enough to do it in one patch.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 99,
+    "Comment": "That would be problematic when a window changes workspaces. The workspace indexes could stay the same and we would not update the property on the window that moved.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 99,
+    "Comment": "It doesn't strike me as over the top, because the alternative would be to check if the property changed, and if it did to update it, which would be much more complex and likely not any faster.\n\nRealistically, I think people will only have about 5-15 top-level windows open at a time and rendering will normally not happen more than once per second, so the performance impact will not be significant.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 99,
+    "Comment": "This change is motivated by a review of other bug trackers for issues with i3. From what I can tell, ewmh spec compliance will be very useful to a lot of people by allowing many new applications to work with i3.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 238,
+    "Comment": "Because ewmh desktop hints depend on the structure of the tree and notifications should ideally be sent right after rendering. The last case of the added test will fail without moving this here.\n\nTo me, this seems like a natural part of rendering. So if rendering had any effect at all, this should be sent here.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 99,
+    "Comment": "\u003e That would be problematic when a window changes workspaces. The workspace indexes could stay the same and we would not update the property on the window that moved.\n\nI think you may have misunderstood what I meant :). With your current version of the patch, ewmh_desktop_index is only set on workspace containers. Therefore, we could use it for leaf nodes with a slightly different meaning. That’s not the cleanest code ever, but the memory is wasted anyway, so we might as well use it.\n\nThe assumption with 5 to 15 top-level windows is just a guess. I have seen people with fewer windows but also those with many more windows. Also, i3 is fairly popular on low-end and embedded devices. It’d be a shame to introduce annoying delays or make i3 slower on those devices, as long as we can help it.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 99,
+    "Comment": "Well, plainly speaking, the spec is bad in this area. And it is not designed to do what we are doing with it. But I think the benefits of supporting ewmh are substantial.\n\nI'll figure out how to do some profiling to measure the performance impact so we can make an informed decision.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

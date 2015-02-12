@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 41,
+    "Comment": "I don't see the point of adding this new parameter. Won't the function already determine the correct corner based on the coordinates in the button press event?\n\nIn any case, this seems like a feature that is not directly related to the client message event. I think it should be included in another patch and justified separately from the client message feature if that is possible.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 26,
+    "Comment": "The `fixes #1432` conventionally goes at the end of the commit description.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Lukas K",
+    "Line": 41,
+    "Comment": "The client message specifies the border on which the resize movement should be done. In practically every case, that will be equal to the border i3 figures out, but the client may specify an edge (top) rather than a corner (top right). (i3 only resizes on corners) Anyway, i3 should behave like the client wants it to, so there has to be an option to specify the corner for resizing.",
+    "EmailHash": "3dde9a8f51edebb27b8cf2308e41b7fd"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 41,
+    "Comment": "I think that the purpose of these events is so the wm can interpret them however it wants. That way a wm can make its own design decisions such as not having edge resizes, but only corner resizes.\n\nBut I think the real issue is that it adds complexity to the code that is not needed. After all, we only have one example of an app that uses this, and its implementation is not even complete. Changing the way the resize operation works to support a noncritical detail of this client message seems like overkill.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

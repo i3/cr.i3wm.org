@@ -1,0 +1,213 @@
+From fd0a489cc849cd11ec2102ec9588943d4acb6b21 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 21 Feb 2014 19:10:21 -0500
+Subject: [PATCH] Move keyboard binding accessor to bindings.[ch]
+
+Rename `get_binding` to `get_keyboard_binding` and ensure that this
+function only accesses bindings of type B_KEYBOARD. Other types of
+bindings (e.g. mouse bindings) will be accessed by a different function.
+---
+ include/bindings.h |  7 ++++++
+ include/config.h   |  7 ------
+ src/bindings.c     | 62 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ src/config.c       | 58 --------------------------------------------------
+ src/key_press.c    |  4 ++--
+ 5 files changed, 71 insertions(+), 67 deletions(-)
+
+diff --git a/include/bindings.h b/include/bindings.h
+index 3e7f34b..bae3113 100644
+--- a/include/bindings.h
++++ b/include/bindings.h
+@@ -29,3 +29,10 @@ Binding *configure_binding(const char *bindtype, const char *modifiers, const ch
+  *
+  */
+ void grab_all_keys(xcb_connection_t *conn, bool bind_mode_switch);
++
++/**
++ * Returns a pointer to the keyboard Binding with the specified modifiers and
++ * keycode or NULL if no such binding exists.
++ *
++ */
++Binding *get_keyboard_binding(uint16_t modifiers, bool key_release, xcb_keycode_t keycode);
+diff --git a/include/config.h b/include/config.h
+index 65eecd8..f307874 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -334,13 +334,6 @@ void switch_mode(const char *new_mode);
+  */void update_barconfig();
+ 
+ /**
+- * Returns a pointer to the Binding with the specified modifiers and keycode
+- * or NULL if no such binding exists.
+- *
+- */
+-Binding *get_binding(uint16_t modifiers, bool key_release, xcb_keycode_t keycode);
+-
+-/**
+  * Kills the configerror i3-nagbar process, if any.
+  *
+  * Called when reloading/restarting.
+diff --git a/src/bindings.c b/src/bindings.c
+index c88a677..9dd24ff 100644
+--- a/src/bindings.c
++++ b/src/bindings.c
+@@ -117,3 +117,65 @@ void grab_all_keys(xcb_connection_t *conn, bool bind_mode_switch) {
+             grab_keycode_for_binding(conn, bind, *walk++);
+     }
+ }
++
++/*
++ * Returns a pointer to the keyboard Binding with the specified modifiers and
++ * keycode or NULL if no such binding exists.
++ *
++ */
++Binding *get_keyboard_binding(uint16_t modifiers, bool key_release, xcb_keycode_t keycode) {
++    Binding *bind;
++
++    if (!key_release) {
++        /* On a KeyPress event, we first reset all
++         * B_UPON_KEYRELEASE_IGNORE_MODS bindings back to B_UPON_KEYRELEASE */
++        TAILQ_FOREACH(bind, bindings, bindings) {
++            if (bind->input_type != B_KEYBOARD)
++                continue;
++            if (bind->release == B_UPON_KEYRELEASE_IGNORE_MODS)
++                bind->release = B_UPON_KEYRELEASE;
++        }
++    }
++
++    TAILQ_FOREACH(bind, bindings, bindings) {
++        /* First compare the modifiers (unless this is a
++         * B_UPON_KEYRELEASE_IGNORE_MODS binding and this is a KeyRelease
++         * event) */
++        if (bind->input_type != B_KEYBOARD)
++            continue;
++        if (bind->mods != modifiers &&
++            (bind->release != B_UPON_KEYRELEASE_IGNORE_MODS ||
++             !key_release))
++            continue;
++
++        /* If a symbol was specified by the user, we need to look in
++         * the array of translated keycodes for the event’s keycode */
++        if (bind->symbol != NULL) {
++            if (memmem(bind->translated_to,
++                       bind->number_keycodes * sizeof(xcb_keycode_t),
++                       &keycode, sizeof(xcb_keycode_t)) == NULL)
++                continue;
++        } else {
++            /* This case is easier: The user specified a keycode */
++            if (bind->keycode != keycode)
++                continue;
++        }
++
++        /* If this keybinding is a KeyRelease binding, it matches the key which
++         * the user pressed. We therefore mark it as
++         * B_UPON_KEYRELEASE_IGNORE_MODS for later, so that the user can
++         * release the modifiers before the actual key and the KeyRelease will
++         * still be matched. */
++        if (bind->release == B_UPON_KEYRELEASE && !key_release)
++            bind->release = B_UPON_KEYRELEASE_IGNORE_MODS;
++
++        /* Check if the binding is for a KeyPress or a KeyRelease event */
++        if ((bind->release == B_UPON_KEYPRESS && key_release) ||
++            (bind->release >= B_UPON_KEYRELEASE && !key_release))
++            continue;
++
++        break;
++    }
++
++    return (bind == TAILQ_END(bindings) ? NULL : bind);
++}
+diff --git a/src/config.c b/src/config.c
+index e8596c7..fb1f498 100644
+--- a/src/config.c
++++ b/src/config.c
+@@ -31,64 +31,6 @@ void ungrab_all_keys(xcb_connection_t *conn) {
+ }
+ 
+ /*
+- * Returns a pointer to the Binding with the specified modifiers and keycode
+- * or NULL if no such binding exists.
+- *
+- */
+-Binding *get_binding(uint16_t modifiers, bool key_release, xcb_keycode_t keycode) {
+-    Binding *bind;
+-
+-    if (!key_release) {
+-        /* On a KeyPress event, we first reset all
+-         * B_UPON_KEYRELEASE_IGNORE_MODS bindings back to B_UPON_KEYRELEASE */
+-        TAILQ_FOREACH(bind, bindings, bindings) {
+-            if (bind->release == B_UPON_KEYRELEASE_IGNORE_MODS)
+-                bind->release = B_UPON_KEYRELEASE;
+-        }
+-    }
+-
+-    TAILQ_FOREACH(bind, bindings, bindings) {
+-        /* First compare the modifiers (unless this is a
+-         * B_UPON_KEYRELEASE_IGNORE_MODS binding and this is a KeyRelease
+-         * event) */
+-        if (bind->mods != modifiers &&
+-            (bind->release != B_UPON_KEYRELEASE_IGNORE_MODS ||
+-             !key_release))
+-            continue;
+-
+-        /* If a symbol was specified by the user, we need to look in
+-         * the array of translated keycodes for the event’s keycode */
+-        if (bind->symbol != NULL) {
+-            if (memmem(bind->translated_to,
+-                       bind->number_keycodes * sizeof(xcb_keycode_t),
+-                       &keycode, sizeof(xcb_keycode_t)) == NULL)
+-                continue;
+-        } else {
+-            /* This case is easier: The user specified a keycode */
+-            if (bind->keycode != keycode)
+-                continue;
+-        }
+-
+-        /* If this keybinding is a KeyRelease binding, it matches the key which
+-         * the user pressed. We therefore mark it as
+-         * B_UPON_KEYRELEASE_IGNORE_MODS for later, so that the user can
+-         * release the modifiers before the actual key and the KeyRelease will
+-         * still be matched. */
+-        if (bind->release == B_UPON_KEYRELEASE && !key_release)
+-            bind->release = B_UPON_KEYRELEASE_IGNORE_MODS;
+-
+-        /* Check if the binding is for a KeyPress or a KeyRelease event */
+-        if ((bind->release == B_UPON_KEYPRESS && key_release) ||
+-            (bind->release >= B_UPON_KEYRELEASE && !key_release))
+-            continue;
+-
+-        break;
+-    }
+-
+-    return (bind == TAILQ_END(bindings) ? NULL : bind);
+-}
+-
+-/*
+  * Translates keysymbols to keycodes for all bindings which use keysyms.
+  *
+  */
+diff --git a/src/key_press.c b/src/key_press.c
+index b8c8cd2..68e2fca 100644
+--- a/src/key_press.c
++++ b/src/key_press.c
+@@ -84,7 +84,7 @@ void handle_key_press(xcb_key_press_event_t *event) {
+     DLOG("(checked mode_switch, state %d)\n", state_filtered);
+ 
+     /* Find the binding */
+-    Binding *bind = get_binding(state_filtered, key_release, event->detail);
++    Binding *bind = get_keyboard_binding(state_filtered, key_release, event->detail);
+ 
+     /* No match? Then the user has Mode_switch enabled but does not have a
+      * specific keybinding. Fall back to the default keybindings (without
+@@ -93,7 +93,7 @@ void handle_key_press(xcb_key_press_event_t *event) {
+     if (bind == NULL) {
+         state_filtered &= ~(BIND_MODE_SWITCH);
+         DLOG("no match, new state_filtered = %d\n", state_filtered);
+-        if ((bind = get_binding(state_filtered, key_release, event->detail)) == NULL) {
++        if ((bind = get_keyboard_binding(state_filtered, key_release, event->detail)) == NULL) {
+             /* This is not a real error since we can have release and
+              * non-release keybindings. On a KeyPress event for which there is
+              * only a !release-binding, but no release-binding, the
+-- 
+1.9.0
+

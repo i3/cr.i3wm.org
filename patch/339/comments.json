@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 24,
+    "Comment": "I don't know if you get alerted on the bug tracker if I'm the owner and you aren't cc'ed so I'll post this here too.\n\nI've documented this here \u003chttp://bugs.i3wm.org/report/ticket/1128\u003e fairly well, I think.\n\nI'm not too familiar with this side of posix, so I don't know if this is state of the art, or introduces compatibility problems, but it seems to work for me.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 24,
+    "Comment": "(I think it deleted my link. I was referring you to the issue on the bug tracker for more info)",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

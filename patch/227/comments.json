@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "Thanks, I will test \u0026 review this early next week.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "jj",
+    "Line": 20,
+    "Comment": "I just discovered that stacked/tabbed containers are not properly handled here. Regarding this and the keyboard resize patch, both methods nearly do the same thing. So I would suggest to extract one method out of both, thus, the behaviour would be consistent.",
+    "EmailHash": "2b7ea79fd33d4f8c0bb3ef8a9dc97f64"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "I’m slightly confused — do you want me to merge these patches or not? You suggested extracting one method out of both, so will you go ahead and do that, then submit a new patch? :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 20,
+    "Comment": "Ok, then do not merge these two resize patches. I will take care of a new version. Just wanted to make sure whether this sounds ok.",
+    "EmailHash": ""
+  }
+]

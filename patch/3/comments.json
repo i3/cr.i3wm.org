@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 92,
+    "Comment": "I’d like to see a better description of what the function does here. IMO, it’s rather bad style to have documentation which refers to other documentation, especially when the cost of repeating is not that high — one sentence is enough.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 92,
+    "Comment": "…of course that also applies to the function’s header ;-).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

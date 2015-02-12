@@ -1,0 +1,37 @@
+From 2c3217a14fe3f27d0be8a32f75d17731c285f542 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 2 May 2014 19:56:12 -0400
+Subject: [PATCH] i3bar: reinit colors on barconfig update
+
+Allows bar colors to be updated on barconfig update events, such as with
+the ipc command `reload`.
+---
+ i3bar/src/ipc.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/i3bar/src/ipc.c b/i3bar/src/ipc.c
+index 6a2c0e6..71e2eda 100644
+--- a/i3bar/src/ipc.c
++++ b/i3bar/src/ipc.c
+@@ -159,6 +159,8 @@ void got_bar_config_update(char *event) {
+     if (found_id == NULL)
+        return;
+ 
++    free_colors(&(config.colors));
++
+     /* update the configuration with the received settings */
+     DLOG("Received bar config update \"%s\"\n", event);
+     bar_display_mode_t old_mode = config.hide_on_modifier;
+@@ -167,6 +169,9 @@ void got_bar_config_update(char *event) {
+         reconfig_windows(true);
+     }
+ 
++    init_colors(&(config.colors));
++    realloc_sl_buffer();
++
+     draw_bars(false);
+ }
+ 
+-- 
+1.9.2
+

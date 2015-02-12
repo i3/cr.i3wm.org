@@ -1,0 +1,142 @@
+From fdcb299e32450fcf9df9cedf2d9aadcff458894d Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Thu, 10 Apr 2014 13:28:14 -0400
+Subject: [PATCH] Dont set input focus and send WM_TAKE_FOCUS
+
+If input focus is set by the window manager, it is not necessary to send
+WM_TAKE_FOCUS because it has already taken focus.
+
+http://tronche.com/gui/x/icccm/sec-4.html#s-4.1.7
+
+> The goal is to support window managers that want to assign the input
+> focus to a top-level window in such a way that the top-level window
+> either can assign it to one of its subwindows or can decline the offer
+> of the focus. For example, a clock or a text editor with no currently
+> open frames might not want to take focus even though the window
+> manager generally believes that clients should take the input focus
+> after being deiconified or raised.
+
+Both setting input focus and sending WM_TAKE_FOCUS is effectively
+setting focus on the window twice which is certainly against the spirit
+of the spec, if not the letter.
+
+fixes #1167
+---
+ src/x.c                         | 12 ++++-------
+ testcases/t/158-wm_take_focus.t | 45 ++++++++++++++++++++++++++++++++---------
+ 2 files changed, 39 insertions(+), 18 deletions(-)
+
+diff --git a/src/x.c b/src/x.c
+index eca95da..e910939 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -987,20 +987,16 @@ void x_push_changes(Con *con) {
+             /* Invalidate focused_id to correctly focus new windows with the same ID */
+             focused_id = XCB_NONE;
+         } else {
+-            bool set_focus = true;
+             if (focused->window != NULL &&
+-                focused->window->needs_take_focus) {
++                focused->window->needs_take_focus &&
++                focused->window->doesnt_accept_focus) {
+                 DLOG("Updating focus by sending WM_TAKE_FOCUS to window 0x%08x (focused: %p / %s)\n",
+                      to_focus, focused, focused->name);
+                 send_take_focus(to_focus, last_timestamp);
+-                set_focus = !focused->window->doesnt_accept_focus;
+-                DLOG("set_focus = %d\n", set_focus);
+ 
+-                if (!set_focus && to_focus != last_focused && is_con_attached(focused))
++                if (to_focus != last_focused && is_con_attached(focused))
+                    ipc_send_window_event("focus", focused);
+-            }
+-
+-            if (set_focus) {
++            } else {
+                 DLOG("Updating focus (focused: %p / %s) to X11 window 0x%08x\n", focused, focused->name, to_focus);
+                 /* We remove XCB_EVENT_MASK_FOCUS_CHANGE from the event mask to get
+                  * no focus change events for our own focus changes. We only want
+diff --git a/testcases/t/158-wm_take_focus.t b/testcases/t/158-wm_take_focus.t
+index b9bc610..ba03913 100644
+--- a/testcases/t/158-wm_take_focus.t
++++ b/testcases/t/158-wm_take_focus.t
+@@ -16,12 +16,14 @@
+ #
+ # Tests if the WM_TAKE_FOCUS protocol is correctly handled by i3
+ #
++# For more information on the protocol and input handling, see:
++# http://tronche.com/gui/x/icccm/sec-4.html#s-4.1.7
++#
+ use i3test;
+ 
+-subtest 'Window without WM_TAKE_FOCUS', sub {
+-    fresh_workspace;
++sub recv_take_focus {
++    my ($window) = @_;
+ 
+-    my $window = open_window;
+     # sync_with_i3 will send a ClientMessage to i3 and i3 will send the same
+     # payload back to $window->id.
+     my $myrnd = sync_with_i3(
+@@ -44,12 +46,20 @@ subtest 'Window without WM_TAKE_FOCUS', sub {
+         return ($rnd == $myrnd);
+     };
+ 
+-    ok($first_event_is_clientmessage, 'did not receive ClientMessage');
++    return !$first_event_is_clientmessage;
++}
++
++subtest 'Window without WM_TAKE_FOCUS', sub {
++    fresh_workspace;
++
++    my $window = open_window;
++
++    ok(!recv_take_focus($window), 'did not receive ClientMessage');
+ 
+     done_testing;
+ };
+ 
+-subtest 'Window with WM_TAKE_FOCUS', sub {
++subtest 'Window with WM_TAKE_FOCUS and without InputHint', sub {
+     fresh_workspace;
+ 
+     my $take_focus = $x->atom(name => 'WM_TAKE_FOCUS');
+@@ -59,16 +69,31 @@ subtest 'Window with WM_TAKE_FOCUS', sub {
+         protocols => [ $take_focus ],
+     });
+ 
++    # add an (empty) WM_HINTS property without the InputHint
++    $window->delete_hint('input');
++
+     $window->map;
+ 
+-    ok(wait_for_event(1, sub {
+-        return 0 unless $_[0]->{response_type} == 161;
+-        my ($data, $time) = unpack("L2", $_[0]->{data});
+-        return ($data == $take_focus->id);
+-    }), 'got ClientMessage with WM_TAKE_FOCUS atom');
++    ok(recv_take_focus($window), 'got ClientMessage with WM_TAKE_FOCUS atom');
+ 
+     done_testing;
+ };
+ 
++# If the InputHint is unspecified, i3 should use the simpler method of focusing
++# the window directly rather than using the WM_TAKE_FOCUS protocol.
++# XXX: The code paths for an unspecified and set InputHint are
++# nearly identical presently, so this is currently used also as a proxy test
++# for the latter case.
++subtest 'Window with WM_TAKE_FOCUS and unspecified InputHint', sub {
++    fresh_workspace;
++
++    my $take_focus = $x->atom(name => 'WM_TAKE_FOCUS');
++
++    my $window = open_window({ protocols => [ $take_focus ] });
++
++    ok(!recv_take_focus($window), 'did not receive ClientMessage');
++
++    done_testing;
++};
+ 
+ done_testing;
+-- 
+1.9.2
+

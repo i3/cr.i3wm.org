@@ -1,0 +1,37 @@
+From 9cc755d1457dea8a12950b86ca476e5181c7a1c0 Mon Sep 17 00:00:00 2001
+From: Stefan Schroeder <ondekoza@…>
+Date: Thu, 28 Feb 2013 16:15:51 -0500
+Subject: [PATCH] Bugfix: Quote external shell script that is called in some
+ cases.
+
+Now the call to the script that was created on-the-fly will
+also work when TMPDIR contains white space.
+
+fixes #971
+---
+ i3-dmenu-desktop |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/i3-dmenu-desktop b/i3-dmenu-desktop
+index 7941203..c9956b0 100755
+--- a/i3-dmenu-desktop
++++ b/i3-dmenu-desktop
+@@ -401,13 +401,13 @@ if (exists($app->{Terminal}) && $app->{Terminal}) {
+     binmode($fh, ':utf8');
+     say $fh <<EOT;
+ #!/bin/sh
+-rm $filename
++rm "$filename"
+ exec $exec
+ EOT
+     close($fh);
+     chmod 0755, $filename;
+ 
+-    $cmd = qq|exec i3-sensible-terminal -e "$filename"|;
++    $cmd = qq|exec i3-sensible-terminal -e "'$filename'"|;
+ } else {
+     # i3 executes applications by passing the argument to i3’s “exec” command
+     # as-is to $SHELL -c. The i3 parser supports quoted strings: When a string
+-- 
+1.7.10.4
+

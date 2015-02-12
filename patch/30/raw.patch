@@ -1,0 +1,38 @@
+From cf77a8d7f68f0afc7dc0f63ad8c2d424af399e33 Mon Sep 17 00:00:00 2001
+From: Adrien Schildknecht <adrien+dev@…>
+Date: Mon, 28 Jan 2013 21:50:07 +0100
+Subject: [PATCH] i3-input: restore the keyboard focus instead of the pointer
+ focus
+
+When a window is focused using a bindsym, the pointer focus remain on
+the previous windows, thus when i3-input is closed this windows will
+be focused even if i3 draw the focused border on the other windows.
+---
+ i3-input/main.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/i3-input/main.c b/i3-input/main.c
+index 49db4df..ec29d57 100644
+--- a/i3-input/main.c
++++ b/i3-input/main.c
+@@ -90,7 +90,7 @@ static void restore_input_focus(void) {
+         fprintf(stderr, "[i3-input] ERROR: Could not restore input focus (X error %d)\n", error->error_code);
+         return;
+     }
+-    xcb_set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT, reply->focus, XCB_CURRENT_TIME);
++    xcb_set_input_focus(conn, XCB_INPUT_FOCUS_FOLLOW_KEYBOARD, reply->focus, XCB_CURRENT_TIME);
+     xcb_flush(conn);
+ }
+ 
+@@ -424,7 +424,7 @@ int main(int argc, char *argv[]) {
+ 
+     /* Set input focus (we have override_redirect=1, so the wm will not do
+      * this for us) */
+-    xcb_set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT, win, XCB_CURRENT_TIME);
++    xcb_set_input_focus(conn, XCB_INPUT_FOCUS_FOLLOW_KEYBOARD, win, XCB_CURRENT_TIME);
+ 
+     /* Grab the keyboard to get all input */
+     xcb_flush(conn);
+-- 
+1.8.1.1
+

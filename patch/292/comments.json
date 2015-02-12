@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 96,
+    "Comment": "you can make this “const int”",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 97,
+    "Comment": "you can make this “const uint64_t”",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 98,
+    "Comment": "please use strcasecmp to be forgiving to configuration mistakes",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 101,
+    "Comment": "well, strictly speaking this code is wrong for megabytes — you’re not converting :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 105,
+    "Comment": "In general, I don’t like this huge condition. It’s hard to follow. Could you change it to something that is easier to understand please? Maybe put it into a separate function if that helps.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 16,
+    "Comment": "please add “fixes #912” to the long description of this commit.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

@@ -1,0 +1,24 @@
+From 3b55b1b49db43c54c1a1c6d68e4f19c8a54a88ff Mon Sep 17 00:00:00 2001
+From: Marco Hunsicker <i3@…>
+Date: Sat, 15 Mar 2014 15:10:14 +0100
+Subject: [PATCH] Remove custom color options from order array
+
+---
+ i3status.c |    1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/i3status.c b/i3status.c
+index 1811884..cfc1fd6 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -419,7 +419,6 @@ int main(int argc, char *argv[]) {
+                 CFG_SEC("ddate", ddate_opts, CFGF_NONE),
+                 CFG_SEC("load", load_opts, CFGF_NONE),
+                 CFG_SEC("cpu_usage", usage_opts, CFGF_NONE),
+-                CFG_CUSTOM_COLOR_OPTS,
+                 CFG_END()
+         };
+ 
+-- 
+1.7.10.4
+

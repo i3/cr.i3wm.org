@@ -1,0 +1,59 @@
+From 8ca9a8b004bed8516500a4706199d9bd9907f26f Mon Sep 17 00:00:00 2001
+From: Baptiste Daroussin <bapt@…>
+Date: Tue, 19 Mar 2013 18:32:08 +0100
+Subject: [PATCH 2/2] Support mixer_idx with OSS
+
+make mixer_idx load the default mixer
+---
+ man/i3status.man   |  5 +++--
+ src/print_volume.c | 12 +++++++++++-
+ 2 files changed, 14 insertions(+), 3 deletions(-)
+
+diff --git a/man/i3status.man b/man/i3status.man
+index 0fccb7e..4bf6749 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -312,9 +312,10 @@ details on the format string.
+ Outputs the volume of the specified mixer on the specified device. Works only
+ on Linux because it uses ALSA.
+ A simplified configuration can be used on FreeBSD and OpenBSD due to
+-the lack of ALSA,  the +device+, +mixer+ and +mixder_idx+ options can be
++the lack of ALSA,  the +device+ and +mixer+ options can be
+ ignored on these systems. On these systems the OSS API is used instead to
+-query +/dev/mixer+ directly.
++query +/dev/mixer+ directly if +mixer_dix+ is -1, otherwise
+++/dev/mixer++mixer_idx+.
+ 
+ *Example order*: +volume master+
+ 
+diff --git a/src/print_volume.c b/src/print_volume.c
+index 1b03e5e..6a87b1e 100644
+--- a/src/print_volume.c
++++ b/src/print_volume.c
+@@ -175,12 +175,22 @@ void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *
+ 	}
+ #endif
+ #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
+-        char mixerpath[] = "/dev/mixer";
++        char *mixerpath;
++        char defaultmixer[] = "/dev/mixer";
+         int mixfd, vol, devmask = 0;
+         pbval = 1;
+ 
++        if (mixer_idx > 0)
++                asprintf(&mixerpath, "/dev/mixer%d", mixer_idx);
++        else
++                mixerpath = defaultmixer;
++
+         if ((mixfd = open(mixerpath, O_RDWR)) < 0)
+                 return;
++
++        if (mixer_idx > 0)
++                free(mixerpath);
++
+         if (ioctl(mixfd, SOUND_MIXER_READ_DEVMASK, &devmask) == -1)
+                 return;
+         if (ioctl(mixfd, MIXER_READ(0),&vol) == -1)
+-- 
+1.8.1.3
+

@@ -1,0 +1,67 @@
+From a14cb5ec2b50a623dd4b594d7ab613b76d50d9ad Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Mon, 22 Sep 2014 01:09:25 -0400
+Subject: [PATCH] IPC: set ws reply "num" member to -1 when named
+
+When a named workspace (i.e., a workspace that has a name that does not
+begin with text that can be parsed as an integer greater than or equal
+to zero) is represented by the ipc as a workspace json object such as
+can be queried with `i3-msg -t get_workspaces`, set the num property to
+-1 instead of json null.
+
+This is for convenience of ipc consumers using type-constrained
+languages such as C which have difficulty cleanly expressing nullable
+integers.
+
+fixes #1368
+---
+ docs/ipc                     | 2 +-
+ src/ipc.c                    | 5 +----
+ testcases/t/139-ws-numbers.t | 2 +-
+ 3 files changed, 3 insertions(+), 6 deletions(-)
+
+diff --git a/docs/ipc b/docs/ipc
+index f0829dc..ce38a54 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -156,7 +156,7 @@ following properties:
+ 
+ num (integer)::
+ 	The logical number of the workspace. Corresponds to the command
+-	to switch to this workspace.
++	to switch to this workspace. For named workspaces, this will be -1.
+ name (string)::
+ 	The name of this workspace (by default num+1), as changed by the
+ 	user. Encoded in UTF-8.
+diff --git a/src/ipc.c b/src/ipc.c
+index 03b3d5a..6dab654 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -617,10 +617,7 @@ IPC_HANDLER(get_workspaces) {
+             y(map_open);
+ 
+             ystr("num");
+-            if (ws->num == -1)
+-                y(null);
+-            else
+-                y(integer, ws->num);
++            y(integer, ws->num);
+ 
+             ystr("name");
+             ystr(ws->name);
+diff --git a/testcases/t/139-ws-numbers.t b/testcases/t/139-ws-numbers.t
+index 6829a14..f76ee04 100644
+--- a/testcases/t/139-ws-numbers.t
++++ b/testcases/t/139-ws-numbers.t
+@@ -24,7 +24,7 @@ sub check_order {
+     my ($msg) = @_;
+ 
+     my @ws = @{$i3->get_workspaces->recv};
+-    my @nums = map { $_->{num} } grep { defined($_->{num}) } @ws;
++    my @nums = map { $_->{num} } grep { $_->{num} != -1 } @ws;
+     my @sorted = sort @nums;
+ 
+     is_deeply(\@nums, \@sorted, $msg);
+-- 
+2.1.0
+

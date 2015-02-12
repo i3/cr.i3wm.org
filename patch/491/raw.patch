@@ -1,0 +1,243 @@
+From ea7b7afd4c8fdc1b58bb1d6cfb105ec898f011ef Mon Sep 17 00:00:00 2001
+From: Marco Hunsicker <i3@…>
+Date: Sun, 23 Mar 2014 13:30:36 +0100
+Subject: [PATCH] Send IPC workspace empty event after last window closed
+
+This patch sends the workspace empty event after the last container in
+a workspace has been closed and the workspace becomes empty again.
+
+Additionally this patch adjusts the prior behavior that the workspace
+empty event was send when switching *from* an empty workspace. Now it
+is send when switching *to* an empty workspace (as clients have
+already been notified about the old empty workspace).
+---
+ src/tree.c                            |   11 ++-
+ src/workspace.c                       |    7 +-
+ testcases/t/223-ipc-empty-workspace.t |  158 +++++++++++++++++++++++++++++++++
+ 3 files changed, 173 insertions(+), 3 deletions(-)
+ create mode 100644 testcases/t/223-ipc-empty-workspace.t
+
+diff --git a/src/tree.c b/src/tree.c
+index 80af522..5e14448 100644
+--- a/src/tree.c
++++ b/src/tree.c
+@@ -229,6 +229,9 @@ bool tree_close(Con *con, kill_window_t kill_window, bool dont_kill_parent, bool
+         return false;
+     }
+ 
++    Con *ws = con_get_workspace(con);
++    bool ws_was_empty = !ws || (TAILQ_EMPTY(&(ws->nodes_head)) && TAILQ_EMPTY(&(ws->floating_head)));
++
+     if (con->window != NULL) {
+         if (kill_window != DONT_KILL_WINDOW) {
+             x_window_kill(con->window->id, kill_window);
+@@ -264,8 +267,6 @@ bool tree_close(Con *con, kill_window_t kill_window, bool dont_kill_parent, bool
+         FREE(con->window);
+     }
+ 
+-    Con *ws = con_get_workspace(con);
+-
+     /* Figure out which container to focus next before detaching 'con'. */
+     if (con_is_floating(con)) {
+         if (con == focused) {
+@@ -321,6 +322,12 @@ bool tree_close(Con *con, kill_window_t kill_window, bool dont_kill_parent, bool
+     TAILQ_REMOVE(&all_cons, con, all_cons);
+     free(con);
+ 
++    /* if the workspace became empty, notify any interested parties. */
++    if (ws && !ws_was_empty && TAILQ_EMPTY(&(ws->nodes_head)) && TAILQ_EMPTY(&(ws->floating_head))) {
++        DLOG("Issue IPC workspace empty event for workspace %s\n", ws->name);
++        ipc_send_event("workspace", I3_IPC_EVENT_WORKSPACE, "{\"change\":\"empty\"}");
++    }
++
+     /* in the case of floating windows, we already focused another container
+      * when closing the parent, so we can exit now. */
+     if (!next) {
+diff --git a/src/workspace.c b/src/workspace.c
+index 670322a..4e291f7 100644
+--- a/src/workspace.c
++++ b/src/workspace.c
+@@ -420,10 +420,15 @@ static void _workspace_show(Con *workspace) {
+         if (!workspace_is_visible(old)) {
+             LOG("Closing old workspace (%p / %s), it is empty\n", old, old->name);
+             tree_close(old, DONT_KILL_WINDOW, false, false);
+-            ipc_send_event("workspace", I3_IPC_EVENT_WORKSPACE, "{\"change\":\"empty\"}");
+         }
+     }
+ 
++    /* if the new workspace is empty, notify any interested parties. */
++    if (TAILQ_EMPTY(&(workspace->nodes_head)) && TAILQ_EMPTY(&(workspace->floating_head))) {
++        DLOG("Issue IPC workspace empty event for workspace %s\n", workspace->name);
++        ipc_send_event("workspace", I3_IPC_EVENT_WORKSPACE, "{\"change\":\"empty\"}");
++    }
++
+     workspace->fullscreen_mode = CF_OUTPUT;
+     LOG("focused now = %p / %s\n", focused, focused->name);
+ 
+diff --git a/testcases/t/223-ipc-empty-workspace.t b/testcases/t/223-ipc-empty-workspace.t
+new file mode 100644
+index 0000000..2919909
+--- /dev/null
++++ b/testcases/t/223-ipc-empty-workspace.t
+@@ -0,0 +1,158 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Check if the workspace empty event is correctly send after window close.
++#
++use i3test;
++
++SKIP: {
++
++    skip "AnyEvent::I3 too old (need >= 0.15)", 1 if $AnyEvent::I3::VERSION < 0.15;
++
++my $i3 = i3(get_socket_path());
++$i3->connect()->recv;
++
++##############################################################
++# check that the workspace empty event is send when last
++# window was closed
++##############################################################
++
++my $tmp = fresh_workspace;
++
++my $cond = AnyEvent->condvar;
++
++$i3->subscribe({
++    workspace => sub {
++        my ($event) = @_;
++        $cond->send($event);
++    }
++})->recv;
++
++my $w1 = open_window();
++
++cmd '[id="' . $w1->id . '"] kill';
++sync_with_i3;
++
++my $event = $cond->recv;
++is($event->{change}, 'empty', '"Empty" event received after last window close');
++
++
++##############################################################
++# check that no empty workspace event is send when workspace
++# is not empty after a window was closed
++##############################################################
++
++my $ws2 = fresh_workspace;
++my $w3 = open_window(name => 'Window 3');
++my $ws1 = fresh_workspace;
++$w1 = open_window(name => 'Window 1');
++my $w2 = open_window(name => 'Window 2');
++
++is(focused_ws(), $ws1, 'Focused workspace is ws1');
++
++my @events;
++my $ws_event_conn = i3(get_socket_path());
++$ws_event_conn->connect()->recv;
++$ws_event_conn->subscribe({
++    workspace => sub {
++        my ($event) = @_;
++        push @events, $event;
++    }
++});
++
++cmd "workspace $ws2";
++cmd 'open';
++
++is(focused_ws(), $ws2, 'Focused workspace is ws2');
++
++# Wait for the workspace event on a new connection. Events will be delivered
++# to older connections earlier, so by the time it arrives here, it should be
++# in @events already.
++my $ws_event_block_conn = i3(get_socket_path());
++$ws_event_block_conn->connect()->recv;
++$ws_event_block_conn->subscribe({ workspace => sub { $cond->send(1) }});
++$cond->recv;
++
++my @expected_events = grep { $_->{change} eq 'focus' } @events;
++my @empty_events = grep { $_->{change} eq 'empty' } @events;
++is(@expected_events, 1, '"Focus" event received');
++is(@empty_events, 0, 'No "empty" events received');
++
++
++##############################################################
++# check that empty workspace event is send when switching to
++# an empty workspace
++##############################################################
++
++$ws2 = fresh_workspace;
++$ws1 = fresh_workspace;
++$w1 = open_window(name => 'Window 1');
++
++is(focused_ws(), $ws1, 'Focused workspace is ws1');
++
++$i3 = i3(get_socket_path());
++$i3->connect()->recv;
++$i3->subscribe({
++    workspace => sub {
++        my ($event) = @_;
++        $cond->send($event);
++    }
++})->recv;
++
++cmd "workspace $ws2";
++cmd 'open';
++
++is(focused_ws(), $ws2, 'Focused workspace is ws2');
++
++$event = $cond->recv;
++is($event->{change}, 'empty', '"Empty" event received upon workspace switch');
++
++
++##############################################################
++# check that no workspace empty event is send when switching
++# from an empty workspace
++##############################################################
++
++$ws1 = fresh_workspace;
++$w1 = open_window(name => 'Window 1');
++$ws2 = fresh_workspace;
++
++is(focused_ws(), $ws2, 'Focused workspace is ws2');
++
++my @events_;
++
++$i3 = i3(get_socket_path());
++$i3->connect()->recv;
++$i3->subscribe({
++    workspace => sub {
++        my ($event) = @_;
++        push @events_, $event;
++    }
++})->recv;
++
++cmd "workspace $ws1";
++cmd 'open';
++
++is(focused_ws(), $ws1, 'Focused workspace is ws1');
++
++my @focus_events = grep { $_->{change} eq 'focus' } @events_;
++my @empty_events_ = grep { $_->{change} eq 'empty' } @events_;
++is(@focus_events, 1, '"Focus" event received');
++is(@empty_events_, 0, 'No "empty" events received');
++
++}
++
++done_testing;
+-- 
+1.7.10.4
+

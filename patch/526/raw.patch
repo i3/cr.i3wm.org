@@ -1,0 +1,74 @@
+From cae33da2f1314a7ac27697402e86e66772636ca8 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 29 Apr 2014 14:29:17 -0400
+Subject: [PATCH] Bugfix: client requests to focus switch workspaces
+
+Allow client requests of type _NET_ACTIVE_WINDOW to switch workspaces.
+This allows task switchers like skippy-xd to work properly.
+
+http://standards.freedesktop.org/wm-spec/latest/ar01s03.html#idm140251368127856
+---
+ src/handlers.c                      |  5 +++--
+ testcases/t/195-net-active-window.t | 23 +++++++++++++++++++++--
+ 2 files changed, 24 insertions(+), 4 deletions(-)
+
+diff --git a/src/handlers.c b/src/handlers.c
+index 8c3bb48..746f08e 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -702,8 +702,9 @@ static void handle_client_message(xcb_client_message_event_t *event) {
+         }
+ 
+         Con *ws = con_get_workspace(con);
+-        if (!workspace_is_visible(ws)) {
+-            DLOG("Workspace not visible, ignoring _NET_ACTIVE_WINDOW\n");
++
++        if (ws == NULL) {
++            DLOG("Window is not being managed, ignoring _NET_ACTIVE_WINDOW\n");
+             return;
+         }
+ 
+diff --git a/testcases/t/195-net-active-window.t b/testcases/t/195-net-active-window.t
+index c3061c0..4aa2a6c 100644
+--- a/testcases/t/195-net-active-window.t
++++ b/testcases/t/195-net-active-window.t
+@@ -54,7 +54,7 @@ is($x->input_focus, $win1->id, 'window 1 has focus');
+ 
+ ################################################################################
+ # Switch to a different workspace and ensure sending the _NET_ACTIVE_WINDOW
+-# ClientMessage has no effect anymore.
++# ClientMessage switches to that workspaces.
+ ################################################################################
+ 
+ my $ws2 = fresh_workspace;
+@@ -64,7 +64,26 @@ is($x->input_focus, $win3->id, 'window 3 has focus');
+ 
+ send_net_active_window($win1->id);
+ 
+-is($x->input_focus, $win3->id, 'window 3 still has focus');
++is($x->input_focus, $win1->id, 'window 1 has focus');
++
++cmd '[id="' . $win3->id . '"] focus';
++
++################################################################################
++# Make sure the ClientMessage only works with managed windows, and specifying a
++# window that is not managed does not crash i3 (#774)
++################################################################################
++
++my $dock = open_window(window_type => $x->atom(name => '_NET_WM_WINDOW_TYPE_DOCK'));
++
++send_net_active_window($dock->id);
++
++does_i3_live;
++is($x->input_focus, $win3->id, 'dock did not get input focus');
++
++send_net_active_window($x->get_root_window());
++
++does_i3_live;
++is($x->input_focus, $win3->id, 'root window did not get input focus');
+ 
+ ################################################################################
+ # Move a window to the scratchpad, send a _NET_ACTIVE_WINDOW for it and verify
+-- 
+1.9.2
+

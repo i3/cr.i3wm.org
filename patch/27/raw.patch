@@ -1,0 +1,238 @@
+From e011cc0433315efc65739308e50cdf88cf907107 Mon Sep 17 00:00:00 2001
+From: Emil Mikulic <emikulic@…>
+Date: Mon, 14 Jan 2013 00:18:38 +1100
+Subject: [PATCH] Add tztime module to support multiple different timezones.
+
+---
+ i3status.c         |   24 +++++++++++++++---------
+ i3status.conf      |    6 ++++++
+ include/i3status.h |    4 ++--
+ man/i3status.man   |   22 +++++++++++++++++++++-
+ src/print_ddate.c  |    6 ++++--
+ src/print_time.c   |   34 +++++++++++++++++++++++++++++-----
+ 6 files changed, 77 insertions(+), 19 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index af62a7c..690afd9 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -243,6 +243,12 @@ int main(int argc, char *argv[]) {
+                 CFG_END()
+         };
+ 
++        cfg_opt_t tztime_opts[] = {
++                CFG_STR("format", "%d.%m.%Y %H:%M:%S %Z", CFGF_NONE),
++                CFG_STR("timezone", "", CFGF_NONE),
++                CFG_END()
++        };
++
+         cfg_opt_t ddate_opts[] = {
+                 CFG_STR("format", "%{%a, %b %d%}, %Y%N - %H", CFGF_NONE),
+                 CFG_END()
+@@ -292,6 +298,7 @@ int main(int argc, char *argv[]) {
+                 CFG_SEC("volume", volume_opts, CFGF_TITLE | CFGF_MULTI),
+                 CFG_SEC("ipv6", ipv6_opts, CFGF_NONE),
+                 CFG_SEC("time", time_opts, CFGF_NONE),
++                CFG_SEC("tztime", tztime_opts, CFGF_TITLE | CFGF_MULTI),
+                 CFG_SEC("ddate", ddate_opts, CFGF_NONE),
+                 CFG_SEC("load", load_opts, CFGF_NONE),
+                 CFG_SEC("cpu_usage", usage_opts, CFGF_NONE),
+@@ -403,16 +410,9 @@ int main(int argc, char *argv[]) {
+          * (!), not individual plugins, seem very unlikely. */
+         char buffer[4096];
+ 
+-        struct tm tm;
+         while (1) {
+                 struct timeval tv;
+                 gettimeofday(&tv, NULL);
+-                time_t current_time = tv.tv_sec;
+-                struct tm *current_tm = NULL;
+-                if (current_time != (time_t) -1) {
+-                        localtime_r(&current_time, &tm);
+-                        current_tm = &tm;
+-                }
+                 if (output_format == O_I3BAR)
+                         yajl_gen_array_open(json_gen);
+                 for (j = 0; j < cfg_size(cfg, "order"); j++) {
+@@ -465,13 +465,19 @@ int main(int argc, char *argv[]) {
+ 
+                         CASE_SEC("time") {
+                                 SEC_OPEN_MAP("time");
+-                                print_time(json_gen, buffer, cfg_getstr(sec, "format"), current_tm);
++                                print_time(json_gen, buffer, cfg_getstr(sec, "format"), NULL, tv.tv_sec);
++                                SEC_CLOSE_MAP;
++                        }
++
++                        CASE_SEC_TITLE("tztime") {
++                                SEC_OPEN_MAP("tztime");
++                                print_time(json_gen, buffer, cfg_getstr(sec, "format"), cfg_getstr(sec, "timezone"), tv.tv_sec);
+                                 SEC_CLOSE_MAP;
+                         }
+ 
+                         CASE_SEC("ddate") {
+                                 SEC_OPEN_MAP("ddate");
+-                                print_ddate(json_gen, buffer, cfg_getstr(sec, "format"), current_tm);
++                                print_ddate(json_gen, buffer, cfg_getstr(sec, "format"), tv.tv_sec);
+                                 SEC_CLOSE_MAP;
+                         }
+ 
+diff --git a/i3status.conf b/i3status.conf
+index 49ea488..32bd455 100644
+--- a/i3status.conf
++++ b/i3status.conf
+@@ -20,6 +20,7 @@ order += "ethernet eth0"
+ order += "battery 0"
+ order += "load"
+ order += "time"
++order += "tztime pacific"
+ 
+ wireless wlan0 {
+         format_up = "W: (%quality at %essid) %ip"
+@@ -48,6 +49,11 @@ time {
+         format = "%Y-%m-%d %H:%M:%S"
+ }
+ 
++tztime pacific {
++        format = "%Y-%m-%d %H:%M:%S %Z"
++        timezone = "US/Pacific"
++}
++
+ load {
+         format = "%1min"
+ }
+diff --git a/include/i3status.h b/include/i3status.h
+index 09394bd..7b84359 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -140,8 +140,8 @@ char *auto_detect_format();
+ void print_ipv6_info(yajl_gen json_gen, char *buffer, const char *format_up, const char *format_down);
+ void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format);
+ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, int low_threshold, char *threshold_type, bool last_full_capacity);
+-void print_time(yajl_gen json_gen, char *buffer, const char *format, struct tm *current_tm);
+-void print_ddate(yajl_gen json_gen, char *buffer, const char *format, struct tm *current_tm);
++void print_time(yajl_gen json_gen, char *buffer, const char *format, const char *timezone, time_t t);
++void print_ddate(yajl_gen json_gen, char *buffer, const char *format, time_t t);
+ const char *get_ip_addr();
+ void print_wireless_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
+ void print_run_watch(yajl_gen json_gen, char *buffer, const char *title, const char *pidfile, const char *format);
+diff --git a/man/i3status.man b/man/i3status.man
+index 3f7a924..f2d16eb 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -57,6 +57,7 @@ order += "battery 0"
+ order += "cpu_temperature 0"
+ order += "load"
+ order += "time"
++order += "tztime pacific"
+ 
+ wireless wlan0 {
+         format_up = "W: (%quality at %essid, %bitrate) %ip"
+@@ -87,6 +88,11 @@ time {
+ 	format = "%Y-%m-%d %H:%M:%S"
+ }
+ 
++tztime pacific {
++        format = "%Y-%m-%d %H:%M:%S %Z"
++        timezone = "US/Pacific"
++}
++
+ load {
+ 	format = "%5min"
+ }
+@@ -258,12 +264,26 @@ Gets the system load (number of processes waiting for CPU time in the last
+ 
+ === Time
+ 
+-Formats the current system time. See +strftime(3)+ for the format.
++Outputs the current time in the local timezone.
++To use a different timezone, you can set the TZ environment variable,
++or use the +tztime+ module.
++See +strftime(3)+ for details on the format string.
+ 
+ *Example order*: +time+
+ 
+ *Example format*: +%Y-%m-%d %H:%M:%S+
+ 
++=== TzTime
++
++Outputs the current time in the given timezone.
++See +strftime(3)+ for details on the format string.
++
++*Example order*: +tztime pacific+
++
++*Example format*: +%Y-%m-%d %H:%M:%S %Z+
++
++*Example timezone*: +US/Pacific+
++
+ === DDate
+ 
+ Outputs the current discordian date in user-specified format. See +ddate(1)+ for
+diff --git a/src/print_ddate.c b/src/print_ddate.c
+index 8213862..d180bbb 100644
+--- a/src/print_ddate.c
++++ b/src/print_ddate.c
+@@ -204,11 +204,13 @@ struct disc_time *get_ddate(struct tm *current_tm) {
+         return &dt;
+ }
+ 
+-void print_ddate(yajl_gen json_gen, char *buffer, const char *format, struct tm *current_tm) {
++void print_ddate(yajl_gen json_gen, char *buffer, const char *format, time_t t) {
+         char *outwalk = buffer;
+         static char *form = NULL;
++        struct tm current_tm;
+         struct disc_time *dt;
+-        if ((dt = get_ddate(current_tm)) == NULL)
++        localtime_r(&t, &current_tm);
++        if ((dt = get_ddate(&current_tm)) == NULL)
+                 return;
+         if (form == NULL)
+                 if ((form = malloc(strlen(format) + 1)) == NULL)
+diff --git a/src/print_time.c b/src/print_time.c
+index 00a6196..f3e6cc3 100644
+--- a/src/print_time.c
++++ b/src/print_time.c
+@@ -7,12 +7,36 @@
+ 
+ #include "i3status.h"
+ 
+-void print_time(yajl_gen json_gen, char *buffer, const char *format, struct tm *current_tm) {
++static const char *local_timezone = NULL;
++static const char *current_timezone = NULL;
++
++void print_time(yajl_gen json_gen, char *buffer, const char *format, const char *timezone, time_t t) {
+         char *outwalk = buffer;
+-        if (current_tm == NULL)
+-                return;
+-        /* Get date & time */
+-        outwalk += strftime(outwalk, 4095, format, current_tm);
++        struct tm tm;
++
++        if (local_timezone == NULL) {
++                /* First call, initialize. */
++                local_timezone = getenv("TZ");
++                if (local_timezone == NULL) {
++                        /* Not set in environment, use empty string and tzset()
++                         * will use /etc/localtime.
++                         */
++                        local_timezone = "";
++                }
++        }
++        if (timezone == NULL) {
++                /* User wants localtime. */
++                timezone = local_timezone;
++        }
++        if (timezone != current_timezone) {
++                /* Need to tzset() before formatting. */
++                setenv("TZ", timezone, 1);
++                tzset();
++                current_timezone = timezone;
++        }
++        /* Convert time and format output. */
++        localtime_r(&t, &tm);
++        outwalk += strftime(outwalk, 4095, format, &tm);
+         *outwalk = '\0';
+         OUTPUT_FULL_TEXT(buffer);
+ }
+-- 
+1.7.10.4
+

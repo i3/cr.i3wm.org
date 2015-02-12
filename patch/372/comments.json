@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 28,
+    "Comment": "Ordinarily I would use some kind of class inheritance scheme for this.\n\nBut I think these concepts are so similar that it won't be a problem for them to share a typedef.\n\nIt is also convenient for all the bindings to be in a single `bindings` list because we sometimes need to iterate over all of them with the same logic, and it's easier to check input type in case we don't rather than iterate over two different lists with the same logic.\n\nIf you plan to add a ton of mouse or keyboard-specific flags to binding directives, this could be a problem. Otherwise this is the least complex way I can think of doing this right now.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 28,
+    "Comment": "If this approach seems sensible to you, the next step could be to rename the `keycode` field to the more general `input_code`, which would store either the mouse button or xcb keycode.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 28,
+    "Comment": "Since bindings are getting a little more complicated, I would like to create an interface to them with a new header file, `binding.h`, and start refactoring some of the binding code.\n\nIdeally I would like to hide the `bindings` list and only provide access to it with the interface. That would be easy to do, except for the fact that i3 sometimes uses workspace bindings to determine what to name the first workspace on a newly created output (which I think is a bad idea, but I'll bring that up later).",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 28,
+    "Comment": "Your plan for refactoring all of this sounds reasonable. Please go ahead.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

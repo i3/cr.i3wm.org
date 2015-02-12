@@ -1,0 +1,119 @@
+From a477cf8c6da06cb07451c7ada2410e8fa405c400 Mon Sep 17 00:00:00 2001
+From: alfonzo1955 <alfonzo1955@…>
+Date: Fri, 28 Nov 2014 12:45:44 -0500
+Subject: [PATCH] Updated battery info to display colors depending on state
+
+---
+ src/print_battery_info.c | 50 +++++++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 43 insertions(+), 7 deletions(-)
+
+diff --git a/src/print_battery_info.c b/src/print_battery_info.c
+index 28b94ec..fc0a956 100644
+--- a/src/print_battery_info.c
++++ b/src/print_battery_info.c
+@@ -172,10 +172,15 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+                                 START_COLOR("color_bad");
+                                 colorful_output = true;
+                         } else {
+-                            colorful_output = false;
++								START_COLOR("color_degraded");
++                                colorful_output = true;
+                         }
++                } else if (status == CS_CHARGING) {
++                    START_COLOR("color_good");
++                    colorful_output = true;
+                 }
+ 
++
+                 if (hide_seconds)
+                         (void)snprintf(remainingbuf, sizeof(remainingbuf), "%02d:%02d",
+                                 max(hours, 0), max(minutes, 0));
+@@ -205,7 +210,13 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+                                 && percentage_remaining < low_threshold) {
+                                 START_COLOR("color_bad");
+                                 colorful_output = true;
++                        } else {
++                                START_COLOR("color_degraded");
++                                colorful_output = true;
+                         }
++                } else if (status == CS_CHARGING) {
++                    START_COLOR("color_good");
++                    colorful_output = true;
+                 }
+         }
+ #elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__DragonFly__)
+@@ -260,7 +271,14 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+ 			   && remaining < (u_int) low_threshold) {
+ 			START_COLOR("color_bad");
+ 			colorful_output = true;
+-		}
++		} else {
++                START_COLOR("color_degraded");
++                colorful_output = true;
++        }
++
++        } else {
++                START_COLOR("color_good");
++                colorful_output = true;
+         }
+ #elif defined(__OpenBSD__)
+ 	/*
+@@ -314,8 +332,14 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+ 			   && apm_info.minutes_left < (u_int) low_threshold) {
+ 			START_COLOR("color_bad");
+ 			colorful_output = true;
+-		}
+-	}
++		} else {
++            START_COLOR("color_degraded");
++            colorful_output = true;
++        }
++    } else if (status == CS_CHARGING) {
++        START_COLOR("color_good");
++        colorful_output = true;
++    }
+ 
+ 	/* Can't give a meaningful value for remaining minutes if we're charging. */
+ 	if (status != CS_CHARGING) {
+@@ -517,8 +541,14 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+                     && (((float)remaining / (float)full_design) * 100) < low_threshold) {
+                         START_COLOR("color_bad");
+                         colorful_output = true;
+-                }
+-        }
++                } else {
++					START_COLOR("color_degraded");
++					colorful_output = true;
++				}
++        }  else if (status == CS_CHARGING) {
++			START_COLOR("color_good");
++			colorful_output = true;
++		}
+ 
+         if (is_full)
+                 (void)snprintf(statusbuf, sizeof(statusbuf), "%s", BATT_STATUS_NAME(CS_FULL));
+@@ -559,7 +589,11 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+                             && ((float) seconds_remaining / 60.0) < (u_int) low_threshold) {
+                                 START_COLOR("color_bad");
+                                 colorful_output = true;
+-                        }
++                        } else {
++							START_COLOR("color_degraded");
++							colorful_output = true;
++						}
++
+                 }
+         } else {
+                 if (hide_seconds)
+@@ -568,6 +602,8 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+                 else
+                         (void)snprintf(remainingbuf, sizeof(remainingbuf), "(%02d:%02d:%02d until full)",
+                                 max(hours, 0), max(minutes, 0), max(seconds, 0));
++				START_COLOR("color_good");
++				colorful_output = true;
+         }
+ 
+         empty_time = time(NULL);
+-- 
+2.1.3
+

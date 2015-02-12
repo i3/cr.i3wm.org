@@ -1,0 +1,42 @@
+From 9f1484c0f42eb547386895d86ec81cdd77eb71e7 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Thu, 13 Feb 2014 20:17:18 -0500
+Subject: [PATCH] i3bar: Do not kill watcher on EOF
+
+Wait for the child process to exit on its own before freeing
+watcher-related resources.
+
+i3bar shows the last received status line until the process exits.
+
+Fixes a race condition where the termination signal was sometimes not
+received to display a meaningful error message.
+---
+ i3bar/src/child.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/i3bar/src/child.c b/i3bar/src/child.c
+index d19192f..cfdf911 100644
+--- a/i3bar/src/child.c
++++ b/i3bar/src/child.c
+@@ -266,6 +266,8 @@ static int stdin_end_array(void *context) {
+ /*
+  * Helper function to read stdin
+  *
++ * Returns NULL on EOF.
++ *
+  */
+ static unsigned char *get_buffer(ev_io *watcher, int *ret_buffer_len) {
+     int fd = watcher->fd;
+@@ -285,9 +287,7 @@ static unsigned char *get_buffer(ev_io *watcher, int *ret_buffer_len) {
+             exit(EXIT_FAILURE);
+         }
+         if (n == 0) {
+-            /* end of file, kill the watcher */
+             ELOG("stdin: received EOF\n");
+-            cleanup();
+             *ret_buffer_len = -1;
+             return NULL;
+         }
+-- 
+1.8.5.4
+

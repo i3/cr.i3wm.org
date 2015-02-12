@@ -1,0 +1,140 @@
+From f12f27aa1c8e7d428b28a65168b1a19b66d51724 Mon Sep 17 00:00:00 2001
+From: Kevin Pulo <kev@…>
+Date: Mon, 10 Feb 2014 15:21:12 +1100
+Subject: [PATCH] Colorized output for disk usage (revised).
+
+Revised to address the issues in http://cr.i3wm.org/patch/292, and also
+updated against a recent master branch.
+
+Fixes #912.
+---
+ i3status.c            |  5 ++++-
+ include/i3status.h    |  2 +-
+ man/i3status.man      | 11 +++++++++++
+ src/print_disk_info.c | 25 ++++++++++++++++++++++++-
+ 4 files changed, 40 insertions(+), 3 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index 09379e6..7a3f371 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -290,6 +290,9 @@ int main(int argc, char *argv[]) {
+         cfg_opt_t disk_opts[] = {
+                 CFG_STR("format", "%free", CFGF_NONE),
+                 CFG_STR("prefix_type", "binary", CFGF_NONE),
++                CFG_INT("low_threshold", 10 * 1024, CFGF_NONE), // 10 GiB
++                CFG_STR("threshold_type", "mibibytes", CFGF_NONE),
++                CFG_CUSTOM_COLOR_OPTS,
+                 CFG_END()
+         };
+ 
+@@ -499,7 +502,7 @@ int main(int argc, char *argv[]) {
+ 
+                         CASE_SEC_TITLE("disk") {
+                                 SEC_OPEN_MAP("disk_info");
+-                                print_disk_info(json_gen, buffer, title, cfg_getstr(sec, "format"), cfg_getstr(sec, "prefix_type"));
++                                print_disk_info(json_gen, buffer, title, cfg_getstr(sec, "format"), cfg_getstr(sec, "prefix_type"), cfg_getint(sec, "low_threshold"), cfg_getstr(sec, "threshold_type"));
+                                 SEC_CLOSE_MAP;
+                         }
+ 
+diff --git a/include/i3status.h b/include/i3status.h
+index e1246b9..06e774d 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -145,7 +145,7 @@ char *auto_detect_format();
+ void set_timezone(const char *tz);
+ 
+ void print_ipv6_info(yajl_gen json_gen, char *buffer, const char *format_up, const char *format_down);
+-void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format, const char *prefix_type);
++void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format, const char *prefix_type, const int low_threshold, const char *threshold_type);
+ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, const char *format_down, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity, bool hide_seconds);
+ void print_time(yajl_gen json_gen, char *buffer, const char *format, const char *tz, time_t t);
+ void print_ddate(yajl_gen json_gen, char *buffer, const char *format, time_t t);
+diff --git a/man/i3status.man b/man/i3status.man
+index 614e22c..1e63a0d 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -196,6 +196,12 @@ SI prefixes (k, M, G, T) represent multiples of powers of 1000.
+ custom::
+ The custom prefixes (K, M, G, T) represent multiples of powers of 1024.
+ 
++It is possible to define a low_threshold that causes the disk text to be
++colored red if the free space is unter a certain amount. The low_threshold
++type can be of threshold_type "mibibytes", "megabytes" or "percentage".
++So, if you configure low_threshold to 10 and threshold_type to "percentage",
++and your disk is 91 percent full, it will be colored red.
++
+ *Example order*: +disk /mnt/usbstick+
+ 
+ *Example format*: +%free (%avail)/ %total+
+@@ -204,6 +210,11 @@ The custom prefixes (K, M, G, T) represent multiples of powers of 1024.
+ 
+ *Example prefix_type*: +custom+
+ 
++*Example low_threshold*: +10240+
++
++*Example threshold_type*: +mibibytes+
++
++
+ === Run-watch
+ 
+ Expands the given path to a pidfile and checks if the process ID found inside
+diff --git a/src/print_disk_info.c b/src/print_disk_info.c
+index 2308305..fd532d3 100644
+--- a/src/print_disk_info.c
++++ b/src/print_disk_info.c
+@@ -53,13 +53,22 @@ static int print_bytes_human(char *outwalk, uint64_t bytes, const char *prefix_t
+ }
+ 
+ /*
++ * Returns true if the given type matches the target type, and the
++ * given value is under the threshold.
++ */
++static bool check_value_under_threshold(const char *type, const char *target_type, const uint64_t value, const uint64_t threshold_value) {
++    return strcasecmp(type, target_type) == 0 && (value < threshold_value);
++}
++
++/*
+  * Does a statvfs and prints either free, used or total amounts of bytes in a
+  * human readable manner.
+  *
+  */
+-void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format, const char *prefix_type) {
++void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format, const char *prefix_type, const int low_threshold, const char *threshold_type) {
+         const char *walk;
+         char *outwalk = buffer;
++        bool colorful_output = false;
+ 
+         INSTANCE(path);
+ 
+@@ -75,6 +84,18 @@ void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const ch
+                 return;
+ #endif
+ 
++        const int percentage_free = ((float)buf.f_bfree / (float)buf.f_blocks) * 100;
++        const uint64_t mibibytes_free = ((uint64_t)buf.f_bsize * (uint64_t)buf.f_bavail)/(1024*1024);
++        const uint64_t megabytes_free = ((uint64_t)buf.f_bsize * (uint64_t)buf.f_bavail)/(1000*1000);
++        if (check_value_under_threshold(threshold_type, "percentage", percentage_free, low_threshold) ||
++            check_value_under_threshold(threshold_type, "mibibytes", mibibytes_free, low_threshold) ||
++            check_value_under_threshold(threshold_type, "megabytes", megabytes_free, low_threshold)) {
++                START_COLOR("color_bad");
++                colorful_output = true;
++        } else {
++                colorful_output = false;
++        }
++
+         for (walk = format; *walk != '\0'; walk++) {
+                 if (*walk != '%') {
+                         *(outwalk++) = *walk;
+@@ -121,6 +142,8 @@ void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const ch
+                         walk += strlen("percentage_avail");
+                 }
+         }
++        if (colorful_output)
++                END_COLOR;
+ 
+         *outwalk = '\0';
+         OUTPUT_FULL_TEXT(buffer);
+-- 
+1.8.1.2
+

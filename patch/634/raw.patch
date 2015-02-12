@@ -1,0 +1,102 @@
+From 8da9c059e884e32d252b3dc47d8eddbf167fefa0 Mon Sep 17 00:00:00 2001
+From: Mats <d912e3@…>
+Date: Sun, 3 Aug 2014 15:04:45 +0200
+Subject: [PATCH] Draw borders not wider than specified width
+
+Rectangles passed to function xcb_poly_fill_rectangle are of type
+xcb_rectangle_t and defined as:
+
+    struct xcb_rectangle_t {
+        int16_t  x;
+        int16_t  y;
+        uint16_t width;
+        uint16_t height;
+    }
+
+The rectangles for the right and lower border had a width and height,
+respectively, greater than the specified border width.
+---
+ src/x.c | 51 +++++++++++++++++++++++++++------------------------
+ 1 file changed, 27 insertions(+), 24 deletions(-)
+
+diff --git a/src/x.c b/src/x.c
+index e3fdde1..1d05cfb 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -412,7 +412,7 @@ void x_draw_decoration(Con *con) {
+         /* We might hide some borders adjacent to the screen-edge */
+         adjacent_t borders_to_hide = ADJ_NONE;
+         borders_to_hide = con_adjacent_borders(con) & config.hide_edge_borders;
+-
++        int border_width = con->current_border_width;
+         Rect br = con_border_style_rect(con);
+ #if 0
+         DLOG("con->rect spans %d x %d\n", con->rect.width, con->rect.height);
+@@ -424,24 +424,24 @@ void x_draw_decoration(Con *con) {
+          * (left, bottom and right part). We don’t just fill the whole
+          * rectangle because some childs are not freely resizable and we want
+          * their background color to "shine through". */
+-        xcb_change_gc(conn, con->pm_gc, XCB_GC_FOREGROUND, (uint32_t[]) {p->color->background});
+-        if (!(borders_to_hide & ADJ_LEFT_SCREEN_EDGE)) {
+-            xcb_rectangle_t leftline = {0, 0, br.x, r->height};
+-            xcb_poly_fill_rectangle(conn, con->pixmap, con->pm_gc, 1, &leftline);
+-        }
+-        if (!(borders_to_hide & ADJ_RIGHT_SCREEN_EDGE)) {
+-            xcb_rectangle_t rightline = {r->width + br.width + br.x, 0, r->width, r->height};
+-            xcb_poly_fill_rectangle(conn, con->pixmap, con->pm_gc, 1, &rightline);
+-        }
+-        if (!(borders_to_hide & ADJ_LOWER_SCREEN_EDGE)) {
+-            xcb_rectangle_t bottomline = {0, r->height + br.height + br.y, r->width, r->height};
+-            xcb_poly_fill_rectangle(conn, con->pixmap, con->pm_gc, 1, &bottomline);
+-        }
++        xcb_rectangle_t border_rects[4];
++        uint32_t border_rects_len = 0;
++
++        if (!(borders_to_hide & ADJ_LEFT_SCREEN_EDGE))
++            border_rects[border_rects_len++] = (xcb_rectangle_t) {0, 0, border_width, r->height};
++
++        if (!(borders_to_hide & ADJ_RIGHT_SCREEN_EDGE))
++            border_rects[border_rects_len++] = (xcb_rectangle_t) {r->width - border_width, 0, border_width, r->height};
++
++        if (!(borders_to_hide & ADJ_LOWER_SCREEN_EDGE))
++            border_rects[border_rects_len++] = (xcb_rectangle_t) {0, r->height - border_width, r->width, border_width};
++
+         /* 1pixel border needs an additional line at the top */
+-        if (p->border_style == BS_PIXEL && !(borders_to_hide & ADJ_UPPER_SCREEN_EDGE)) {
+-            xcb_rectangle_t topline = {br.x, 0, con->rect.width + br.width + br.x, br.y};
+-            xcb_poly_fill_rectangle(conn, con->pixmap, con->pm_gc, 1, &topline);
+-        }
++        if (p->border_style == BS_PIXEL && !(borders_to_hide & ADJ_UPPER_SCREEN_EDGE))
++            border_rects[border_rects_len++] = (xcb_rectangle_t) {0, 0, r->width, border_width};
++
++        xcb_change_gc(conn, con->pm_gc, XCB_GC_FOREGROUND, (uint32_t[]) {p->color->background});
++        xcb_poly_fill_rectangle(conn, con->pixmap, con->pm_gc, border_rects_len, border_rects);
+ 
+         /* Highlight the side of the border at which the next window will be
+          * opened if we are rendering a single window within a split container
+@@ -450,13 +450,16 @@ void x_draw_decoration(Con *con) {
+         if (TAILQ_NEXT(con, nodes) == NULL &&
+             TAILQ_PREV(con, nodes_head, nodes) == NULL &&
+             con->parent->type != CT_FLOATING_CON) {
++            xcb_rectangle_t indicator_rects[1];
++            uint32_t indicator_rects_len = 0;
++
++            if (p->parent_layout == L_SPLITH && !(borders_to_hide & ADJ_RIGHT_SCREEN_EDGE))
++                indicator_rects[indicator_rects_len++] = (xcb_rectangle_t) {r->width - border_width, br.y, border_width, r->height + br.height};
++            else if (p->parent_layout == L_SPLITV && !(borders_to_hide & ADJ_LOWER_SCREEN_EDGE))
++                indicator_rects[indicator_rects_len++] = (xcb_rectangle_t) {br.x, r->height - border_width, r->width + br.width, border_width};
++
+             xcb_change_gc(conn, con->pm_gc, XCB_GC_FOREGROUND, (uint32_t[]) {p->color->indicator});
+-            if (p->parent_layout == L_SPLITH)
+-                xcb_poly_fill_rectangle(conn, con->pixmap, con->pm_gc, 1, (xcb_rectangle_t[]) {
+-                                                                              {r->width + br.width + br.x, br.y, r->width, r->height + br.height}});
+-            else if (p->parent_layout == L_SPLITV)
+-                xcb_poly_fill_rectangle(conn, con->pixmap, con->pm_gc, 1, (xcb_rectangle_t[]) {
+-                                                                              {br.x, r->height + br.height + br.y, r->width - (2 * br.x), r->height}});
++            xcb_poly_fill_rectangle(conn, con->pixmap, con->pm_gc, indicator_rects_len, indicator_rects);
+         }
+     }
+ 
+-- 
+2.0.3
+

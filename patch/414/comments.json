@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "Please strip the “(revised)” from the git description. This is useful information, but it is better kept in the code review, not in the revision history :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 25,
+    "Comment": "The default settings make the new code path trigger by default, and I don’t think that’s a good idea. There are users of computers with less than 10G of free storage (think netbook users for example) who’ll end up with a suddenly red disk indicator after upgrading.\n\nSo, I suggest changing the default threshold_type to none.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 62,
+    "Comment": "I suggest mentioning threshold_type \"none\" explicitly to give users a way to disable this feature (and so that you can state the default in the manpage).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 62,
+    "Comment": "The threshold_type of the battery module doesn’t offer a none type either...",
+    "EmailHash": ""
+  }
+]

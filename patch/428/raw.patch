@@ -1,0 +1,548 @@
+From 38a68463effea1671dec4f76f6d751c23b081640 Mon Sep 17 00:00:00 2001
+From: Marco Hunsicker <i3@…>
+Date: Tue, 18 Feb 2014 21:46:28 +0100
+Subject: [PATCH] This patch fixes ticket #1168 to extend the window IPC event
+ mechanism to send IPC events for window focus and title
+ changes. The newly added window events use the same format
+ as the already established "new" event.
+
+Specifically this patch:
+
+* Moves the ipc_send_window_event() function from src/manage.c into
+  src/ipc.c and adds an argument for the change property of the event
+* Updates src/manage.c to use the new function signature. To ensure
+  that the "new" event does not send the same event data as the
+  "focus" event, setting focus now happens after the "new" event
+  has been sent
+* Adds IPC focus event notification to src/x.c. To workaround a problem
+  during window close when accessing the window name, a function has been
+  added to query whether a window is actually attached to its parent. To
+  avoid obsolete focus notification, a new field has been added to keep
+  track of the focus without any interference by the click handling
+* Adds IPC title event notification to src/handlers.c. To avoid
+  obsolete title notification, a function has been added to determine
+  whether a window title has actually changed
+* Updates the IPC documentation to include the new events
+* Updates testcases/t/205-ipc-windows.t to include the "focus" event
+  in order to ensure the correct event sequence
+* Adds two new unit tests, b/testcases/t/219-ipc-window-focus.t and
+  b/testcases/t/220-ipc-window-title.t to ensure proper "focus" and
+ "title" events
+---
+ docs/ipc                           |   17 ++++---
+ include/ipc.h                      |    6 +++
+ src/handlers.c                     |   25 ++++++++++
+ src/ipc.c                          |   30 ++++++++++++
+ src/manage.c                       |   44 +++++------------
+ src/x.c                            |   28 ++++++++++-
+ testcases/t/205-ipc-windows.t      |   18 +++++--
+ testcases/t/219-ipc-window-focus.t |   94 ++++++++++++++++++++++++++++++++++++
+ testcases/t/220-ipc-window-title.t |   57 ++++++++++++++++++++++
+ 9 files changed, 274 insertions(+), 45 deletions(-)
+ create mode 100644 testcases/t/219-ipc-window-focus.t
+ create mode 100644 testcases/t/220-ipc-window-title.t
+
+diff --git a/docs/ipc b/docs/ipc
+index 8d4d735..7b05544 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -1,7 +1,7 @@
+ IPC interface (interprocess communication)
+ ==========================================
+ Michael Stapelberg <michael@i3wm.org>
+-October 2012
++February 2014
+ 
+ This document describes how to interface with i3 from a separate process. This
+ is useful for example to remote-control i3 (to write test cases for example) or
+@@ -632,7 +632,8 @@ mode (2)::
+ 	Sent whenever i3 changes its binding mode.
+ window (3)::
+ 	Sent when a client's window is successfully reparented (that is when i3
+-	has finished fitting it into a container).
++	has finished fitting it into a container), when a window received input
++	focus or when a window title has been updated.
+ barconfig_update (4)::
+     Sent when the hidden_state or mode field in the barconfig of any bar
+     instance was updated.
+@@ -712,14 +713,14 @@ mode is simply named default.
+ === window event
+ 
+ This event consists of a single serialized map containing a property
+-+change (string)+ which currently can indicate only that a new window
+-has been successfully reparented (the value will be "new").
+++change (string)+ which indicates the type of the change ("focus", "new",
++"title").
+ 
+ Additionally a +container (object)+ field will be present, which consists
+-of the window's parent container. Be aware that the container will hold
+-the initial name of the newly reparented window (e.g. if you run urxvt
+-with a shell that changes the title, you will still at this point get the
+-window title as "urxvt").
++of the window's parent container. Be aware that for the "new" event, the
++container will hold the initial name of the newly reparented window (e.g.
++if you run urxvt with a shell that changes the title, you will still at
++this point get the window title as "urxvt").
+ 
+ *Example:*
+ ---------------------------
+diff --git a/include/ipc.h b/include/ipc.h
+index cbbec8e..2c25b4e 100644
+--- a/include/ipc.h
++++ b/include/ipc.h
+@@ -87,3 +87,9 @@ void dump_node(yajl_gen gen, Con *con, bool inplace_restart);
+  * respectively.
+  */
+ void ipc_send_workspace_focus_event(Con *current, Con *old);
++
++/**
++ * For the window events we send, along the usual "change" field,
++ * also the window container, in "container".
++ */
++void ipc_send_window_event(const char *property, Con *con);
+diff --git a/src/handlers.c b/src/handlers.c
+index 312372a..8c3bb48 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -528,6 +528,17 @@ static void handle_destroy_notify_event(xcb_destroy_notify_event_t *event) {
+     handle_unmap_notify_event(&unmap);
+ }
+ 
++static bool window_name_changed(i3Window *window, char *old_name) {
++    if ((old_name == NULL) && (window->name == NULL))
++        return false;
++
++    /* Either the old or the new one is NULL, but not both. */
++    if ((old_name == NULL) ^ (window->name == NULL))
++        return true;
++
++    return (strcmp(old_name, i3string_as_utf8(window->name)) != 0);
++}
++
+ /*
+  * Called when a window changes its title
+  *
+@@ -538,10 +549,17 @@ static bool handle_windowname_change(void *data, xcb_connection_t *conn, uint8_t
+     if ((con = con_by_window_id(window)) == NULL || con->window == NULL)
+         return false;
+ 
++    char *old_name = (con->window->name != NULL ? sstrdup(i3string_as_utf8(con->window->name)) : NULL);
++
+     window_update_name(con->window, prop, false);
+ 
+     x_push_changes(croot);
+ 
++    if (window_name_changed(con->window, old_name))
++        ipc_send_window_event("title", con);
++
++    FREE(old_name);
++
+     return true;
+ }
+ 
+@@ -556,10 +574,17 @@ static bool handle_windowname_change_legacy(void *data, xcb_connection_t *conn,
+     if ((con = con_by_window_id(window)) == NULL || con->window == NULL)
+         return false;
+ 
++    char *old_name = (con->window->name != NULL ? sstrdup(i3string_as_utf8(con->window->name)) : NULL);
++
+     window_update_name_legacy(con->window, prop, false);
+ 
+     x_push_changes(croot);
+ 
++    if (window_name_changed(con->window, old_name))
++        ipc_send_window_event("title", con);
++
++    FREE(old_name);
++
+     return true;
+ }
+ 
+diff --git a/src/ipc.c b/src/ipc.c
+index f1e9019..33e5c58 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -1056,3 +1056,33 @@ void ipc_send_workspace_focus_event(Con *current, Con *old) {
+     y(free);
+     setlocale(LC_NUMERIC, "");
+ }
++
++/**
++ * For the window events we send, along the usual "change" field,
++ * also the window container, in "container".
++ */
++void ipc_send_window_event(const char *property, Con *con) {
++    DLOG("Issue IPC window %s event for X11 window 0x%08x\n", property, con->window->id);
++
++    setlocale(LC_NUMERIC, "C");
++    yajl_gen gen = ygenalloc();
++
++    y(map_open);
++
++    ystr("change");
++    ystr(property);
++
++    ystr("container");
++    dump_node(gen, con, false);
++
++    y(map_close);
++
++    const unsigned char *payload;
++    ylength length;
++    y(get_buf, &payload, &length);
++
++    ipc_send_event("window", I3_IPC_EVENT_WINDOW, (const char *)payload);
++    y(free);
++    setlocale(LC_NUMERIC, "");
++}
++
+diff --git a/src/manage.c b/src/manage.c
+index d84ba1b..ae14fe6 100644
+--- a/src/manage.c
++++ b/src/manage.c
+@@ -76,35 +76,6 @@ void restore_geometry(void) {
+ }
+ 
+ /*
+- * The following function sends a new window event, which consists
+- * of fields "change" and "container", the latter containing a dump
+- * of the window's container.
+- *
+- */
+-static void ipc_send_window_new_event(Con *con) {
+-    setlocale(LC_NUMERIC, "C");
+-    yajl_gen gen = ygenalloc();
+-
+-    y(map_open);
+-
+-    ystr("change");
+-    ystr("new");
+-
+-    ystr("container");
+-    dump_node(gen, con, false);
+-
+-    y(map_close);
+-
+-    const unsigned char *payload;
+-    ylength length;
+-    y(get_buf, &payload, &length);
+-
+-    ipc_send_event("window", I3_IPC_EVENT_WINDOW, (const char *)payload);
+-    y(free);
+-    setlocale(LC_NUMERIC, "");
+-}
+-
+-/*
+  * Do some sanity checks and then reparent the window.
+  *
+  */
+@@ -360,6 +331,8 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+ 
+     FREE(state_reply);
+ 
++    bool set_focus = false;
++
+     if (fs == NULL) {
+         DLOG("Not in fullscreen mode, focusing\n");
+         if (!cwindow->dock) {
+@@ -371,7 +344,7 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+ 
+             if (workspace_is_visible(ws) && current_output == target_output) {
+                 if (!match || !match->restart_mode) {
+-                    con_focus(nc);
++                    set_focus = true;
+                 } else DLOG("not focusing, matched with restart_mode == true\n");
+             } else DLOG("workspace not visible, not focusing\n");
+         } else DLOG("dock, not focusing\n");
+@@ -421,7 +394,7 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+                    transient_win->transient_for != XCB_NONE) {
+                 if (transient_win->transient_for == fs->window->id) {
+                     LOG("This floating window belongs to the fullscreen window (popup_during_fullscreen == smart)\n");
+-                    con_focus(nc);
++                    set_focus = true;
+                     break;
+                 }
+                 Con *next_transient = con_by_window_id(transient_win->transient_for);
+@@ -500,7 +473,14 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+     tree_render();
+ 
+     /* Send an event about window creation */
+-    ipc_send_window_new_event(nc);
++    ipc_send_window_event("new", nc);
++
++    /* Defer setting focus after the 'new' event has been sent to ensure the
++     * proper window event sequence. */
++    if (set_focus) {
++        con_focus(nc);
++        tree_render();
++    }
+ 
+     /* Windows might get managed with the urgency hint already set (Pidgin is
+      * known to do that), so check for that and handle the hint accordingly.
+diff --git a/src/x.c b/src/x.c
+index b3af85a..3b8c611 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -15,6 +15,11 @@
+ /* Stores the X11 window ID of the currently focused window */
+ xcb_window_t focused_id = XCB_NONE;
+ 
++/* Because 'focused_id' might be reset to force input focus, we separately keep
++ * track of the X11 window ID to be able to always tell whether the focused
++ * window actually changed. */
++static xcb_window_t last_focused = XCB_NONE;
++
+ /* The bottom-to-top window stack of all windows which are managed by i3.
+  * Used for x_get_window_stack(). */
+ static xcb_window_t *btt_stack;
+@@ -232,7 +237,7 @@ void x_con_kill(Con *con) {
+     free(state);
+ 
+     /* Invalidate focused_id to correctly focus new windows with the same ID */
+-    focused_id = XCB_NONE;
++    focused_id = last_focused = XCB_NONE;
+ }
+ 
+ /*
+@@ -849,6 +854,22 @@ static void x_push_node_unmaps(Con *con) {
+ }
+ 
+ /*
++ * Returns true if the given container is currently attached to its parent.
++ */
++static bool is_con_attached(Con *con) {
++    if (con->parent == NULL)
++        return false;
++
++    Con *current;
++    TAILQ_FOREACH(current, &(con->parent->nodes_head), nodes) {
++        if (current == con)
++            return true;
++    }
++
++    return false;
++}
++
++/*
+  * Pushes all changes (state of each node, see x_push_node() and the window
+  * stack) to X11.
+  *
+@@ -990,9 +1011,12 @@ void x_push_changes(Con *con) {
+                 }
+ 
+                 ewmh_update_active_window(to_focus);
++
++                if (to_focus != XCB_NONE && to_focus != last_focused && focused->window != NULL && is_con_attached(focused))
++                   ipc_send_window_event("focus", focused);
+             }
+ 
+-            focused_id = to_focus;
++            focused_id = last_focused = to_focus;
+         }
+     }
+ 
+diff --git a/testcases/t/205-ipc-windows.t b/testcases/t/205-ipc-windows.t
+index aa679e2..22c11ce 100644
+--- a/testcases/t/205-ipc-windows.t
++++ b/testcases/t/205-ipc-windows.t
+@@ -30,19 +30,31 @@ $i3->connect()->recv;
+ # Events
+ 
+ my $new = AnyEvent->condvar;
++my $focus = AnyEvent->condvar;
+ $i3->subscribe({
+     window => sub {
+         my ($event) = @_;
+-        $new->send($event->{change} eq 'new');
++        if ($event->{change} eq 'new') {
++            $new->send($event);
++        } elsif ($event->{change} eq 'focus') {
++            $focus->send($event);
++        }
+     }
+ })->recv;
+ 
+ open_window;
+ 
+ my $t;
+-$t = AnyEvent->timer(after => 0.5, cb => sub { $new->send(0); });
++$t = AnyEvent->timer(
++    after => 0.5,
++    cb => sub {
++        $new->send(0);
++        $focus->send(0);
++    }
++);
+ 
+-ok($new->recv, 'Window "new" event received');
++is($new->recv->{container}->{focused}, 0, 'Window "new" event received');
++is($focus->recv->{container}->{focused}, 1, 'Window "focus" event received');
+ 
+ }
+ 
+diff --git a/testcases/t/219-ipc-window-focus.t b/testcases/t/219-ipc-window-focus.t
+new file mode 100644
+index 0000000..4bacd86
+--- /dev/null
++++ b/testcases/t/219-ipc-window-focus.t
+@@ -0,0 +1,94 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++
++use i3test;
++
++SKIP: {
++
++    skip "AnyEvent::I3 too old (need >= 0.15)", 1 if $AnyEvent::I3::VERSION < 0.15;
++
++my $i3 = i3(get_socket_path());
++$i3->connect()->recv;
++
++################################
++# Window focus event
++################################
++
++cmd 'split h';
++
++my $win0 = open_window;
++my $win1 = open_window;
++my $win2 = open_window;
++
++my $focus = AnyEvent->condvar;
++
++$i3->subscribe({
++    window => sub {
++        my ($event) = @_;
++        $focus->send($event);
++    }
++})->recv;
++
++my $t;
++$t = AnyEvent->timer(
++    after => 0.5,
++    cb => sub {
++        $focus->send(0);
++    }
++);
++
++# ensure the rightmost window contains input focus
++$i3->command('[id="' . $win2->id . '"] focus')->recv;
++is($x->input_focus, $win2->id, "Window 2 focused");
++
++cmd 'focus left';
++my $event = $focus->recv;
++is($event->{change}, 'focus', 'Focus event received');
++is($focus->recv->{container}->{name}, 'Window 1', 'Window 1 focused');
++
++$focus = AnyEvent->condvar;
++cmd 'focus left';
++$event = $focus->recv;
++is($event->{change}, 'focus', 'Focus event received');
++is($event->{container}->{name}, 'Window 0', 'Window 0 focused');
++
++$focus = AnyEvent->condvar;
++cmd 'focus right';
++$event = $focus->recv;
++is($event->{change}, 'focus', 'Focus event received');
++is($event->{container}->{name}, 'Window 1', 'Window 1 focused');
++
++$focus = AnyEvent->condvar;
++cmd 'focus right';
++$event = $focus->recv;
++is($event->{change}, 'focus', 'Focus event received');
++is($event->{container}->{name}, 'Window 2', 'Window 2 focused');
++
++$focus = AnyEvent->condvar;
++cmd 'focus right';
++$event = $focus->recv;
++is($event->{change}, 'focus', 'Focus event received');
++is($event->{container}->{name}, 'Window 0', 'Window 0 focused');
++
++$focus = AnyEvent->condvar;
++cmd 'focus left';
++$event = $focus->recv;
++is($event->{change}, 'focus', 'Focus event received');
++is($event->{container}->{name}, 'Window 2', 'Window 2 focused');
++
++}
++
++done_testing;
+diff --git a/testcases/t/220-ipc-window-title.t b/testcases/t/220-ipc-window-title.t
+new file mode 100644
+index 0000000..4c93ab5
+--- /dev/null
++++ b/testcases/t/220-ipc-window-title.t
+@@ -0,0 +1,57 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++
++use i3test;
++
++SKIP: {
++
++    skip "AnyEvent::I3 too old (need >= 0.15)", 1 if $AnyEvent::I3::VERSION < 0.15;
++
++my $i3 = i3(get_socket_path());
++$i3->connect()->recv;
++
++################################
++# Window title event
++################################
++
++my $window = open_window(name => 'Window 0');
++
++my $title = AnyEvent->condvar;
++
++$i3->subscribe({
++    window => sub {
++        my ($event) = @_;
++        $title->send($event);
++    }
++})->recv;
++
++$window->name('New Window Title');
++
++my $t;
++$t = AnyEvent->timer(
++    after => 0.5,
++    cb => sub {
++        $title->send(0);
++    }
++);
++
++my $event = $title->recv;
++is($event->{change}, 'title', 'Window title change event received');
++is($event->{container}->{name}, 'New Window Title', 'Window title changed');
++
++}
++
++done_testing;
+-- 
+1.7.10.4
+

@@ -1,0 +1,88 @@
+From efb65d9158d6ad4f4e1ddd52cea6a6d0e2caf3f5 Mon Sep 17 00:00:00 2001
+From: Paul Grove <paul.grove@…>
+Date: Sat, 19 Oct 2013 23:37:55 +0100
+Subject: [PATCH 2/2] IPC: Custom 'event' command documentation
+
+---
+ docs/ipc       | 19 +++++++++++++++++++
+ docs/userguide | 27 +++++++++++++++++++++++++++
+ 2 files changed, 46 insertions(+)
+
+diff --git a/docs/ipc b/docs/ipc
+index 85e5e77..6051a65 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -631,6 +631,9 @@ window (3)::
+ barconfig_update (4)::
+     Sent when the hidden_state or mode field in the barconfig of any bar
+     instance was updated.
++custom (5)::
++	Sent when triggered by the i3 +event+ command.  Custom events can be
++	subscribed to under any name but always use the the same event type (5)
+ 
+ *Example:*
+ --------------------------------------------------------------------
+@@ -746,6 +749,22 @@ corresponds to the current mode.
+ }
+ ---------------------------
+ 
++=== custom event
++
++This event is the result of an issued +event+ command usualy bound to a 
++keybinding.  The event names are custom and variable, but the message type
++will allways be the same, because of this the name of the triggered event
++is included along with the payload. See the i3 userguide for more information
++on the +event+ command.
++
++*Example:*
++---------------------------
++{
++    "event": "test",
++    "payload": "Hello World"
++}
++---------------------------
++
+ == See also (existing libraries)
+ 
+ [[libraries]]
+diff --git a/docs/userguide b/docs/userguide
+index 25ea5d5..d5a432a 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -1915,6 +1915,33 @@ bindsym $mod+b bar mode hide bar-1
+ bindsym $mod+Shift+b bar mode invisible bar-1
+ ------------------------------------------------
+ 
++=== custom event
++
++The +event+ command is an advanced feature to pass messages to connected IPC 
++clients.  This allows scripters to run services that respond to commands
++processed by i3.
++
++*Syntax*:
++---------------
++event <event_name> <event_data>
++---------------
++
++<event_name> is required and can be any single word.
++<event_data> is required and can be any valid string.
++
++Any IPC clients subscribed to the event matching <event_name> will receive an
++event with a JSON blob containing the event_name and event_data sent. e.g.
++
++*Example*:
++---------------
++# If bound to a key press
++bindsym $mod+y event test "Hello World"
++
++# The following JSON will be received by all connect IPC clients subscribed
++# to the test event when $mod+y is pressed:
++{"event": "test", "Hello World"}
++---------------
++
+ [[multi_monitor]]
+ 
+ == Multiple monitors
+-- 
+1.8.4.1
+

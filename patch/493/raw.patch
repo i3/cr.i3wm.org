@@ -1,0 +1,26 @@
+From fdbc9b40bcd831a52cb59f3338beb1d5beb723bb Mon Sep 17 00:00:00 2001
+From: Arun Persaud <arun@…>
+Date: Sun, 23 Mar 2014 10:49:20 -0700
+Subject: [PATCH 1/2] i3-nagbar: add missing newline when printing version
+ information
+
+---
+ i3-nagbar/main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/i3-nagbar/main.c b/i3-nagbar/main.c
+index fea2e68..70ad93b 100644
+--- a/i3-nagbar/main.c
++++ b/i3-nagbar/main.c
+@@ -341,7 +341,7 @@ int main(int argc, char *argv[]) {
+     while ((o = getopt_long(argc, argv, options_string, long_options, &option_index)) != -1) {
+         switch (o) {
+             case 'v':
+-                printf("i3-nagbar " I3_VERSION);
++                printf("i3-nagbar " I3_VERSION "\n");
+                 return 0;
+             case 'f':
+                 FREE(pattern);
+-- 
+1.9.1
+

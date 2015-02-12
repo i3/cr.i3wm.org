@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 33,
+    "Comment": "I think you could optimize more here by calling x_push_changes, but I like how we have tree_render as the entry point to completely rendering the tree.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

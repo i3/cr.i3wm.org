@@ -1,0 +1,54 @@
+From 982775edd3468c43db21687e9da1003d402c4497 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sun, 18 May 2014 00:28:55 -0400
+Subject: [PATCH] commands.c yajl macros allow NULL
+
+---
+ src/commands.c | 28 ++++++++++++++++------------
+ 1 file changed, 16 insertions(+), 12 deletions(-)
+
+diff --git a/src/commands.c b/src/commands.c
+index 201c76e..262992b 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -16,21 +16,25 @@
+ #include "shmlog.h"
+ 
+ // Macros to make the YAJL API a bit easier to use.
+-#define y(x, ...) yajl_gen_ ## x (cmd_output->json_gen, ##__VA_ARGS__)
+-#define ystr(str) yajl_gen_string(cmd_output->json_gen, (unsigned char*)str, strlen(str))
++#define y(x, ...) (cmd_output != NULL ? yajl_gen_ ## x (cmd_output->json_gen, ##__VA_ARGS__) : 0)
++#define ystr(str) (cmd_output != NULL ? yajl_gen_string(cmd_output->json_gen, (unsigned char*)str, strlen(str)) : 0)
+ #define ysuccess(success) do { \
+-    y(map_open); \
+-    ystr("success"); \
+-    y(bool, success); \
+-    y(map_close); \
++    if (cmd_output->json_gen != NULL) { \
++        y(map_open); \
++        ystr("success"); \
++        y(bool, success); \
++        y(map_close); \
++    } \
+ } while (0)
+ #define yerror(message) do { \
+-    y(map_open); \
+-    ystr("success"); \
+-    y(bool, false); \
+-    ystr("error"); \
+-    ystr(message); \
+-    y(map_close); \
++    if (cmd_output->json_gen != NULL) { \
++        y(map_open); \
++        ystr("success"); \
++        y(bool, false); \
++        ystr("error"); \
++        ystr(message); \
++        y(map_close); \
++    } \
+ } while (0)
+ 
+ /** When the command did not include match criteria (!), we use the currently
+-- 
+1.9.2
+

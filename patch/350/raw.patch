@@ -1,0 +1,82 @@
+From b3ca1df716c17c3c592840fbe9abe65d41155281 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sat, 21 Dec 2013 14:29:22 -0500
+Subject: [PATCH] Snap pointer to resize bar on drag resize
+
+When the user initiates a drag resize, draw the resize bar on the border
+of the two involved containers and snap the pointer.
+
+This solution produces cleaner code than the former approach where the
+caller obfuscated the click coordinates of the event. This may confuse
+someone expecting a true button press event.
+
+Fixes an issue where the resize cursor is not shown when the resize bar
+is clicked until the user begins to drag the mouse.
+
+Fixes an issue where focus is not properly updated after the drag is
+complete when `focus_follows_mouse' option is set, leaving the pointer
+in an unfocused window in some cases.
+
+Fixes an issue where the resize bar may jump a few pixels when the mouse
+is first moved.
+
+(Thanks to pbos for suggesting this fix and providing an example
+implementation)
+---
+ src/click.c  |  5 -----
+ src/resize.c | 13 +++++++++----
+ 2 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/src/click.c b/src/click.c
+index 340c841..a517838 100644
+--- a/src/click.c
++++ b/src/click.c
+@@ -62,12 +62,7 @@ static bool tiling_resize_for_border(Con *con, border_t border, xcb_button_press
+         second = tmp;
+     }
+ 
+-    /* We modify the X/Y position in the event so that the divider line is at
+-     * the actual position of the border, not at the position of the click. */
+     const orientation_t orientation = ((border == BORDER_LEFT || border == BORDER_RIGHT) ? HORIZ : VERT);
+-    if (orientation == HORIZ)
+-        event->root_x = second->rect.x;
+-    else event->root_y = second->rect.y;
+ 
+     resize_graphical_handler(first, second, orientation, event);
+ 
+diff --git a/src/resize.c b/src/resize.c
+index cc4ba84..190120c 100644
+--- a/src/resize.c
++++ b/src/resize.c
+@@ -122,19 +122,24 @@ int resize_graphical_handler(Con *first, Con *second, orientation_t orientation,
+     xcb_window_t grabwin = create_window(conn, output->rect, XCB_COPY_FROM_PARENT, XCB_COPY_FROM_PARENT,
+             XCB_WINDOW_CLASS_INPUT_ONLY, XCURSOR_CURSOR_POINTER, true, mask, values);
+ 
++    /* configure the resizebar position and snap the pointer */
+     Rect helprect;
+     if (orientation == HORIZ) {
+-        helprect.x = event->root_x;
++        helprect.x = second->rect.x;
+         helprect.y = output->rect.y;
+         helprect.width = 2;
+         helprect.height = output->rect.height;
+-        new_position = event->root_x;
++        new_position = second->rect.x;
++        xcb_warp_pointer(conn, XCB_NONE, event->root, 0, 0, 0, 0,
++                second->rect.x, event->root_y);
+     } else {
+         helprect.x = output->rect.x;
+-        helprect.y = event->root_y;
++        helprect.y = second->rect.y;
+         helprect.width = output->rect.width;
+         helprect.height = 2;
+-        new_position = event->root_y;
++        new_position = second->rect.y;
++        xcb_warp_pointer(conn, XCB_NONE, event->root, 0, 0, 0, 0,
++                event->root_x, second->rect.y);
+     }
+ 
+     mask = XCB_CW_BACK_PIXEL;
+-- 
+1.8.5.2
+

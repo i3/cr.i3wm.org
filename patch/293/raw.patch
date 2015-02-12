@@ -1,0 +1,147 @@
+From 0f45b53bee45be236f7d7fff555bfa63cccbc02f Mon Sep 17 00:00:00 2001
+From: Philippe Virouleau <philippe.virouleau@…>
+Date: Thu, 24 Oct 2013 17:02:33 +0200
+Subject: [PATCH] Authentication in different process
+
+Add the possibility to buffer keystrokes when a process is running authentication
+Fix #1090.
+---
+ i3lock.c |   70 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 67 insertions(+), 3 deletions(-)
+
+diff --git a/i3lock.c b/i3lock.c
+index 2d8a580..df1aa4c 100644
+--- a/i3lock.c
++++ b/i3lock.c
+@@ -45,6 +45,9 @@ static pam_handle_t *pam_handle;
+ int input_position = 0;
+ /* Holds the password you enter (in UTF-8). */
+ static char password[512];
++static xcb_key_press_event_t *buffered_events[512];
++static int event_index = 0;
++static int replay_index = 0;
+ static bool beep = false;
+ bool debug_mode = false;
+ static bool dpms = false;
+@@ -187,10 +190,14 @@ static void clear_pam_wrong(EV_P_ ev_timer *w, int revents) {
+     clear_pam_wrong_timeout = NULL;
+ }
+ 
+-static void clear_input(void) {
++static void reset_input(void) {
+     input_position = 0;
+     clear_password_memory();
+     password[input_position] = '\0';
++}
++
++static void clear_input(void) {
++    reset_input();
+ 
+     /* Hide the unlock indicator after a bit if the password buffer is
+      * empty. */
+@@ -205,7 +212,6 @@ static void auth_failed(void) {
+         fprintf(stderr, "Authentication failure\n");
+ 
+     pam_state = STATE_PAM_WRONG;
+-    clear_input();
+     redraw_screen();
+ 
+     /* Clear this state after 2 seconds (unless the user enters another
+@@ -227,6 +233,9 @@ static void auth_failed(void) {
+     }
+ }
+ 
++static void handle_key_press(xcb_key_press_event_t *event);
++static void handle_key_release(xcb_key_release_event_t *event);
++
+ static void child_cb(EV_P_ ev_child *child_watcher, int revents) {
+     if (child_watcher->rstatus != 0) {
+         DEBUG("Authentication successfull\n");
+@@ -234,7 +243,44 @@ static void child_cb(EV_P_ ev_child *child_watcher, int revents) {
+ 
+         exit(0);
+     } else {
++        if (replay_index > 0 && replay_index <= event_index) {
++            /* Move the remaining events in order to free some space */
++            memmove(buffered_events, buffered_events+replay_index,
++                (event_index - replay_index + 1) * sizeof(xcb_key_press_event_t *));
++            event_index -= replay_index;
++            replay_index = 0;
++            buffered_events[event_index+1] = NULL;
++        }
+         auth_failed();
++        while (replay_index <= event_index && pam_state != STATE_PAM_VERIFY) {
++            xcb_key_press_event_t *theEvent = buffered_events[replay_index];
++            replay_index++;
++            if (theEvent) {
++                /* Strip off the highest bit (set if the event is generated) */
++                int type = (theEvent->response_type & 0x7F);
++                switch (type) {
++                    case XCB_KEY_PRESS:
++                        handle_key_press((xcb_key_press_event_t*)theEvent);
++                        break;
++
++                    case XCB_KEY_RELEASE:
++                        handle_key_release((xcb_key_release_event_t*)theEvent);
++
++                        /* If this was the backspace or escape key we are back at an
++                         * empty input, so turn off the screen if DPMS is enabled */
++                        if (dpms && input_position == 0)
++                            dpms_turn_off_screen(conn);
++
++                        break;
++                }
++            } else {
++                /* No more event to replay, reset everything */
++                replay_index = 0;
++                event_index = 0;
++                buffered_events[event_index] = NULL;
++                break;
++            }
++        }
+     }
+     ev_child_stop(main_loop, child_watcher);
+     free(child_watcher);
+@@ -259,7 +305,8 @@ static void input_done(void) {
+     if (cpid == 0) {
+         exit(pam_authenticate(pam_handle, 0) == PAM_SUCCESS);
+     } else if (cpid > 0) {
+-        struct ev_child *child_watcher = calloc(sizeof(struct ev_io), 1);
++        reset_input();
++        struct ev_child *child_watcher = calloc(sizeof(struct ev_child), 1);
+         ev_child_init(child_watcher, child_cb, cpid, 0);
+         ev_child_set(child_watcher, cpid, 0);
+         ev_child_start(EV_DEFAULT_ child_watcher);
+@@ -518,12 +565,29 @@ static void xcb_check_cb(EV_P_ ev_check *w, int revents) {
+ 
+         /* Strip off the highest bit (set if the event is generated) */
+         int type = (event->response_type & 0x7F);
++        int buffer_size = sizeof(buffered_events)/sizeof(xcb_key_press_event_t *);
+         switch (type) {
+             case XCB_KEY_PRESS:
++                if (pam_state == STATE_PAM_VERIFY) {
++                    if (event_index < buffer_size - 1)
++                        buffered_events[event_index++] = (xcb_key_press_event_t*)event;
++                    else
++                        /* if we can't buffer the event, then free it */
++                        break;
++                    /* else don't free the event, it will be freed when replayed */
++                    continue;
++                }
+                 handle_key_press((xcb_key_press_event_t*)event);
+                 break;
+ 
+             case XCB_KEY_RELEASE:
++                if (pam_state == STATE_PAM_VERIFY) {
++                    if (event_index < buffer_size - 1)
++                        buffered_events[event_index++] = (xcb_key_press_event_t*)event;
++                    else
++                        break;
++                    continue;
++                }
+                 handle_key_release((xcb_key_release_event_t*)event);
+ 
+                 /* If this was the backspace or escape key we are back at an
+-- 
+1.7.10.4
+

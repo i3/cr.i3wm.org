@@ -1,0 +1,92 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 31,
+    "Comment": "I am not convinced that the SKIP_* states should be looked at at all by i3. The spec does not say that those windows are floating, and it really seems like a guess to me.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 99,
+    "Comment": "This may sound like a nitpick, but the control flow of this function is the wrong way around, IMO:\n\nI think you should whitelist the uncommon case (floating) and default to the common case (tiling).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 39,
+    "Comment": "I’d rather not have any handling for TYPE_DESKTOP, since i3 does not (and will not) support desktop windows at all. This can probably be stripped after you address my comment below about the control flow.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 87,
+    "Comment": "Instead of synchronously getting the size hints, please request them in manage_window() in the same place where the wm_hints are requested.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Kernc",
+    "Line": 99,
+    "Comment": "I understand. But of 14 _NET_WM_WINDOW_TYPEs, only three are non-floating (DESKTOP, DOCK, and NORMAL further-conditionally). It'll be a long `if` every call to xcb_reply_contians_atom() is a loop.",
+    "EmailHash": "28709af063bd0d54484173c7eb13eab4"
+  },
+  {
+    "Author": "Kernc",
+    "Line": 87,
+    "Comment": "Sure, agreed.\nDo I clear the ```\nTODO: also get wm_normal_hints here. implement after we got rid of xcb-event\n```\nand what exactly does that mean? :D",
+    "EmailHash": "28709af063bd0d54484173c7eb13eab4"
+  },
+  {
+    "Author": "Kernc",
+    "Line": 39,
+    "Comment": "Sure. We just have to make sure it is tiled as matching for \"Xfdesktop\" class makes for a neat desktop window on workspace 0. :)",
+    "EmailHash": "28709af063bd0d54484173c7eb13eab4"
+  },
+  {
+    "Author": "Kernc",
+    "Line": 31,
+    "Comment": "The spec indeed does say nothing, but can we look at how they are used in practice?\n\nTilda (a quake-like terminal) sets SKIP_TASKBAR, xfce4-notes-plugin sets it. (Those are temporary and very short-lived in nature. I don't want them to mess-up the layout on my screen. I'd have those float on i3 too.)\n\nxfce4-whiskermenu-plugin sets both (on a NORMAL-type window).\n\nI just think we will catch more of the desired effect by looking at those flags.\nOf course, the case can be made for setting a match exception, but since when are exceptions supposed to be in the majority? :P",
+    "EmailHash": "28709af063bd0d54484173c7eb13eab4"
+  },
+  {
+    "Author": "Kernc",
+    "Line": 87,
+    "Comment": "So I moved the request to where the wm_hints are requested. Yet I don't understand what you mean by 'synchronously'? To my eyes, there's nothing asynchronous about\nxcb_icccm_get_wm_size_hints_reply(conn, wm_normal_hints_cookie, \u0026wm_size_hints, NULL);\nor its longer version with xcb_get_property_reply(). Can you please explain?",
+    "EmailHash": "28709af063bd0d54484173c7eb13eab4"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 31,
+    "Comment": "While your examples certainly are valid examples, I don’t think they fit well into the concept of i3.\n\nTilda (or any drop-down console, really) seems to be for casual terminal users, whereas with i3, you typically use a lot of terminals for day-to-day operations, not just casually.\n\nInstead of xfce4-whiskermenu, most i3 users use dmenu.\n\nInstead of xfce4-notes-plugin, most i3 users probably use text files in their favorite editor, perhaps in a scratchpad window.\n\nNow, what I’m trying to say is that these are all examples which don’t really fit into i3’s philosophy. The fact that you want them floating is proof for that — floating is really only for popup windows in i3, and those should be really really rare.\n\nTherefore, I’d argue that if you really want to use i3 in an unusual way, it’s a reasonable expectation that you configure it (e.g. with for_window rules).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 87,
+    "Comment": "As for the TODO, yeah, I think that is obsolete.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 87,
+    "Comment": "The asynchronicity comes from the fact that the request is sent early (and in a batch in this specific case), then the reply is fetched based on the cookie id.\n\nI.e., instead of sending one packet, waiting for the reply, sending one packet, …, you send a batch of requests and get a bunch of replies at once.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 99,
+    "Comment": "Code clarity for the reader is more important than the runtime characteristics in this case.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Kernc",
+    "Line": 87,
+    "Comment": "Got it, thank you.",
+    "EmailHash": "28709af063bd0d54484173c7eb13eab4"
+  },
+  {
+    "Author": "Kernc",
+    "Line": 31,
+    "Comment": "It's just that Xfce does a wonderful job at following just about all XDG standards while i3 is an awesomely intuitive tiling WM. I'm just trying to make sure I'll be able to have unhindered best of both worlds. But I'll likely pick up new use patterns as well. Good. :)",
+    "EmailHash": "28709af063bd0d54484173c7eb13eab4"
+  }
+]

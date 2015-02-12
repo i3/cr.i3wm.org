@@ -1,0 +1,32 @@
+From f518c81d852118e8fb5bb412c18a6c679da00740 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 6 Dec 2013 01:36:29 -0500
+Subject: [PATCH] Remove pointer warp from test boilerplate
+
+Remove the line to warp the pointer to (0, 0) in `new-test` helper
+script, which is used to create new tests.
+
+Since 4.6-g0634766, testcases may assume at the start of the test that
+the pointer begins at position (0, 0).
+---
+ testcases/new-test | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/testcases/new-test b/testcases/new-test
+index 14465d2..4efcde5 100755
+--- a/testcases/new-test
++++ b/testcases/new-test
+@@ -83,10 +83,6 @@ if ($multi_monitor) {
+     print $fh <<'EOF';
+ use i3test i3_autostart => 0;
+ 
+-# Ensure the pointer is at (0, 0) so that we really start on the first
+-# (the left) workspace.
+-$x->root->warp_pointer(0, 0);
+-
+ my $config = <<EOT;
+ # i3 config file (v4)
+ font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
+-- 
+1.8.4.2
+

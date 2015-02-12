@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 23,
+    "Comment": "The content looks much better.\n\nBut the description is written as a response to the last patch. The last patch won't be in the commit history, so that won't make sense to people reading the git history. Those kinds of comments should be comments on cr.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

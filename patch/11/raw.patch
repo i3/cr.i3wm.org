@@ -1,0 +1,207 @@
+From 0ef0def82c493b9dabff9cc548cbc57dfb1c4a10 Mon Sep 17 00:00:00 2001
+From: Vivien Didelot <vivien.didelot@…>
+Date: Wed, 23 Jan 2013 15:13:20 -0500
+Subject: [PATCH] adjust window in scratchpad at move time
+
+The first aim of this patch was to prevent i3 from resizing an already
+floating window when moved to the scratchpad workspace.
+Indeed, an user may adjust a small media player to his/her liking, move
+it to scratchpad, then doesn't want i3 to readjust it.
+
+Currently, the resizing of (every) scratchpad windows is done at show
+time (in the scratchpad_show() function).
+To be able to check if the window was not already floating and readjust
+it accordingly, this patch moves the readjusting code from the show
+function to the move function (scratchpad_move()).
+
+This has the side-effect to make the SCRATCHPAD_FRESH state obsolete.
+Consequently, this patch removes this fresh state and renames the state
+SCRATCHPAD_CHANGED to SCRATCHPAD_ENABLED for relevance.
+
+Reported-by: Julien Bonjean <julien.bonjean@savoirfairelinux.com>
+---
+ include/data.h               |  3 +--
+ src/ipc.c                    |  7 ++-----
+ src/load_layout.c            |  6 ++----
+ src/scratchpad.c             | 32 +++++++++++++++-----------------
+ testcases/t/185-scratchpad.t | 23 +++++++++--------------
+ 5 files changed, 29 insertions(+), 42 deletions(-)
+
+diff --git a/include/data.h b/include/data.h
+index 9a814f4..dc84a1c 100644
+--- a/include/data.h
++++ b/include/data.h
+@@ -571,8 +571,7 @@ struct Con {
+ 
+     enum {
+         SCRATCHPAD_NONE = 0,
+-        SCRATCHPAD_FRESH = 1,
+-        SCRATCHPAD_CHANGED = 2
++        SCRATCHPAD_ENABLED = 1
+     } scratchpad_state;
+ 
+     /* The ID of this container before restarting. Necessary to correctly
+diff --git a/src/ipc.c b/src/ipc.c
+index 2379ba5..058b0b6 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -170,11 +170,8 @@ void dump_node(yajl_gen gen, struct Con *con, bool inplace_restart) {
+         case SCRATCHPAD_NONE:
+             ystr("none");
+             break;
+-        case SCRATCHPAD_FRESH:
+-            ystr("fresh");
+-            break;
+-        case SCRATCHPAD_CHANGED:
+-            ystr("changed");
++        case SCRATCHPAD_ENABLED:
++            ystr("enabled");
+             break;
+     }
+ 
+diff --git a/src/load_layout.c b/src/load_layout.c
+index ca4c87e..f268405 100644
+--- a/src/load_layout.c
++++ b/src/load_layout.c
+@@ -248,10 +248,8 @@ static int json_string(void *ctx, const unsigned char *val, unsigned int len) {
+             sasprintf(&buf, "%.*s", (int)len, val);
+             if (strcasecmp(buf, "none") == 0)
+                 json_node->scratchpad_state = SCRATCHPAD_NONE;
+-            else if (strcasecmp(buf, "fresh") == 0)
+-                json_node->scratchpad_state = SCRATCHPAD_FRESH;
+-            else if (strcasecmp(buf, "changed") == 0)
+-                json_node->scratchpad_state = SCRATCHPAD_CHANGED;
++            else if (strcasecmp(buf, "enabled") == 0)
++                json_node->scratchpad_state = SCRATCHPAD_ENABLED;
+             free(buf);
+         }
+     }
+diff --git a/src/scratchpad.c b/src/scratchpad.c
+index c38e63b..d22582d 100644
+--- a/src/scratchpad.c
++++ b/src/scratchpad.c
+@@ -57,11 +57,22 @@ void scratchpad_move(Con *con) {
+     con_move_to_workspace(con, __i3_scratch, true, true);
+ 
+     /* 3: If this is the first time this window is used as a scratchpad, we set
+-     * the scratchpad_state to SCRATCHPAD_FRESH. The window will then be
+-     * adjusted in size according to what the user specifies. */
++     * the scratchpad_state to SCRATCHPAD_ENABLED. If it was not already
++     * floating, we adjust its size according to what the user specifies. */
+     if (con->scratchpad_state == SCRATCHPAD_NONE) {
+         DLOG("This window was never used as a scratchpad before.\n");
+-        con->scratchpad_state = SCRATCHPAD_FRESH;
++        con->scratchpad_state = SCRATCHPAD_ENABLED;
++
++        if (!maybe_floating_con) {
++            DLOG("Adjusting size of this window.\n");
++            Con *output = con_get_output(con);
++            con->rect.width = output->rect.width * 0.5;
++            con->rect.height = output->rect.height * 0.75;
++            con->rect.x = output->rect.x +
++                ((output->rect.width / 2.0) - (con->rect.width / 2.0));
++            con->rect.y = output->rect.y +
++                ((output->rect.height / 2.0) - (con->rect.height / 2.0));
++        }
+     }
+ 
+     /* 4: Fix focus. Normally, when moving a window to a different output, the
+@@ -153,22 +164,9 @@ void scratchpad_show(Con *con) {
+         }
+     }
+ 
+-    /* 1: Move the window from __i3_scratch to the current workspace. */
++    /* Move the window from __i3_scratch to the current workspace. */
+     con_move_to_workspace(con, active, true, false);
+ 
+-    /* 2: Adjust the size if this window was not adjusted yet. */
+-    if (con->scratchpad_state == SCRATCHPAD_FRESH) {
+-        DLOG("Adjusting size of this window.\n");
+-        Con *output = con_get_output(con);
+-        con->rect.width = output->rect.width * 0.5;
+-        con->rect.height = output->rect.height * 0.75;
+-        con->rect.x = output->rect.x +
+-                      ((output->rect.width / 2.0) - (con->rect.width / 2.0));
+-        con->rect.y = output->rect.y +
+-                      ((output->rect.height / 2.0) - (con->rect.height / 2.0));
+-        con->scratchpad_state = SCRATCHPAD_CHANGED;
+-    }
+-
+     /* Activate active workspace if window is from another workspace to ensure
+      * proper focus. */
+     if (current != active) {
+diff --git a/testcases/t/185-scratchpad.t b/testcases/t/185-scratchpad.t
+index 598f2b3..b6f844e 100644
+--- a/testcases/t/185-scratchpad.t
++++ b/testcases/t/185-scratchpad.t
+@@ -109,7 +109,7 @@ is(scalar @scratch_nodes, 1, '__i3_scratch contains our window');
+ ($nodes, $focus) = get_ws_content($tmp);
+ is(scalar @$nodes, 0, 'no window on current ws anymore');
+ 
+-is($scratch_nodes[0]->{scratchpad_state}, 'fresh', 'scratchpad_state fresh');
++is($scratch_nodes[0]->{scratchpad_state}, 'enabled', 'scratchpad_state enabled');
+ 
+ $tree = $i3->get_tree->recv;
+ my $__i3 = first { $_->{name} eq '__i3' } @{$tree->{nodes}};
+@@ -165,7 +165,7 @@ $__i3_scratch = get_ws('__i3_scratch');
+ @scratch_nodes = @{$__i3_scratch->{floating_nodes}};
+ is(scalar @scratch_nodes, 1, '__i3_scratch contains our window');
+ 
+-is($scratch_nodes[0]->{scratchpad_state}, 'changed', 'scratchpad_state changed');
++is($scratch_nodes[0]->{scratchpad_state}, 'enabled', 'scratchpad_state enabled');
+ 
+ ################################################################################
+ # 6: Verify that repeated 'scratchpad show' cycle through the stack, that is,
+@@ -180,18 +180,13 @@ $__i3_scratch = get_ws('__i3_scratch');
+ @scratch_nodes = @{$__i3_scratch->{floating_nodes}};
+ is(scalar @scratch_nodes, 2, '__i3_scratch contains both windows');
+ 
+-is($scratch_nodes[0]->{scratchpad_state}, 'changed', 'changed window first');
+-is($scratch_nodes[1]->{scratchpad_state}, 'fresh', 'fresh window is second');
+-
+-my $changed_id = $scratch_nodes[0]->{nodes}->[0]->{id};
+-my $fresh_id = $scratch_nodes[1]->{nodes}->[0]->{id};
+-is($scratch_nodes[0]->{id}, $__i3_scratch->{focus}->[0], 'changed window first');
+-is($scratch_nodes[1]->{id}, $__i3_scratch->{focus}->[1], 'fresh window second');
++my $first_id = $scratch_nodes[0]->{nodes}->[0]->{id};
++my $second_id = $scratch_nodes[1]->{nodes}->[0]->{id};
+ 
+ # Repeatedly use 'scratchpad show' and check that the windows are different.
+ cmd 'scratchpad show';
+ 
+-is(get_focused($tmp), $changed_id, 'focus changed');
++is(get_focused($tmp), $first_id, 'focus changed');
+ 
+ $ws = get_ws($tmp);
+ $scratchrect = $ws->{floating_nodes}->[0]->{rect};
+@@ -206,15 +201,15 @@ is($scratchrect->{y},
+ 
+ cmd 'scratchpad show';
+ 
+-isnt(get_focused($tmp), $changed_id, 'focus changed');
++isnt(get_focused($tmp), $first_id, 'focus changed');
+ 
+ cmd 'scratchpad show';
+ 
+-is(get_focused($tmp), $fresh_id, 'focus changed');
++is(get_focused($tmp), $second_id, 'focus changed');
+ 
+ cmd 'scratchpad show';
+ 
+-isnt(get_focused($tmp), $fresh_id, 'focus changed');
++isnt(get_focused($tmp), $second_id, 'focus changed');
+ 
+ ################################################################################
+ # 8: Show it, move it around, hide it. Verify that the position is retained
+@@ -274,7 +269,7 @@ cmd '[title="scratch-match"] scratchpad show';
+ $ws = get_ws($tmp);
+ is(scalar @{$ws->{nodes}}, 1, 'still precisely one window on current ws');
+ is(scalar @{$ws->{floating_nodes}}, 1, 'precisely one floating windows on current ws');
+-is($ws->{floating_nodes}->[0]->{scratchpad_state}, 'changed', 'scratchpad_state is "changed"');
++is($ws->{floating_nodes}->[0]->{scratchpad_state}, 'enabled', 'scratchpad_state is "enabled"');
+ 
+ ################################################################################
+ # 10: on an empty workspace, ensure the 'move scratchpad' command does nothing
+-- 
+1.8.1.1
+

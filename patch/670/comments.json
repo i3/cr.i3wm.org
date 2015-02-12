@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 16,
+    "Comment": "Sorry, but I think email is something you should not have in i3status from a philosophy point of view. And even then, implementing the various different ways in which people receive email would be too much effort. This is one of the cases where, if you really insist, you should use a wrapper script around i3status which does that.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Timo Buhrmester",
+    "Line": 16,
+    "Comment": "Fair enough, I'll maintain the patch myself then.\n(For the record, I went the 'wrapper script' route for a while, It's suboptimal because it requires to launch a shell, which goes against low resource usage; plus getting the colors right (i.e. hand-crafting the correct JSON) turned out to be rather painful).",
+    "EmailHash": "0a91d4c1d5053b653100b3dcba09121c"
+  }
+]

@@ -1,0 +1,27 @@
+From 50d1f261be176a5fa5656836e30302c9046eec38 Mon Sep 17 00:00:00 2001
+From: Sebastian Ullrich <sebasti@…>
+Date: Fri, 29 Mar 2013 00:46:22 +0100
+Subject: [PATCH 2/2] Fix centering the indicator in the no-xinerama case
+
+---
+ unlock_indicator.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/unlock_indicator.c b/unlock_indicator.c
+index ab4d56e..5e4015c 100644
+--- a/unlock_indicator.c
++++ b/unlock_indicator.c
+@@ -246,8 +246,8 @@ xcb_pixmap_t draw_image(uint32_t *resolution) {
+         /* We have no information about the screen sizes/positions, so we just
+          * place the unlock indicator in the middle of the X root window and
+          * hope for the best. */
+-        int x = (last_resolution[0] / 2);
+-        int y = (last_resolution[1] / 2);
++        int x = (last_resolution[0] / 2) - (BUTTON_DIAMETER / 2);
++        int y = (last_resolution[1] / 2) - (BUTTON_DIAMETER / 2);
+         cairo_set_source_surface(xcb_ctx, output, x, y);
+         cairo_rectangle(xcb_ctx, x, y, BUTTON_DIAMETER, BUTTON_DIAMETER);
+         cairo_fill(xcb_ctx);
+-- 
+1.8.2
+

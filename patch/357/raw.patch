@@ -1,0 +1,33 @@
+From 5b6b4abcf896b71f67e640f9bd126bc6fdb8f76a Mon Sep 17 00:00:00 2001
+From: Alexander Kedrik <alexander.kedrik@…>
+Date: Wed, 1 Jan 2014 19:23:10 +0400
+Subject: [PATCH 1/3] remove unnecessary forward declaration of
+ set_statusline_error
+
+Attributes can be added to function definitions.
+Tested with gcc 4.8.2 and clang 3.3
+---
+ i3bar/src/child.c | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
+
+diff --git a/i3bar/src/child.c b/i3bar/src/child.c
+index 16d3e09..a2a37ac 100644
+--- a/i3bar/src/child.c
++++ b/i3bar/src/child.c
+@@ -81,12 +81,7 @@ static void clear_status_blocks() {
+  * `draw_bars' is called, the error message text will be drawn on the bar in
+  * the space allocated for the statusline.
+  */
+-
+-/* forward function declaration is needed to add __attribute__ mechanism which
+- * helps the compiler understand we are defining a printf wrapper */
+-static void set_statusline_error(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
+-
+-static void set_statusline_error(const char *format, ...) {
++__attribute__ ((format (printf, 1, 2))) static void set_statusline_error(const char *format, ...) {
+     clear_status_blocks();
+ 
+     char *message;
+-- 
+1.8.5.2
+

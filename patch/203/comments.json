@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "anonymous",
+    "Line": 37,
+    "Comment": "I did not checked closely but \"button\" seems to be a wrong term. This is more an indicator instead of a button.\nWhat do you think ?\n\n-syl20bnr-",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 37,
+    "Comment": "Yeah, mode indicator sounds better. However, I am not entirely convinced that this patch is a good idea. Even though the user will need to opt-in, this hides state, and that is always bad. Is there a really strong justification or is this just cosmetics?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 37,
+    "Comment": "Are you saying that the current behavior is a bug ?\nCurrent behavior hides the binding mode indicator when `workspace_buttons`is set to no. So the submission of this patch to decouple this.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "syl20bnr",
+    "Line": 37,
+    "Comment": "I submitted a new patch with indicator instead of button.\n\n-syl20bnr-",
+    "EmailHash": "cd475a30e91fbdd9db17661287c73004"
+  }
+]

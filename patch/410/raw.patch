@@ -1,0 +1,29 @@
+From 659c044f019cc5855d52c1e2bf7b2dfe01817ab6 Mon Sep 17 00:00:00 2001
+From: Jonas Maaskola <jonas@…>
+Date: Fri, 7 Feb 2014 11:52:14 +0100
+Subject: [PATCH] Doc update: title right click resizes floating windows
+
+This documentation update describes the change implemented in
+905440d6d1c6d2a872e3bbb0da4c963bedaf5708
+It avoids repetitive usage of the word 'also'.
+---
+ docs/userguide | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/docs/userguide b/docs/userguide
+index 246233f..f87cdd8 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -166,7 +166,8 @@ hint and are opened in floating mode by default.
+ You can toggle floating mode for a window by pressing +$mod+Shift+Space+. By
+ dragging the window’s titlebar with your mouse you can move the window
+ around. By grabbing the borders and moving them you can resize the window. You
+-can also do that by using the <<floating_modifier>>.
++can also do that by using the <<floating_modifier>>. Another way to resize
++floating windows using the mouse is to right-click on the titlebar and drag.
+ 
+ For resizing floating windows with your keyboard, see <<resizingconfig>>.
+ 
+-- 
+1.8.3.2
+

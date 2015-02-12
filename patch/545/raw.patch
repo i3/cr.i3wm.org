@@ -1,0 +1,247 @@
+From 29d63018018c2301bb2d7a5e9cba17aa15039668 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 9 May 2014 22:41:03 -0400
+Subject: [PATCH] Feature: Workspace assignment by number
+
+Workspace assignments with bare numbers assign all workspaces with that
+number to the specified output.
+
+Workspace assignment by number is overridden by workspace assignment by
+name.
+---
+ include/data.h                                |  2 +-
+ include/util.h                                | 13 +++++
+ src/util.c                                    | 33 ++++++++++++
+ src/workspace.c                               | 34 ++++++------
+ testcases/t/518-interpret-workspace-numbers.t | 77 +++++++++++++++++++++++++++
+ 5 files changed, 142 insertions(+), 17 deletions(-)
+ create mode 100644 testcases/t/518-interpret-workspace-numbers.t
+
+diff --git a/include/data.h b/include/data.h
+index f6dc0d7..47bf4ac 100644
+--- a/include/data.h
++++ b/include/data.h
+@@ -158,7 +158,7 @@ struct deco_render_params {
+ };
+ 
+ /**
+- * Stores which workspace (by name) goes to which output.
++ * Stores which workspace (by name or number) goes to which output.
+  *
+  */
+ struct Workspace_Assignment {
+diff --git a/include/util.h b/include/util.h
+index 53ea68e..ab5ead0 100644
+--- a/include/util.h
++++ b/include/util.h
+@@ -59,6 +59,19 @@ bool rect_contains(Rect rect, uint32_t x, uint32_t y);
+ Rect rect_add(Rect a, Rect b);
+ 
+ /**
++ * Returns true if the name consists of only digits.
++ *
++ */
++bool name_is_digits(char *name);
++
++/**
++ * Parses the workspace name as a number. Returns -1 if the workspace should be
++ * interpreted as a "named workspace".
++ *
++ */
++long ws_name_to_number(const char *name);
++
++/**
+  * Updates *destination with new_value and returns true if it was changed or false
+  * if it was the same
+  *
+diff --git a/src/util.c b/src/util.c
+index c3336e1..20ff9d8 100644
+--- a/src/util.c
++++ b/src/util.c
+@@ -21,6 +21,7 @@
+ #include <pwd.h>
+ #include <yajl/yajl_version.h>
+ #include <libgen.h>
++#include <ctype.h>
+ 
+ #define SN_API_NOT_YET_FROZEN 1
+ #include <libsn/sn-launcher.h>
+@@ -48,6 +49,38 @@ Rect rect_add(Rect a, Rect b) {
+ }
+ 
+ /*
++ * Returns true if the name consists of only digits.
++ *
++ */
++bool name_is_digits(char *name) {
++    /* positive integers and zero are interpreted as numbers */
++    for (int i = 0; i < strlen(name); i++)
++        if (!isdigit(name[i]))
++            return false;
++
++    return true;
++}
++
++/*
++ * Parses the workspace name as a number. Returns -1 if the workspace should be
++ * interpreted as a "named workspace".
++ *
++ */
++long ws_name_to_number(const char *name) {
++    /* positive integers and zero are interpreted as numbers */
++    char *endptr = NULL;
++    long parsed_num = strtol(name, &endptr, 10);
++    if (parsed_num == LONG_MIN ||
++            parsed_num == LONG_MAX ||
++            parsed_num < 0 ||
++            endptr == name) {
++        parsed_num = -1;
++    }
++
++    return parsed_num;
++}
++
++/*
+  * Updates *destination with new_value and returns true if it was changed or false
+  * if it was the same
+  *
+diff --git a/src/workspace.c b/src/workspace.c
+index 99c2166..256b080 100644
+--- a/src/workspace.c
++++ b/src/workspace.c
+@@ -53,14 +53,25 @@ Con *workspace_get(const char *num, bool *created) {
+         output = con_get_output(focused);
+         /* look for assignments */
+         struct Workspace_Assignment *assignment;
+-        TAILQ_FOREACH(assignment, &ws_assignments, ws_assignments) {
+-            if (strcmp(assignment->name, num) != 0)
+-                continue;
+ 
+-            LOG("Found workspace assignment to output \"%s\"\n", assignment->output);
+-            GREP_FIRST(output, croot, !strcmp(child->name, assignment->output));
+-            break;
++        /* We set workspace->num to the number if this workspace’s name begins
++         * with a positive number. Otherwise it’s a named ws and num will be
++         * -1. */
++        long parsed_num = ws_name_to_number(num);
++
++        TAILQ_FOREACH(assignment, &ws_assignments, ws_assignments) {
++            if (strcmp(assignment->name, num) == 0) {
++                DLOG("Found workspace name assignment to output \"%s\"\n", assignment->output);
++                GREP_FIRST(output, croot, !strcmp(child->name, assignment->output));
++                break;
++            } else if (parsed_num != -1
++                    && name_is_digits(assignment->name)
++                    && ws_name_to_number(assignment->name) == parsed_num) {
++                DLOG("Found workspace number assignment to output \"%s\"\n", assignment->output);
++                GREP_FIRST(output, croot, !strcmp(child->name, assignment->output));
++            }
+         }
++
+         Con *content = output_get_content(output);
+         LOG("got output %p with content %p\n", output, content);
+         /* We need to attach this container after setting its type. con_attach
+@@ -74,16 +85,7 @@ Con *workspace_get(const char *num, bool *created) {
+         FREE(workspace->name);
+         workspace->name = sstrdup(num);
+         workspace->workspace_layout = config.default_layout;
+-        /* We set ->num to the number if this workspace’s name begins with a
+-         * positive number. Otherwise it’s a named ws and num will be -1. */
+-        char *endptr = NULL;
+-        long parsed_num = strtol(num, &endptr, 10);
+-        if (parsed_num == LONG_MIN ||
+-            parsed_num == LONG_MAX ||
+-            parsed_num < 0 ||
+-            endptr == num)
+-            workspace->num = -1;
+-        else workspace->num = parsed_num;
++        workspace->num = parsed_num;
+         LOG("num = %d\n", workspace->num);
+ 
+         workspace->parent = content;
+diff --git a/testcases/t/518-interpret-workspace-numbers.t b/testcases/t/518-interpret-workspace-numbers.t
+new file mode 100644
+index 0000000..577881f
+--- /dev/null
++++ b/testcases/t/518-interpret-workspace-numbers.t
+@@ -0,0 +1,77 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Tests that workspace assignment config directives for plain numbers will
++# assign any workspace of that number to the specified output.
++# Ticket: #1238
++# Bug still in: 4.7.2-147-g3760a48
++use i3test i3_autostart => 0;
++
++my $config = <<EOT;
++# i3 config file (v4)
++font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
++
++workspace 1:override output fake-0
++workspace 2 output fake-0
++workspace 1 output fake-1
++workspace 2:override output fake-1
++
++fake-outputs 1024x768+0+0,1024x768+1024+0
++EOT
++
++my $pid = launch_with_config($config);
++my $i3 = i3(get_socket_path());
++$i3->connect->recv;
++
++# Returns the name of the output on which this workspace resides
++sub get_output_for_workspace {
++    my $ws_name = shift @_;
++
++    foreach (grep { not $_->{name} =~ /^__/ } @{$i3->get_tree->recv->{nodes}}) {
++        my $output = $_->{name};
++        foreach (grep { $_->{name} =~ "content" } @{$_->{nodes}}) {
++            return $output if $_->{nodes}[0]->{name} =~ $ws_name;
++        }
++    }
++}
++
++################################################################################
++# Workspace assignments with bare numbers should be interpreted as `workspace
++# number` config directives. Any workspace beginning with that number should be
++# assigned to the specified output.
++################################################################################
++
++cmd 'focus output fake-1';
++cmd 'workspace "2:foo"';
++is(get_output_for_workspace('2:foo'), 'fake-0',
++    'Workspaces should be assigned by number when the assignment is a plain number')
++    or diag 'Since workspace number 2 is assigned to fake-0, 2:foo should open on fake-0';
++
++cmd 'focus output fake-0';
++cmd 'workspace "2:override"';
++is(get_output_for_workspace('2:override'), 'fake-1',
++    'Workspace assignments by name should override numbered assignments')
++    or diag 'Since workspace "2:override" is assigned by name to fake-1, it should open on fake-1';
++
++cmd 'focus output fake-1';
++cmd 'workspace "1:override"';
++is(get_output_for_workspace('1:override'), 'fake-0',
++    'Assignment rules should not be affected by the order assignments are declared')
++    or diag 'Since workspace "1:override" is assigned by name to fake-0, it should open on fake-0';
++
++exit_gracefully($pid);
++
++done_testing;
+-- 
+1.9.2
+

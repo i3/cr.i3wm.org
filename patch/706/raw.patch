@@ -1,0 +1,229 @@
+From 14c3e93ff251e6e9e0f17e868b5d46956983c638 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Thu, 29 Jan 2015 20:52:52 -0500
+Subject: [PATCH] Add mouse binding pointer position configuration
+
+Add the `--whole-window` switch for mouse bindings. This switch controls
+what part of the container the pointer must be over to trigger a mouse
+binding. The default is to only trigger mouse bindings over the
+titlebars. With this switch, a mouse binding will be triggered over the
+main part of the window as well.
+
+This is a breaking change to the previous behavior, which would trigger
+a mouse binding with a modifier over any part of the window.
+
+fixes #1429
+---
+ docs/userguide                  | 10 +++++-----
+ include/bindings.h              |  2 +-
+ include/config_directives.h     |  4 ++--
+ include/data.h                  |  5 +++++
+ parser-specs/config.spec        | 10 ++++++++--
+ src/bindings.c                  |  3 ++-
+ src/click.c                     |  6 +++---
+ src/config_directives.c         |  8 ++++----
+ testcases/t/201-config-parser.t |  8 ++++----
+ 9 files changed, 34 insertions(+), 22 deletions(-)
+
+diff --git a/docs/userguide b/docs/userguide
+index 5f00fd6..d6afa33 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -404,12 +404,12 @@ can configure mouse bindings in a similar way to key bindings.
+ 
+ *Syntax*:
+ ----------------------------------
+-bindsym [Modifiers+]button[n] command
++bindsym [--whole-window] [Modifiers+]button[n] command
+ ----------------------------------
+ 
+-If the binding has no modifiers, it will only run when you click on the
+-titlebar of the window. Otherwise, it will run when any part of the window is
+-clicked.
++By default, the binding will only run when you click on the titlebar of the
++window. If the +--whole-window+ flag is given, it will run when any part of the
++window is clicked.
+ 
+ *Examples*:
+ --------------------------------
+@@ -417,7 +417,7 @@ clicked.
+ bindsym button2 kill
+ 
+ # The middle button and a modifer over any part of the window kills the window
+-bindsym $mod+button2 kill
++bindsym --whole-window $mod+button2 kill
+ 
+ # The right button toggles floating
+ bindsym button3 floating toggle
+diff --git a/include/bindings.h b/include/bindings.h
+index 02c3f19..19345f8 100644
+--- a/include/bindings.h
++++ b/include/bindings.h
+@@ -24,7 +24,7 @@ const char *DEFAULT_BINDING_MODE;
+  *
+  */
+ Binding *configure_binding(const char *bindtype, const char *modifiers, const char *input_code,
+-                           const char *release, const char *command, const char *mode);
++                           const char *release, const char *whole_window, const char *command, const char *mode);
+ 
+ /**
+  * Grab the bound keys (tell X to send us keypress events for those keycodes)
+diff --git a/include/config_directives.h b/include/config_directives.h
+index af7b9a9..0f1a662 100644
+--- a/include/config_directives.h
++++ b/include/config_directives.h
+@@ -61,10 +61,10 @@ CFGFUN(color_single, const char *colorclass, const char *color);
+ CFGFUN(floating_modifier, const char *modifiers);
+ CFGFUN(new_window, const char *windowtype, const char *border, const long width);
+ CFGFUN(workspace, const char *workspace, const char *output);
+-CFGFUN(binding, const char *bindtype, const char *modifiers, const char *key, const char *release, const char *command);
++CFGFUN(binding, const char *bindtype, const char *modifiers, const char *key, const char *release, const char *whole_window, const char *command);
+ 
+ CFGFUN(enter_mode, const char *mode);
+-CFGFUN(mode_binding, const char *bindtype, const char *modifiers, const char *key, const char *release, const char *command);
++CFGFUN(mode_binding, const char *bindtype, const char *modifiers, const char *key, const char *release, const char *whole_window, const char *command);
+ 
+ CFGFUN(bar_font, const char *font);
+ CFGFUN(bar_mode, const char *mode);
+diff --git a/include/data.h b/include/data.h
+index 1a67685..8f2c197 100644
+--- a/include/data.h
++++ b/include/data.h
+@@ -255,6 +255,11 @@ struct Binding {
+         B_UPON_KEYRELEASE_IGNORE_MODS = 2,
+     } release;
+ 
++    /** If this is true for a mouse binding, the binding should be executed
++     * when the button is pressed over any part of the window, not just the
++     * title bar (default). */
++    bool whole_window;
++
+     uint32_t number_keycodes;
+ 
+     /** Keycode to bind */
+diff --git a/parser-specs/config.spec b/parser-specs/config.spec
+index 4025665..95c206f 100644
+--- a/parser-specs/config.spec
++++ b/parser-specs/config.spec
+@@ -278,6 +278,8 @@ state FONT:
+ state BINDING:
+   release = '--release'
+       ->
++  whole_window = '--whole-window'
++      ->
+   modifiers = 'Mod1', 'Mod2', 'Mod3', 'Mod4', 'Mod5', 'Shift', 'Control', 'Ctrl', 'Mode_switch', '$mod'
+       ->
+   '+'
+@@ -288,8 +290,10 @@ state BINDING:
+ state BINDCOMMAND:
+   release = '--release'
+       ->
++  whole_window = '--whole-window'
++      ->
+   command = string
+-      -> call cfg_binding($bindtype, $modifiers, $key, $release, $command)
++      -> call cfg_binding($bindtype, $modifiers, $key, $release, $whole_window, $command)
+ 
+ ################################################################################
+ # Mode configuration
+@@ -333,8 +337,10 @@ state MODE_BINDING:
+ state MODE_BINDCOMMAND:
+   release = '--release'
+       ->
++  whole_window = '--whole-window'
++      ->
+   command = string
+-      -> call cfg_mode_binding($bindtype, $modifiers, $key, $release, $command); MODE
++      -> call cfg_mode_binding($bindtype, $modifiers, $key, $release, $whole_window, $command); MODE
+ 
+ ################################################################################
+ # Bar configuration (i3bar)
+diff --git a/src/bindings.c b/src/bindings.c
+index 70d274a..8f9767e 100644
+--- a/src/bindings.c
++++ b/src/bindings.c
+@@ -49,10 +49,11 @@ static struct Mode *mode_from_name(const char *name) {
+  *
+  */
+ Binding *configure_binding(const char *bindtype, const char *modifiers, const char *input_code,
+-                           const char *release, const char *command, const char *modename) {
++                           const char *release, const char *whole_window, const char *command, const char *modename) {
+     Binding *new_binding = scalloc(sizeof(Binding));
+     DLOG("bindtype %s, modifiers %s, input code %s, release %s\n", bindtype, modifiers, input_code, release);
+     new_binding->release = (release != NULL ? B_UPON_KEYRELEASE : B_UPON_KEYPRESS);
++    new_binding->whole_window = (whole_window != NULL);
+     if (strcmp(bindtype, "bindsym") == 0) {
+         new_binding->input_type = (strncasecmp(input_code, "button", (sizeof("button") - 1)) == 0
+                                        ? B_MOUSE
+diff --git a/src/click.c b/src/click.c
+index 5c36aeb..86a63ea 100644
+--- a/src/click.c
++++ b/src/click.c
+@@ -182,9 +182,9 @@ static int route_click(Con *con, xcb_button_press_event_t *event, const bool mod
+     if (dest == CLICK_DECORATION || dest == CLICK_INSIDE) {
+         Binding *bind = get_binding_from_xcb_event((xcb_generic_event_t *)event);
+         /* clicks over a window decoration will always trigger the binding and
+-         * clicks on the inside of the window will only trigger a binding if it
+-         * has modifiers. */
+-        if (bind && (dest == CLICK_DECORATION || (bind->mods && dest == CLICK_INSIDE))) {
++         * clicks on the inside of the window will only trigger a binding if
++         * the --whole-window flag was given for the binding. */
++        if (bind && (dest == CLICK_DECORATION || bind->whole_window)) {
+             CommandResult *result = run_binding(bind, con);
+ 
+             /* ASYNC_POINTER eats the event */
+diff --git a/src/config_directives.c b/src/config_directives.c
+index 690e08b..e8fdfe7 100644
+--- a/src/config_directives.c
++++ b/src/config_directives.c
+@@ -171,8 +171,8 @@ CFGFUN(font, const char *font) {
+     font_pattern = sstrdup(font);
+ }
+ 
+-CFGFUN(binding, const char *bindtype, const char *modifiers, const char *key, const char *release, const char *command) {
+-    configure_binding(bindtype, modifiers, key, release, command, DEFAULT_BINDING_MODE);
++CFGFUN(binding, const char *bindtype, const char *modifiers, const char *key, const char *release, const char *whole_window, const char *command) {
++    configure_binding(bindtype, modifiers, key, release, whole_window, command, DEFAULT_BINDING_MODE);
+ }
+ 
+ /*******************************************************************************
+@@ -181,8 +181,8 @@ CFGFUN(binding, const char *bindtype, const char *modifiers, const char *key, co
+ 
+ static char *current_mode;
+ 
+-CFGFUN(mode_binding, const char *bindtype, const char *modifiers, const char *key, const char *release, const char *command) {
+-    configure_binding(bindtype, modifiers, key, release, command, current_mode);
++CFGFUN(mode_binding, const char *bindtype, const char *modifiers, const char *key, const char *release, const char *whole_window, const char *command) {
++    configure_binding(bindtype, modifiers, key, release, whole_window, command, current_mode);
+ }
+ 
+ CFGFUN(enter_mode, const char *modename) {
+diff --git a/testcases/t/201-config-parser.t b/testcases/t/201-config-parser.t
+index 1153423..86ef731 100644
+--- a/testcases/t/201-config-parser.t
++++ b/testcases/t/201-config-parser.t
+@@ -50,9 +50,9 @@ EOT
+ 
+ my $expected = <<'EOT';
+ cfg_enter_mode(meh)
+-cfg_mode_binding(bindsym, Mod1,Shift, x, (null), resize grow)
+-cfg_mode_binding(bindcode, Mod1, 44, (null), resize shrink)
+-cfg_mode_binding(bindsym, Mod1, x, --release, exec foo)
++cfg_mode_binding(bindsym, Mod1,Shift, x, (null), (null), resize grow)
++cfg_mode_binding(bindcode, Mod1, 44, (null), (null), resize shrink)
++cfg_mode_binding(bindsym, Mod1, x, --release, (null), exec foo)
+ EOT
+ 
+ is(parser_calls($config),
+@@ -618,7 +618,7 @@ EOT
+ 
+ $expected = <<'EOT';
+ cfg_enter_mode(yo)
+-cfg_mode_binding(bindsym, (null), x, (null), resize shrink left)
++cfg_mode_binding(bindsym, (null), x, (null), (null), resize shrink left)
+ ERROR: CONFIG: Expected one of these tokens: <end>, '#', 'set', 'bindsym', 'bindcode', 'bind', '}'
+ ERROR: CONFIG: (in file <stdin>)
+ ERROR: CONFIG: Line   1: mode "yo" {
+-- 
+2.2.2
+

@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 68,
+    "Comment": "remove the TODO",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 44,
+    "Comment": "The test actually works now with xephyr.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 193,
+    "Comment": "I don’t think that line applies here :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 199,
+    "Comment": "Using join(\"+\", @mods) . \"+$keysym\" will make the code easier to modify in the future.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 249,
+    "Comment": "Same here, making it work with any amount of values in @mods would be good.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 41,
+    "Comment": "documentation update is still missing from this patch.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

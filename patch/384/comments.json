@@ -1,0 +1,74 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 68,
+    "Comment": "I don’t think adding an event which is this specific is a good idea.\n\nEssentially, upon focus changes, you send out the window title. Why not just send out the entire container? The window title is included automatically and the client can filter it out, possibly facilitated by a good client library API.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 66,
+    "Comment": "coding style: opening brace should go to the previous line",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 66,
+    "Comment": "You have a keen eye! It's hard for me to apply a coding style manually ;)\n\nHow does this work? I fix it, commit the change and send a new patch?",
+    "EmailHash": "22f8904ca7bfa6dea52dc3cd733b4645"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 68,
+    "Comment": "\u003e I don’t think adding an event which is this specific is a good idea.\n\nI wasn't sure whether a distinct window_title event is the best approach either. But if I merely extend the window event protocol, this would increase the amount of messages sent between i3 and client, which I was trying to avoid.\n\n\u003e Essentially, upon focus changes, you send out the window title.\n\nOnly reacting upon focus changes would not be enough for my use case. Studying the patch from Kevin, I realized that this approach would not be clean (semantically), as a focus event would be send, when only the window title changed. Seems wrong to me.\n\n\u003e Why not just send out the entire container? The window title is included\n\u003e automatically and the client can filter it out, possibly facilitated by a\n\u003e good client library API.\n\nActually, the whole container is send in \"current\" (should probably be renamed to \"container\"). \"title\" was just meant for convenience (doesn't seem to be much overhead), but indeed feels a bit out of place.\n\nThe protocol currently looks like this:\n\n{\n    \"change\": \"window_title\",\n    \"title\", \"*ipc (~/Dev/i3/docs) - gedit\"\n    \"current\": {\n        \"id\": 7592720,\n        \"type\": \"con\",\n        ...\n    }\n}\n\nRemoving the title is certainly fine. Do you propose any other changes? Thanks.",
+    "EmailHash": "22f8904ca7bfa6dea52dc3cd733b4645"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 68,
+    "Comment": "As an alternative, we could extend the window event protocol to add two new change properties.\n\nFor focus changes:\n\n{\n\"change\": \"focus\",\n\"container\": {\n\"id\": 7592720,\n\"type\": \"con\",\n...\n}\n}\n\n(You might want to include the previously focused container here as well, similar to the workspace event)\n\nFor title changes:\n\n{\n\"change\": \"title\",\n\"container\": {\n\"id\": 7592720,\n\"type\": \"con\",\n...\n}\n}\n\nFor my use case, I'd have to subscribe to the \"window\" event, filter for \"focus\" and \"title\" and get the title from the container properties. Fine by me.",
+    "EmailHash": "22f8904ca7bfa6dea52dc3cd733b4645"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 68,
+    "Comment": "I think this needs a test.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 68,
+    "Comment": "A test like \"Please add a unit test\"? Or a test lie \"Please change the code and submit a new patch so that we could check the differences\"? Thanks.",
+    "EmailHash": "22f8904ca7bfa6dea52dc3cd733b4645"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 68,
+    "Comment": "Yes, a unit test.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 68,
+    "Comment": "Before I delve into that (I don't speak Perl and probably have to invest some time before I could provide a test), can we agree on the general strategy regarding the implementation?\n\nThe design decision should not depend on a unit test (I already use a patched version of i3 to great satisfaction), and I don't want to invest time with such infrastructure details before I can't be certain to receive your blessing.\n\nDoes the proposal to extend the \"window\" event protocol with two new change properties sound reasonable? Thanks.",
+    "EmailHash": "22f8904ca7bfa6dea52dc3cd733b4645"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 68,
+    "Comment": "I suggest you make a feature request on the bug tracker with a proposal to add the event. It would be much easier to discuss the details of the implementation there.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 68,
+    "Comment": "I will post a RFE along with some refactored code. You can close this request. Thanks.",
+    "EmailHash": "22f8904ca7bfa6dea52dc3cd733b4645"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 68,
+    "Comment": "Added ticket #1168: 'Add IPC window events for focus and title changes' and submitted a new patch 'Send IPC window events for focus and title changes'.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  }
+]

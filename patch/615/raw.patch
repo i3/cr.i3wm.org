@@ -1,0 +1,81 @@
+From b4b49e0c7b765cd28cf4223f4605efc362dff327 Mon Sep 17 00:00:00 2001
+From: Jesse Luehrs <doy@…>
+Date: Sun, 29 Jun 2014 14:14:41 -0400
+Subject: [PATCH] Make command `move absolute position [position]` work with
+ criteria
+
+A container selected with criteria should be moved with the `move
+absolute position [position]` command, instead of this command always
+acting on the focused container.
+---
+ src/commands.c | 47 +++++++++++++++++++++++++++++------------------
+ 1 file changed, 29 insertions(+), 18 deletions(-)
+
+diff --git a/src/commands.c b/src/commands.c
+index 7803c98..c464aff 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -1811,31 +1811,42 @@ void cmd_move_window_to_position(I3_CMD, char *method, char *cx, char *cy) {
+     int x = atoi(cx);
+     int y = atoi(cy);
+ 
+-    if (!con_is_floating(focused)) {
+-        ELOG("Cannot change position. The window/container is not floating\n");
+-        yerror("Cannot change position. The window/container is not floating.");
+-        return;
+-    }
++    owindow *current;
++    HANDLE_EMPTY_MATCH;
+ 
+-    if (strcmp(method, "absolute") == 0) {
+-        focused->parent->rect.x = x;
+-        focused->parent->rect.y = y;
++    Con *initially_focused = focused;
+ 
+-        DLOG("moving to absolute position %d %d\n", x, y);
+-        floating_maybe_reassign_ws(focused->parent);
+-        cmd_output->needs_tree_render = true;
+-    }
++    TAILQ_FOREACH (current, &owindows, owindows) {
++        if (con_is_floating(current->con)) {
++            if (strcmp(method, "absolute") == 0) {
++                current->con->parent->rect.x = x;
++                current->con->parent->rect.y = y;
+ 
+-    if (strcmp(method, "position") == 0) {
+-        Rect newrect = focused->parent->rect;
++                DLOG("moving to absolute position %d %d\n", x, y);
++                floating_maybe_reassign_ws(current->con->parent);
++                cmd_output->needs_tree_render = true;
++            }
+ 
+-        DLOG("moving to position %d %d\n", x, y);
+-        newrect.x = x;
+-        newrect.y = y;
++            if (strcmp(method, "position") == 0) {
++                Rect newrect = current->con->parent->rect;
+ 
+-        floating_reposition(focused->parent, newrect);
++                DLOG("moving to position %d %d\n", x, y);
++                newrect.x = x;
++                newrect.y = y;
++
++                floating_reposition(current->con->parent, newrect);
++            }
++        }
++        else {
++            ELOG("Cannot change position. The window/container is not floating\n");
++            yerror("Cannot change position. The window/container is not floating.");
++            return;
++        }
+     }
+ 
++    if (focused != initially_focused)
++        con_focus(initially_focused);
++
+     // XXX: default reply for now, make this a better reply
+     ysuccess(true);
+ }
+-- 
+2.0.1
+

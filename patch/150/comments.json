@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 21,
+    "Comment": "just fyi: this is a commit which touches gory internals. i need to think about this for some time before i can merge it. expect no quick action.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "oblique",
+    "Line": 21,
+    "Comment": "i know. i'm also try to think if there is a better solution. i will check it again later.",
+    "EmailHash": "c15e88cb370e3acf3be902f01101c7cc"
+  },
+  {
+    "Author": "oblique",
+    "Line": 21,
+    "Comment": "reject it, i found a better solution, without using event_is_ignored()",
+    "EmailHash": "c15e88cb370e3acf3be902f01101c7cc"
+  }
+]

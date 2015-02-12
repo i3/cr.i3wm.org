@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Emil Mikulic",
+    "Line": 42,
+    "Comment": "This is correctly indented, but it uses spaces, the surrounding lines use tabs.  Please advise.",
+    "EmailHash": "dce73ce6fdc8f512ad557eb19e65480c"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 42,
+    "Comment": "Spaces are the correct way to indent here. Don’t worry about it, I might re-indent the section in question.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

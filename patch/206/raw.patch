@@ -1,0 +1,46 @@
+From c848a0611dbe7c88a11cb0ef952d3fcacfbdfe35 Mon Sep 17 00:00:00 2001
+From: Vincent Bernat <bernat@…>
+Date: Mon, 26 Aug 2013 23:39:38 +0200
+Subject: [PATCH] Do not try to validate an empty password with XF86ScreenSaver
+
+When the XF86ScreenSaver key is used to put a laptop to sleep (or to
+trigger the screensaver), the key may "bounce" on resume. This is
+annoying as i3lock will try to validate several empty passwords and
+wait several seconds before accepting a legit password.
+
+Some users may want to validate an empty password: PAM may rely on
+other sources to unlock the screen, like the presence of a token or
+the proximity of some Bluetooth device. Hence, we don't forbid this
+possibility.
+
+The intersection of the users validating their password with
+XF86ScreenSaver and those using a device for password validation
+should be small enough to not exist until they come up with another
+patch.
+---
+ i3lock.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/i3lock.c b/i3lock.c
+index e5654d6..7e33053 100644
+--- a/i3lock.c
++++ b/i3lock.c
+@@ -264,9 +264,14 @@ static void handle_key_press(xcb_key_press_event_t *event) {
+     n = xkb_keysym_to_utf8(ksym, buffer, sizeof(buffer));
+ 
+     switch (ksym) {
++    case XKB_KEY_XF86ScreenSaver:
++        if (input_position == 0) {
++            clear_input();
++            return;
++        }
++        /* Otherwise, continue below... */
+     case XKB_KEY_Return:
+     case XKB_KEY_KP_Enter:
+-    case XKB_KEY_XF86ScreenSaver:
+         password[input_position] = '\0';
+         unlock_state = STATE_KEY_PRESSED;
+         redraw_screen();
+-- 
+1.8.4.rc3
+

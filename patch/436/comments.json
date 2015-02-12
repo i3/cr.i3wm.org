@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 156,
+    "Comment": "I guess it's no problem to enclose the whole separator with foreground commands?",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 156,
+    "Comment": "I don’t know, I don’t use dzen2. Didn’t you test this?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 156,
+    "Comment": "I've just looked up the documentation. ^p(5) moves the input 5 pixels to the right. I think this is not affected if we either place the closing fg() before or after it (similar to the other formats).\n\nI did verify that the output is to my expectations for all output formats.\n\nBut hold on with committing. The global separator is not necessary. Stupid me.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 156,
+    "Comment": "Just tested it with dzen2 master. Works just fine.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  }
+]

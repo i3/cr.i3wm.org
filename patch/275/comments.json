@@ -1,0 +1,56 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 79,
+    "Comment": "This is actually not correct, the \"payload\": key is missing here.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 62,
+    "Comment": "Please extend the dashes to cover the entire example to make it less ambigous for asciidoc to understand (we’ve had trouble with this in the past).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 67,
+    "Comment": "I wonder why it is required. Also, what is valid string? Are you trying to say “any string that can be encoded in JSON”?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 69,
+    "Comment": "Actually, any IPC client subscribed to custom events, right?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 70,
+    "Comment": "Strip the trailing “e.g.” here.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 14,
+    "Comment": "General comment: please merge this patch with your previous one. It’s nice when code and documentation changes come in one commit, so that when tracking down a feature in the git log you have the corresponding documentation.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Paul Grove",
+    "Line": 67,
+    "Comment": "I men't valid by the i3 parser. can make optional, but i might need some help with the command parser language.",
+    "EmailHash": "caece4652a0137be7f3c4732b352e6ab"
+  },
+  {
+    "Author": "Paul Grove",
+    "Line": 69,
+    "Comment": "No they have to subscribe to the particular name in my implementation.  There may have been a mis-communication when we talked about this before.  The implementation allows for IPC clients to subscribe to arbitrary event names, the client will only receive events matching those names.",
+    "EmailHash": "caece4652a0137be7f3c4732b352e6ab"
+  },
+  {
+    "Author": "Paul Grove",
+    "Line": 79,
+    "Comment": "Yes correct, missed that",
+    "EmailHash": "caece4652a0137be7f3c4732b352e6ab"
+  }
+]

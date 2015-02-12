@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 44,
+    "Comment": "I have been doing some testing, and now I see that your concerns about performance issues is valid.\n\nThese properties (and others) will need some work to be considered a proper implementation from the perspective of a client.\n\nI still think adding this is a good idea though, because it really does add a lot of functionality that people have been asking for.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 154,
+    "Comment": "I’m not entirely sure about this, but it may be worth investigating whether it is faster to send a single REPLACE call rather than repeated APPEND calls. I realize that it makes the code more complex, but this will significantly reduce context switches and processing overhead in the X11 server, I think.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 113,
+    "Comment": "The comment is wrong, isn’t it? This only updates properties on the workspaces, not on managed windows, right?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

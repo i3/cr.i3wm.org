@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 22,
+    "Comment": "It's still kind of quirky with normal borders.\n\nThis might need a more extensive fix to get it right. In most places, the code still assumes there is only one default border width.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

@@ -1,0 +1,44 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 91,
+    "Comment": "I suggest s/client_order/initial_mapping_order/ in order to have the same terminology as the standard :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 127,
+    "Comment": "This line of code will only be executed when the number of windows changes, i.e. when your client_list_changed == true.\n\nTherefore, I think you can get rid of the global variable and make it a local one in the x_push_changes() function.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 147,
+    "Comment": "While it’s not super-clean, I think you should reuse btt_stack, which has enough space to hold the same list and is unused at the point your code runs. This has the advantage of not calling malloc() all the time in a quite hot code path.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 127,
+    "Comment": "I was concerned that there could be multiple updates to the client list in between calls to x_push_changes which could lead to the client list being invalidated without changing the count of clients.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 147,
+    "Comment": "Should I rename btt_stack? Perhaps client_buffer?",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 127,
+    "Comment": "Nope, that won’t happen.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 147,
+    "Comment": "client_list_windows sounds good to me. Maybe also define it in x_push_changes, since it’s not a global, “just” a static variable.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

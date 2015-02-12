@@ -1,0 +1,46 @@
+From 6e62dafa575c146113580a86f4198d1a3a54adf0 Mon Sep 17 00:00:00 2001
+From: Marco Hunsicker <i3@…>
+Date: Fri, 24 Jan 2014 23:49:46 +0100
+Subject: [PATCH] Program version shows wrong year
+
+This patch updates the copyright year information the i3 and
+i3bar binaries show to the user.
+---
+ i3bar/src/main.c |    2 +-
+ src/main.c       |    4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/i3bar/src/main.c b/i3bar/src/main.c
+index 9ae69e3..8c4cbf6 100644
+--- a/i3bar/src/main.c
++++ b/i3bar/src/main.c
+@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
+                 socket_path = expand_path(optarg);
+                 break;
+             case 'v':
+-                printf("i3bar version " I3_VERSION " © 2010-2011 Axel Wagner and contributors\n");
++                printf("i3bar version " I3_VERSION " © 2010-2014 Axel Wagner and contributors\n");
+                 exit(EXIT_SUCCESS);
+                 break;
+             case 'b':
+diff --git a/src/main.c b/src/main.c
+index 878ea5b..ec73955 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -340,11 +340,11 @@ int main(int argc, char *argv[]) {
+                 only_check_config = true;
+                 break;
+             case 'v':
+-                printf("i3 version " I3_VERSION " © 2009-2013 Michael Stapelberg and contributors\n");
++                printf("i3 version " I3_VERSION " © 2009-2014 Michael Stapelberg and contributors\n");
+                 exit(EXIT_SUCCESS);
+                 break;
+             case 'm':
+-                printf("Binary i3 version:  " I3_VERSION " © 2009-2013 Michael Stapelberg and contributors\n");
++                printf("Binary i3 version:  " I3_VERSION " © 2009-2014 Michael Stapelberg and contributors\n");
+                 display_running_version();
+                 exit(EXIT_SUCCESS);
+                 break;
+-- 
+1.7.10.4
+

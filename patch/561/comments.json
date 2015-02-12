@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 43,
+    "Comment": "I want to send a window::focus event with a null container here",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 43,
+    "Comment": "…then do it? :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 21,
+    "Comment": "The patch looks good, but I’d really appreciate a test case update.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

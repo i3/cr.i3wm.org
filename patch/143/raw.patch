@@ -1,0 +1,46 @@
+From aa006cdef09970b6b69df804978af76bf21edba6 Mon Sep 17 00:00:00 2001
+From: "Eric S. Raymond" <esr@…>
+Date: Wed, 17 Apr 2013 23:02:18 -0400
+Subject: [PATCH] The use of toggle in the split-mode documentation was
+ confusing.
+
+---
+ docs/userguide | 15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
+
+diff --git a/docs/userguide b/docs/userguide
+index a0f521c..bad7cfe 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -68,11 +68,11 @@ To split it horizontally, press +$mod+h+.
+ 
+ A split container can have one of the following layouts:
+ 
+-splith/splitv::
+-Windows are sized so that every window gets an equal amount of space in the
+-container. splith distributes the windows horizontally (windows are right next
+-to each other), splitv distributes them vertically (windows are on top of each
+-other).
++splitting::
++Windows are sized so that every window gets an equal amount of space
++in the container.  By default the split line will be parallel to the
++container's longest side, but commands are available to require
++vertical or horizontal splitting when it is done.
+ stacking::
+ Only the focused window in the container is displayed. You get a list of
+ windows at the top of the container.
+@@ -80,8 +80,9 @@ tabbed::
+ The same principle as +stacking+, but the list of windows at the top is only
+ a single line which is vertically split.
+ 
+-To switch modes, press +$mod+e+ for splith/splitv (it toggles), +$mod+s+ for
+-stacking and +$mod+w+ for tabbed.
++To switch modes, press +$mod+e+ for splitting, +$mod+s+ for
++stacking and +$mod+w+ for tabbed. The commands +$mod+h+ and +$mod+v+
++require horizontal and vertical splitting when that mode is active.
+ 
+ image:modes.png[Container modes]
+ 
+-- 
+1.8.0.1.g2b06c9a
+

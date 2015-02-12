@@ -1,0 +1,25 @@
+From e8fa3eeebda44de0fe6400b9d53961f4bcc149a8 Mon Sep 17 00:00:00 2001
+From: Michael Stapelberg <mstplbrg@…>
+Date: Wed, 23 Jan 2013 08:11:27 +0100
+Subject: [PATCH] i3-msg: include socket path in error message
+
+---
+ i3-msg/main.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/i3-msg/main.c b/i3-msg/main.c
+index 607c526..131146d 100644
+--- a/i3-msg/main.c
++++ b/i3-msg/main.c
+@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
+     addr.sun_family = AF_LOCAL;
+     strncpy(addr.sun_path, socket_path, sizeof(addr.sun_path) - 1);
+     if (connect(sockfd, (const struct sockaddr*)&addr, sizeof(struct sockaddr_un)) < 0)
+-        err(EXIT_FAILURE, "Could not connect to i3");
++        err(EXIT_FAILURE, "Could not connect to i3 on socket \"%s\"", socket_path);
+ 
+     if (ipc_send_message(sockfd, strlen(payload), message_type, (uint8_t*)payload) == -1)
+         err(EXIT_FAILURE, "IPC: write()");
+-- 
+1.7.10.4
+

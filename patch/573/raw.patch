@@ -1,0 +1,38 @@
+From 60cdbcc7f75a2a96979a7aaa3c1e2fc876e2aba0 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Thu, 12 Jun 2014 01:33:33 -0400
+Subject: [PATCH] Bugfix: Set input focus with last timestamp
+
+Setting input focus with the last event timestamp prevents race
+conditions when setting focus.
+
+fixes #1127
+---
+ src/x.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/x.c b/src/x.c
+index 086dbc9..e48161d 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -1026,7 +1026,7 @@ void x_push_changes(Con *con) {
+                     values[0] = CHILD_EVENT_MASK & ~(XCB_EVENT_MASK_FOCUS_CHANGE);
+                     xcb_change_window_attributes(conn, focused->window->id, XCB_CW_EVENT_MASK, values);
+                 }
+-                xcb_set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT, to_focus, XCB_CURRENT_TIME);
++                xcb_set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT, to_focus, last_timestamp);
+                 if (focused->window != NULL) {
+                     values[0] = CHILD_EVENT_MASK;
+                     xcb_change_window_attributes(conn, focused->window->id, XCB_CW_EVENT_MASK, values);
+@@ -1044,7 +1044,7 @@ void x_push_changes(Con *con) {
+ 
+     if (focused_id == XCB_NONE) {
+         DLOG("Still no window focused, better set focus to the root window\n");
+-        xcb_set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT, root, XCB_CURRENT_TIME);
++        xcb_set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT, root, last_timestamp);
+         ewmh_update_active_window(XCB_WINDOW_NONE);
+         focused_id = root;
+     }
+-- 
+2.0.0
+

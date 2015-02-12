@@ -1,0 +1,102 @@
+From 4f5c8c1a14426e05f44548c09e4146099e93fbf3 Mon Sep 17 00:00:00 2001
+From: Mats <d912e3@…>
+Date: Sat, 29 Nov 2014 18:22:56 +0100
+Subject: [PATCH] Prevent workspace change during global fullscreen
+
+While in global fullscreen, the workspace could be changed leaving the
+fullscreen container still visible on top but losing its focus.
+---
+ src/commands.c               | 24 ++++++++++++++++++++++++
+ testcases/t/100-fullscreen.t | 20 ++++++++++++++++++++
+ 2 files changed, 44 insertions(+)
+
+diff --git a/src/commands.c b/src/commands.c
+index 95dcb7b..48df5e3 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -958,6 +958,12 @@ void cmd_workspace(I3_CMD, char *which) {
+ 
+     DLOG("which=%s\n", which);
+ 
++    if (con_get_fullscreen_con(croot, CF_GLOBAL)) {
++        LOG("Cannot switch workspace while in global fullscreen\n");
++        ysuccess(false);
++        return;
++    }
++
+     if (strcmp(which, "next") == 0)
+         ws = workspace_next();
+     else if (strcmp(which, "prev") == 0)
+@@ -986,6 +992,12 @@ void cmd_workspace(I3_CMD, char *which) {
+ void cmd_workspace_number(I3_CMD, char *which) {
+     Con *output, *workspace = NULL;
+ 
++    if (con_get_fullscreen_con(croot, CF_GLOBAL)) {
++        LOG("Cannot switch workspace while in global fullscreen\n");
++        ysuccess(false);
++        return;
++    }
++
+     long parsed_num = ws_name_to_number(which);
+ 
+     if (parsed_num == -1) {
+@@ -1020,6 +1032,12 @@ void cmd_workspace_number(I3_CMD, char *which) {
+  *
+  */
+ void cmd_workspace_back_and_forth(I3_CMD) {
++    if (con_get_fullscreen_con(croot, CF_GLOBAL)) {
++        LOG("Cannot switch workspace while in global fullscreen\n");
++        ysuccess(false);
++        return;
++    }
++
+     workspace_back_and_forth();
+ 
+     cmd_output->needs_tree_render = true;
+@@ -1038,6 +1056,12 @@ void cmd_workspace_name(I3_CMD, char *name) {
+         return;
+     }
+ 
++    if (con_get_fullscreen_con(croot, CF_GLOBAL)) {
++        LOG("Cannot switch workspace while in global fullscreen\n");
++        ysuccess(false);
++        return;
++    }
++
+     DLOG("should switch to workspace %s\n", name);
+     if (maybe_back_and_forth(cmd_output, name))
+         return;
+diff --git a/testcases/t/100-fullscreen.t b/testcases/t/100-fullscreen.t
+index 206116e..bb9403b 100644
+--- a/testcases/t/100-fullscreen.t
++++ b/testcases/t/100-fullscreen.t
+@@ -192,6 +192,26 @@ cmd 'focus left';
+ is($x->input_focus, $window->id, 'fullscreen window still focused');
+ 
+ ################################################################################
++# Verify that changing workspace while in global fullscreen does not work.
++################################################################################
++
++$tmp = fresh_workspace;
++$window = open_window;
++
++cmd 'fullscreen global';
++is($x->input_focus, $window->id, 'window focused');
++is(focused_ws(), $tmp, 'workspace selected');
++
++$other = get_unused_workspace;
++cmd "workspace $other";
++is($x->input_focus, $window->id, 'window still focused');
++is(focused_ws(), $tmp, 'workspace still selected');
++
++# leave global fullscreen so that is does not interfere with the other tests
++$window->fullscreen(0);
++sync_with_i3;
++
++################################################################################
+ # Verify that fullscreening a window on a second workspace and moving it onto
+ # the first workspace unfullscreens the first window.
+ ################################################################################
+-- 
+2.1.3
+

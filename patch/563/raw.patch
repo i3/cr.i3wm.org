@@ -1,0 +1,118 @@
+From 58059886f2d97ff4f524450c14fda4038ced2f7c Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sat, 31 May 2014 12:06:39 -0400
+Subject: [PATCH] Set EWMH active window to None when none has focus
+
+_NET_ACTIVE_WINDOW:
+
+> The window ID of the currently active window or None if no window has
+> the focus.
+
+This fixes a bug that would not update _NET_ACTIVE_WINDOW when focus
+changed to an i3 container without a window such as a branch or
+workspace content container.
+---
+ src/x.c                             |  5 ++++-
+ testcases/t/195-net-active-window.t | 44 ++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 47 insertions(+), 2 deletions(-)
+
+diff --git a/src/x.c b/src/x.c
+index 104ea55..086dbc9 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -1013,6 +1013,8 @@ void x_push_changes(Con *con) {
+                      to_focus, focused, focused->name);
+                 send_take_focus(to_focus, last_timestamp);
+ 
++                ewmh_update_active_window((con_has_managed_window(focused) ? focused->window->id : XCB_WINDOW_NONE));
++
+                 if (to_focus != last_focused && is_con_attached(focused))
+                    ipc_send_window_event("focus", focused);
+             } else {
+@@ -1030,7 +1032,7 @@ void x_push_changes(Con *con) {
+                     xcb_change_window_attributes(conn, focused->window->id, XCB_CW_EVENT_MASK, values);
+                 }
+ 
+-                ewmh_update_active_window(to_focus);
++                ewmh_update_active_window((con_has_managed_window(focused) ? focused->window->id : XCB_WINDOW_NONE));
+ 
+                 if (to_focus != XCB_NONE && to_focus != last_focused && focused->window != NULL && is_con_attached(focused))
+                    ipc_send_window_event("focus", focused);
+@@ -1043,6 +1045,7 @@ void x_push_changes(Con *con) {
+     if (focused_id == XCB_NONE) {
+         DLOG("Still no window focused, better set focus to the root window\n");
+         xcb_set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT, root, XCB_CURRENT_TIME);
++        ewmh_update_active_window(XCB_WINDOW_NONE);
+         focused_id = root;
+     }
+ 
+diff --git a/testcases/t/195-net-active-window.t b/testcases/t/195-net-active-window.t
+index 2101811..cf8c065 100644
+--- a/testcases/t/195-net-active-window.t
++++ b/testcases/t/195-net-active-window.t
+@@ -15,7 +15,8 @@
+ #   (unless you are already familiar with Perl)
+ #
+ # Verifies that the _NET_ACTIVE_WINDOW message only changes focus when the
+-# window is on a visible workspace.
++# window is on a visible workspace and that focus changes properly update this
++# property on the root window.
+ # ticket #774, bug still present in commit 1e49f1b08a3035c1f238fcd6615e332216ab582e
+ # ticket #1136, bug still present in commit fd07f989fdf441ef335245dd3436a70ff60e8896
+ use i3test;
+@@ -40,6 +41,23 @@ sub send_net_active_window {
+     $x->send_event(0, $x->get_root_window(), X11::XCB::EVENT_MASK_SUBSTRUCTURE_REDIRECT, $msg);
+ }
+ 
++sub get_net_active_window {
++    my $cookie = $x->get_property(
++        0,
++        $x->get_root_window(),
++        $x->atom(name => '_NET_ACTIVE_WINDOW')->id,
++        $x->atom(name => 'WINDOW')->id,
++        0,
++        4096,
++    );
++    my $reply = $x->get_property_reply($cookie->{sequence});
++    my $len = $reply->{length};
++
++    return -1 if $len == 0;
++    return unpack("L", $reply->{value});
++
++}
++
+ my $ws1 = fresh_workspace;
+ my $win1 = open_window;
+ my $win2 = open_window;
+@@ -113,4 +131,28 @@ send_net_active_window($scratch->id);
+ 
+ is($x->input_focus, $win3->id, 'window 3 still focused');
+ 
++################################################################################
++# Verify that the _NET_ACTIVE_WINDOW property is updated on the root window
++# correctly.
++################################################################################
++
++fresh_workspace;
++
++is(get_net_active_window(), 0, 'workspace content focus is indicated by the root property as "None" window');
++
++my $win4 = open_window;
++
++cmd '[id="' . $win4->id . '"] focus';
++
++is(get_net_active_window(), $win4->id, 'window 4 is indicated as focused by the root property');
++
++# make a branch
++open_window;
++open_window;
++cmd 'split h';
++open_window;
++cmd 'focus parent';
++
++is(get_net_active_window(), 0, 'branch focus is indicated by the root property as "None" window');
++
+ done_testing;
+-- 
+1.9.3
+

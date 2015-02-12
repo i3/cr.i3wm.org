@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 87,
+    "Comment": "We could use the \"separator\" variable directly here as the macro seems to be only used within i3status.c#main, but as the macro is defined in the header I'd thought to better play it safe.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 90,
+    "Comment": "Oh my! We need to use a boolean here.\n\nyajl_gen_bool(json_gen, false); \\\n",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  }
+]

@@ -1,0 +1,44 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 102,
+    "Comment": "You are missing yajl_free_error(parser, message); :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 130,
+    "Comment": "s/Status command/status_command/ for consistency with the config file",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 132,
+    "Comment": "s/Status command/status_command/ for consistency with the config file",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 134,
+    "Comment": "s/Statusline process/status_command/ for consistency with the config file",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 64,
+    "Comment": "Why are you using a fixed size buffer instead of vasprintf?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 58,
+    "Comment": "Use __attribute__ ((format (printf, 1, 2))) before the opening brace to make the compiler understand you are defining a printf wrapper :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 64,
+    "Comment": "When I was looking up how to do this, there were many grave warnings about \"buffer overflow attacks\" (which I don't know much about) that your code could be exposed to without a fixed buffer.\n\nFrom what I understand, it is good practice to use a fixed buffer when handling text from an outside source, such as the yajl error message.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

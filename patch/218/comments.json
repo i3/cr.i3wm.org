@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "It is not clear to me why you are moving this block of code around. It seems like it does not change anything?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "Ah, it seems like this is because of the “reply” variable. Can you just introduce a new one to avoid this otherwise useless move please?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

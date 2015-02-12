@@ -1,0 +1,127 @@
+From 34232b8ec8aadf49f842ca552b3ecd44582b7cc6 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 7 Jan 2014 13:14:02 -0500
+Subject: [PATCH] Move `ipc_send_workspace_focus_event` to icp.h
+
+Make `ipc_send_workspace_focus_event publicly available from ipc.h for
+more flexible event sending.
+---
+ include/ipc.h   |  7 +++++++
+ src/ipc.c       | 34 ++++++++++++++++++++++++++++++++++
+ src/workspace.c | 36 ------------------------------------
+ 3 files changed, 41 insertions(+), 36 deletions(-)
+
+diff --git a/include/ipc.h b/include/ipc.h
+index 24014c2..cbbec8e 100644
+--- a/include/ipc.h
++++ b/include/ipc.h
+@@ -80,3 +80,10 @@ void ipc_send_event(const char *event, uint32_t message_type, const char *payloa
+ void ipc_shutdown(void);
+ 
+ void dump_node(yajl_gen gen, Con *con, bool inplace_restart);
++
++/**
++ * For the workspace "focus" event we send, along the usual "change" field,
++ * also the current and previous workspace, in "current" and "old"
++ * respectively.
++ */
++void ipc_send_workspace_focus_event(Con *current, Con *old);
+diff --git a/src/ipc.c b/src/ipc.c
+index 355c14a..f1e9019 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -1022,3 +1022,37 @@ int ipc_create_socket(const char *filename) {
+     current_socketpath = resolved;
+     return sockfd;
+ }
++
++/*
++ * For the workspace "focus" event we send, along the usual "change" field,
++ * also the current and previous workspace, in "current" and "old"
++ * respectively.
++ */
++void ipc_send_workspace_focus_event(Con *current, Con *old) {
++    setlocale(LC_NUMERIC, "C");
++    yajl_gen gen = ygenalloc();
++
++    y(map_open);
++
++    ystr("change");
++    ystr("focus");
++
++    ystr("current");
++    dump_node(gen, current, false);
++
++    ystr("old");
++    if (old == NULL)
++        y(null);
++    else
++        dump_node(gen, old, false);
++
++    y(map_close);
++
++    const unsigned char *payload;
++    ylength length;
++    y(get_buf, &payload, &length);
++
++    ipc_send_event("workspace", I3_IPC_EVENT_WORKSPACE, (const char *)payload);
++    y(free);
++    setlocale(LC_NUMERIC, "");
++}
+diff --git a/src/workspace.c b/src/workspace.c
+index 3f70ced..670322a 100644
+--- a/src/workspace.c
++++ b/src/workspace.c
+@@ -11,9 +11,6 @@
+  *
+  */
+ #include "all.h"
+-#include "yajl_utils.h"
+-
+-#include <yajl/yajl_gen.h>
+ 
+ /* Stores a copy of the name of the last used workspace for the workspace
+  * back-and-forth switching. */
+@@ -335,39 +332,6 @@ static void workspace_defer_update_urgent_hint_cb(EV_P_ ev_timer *w, int revents
+     FREE(con->urgency_timer);
+ }
+ 
+-/*
+- * For the "focus" event we send, along the usual "change" field, also the
+- * current and previous workspace, in "current" and "old" respectively.
+- */
+-static void ipc_send_workspace_focus_event(Con *current, Con *old) {
+-    setlocale(LC_NUMERIC, "C");
+-    yajl_gen gen = ygenalloc();
+-
+-    y(map_open);
+-
+-    ystr("change");
+-    ystr("focus");
+-
+-    ystr("current");
+-    dump_node(gen, current, false);
+-
+-    ystr("old");
+-    if (old == NULL)
+-        y(null);
+-    else
+-        dump_node(gen, old, false);
+-
+-    y(map_close);
+-
+-    const unsigned char *payload;
+-    ylength length;
+-    y(get_buf, &payload, &length);
+-
+-    ipc_send_event("workspace", I3_IPC_EVENT_WORKSPACE, (const char *)payload);
+-    y(free);
+-    setlocale(LC_NUMERIC, "");
+-}
+-
+ static void _workspace_show(Con *workspace) {
+     Con *current, *old = NULL;
+ 
+-- 
+1.8.5.2
+

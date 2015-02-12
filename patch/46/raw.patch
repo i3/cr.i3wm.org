@@ -1,0 +1,27 @@
+From 1eb84b31537fd09ae68397a0227957bb82e93f54 Mon Sep 17 00:00:00 2001
+From: Sebastian Pielawa <aeqwaa@…>
+Date: Tue, 12 Feb 2013 16:32:13 +0100
+Subject: [PATCH] Changed in src/render.c LINE 124, 125 -= 2*2 to -= 4
+
+---
+ src/render.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/render.c b/src/render.c
+index 1216241..dc15f60 100644
+--- a/src/render.c
++++ b/src/render.c
+@@ -121,8 +121,8 @@ void render_con(Con *con, bool render_fullscreen) {
+     if (show_debug_borders) {
+         rect.x += 2;
+         rect.y += 2;
+-        rect.width -= 2 * 2;
+-        rect.height -= 2 * 2;
++        rect.width -= 4;
++        rect.height -= 4;
+     }
+ 
+     int x = rect.x;
+-- 
+1.8.1.2
+

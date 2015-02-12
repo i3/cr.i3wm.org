@@ -1,0 +1,122 @@
+From 969e7d086bccc4e4f01c2c8bc32f47efcff1d12d Mon Sep 17 00:00:00 2001
+From: philipdexter <philip.dexter@…>
+Date: Sat, 16 Mar 2013 00:57:02 -0400
+Subject: [PATCH] Add toggle mode for i3bar
+
+Implementation works best when modifier key for the toggle is not the normal modifier key for i3 commands. Plan to add a i3-msg for the possiblity of binding better keys for hiding/showing the i3bar.
+
+Implements feature-request #833
+---
+ i3bar/include/config.h   | 1 +
+ i3bar/src/config.c       | 2 ++
+ i3bar/src/xcb.c          | 8 ++++++++
+ include/config.h         | 2 +-
+ parser-specs/config.spec | 2 +-
+ src/config_directives.c  | 2 +-
+ src/ipc.c                | 5 ++++-
+ 7 files changed, 18 insertions(+), 4 deletions(-)
+
+diff --git a/i3bar/include/config.h b/i3bar/include/config.h
+index 4f6e885..db3ccac 100644
+--- a/i3bar/include/config.h
++++ b/i3bar/include/config.h
+@@ -20,6 +20,7 @@ typedef enum {
+ 
+ typedef struct config_t {
+     int          hide_on_modifier;
++    int          toggle_on_modifier;
+     int          modifier;
+     position_t   position;
+     int          verbose;
+diff --git a/i3bar/src/config.c b/i3bar/src/config.c
+index 6c7286c..4566439 100644
+--- a/i3bar/src/config.c
++++ b/i3bar/src/config.c
+@@ -74,6 +74,8 @@ static int config_string_cb(void *params_, const unsigned char *val, unsigned in
+     if (!strcmp(cur_key, "mode")) {
+         DLOG("mode = %.*s, len = %d\n", len, val, len);
+         config.hide_on_modifier = (len == 4 && !strncmp((const char*)val, "hide", strlen("hide")));
++        config.toggle_on_modifier = (len == 6 && !strncmp((const char*)val, "toggle", strlen("toggle")));
++        config.hide_on_modifier |= config.toggle_on;
+         return 1;
+     }
+ 
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index d5d4eb8..1e29847 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -215,8 +215,16 @@ void hide_bars(void) {
+  */
+ void unhide_bars(void) {
+     if (!config.hide_on_modifier) {
++        if(config.toggle_on_modifier) {
++            config.hide_on_modifier = 1;
++        }
+         return;
+     }
++    else {
++        if(config.toggle_on_modifier) {
++            config.hide_on_modifier = 0;
++        }
++    }
+ 
+     i3_output           *walk;
+     xcb_void_cookie_t   cookie;
+diff --git a/include/config.h b/include/config.h
+index 7056af8..46286fc 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -227,7 +227,7 @@ struct Barconfig {
+     char *socket_path;
+ 
+     /** Bar display mode (hide unless modifier is pressed or show in dock mode) */
+-    enum { M_DOCK = 0, M_HIDE = 1 } mode;
++    enum { M_DOCK = 0, M_HIDE = 1, M_TOGGLE = 2 } mode;
+ 
+     /** Bar modifier (to show bar when in hide mode). */
+     enum {
+diff --git a/parser-specs/config.spec b/parser-specs/config.spec
+index 6960510..06ab86b 100644
+--- a/parser-specs/config.spec
++++ b/parser-specs/config.spec
+@@ -378,7 +378,7 @@ state BAR_SOCKET_PATH:
+       -> call cfg_bar_socket_path($path); BAR
+ 
+ state BAR_MODE:
+-  mode = 'dock', 'hide'
++  mode = 'dock', 'hide', 'toggle'
+       -> call cfg_bar_mode($mode); BAR
+ 
+ state BAR_MODIFIER:
+diff --git a/src/config_directives.c b/src/config_directives.c
+index a7fa350..0f3fed2 100644
+--- a/src/config_directives.c
++++ b/src/config_directives.c
+@@ -452,7 +452,7 @@ CFGFUN(bar_font, const char *font) {
+ }
+ 
+ CFGFUN(bar_mode, const char *mode) {
+-    current_bar.mode = (strcmp(mode, "hide") == 0 ? M_HIDE : M_DOCK);
++    current_bar.mode = (strcmp(mode, "hide") == 0 ? M_HIDE : (strcmp(mode, "toggle") == 0) ? M_TOGGLE : M_DOCK);
+ }
+ 
+ CFGFUN(bar_output, const char *output) {
+diff --git a/src/ipc.c b/src/ipc.c
+index cf25357..47515d5 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -618,7 +618,10 @@ IPC_HANDLER(get_bar_config) {
+         ystr("mode");
+         if (config->mode == M_HIDE)
+             ystr("hide");
+-        else ystr("dock");
++        else if(config->mode == M_TOGGLE)
++            ystr("toggle");
++        else
++            ystr("dock");
+ 
+         ystr("modifier");
+         switch (config->modifier) {
+-- 
+1.8.2
+

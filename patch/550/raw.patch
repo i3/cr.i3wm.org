@@ -1,0 +1,234 @@
+From f5029ea683a44dfadcebb5b79c157ff68ba55994 Mon Sep 17 00:00:00 2001
+From: Atte Peltomaki <atte.peltomaki@…>
+Date: Mon, 24 Mar 2014 19:03:05 +0200
+Subject: [PATCH] Add configuration option for disabling mouse warping
+
+This patch fixes ticket #780 by adding a new configuration option
+"mouse_warping [output|none]".
+
+When mouse warping is disabled, mouse cursor does not jump to middle of current
+screen when changing workspaces between multiple outputs. This introduces a
+"special" cursor state, where focus is in one window and cursor on another.
+Useful for eg. scrolling a web page with mouse wheel while typing into another
+window on keyboard.
+---
+ docs/userguide                  | 16 +++++++++++++
+ include/config.h                |  5 ++++
+ include/config_directives.h     |  1 +
+ parser-specs/config.spec        |  6 +++++
+ src/config_directives.c         |  7 ++++++
+ src/x.c                         |  2 +-
+ testcases/t/201-config-parser.t | 20 +++++++++++++++-
+ testcases/t/518-mouse-warping.t | 52 +++++++++++++++++++++++++++++++++++++++++
+ 8 files changed, 107 insertions(+), 2 deletions(-)
+ create mode 100644 testcases/t/518-mouse-warping.t
+
+diff --git a/docs/userguide b/docs/userguide
+index 34f9381..486ef43 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -810,6 +810,22 @@ focus_follows_mouse <yes|no>
+ focus_follows_mouse no
+ ----------------------
+ 
++=== Focus follows mouse
++
++By default, mouse cursor is warped to center of the destination
++screen/workspace when switching to a different output (eg. monitor). This
++option allows disabling mouse cursor warping entirely.
++
++*Syntax*:
++---------------------------
++mouse_warping <output|none>
++---------------------------
++
++*Example*:
++------------------
++mouse_warping none
++------------------
++
+ === Popups during fullscreen mode
+ 
+ When you are in fullscreen mode, some applications still open popup windows
+diff --git a/include/config.h b/include/config.h
+index 7598241..bc19361 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -108,6 +108,11 @@ struct Config {
+      * It is not planned to add any different focus models. */
+     bool disable_focus_follows_mouse;
+ 
++    /** By default, mouse cursor is warped to center of the destination
++     * screen/workspace when switching focus to a different output.
++     * This option allows disabling mouse cursor warping entirely. */
++    bool disable_mouse_warping;
++
+     /** Remove borders if they are adjacent to the screen edge.
+      * This is useful if you are reaching scrollbar on the edge of the
+      * screen or do not want to waste a single pixel of displayspace.
+diff --git a/include/config_directives.h b/include/config_directives.h
+index a95a647..a45f138 100644
+--- a/include/config_directives.h
++++ b/include/config_directives.h
+@@ -46,6 +46,7 @@ CFGFUN(default_orientation, const char *orientation);
+ CFGFUN(workspace_layout, const char *layout);
+ CFGFUN(workspace_back_and_forth, const char *value);
+ CFGFUN(focus_follows_mouse, const char *value);
++CFGFUN(mouse_warping, const char *value);
+ CFGFUN(force_focus_wrapping, const char *value);
+ CFGFUN(force_xinerama, const char *value);
+ CFGFUN(fake_outputs, const char *outputs);
+diff --git a/parser-specs/config.spec b/parser-specs/config.spec
+index dfd6401..71ad316 100644
+--- a/parser-specs/config.spec
++++ b/parser-specs/config.spec
+@@ -32,6 +32,7 @@ state INITIAL:
+   'for_window'                             -> FOR_WINDOW
+   'assign'                                 -> ASSIGN
+   'focus_follows_mouse'                    -> FOCUS_FOLLOWS_MOUSE
++  'mouse_warping'                          -> MOUSE_WARPING
+   'force_focus_wrapping'                   -> FORCE_FOCUS_WRAPPING
+   'force_xinerama', 'force-xinerama'       -> FORCE_XINERAMA
+   'workspace_auto_back_and_forth'          -> WORKSPACE_BACK_AND_FORTH
+@@ -172,6 +173,11 @@ state FOCUS_FOLLOWS_MOUSE:
+   value = word
+       -> call cfg_focus_follows_mouse($value)
+ 
++# mouse_warping bool
++state MOUSE_WARPING:
++  value = word
++      -> call cfg_mouse_warping($value)
++
+ # force_focus_wrapping
+ state FORCE_FOCUS_WRAPPING:
+   value = word
+diff --git a/src/config_directives.c b/src/config_directives.c
+index f5a592f..c6162fd 100644
+--- a/src/config_directives.c
++++ b/src/config_directives.c
+@@ -299,6 +299,13 @@ CFGFUN(focus_follows_mouse, const char *value) {
+     config.disable_focus_follows_mouse = !eval_boolstr(value);
+ }
+ 
++CFGFUN(mouse_warping, const char *value) {
++    if (strcmp(value, "none") == 0)
++        config.disable_mouse_warping = 1;
++    else if (strcmp(value, "output") == 0)
++        config.disable_mouse_warping = 0;
++}
++
+ CFGFUN(force_xinerama, const char *value) {
+     config.force_xinerama = eval_boolstr(value);
+ }
+diff --git a/src/x.c b/src/x.c
+index 8e7a710..c8899fb 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -1142,7 +1142,7 @@ void x_set_i3_atoms(void) {
+  */
+ void x_set_warp_to(Rect *rect)
+ {
+-    if (!config.disable_focus_follows_mouse)
++    if (!config.disable_focus_follows_mouse && !config.disable_mouse_warping)
+         warp_to = rect;
+ }
+ 
+diff --git a/testcases/t/201-config-parser.t b/testcases/t/201-config-parser.t
+index 55239c6..a15f7a3 100644
+--- a/testcases/t/201-config-parser.t
++++ b/testcases/t/201-config-parser.t
+@@ -310,6 +310,24 @@ is(parser_calls($config),
+    'focus_follows_mouse ok');
+ 
+ ################################################################################
++# mouse_warping
++################################################################################
++
++$config = <<'EOT';
++mouse_warping output
++mouse_warping none
++EOT
++
++$expected = <<'EOT';
++cfg_mouse_warping(output)
++cfg_mouse_warping(none)
++EOT
++
++is(parser_calls($config),
++   $expected,
++   'mouse_warping ok');
++
++################################################################################
+ # force_display_urgency_hint
+ ################################################################################
+ 
+@@ -413,7 +431,7 @@ client.focused          #4c7899 #285577 #ffffff #2e9ef4
+ EOT
+ 
+ my $expected_all_tokens = <<'EOT';
+-ERROR: CONFIG: Expected one of these tokens: <end>, '#', 'set', 'bindsym', 'bindcode', 'bind', 'bar', 'font', 'mode', 'floating_minimum_size', 'floating_maximum_size', 'floating_modifier', 'default_orientation', 'workspace_layout', 'new_window', 'new_float', 'hide_edge_borders', 'for_window', 'assign', 'focus_follows_mouse', 'force_focus_wrapping', 'force_xinerama', 'force-xinerama', 'workspace_auto_back_and_forth', 'fake_outputs', 'fake-outputs', 'force_display_urgency_hint', 'workspace', 'ipc_socket', 'ipc-socket', 'restart_state', 'popup_during_fullscreen', 'exec_always', 'exec', 'client.background', 'client.focused_inactive', 'client.focused', 'client.unfocused', 'client.urgent'
++ERROR: CONFIG: Expected one of these tokens: <end>, '#', 'set', 'bindsym', 'bindcode', 'bind', 'bar', 'font', 'mode', 'floating_minimum_size', 'floating_maximum_size', 'floating_modifier', 'default_orientation', 'workspace_layout', 'new_window', 'new_float', 'hide_edge_borders', 'for_window', 'assign', 'focus_follows_mouse', 'mouse_warping', 'force_focus_wrapping', 'force_xinerama', 'force-xinerama', 'workspace_auto_back_and_forth', 'fake_outputs', 'fake-outputs', 'force_display_urgency_hint', 'workspace', 'ipc_socket', 'ipc-socket', 'restart_state', 'popup_during_fullscreen', 'exec_always', 'exec', 'client.background', 'client.focused_inactive', 'client.focused', 'client.unfocused', 'client.urgent'
+ EOT
+ 
+ my $expected_end = <<'EOT';
+diff --git a/testcases/t/518-mouse-warping.t b/testcases/t/518-mouse-warping.t
+new file mode 100644
+index 0000000..4ad2294
+--- /dev/null
++++ b/testcases/t/518-mouse-warping.t
+@@ -0,0 +1,52 @@
++#!/perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++
++use i3test i3_autostart => 0;
++
++# Ensure the pointer is at (0, 0) so that we really start on the first
++# (the left) workspace.
++$x->root->warp_pointer(0, 0);
++
++my $config = <<EOT;
++# i3 config file (v4)
++font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
++fake-outputs 1024x768+0+0,1024x768+1024+0
++mouse_warping none
++EOT
++my $pid = launch_with_config($config);
++
++my $i3 = i3(get_socket_path());
++
++######################################################
++# Open one workspace with one window on both outputs #
++######################################################
++
++# Open window on workspace 1, left output
++is(focused_ws, '1', 'starting with focus on workspace 1');
++open_window;
++
++# Open window on workspace 2, right output
++cmd 'focus output right';
++is(focused_ws, '2', 'moved focus to workspace 2');
++open_window;
++
++# If mouse_warping is disabled, the pointer has not moved from
++# position (0, 0) when focus was switched to workspace 2
++$x->root->warp_pointer(0, 0);
++
++# Ensure focus is still on workspace 2
++is(focused_ws, '2', 'warped mouse cursor to (0, 0), focus still in workspace 2');
++
++# Exit gracefully
++exit_gracefully($pid);
++done_testing;
+-- 
+1.9.0
+

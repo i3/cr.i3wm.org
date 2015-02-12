@@ -1,0 +1,91 @@
+From dc3ee67c387feeaf687924cb0a144e72ad8e5ebb Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sun, 21 Sep 2014 20:15:03 -0400
+Subject: [PATCH] Bugfix: do not require string param for `nop` cmd
+
+"nop" conventionally means "no operation". The old implementation
+required a string param and threw an error when not present, which is
+not intuitive.
+
+fixes #1318
+---
+ include/commands.h                | 4 ++--
+ parser-specs/commands.spec        | 4 ++--
+ src/commands.c                    | 8 +++-----
+ testcases/t/187-commands-parser.t | 6 +++---
+ 4 files changed, 10 insertions(+), 12 deletions(-)
+
+diff --git a/include/commands.h b/include/commands.h
+index cb68789..d4fd577 100644
+--- a/include/commands.h
++++ b/include/commands.h
+@@ -73,10 +73,10 @@ void cmd_resize(I3_CMD, char *way, char *direction, char *resize_px, char *resiz
+ void cmd_border(I3_CMD, char *border_style_str, char *border_width);
+ 
+ /**
+- * Implementation of 'nop <comment>'.
++ * Implementation of 'nop'.
+  *
+  */
+-void cmd_nop(I3_CMD, char *comment);
++void cmd_nop(I3_CMD);
+ 
+ /**
+  * Implementation of 'append_layout <path>'.
+diff --git a/parser-specs/commands.spec b/parser-specs/commands.spec
+index e3da62c..d93a9e8 100644
+--- a/parser-specs/commands.spec
++++ b/parser-specs/commands.spec
+@@ -335,8 +335,8 @@ state MODE:
+       -> call cmd_mode($mode)
+ 
+ state NOP:
+-  comment = string
+-      -> call cmd_nop($comment)
++    end
++      -> call cmd_nop()
+ 
+ state SCRATCHPAD:
+   'show'
+diff --git a/src/commands.c b/src/commands.c
+index 95dcb7b..03612fb 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -884,13 +884,11 @@ void cmd_border(I3_CMD, char *border_style_str, char *border_width) {
+ }
+ 
+ /*
+- * Implementation of 'nop <comment>'.
++ * Implementation of 'nop'.
+  *
+  */
+-void cmd_nop(I3_CMD, char *comment) {
+-    LOG("-------------------------------------------------\n");
+-    LOG("  NOP: %s\n", comment);
+-    LOG("-------------------------------------------------\n");
++void cmd_nop(I3_CMD) {
++    // nop
+ }
+ 
+ /*
+diff --git a/testcases/t/187-commands-parser.t b/testcases/t/187-commands-parser.t
+index 5ee94f8..3b30b8e 100644
+--- a/testcases/t/187-commands-parser.t
++++ b/testcases/t/187-commands-parser.t
+@@ -68,10 +68,10 @@ is(parser_calls(
+    "cmd_move_con_to_workspace_name(3: foobar, baz)",
+    'move ok');
+ 
+-is(parser_calls('move workspace 3: foobar, nop foo'),
++is(parser_calls('move workspace 3: foobar, nop'),
+    "cmd_move_con_to_workspace_name(3: foobar)\n" .
+-   "cmd_nop(foo)",
+-   'multiple ops (move workspace 3: foobar, nop foo) ok');
++   "cmd_nop()",
++   'multiple ops (move workspace 3: foobar, nop) ok');
+ 
+ is(parser_calls(
+    'exec i3-sensible-terminal; ' .
+-- 
+2.1.0
+

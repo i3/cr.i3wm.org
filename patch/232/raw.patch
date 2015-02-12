@@ -1,0 +1,33 @@
+From 4e4d953f288bbdab72f7224ebc57291f2c2fae7b Mon Sep 17 00:00:00 2001
+From: Vivien Didelot <vivien.didelot@…>
+Date: Wed, 25 Sep 2013 14:58:12 -0400
+Subject: [PATCH] common.mk: change default PREFIX
+
+By convention, it is strongly recommended that locally installed
+software must be placed within /usr/local rather than /usr.
+
+This patch defines the default PREFIX variable as /usr/local.
+
+See: http://refspecs.linuxfoundation.org/FHS_2.3/fhs-2.3.html#USRLOCALLOCALHIERARCHY
+
+Signed-off-by: Vivien Didelot <vivien.didelot@savoirfairelinux.com>
+---
+ common.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/common.mk b/common.mk
+index 0214abf..d24162b 100644
+--- a/common.mk
++++ b/common.mk
+@@ -5,7 +5,7 @@ INSTALL=install
+ FLEX=flex
+ BISON=bison
+ ifndef PREFIX
+-  PREFIX=/usr
++  PREFIX=/usr/local
+ endif
+ ifndef SYSCONFDIR
+   ifeq ($(PREFIX),/usr)
+-- 
+1.8.4
+

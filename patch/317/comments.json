@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 368,
+    "Comment": "This check is not the same as it was before. The check was for getcwd() != NULL, now it is for cwd != NULL, which will never be true, because cwd = malloc(), and malloc() doesn’t fail (at least not on Linux with overcommitment).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 370,
+    "Comment": "Please remove this whitespace change.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 61,
+    "Comment": "Please do not change indentation.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 245,
+    "Comment": "Please add the explanation: X11’s GetProperty request operates on WORDs (4 bytes).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 260,
+    "Comment": "It’d be simpler to check if prop_reply-\u003ebytes_after \u003e 0, right? Then you would not need to introduce prop_value_size at all.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 80,
+    "Comment": "Instead of duplicating this code between i3 and i3bar, can you refactor root_atom_contents() in such a way that it will take an optional xcb_connection_t *conn? Then nothing prevents i3bar from using that function, I think.\n\nIdeally, you’d submit that as a separate patch.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

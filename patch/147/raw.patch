@@ -1,0 +1,52 @@
+From ddd2e75737805b811678c690721a5bb4d450a63d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Cl=C3=A9ment=20B=C5=93sch?= <ubitux@…>
+Date: Sat, 20 Apr 2013 23:47:37 +0200
+Subject: [PATCH] render_con: fix height rounding in aspect ratio computation
+
+With a 484x292 window and proportion of 488x294, new_height is
+291.590164 after the loop, causing a rounding issue leading to a window
+of 484x291.
+
+---
+To reproduce the bug:
+  wget http://lucy.pkh.me/youtube-free.webm
+  mplayer youtube-free.webm
+
+If you don't use vo sdl but xv/vdpau/gl/... the window will be 484x291
+instead of 484x292. This is particularly visible with this video since
+the scaling of the window will blur some of the characters of the video.
+
+Here is a preview:
+  http://b.pkh.me/ffplay.png FAIL
+  http://b.pkh.me/mpv.png FAIL
+
+While the problem looks indeed related to a rounding issue, I'm not sure
+this fix is the proper solution.
+
+Note: I'm sorry I wasn't able to run the testsuite (failing to install
+X11::XCB because of missing pthread-stubs package or something) so I
+hope everything is OK.
+---
+ src/render.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/render.c b/src/render.c
+index 6061838..c0a0fed 100644
+--- a/src/render.c
++++ b/src/render.c
+@@ -184,10 +184,10 @@ void render_con(Con *con, bool render_fullscreen) {
+                     new_width--;
+             }
+             /* Center the window */
+-            inset->y += ceil(inset->height / 2) - floor(new_height / 2);
++            inset->y += ceil(inset->height / 2) - floor((new_height + .5) / 2);
+             inset->x += ceil(inset->width / 2) - floor(new_width / 2);
+ 
+-            inset->height = new_height;
++            inset->height = new_height + .5;
+             inset->width = new_width;
+         }
+ 
+-- 
+1.8.2.1
+

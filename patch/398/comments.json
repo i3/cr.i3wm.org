@@ -1,0 +1,56 @@
+[
+  {
+    "Author": "anonymous",
+    "Line": 23,
+    "Comment": "Sorry, double submission, my net connection dropped just after I hit submit.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 42,
+    "Comment": "trailing whitespace here needs to be removed",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 30,
+    "Comment": "These three lines mix tabs and spaces. Use four spaces instead of tabs.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 29,
+    "Comment": "An if statement without braces followed by one with braces is hard to read without a newline between them.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 99,
+    "Comment": "Another tabs/spaces problem. This block should be indented with four spaces.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 104,
+    "Comment": "Returning 0 here will cause false positives on tests 1-3.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 97,
+    "Comment": "Can we change this to `current_desktop_index` to be clear that this does not return the name of the workspace? I had to look up the definition of the property to understand why `current_desktop` was 0 when we are on workspace 1 below.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 91,
+    "Comment": "Variables in all caps are conventionally used to indicate constant values in the code.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 91,
+    "Comment": "The idiomatic way to represent constants in Perl is \"use constant NAME =\u003e value;\" The values here are \"write once\", i.e. they are to be used as constants once initialised.\n\nUsing atoms in this style was suggested in a previous review of this patch.",
+    "EmailHash": ""
+  }
+]

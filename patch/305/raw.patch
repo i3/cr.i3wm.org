@@ -1,0 +1,200 @@
+From 2a4e38c1d06d3a268a245aaafae8fc2a683d7768 Mon Sep 17 00:00:00 2001
+From: Philippe Virouleau <philippe.virouleau@…>
+Date: Thu, 24 Oct 2013 17:02:33 +0200
+Subject: [PATCH] Authentication in different process
+
+Add the possibility to buffer keystrokes when a process is running authentication
+Fix #1090.
+---
+ i3lock.1 |    9 +++++++
+ i3lock.c |   88 +++++++++++++++++++++++++++++++++++++++++++++++++++++++-------
+ 2 files changed, 88 insertions(+), 9 deletions(-)
+
+diff --git a/i3lock.1 b/i3lock.1
+index e95340c..d660751 100644
+--- a/i3lock.1
++++ b/i3lock.1
+@@ -107,6 +107,15 @@ another try. This can be useful if the XF86ScreenSaver key is used to
+ put a laptop to sleep and bounce on resume or if you happen to wake up
+ your computer with the enter key.
+ 
++.SH BUGS
++.B i3lock
++uses a buffer to store keystrokes events during authentication, if it is full
++the events are dropped. There is a known issue if you do hit the maximum size
++of the buffer : pressing shift + a letter as the last two events in the buffer
++will cause the shift release event to be dropped, therefore all the upcomming
++keystrokes will have the shift modifier. A work around is to use capslock to
++cancel the shift modifier.
++
+ .SH SEE ALSO
+ .IR xautolock(1)
+ \- use i3lock as your screen saver
+diff --git a/i3lock.c b/i3lock.c
+index 2d8a580..cb09e60 100644
+--- a/i3lock.c
++++ b/i3lock.c
+@@ -63,6 +63,18 @@ cairo_surface_t *img = NULL;
+ bool tile = false;
+ bool ignore_empty_password = false;
+ 
++typedef struct ringbuffer_t {
++    int head;
++    int tail;
++    int size;
++    xcb_generic_event_t *buf[1024];
++} ringbuffer_t;
++/* Size of the ringbuffer */
++const int ringbuffer_max = 1024;
++
++/* Ring buffer where keystrokes are stored during authentication */
++static ringbuffer_t buffered_events = { 0, 0, 0 };
++
+ /* isutf, u8_dec © 2005 Jeff Bezanson, public domain */
+ #define isutf(c) (((c) & 0xC0) != 0x80)
+ 
+@@ -75,6 +87,39 @@ void u8_dec(char *s, int *i) {
+ }
+ 
+ /*
++ * Add an event to the ring buffer.
++ *
++ * Return true if the event was added, false if there was an error
++ * (no space available or null buffer).
++ *
++ */
++static bool ringbuffer_add(ringbuffer_t *bufring, xcb_generic_event_t *event) {
++    if (bufring && bufring->size < ringbuffer_max) {
++        bufring->buf[bufring->head++] = event;
++        bufring->head %= ringbuffer_max;
++        bufring->size++;
++        return true;
++    }
++    return false;
++}
++
++/*
++ * Remove an event from the ring buffer.
++ *
++ * Return null if there was an error (empty or null buffer).
++ *
++ */
++static xcb_generic_event_t *ringbuffer_remove(ringbuffer_t *bufring) {
++    xcb_generic_event_t *ret_val = NULL;
++    if (bufring && bufring->size > 0) {
++        ret_val = bufring->buf[bufring->tail++];
++        bufring->tail %= ringbuffer_max;
++        bufring->size--;
++    }
++    return ret_val;
++}
++
++/*
+  * Loads the XKB keymap from the X11 server and feeds it to xkbcommon.
+  * Necessary so that we can properly let xkbcommon track the keyboard state and
+  * translate keypresses to utf-8.
+@@ -187,10 +232,14 @@ static void clear_pam_wrong(EV_P_ ev_timer *w, int revents) {
+     clear_pam_wrong_timeout = NULL;
+ }
+ 
+-static void clear_input(void) {
++static void reset_input(void) {
+     input_position = 0;
+     clear_password_memory();
+     password[input_position] = '\0';
++}
++
++static void clear_input(void) {
++    reset_input();
+ 
+     /* Hide the unlock indicator after a bit if the password buffer is
+      * empty. */
+@@ -205,7 +254,6 @@ static void auth_failed(void) {
+         fprintf(stderr, "Authentication failure\n");
+ 
+     pam_state = STATE_PAM_WRONG;
+-    clear_input();
+     redraw_screen();
+ 
+     /* Clear this state after 2 seconds (unless the user enters another
+@@ -227,6 +275,9 @@ static void auth_failed(void) {
+     }
+ }
+ 
++static void handle_key_press(xcb_key_press_event_t *event);
++static void handle_key_release(xcb_key_release_event_t *event);
++
+ static void child_cb(EV_P_ ev_child *child_watcher, int revents) {
+     if (child_watcher->rstatus != 0) {
+         DEBUG("Authentication successfull\n");
+@@ -235,6 +286,17 @@ static void child_cb(EV_P_ ev_child *child_watcher, int revents) {
+         exit(0);
+     } else {
+         auth_failed();
++        xcb_generic_event_t *event;
++        while (pam_state != STATE_PAM_VERIFY &&
++            (event = ringbuffer_remove(&buffered_events))) {
++            /* Strip off the highest bit (set if the event is generated) */
++            int type = (event->response_type & 0x7F);
++            if (type == XCB_KEY_PRESS)
++                handle_key_press((xcb_key_press_event_t*)event);
++            else if (type == XCB_KEY_RELEASE)
++                handle_key_release((xcb_key_release_event_t*)event);
++            free(event);
++        }
+     }
+     ev_child_stop(main_loop, child_watcher);
+     free(child_watcher);
+@@ -259,7 +321,8 @@ static void input_done(void) {
+     if (cpid == 0) {
+         exit(pam_authenticate(pam_handle, 0) == PAM_SUCCESS);
+     } else if (cpid > 0) {
+-        struct ev_child *child_watcher = calloc(sizeof(struct ev_io), 1);
++        reset_input();
++        struct ev_child *child_watcher = calloc(sizeof(struct ev_child), 1);
+         ev_child_init(child_watcher, child_cb, cpid, 0);
+         ev_child_set(child_watcher, cpid, 0);
+         ev_child_start(EV_DEFAULT_ child_watcher);
+@@ -281,6 +344,11 @@ static void input_done(void) {
+  */
+ static void handle_key_release(xcb_key_release_event_t *event) {
+     xkb_state_update_key(xkb_state, event->detail, XKB_KEY_UP);
++
++    /* If this was the backspace or escape key we are back at an
++     * empty input, so turn off the screen if DPMS is enabled */
++    if (dpms && input_position == 0)
++        dpms_turn_off_screen(conn);
+ }
+ 
+ static void redraw_timeout(EV_P_ ev_timer *w, int revents) {
+@@ -518,6 +586,14 @@ static void xcb_check_cb(EV_P_ ev_check *w, int revents) {
+ 
+         /* Strip off the highest bit (set if the event is generated) */
+         int type = (event->response_type & 0x7F);
++        if (pam_state == STATE_PAM_VERIFY &&
++            (type == XCB_KEY_PRESS || type == XCB_KEY_RELEASE)) {
++            /* Don’t process KeyPress/KeyRelease events when a verification is
++             * in progress. Try to buffer them or drop them if the buffer is full. */
++            if (!ringbuffer_add(&buffered_events, event))
++                free(event);
++            continue;
++        }
+         switch (type) {
+             case XCB_KEY_PRESS:
+                 handle_key_press((xcb_key_press_event_t*)event);
+@@ -525,12 +601,6 @@ static void xcb_check_cb(EV_P_ ev_check *w, int revents) {
+ 
+             case XCB_KEY_RELEASE:
+                 handle_key_release((xcb_key_release_event_t*)event);
+-
+-                /* If this was the backspace or escape key we are back at an
+-                 * empty input, so turn off the screen if DPMS is enabled */
+-                if (dpms && input_position == 0)
+-                    dpms_turn_off_screen(conn);
+-
+                 break;
+ 
+             case XCB_VISIBILITY_NOTIFY:
+-- 
+1.7.10.4
+

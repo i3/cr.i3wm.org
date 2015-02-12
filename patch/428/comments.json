@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 48,
+    "Comment": "Each time I make a different error :D\n\nYou might want to alter the title of the patch... Sorry.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 312,
+    "Comment": "What’s the status with regards to fixing the root cause of this?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 289,
+    "Comment": "Please make it: “[…] to force input focus (after click to raise) […]”.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 48,
+    "Comment": "The patch largely looks good! Two small comments.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 312,
+    "Comment": "I did not make any real progress yet. In order to be able to safely refactor the code, I need to make sure that the tests cover all cases and although the coverage reports claims full branch coverage, I still need to locate and check the relevant tests to make sure that the focus state is verified for all cases.\n\nIf nobody else does chime in, I will be working on and off on this issue, but don't expect a solution soon.\n\nI will add a TODO with my next patch to highlight the fact that the function should be removed when ticket #1185 get fixed.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  }
+]

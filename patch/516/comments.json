@@ -1,0 +1,44 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 16,
+    "Comment": "This looks like a good approach. Can you add \"fixes #1209\" to the commit message?",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 21,
+    "Comment": "In these cases, you should add an \"error\" member to the result with a message like \"workspaces beginning with underscores are reserved as internal\".",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 16,
+    "Comment": "",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 16,
+    "Comment": "This could use a unit test. More information at http://i3wm.org/docs/testsuite.html",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 16,
+    "Comment": "Also I think the next two patches could be squashed together into this one",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 21,
+    "Comment": "While you are right, this does not have to be done in the very same patch.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 16,
+    "Comment": "Agreed (to all comments above).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

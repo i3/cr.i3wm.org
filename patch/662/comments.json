@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "anonymous",
+    "Line": 19,
+    "Comment": "I think urxvtc should probably be added (a lot of users use urxvtd and call terminal using `urxvtc`)",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 14,
+    "Comment": "I’ve done this change in a slightly different way, so I’m marking this patch as superseded. Thanks :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "No, because urxvtc fails when urxvtd is not running. On some setups it may be installed even though people don’t start urxvtd. Using it would break the “open terminal” default keybinding.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

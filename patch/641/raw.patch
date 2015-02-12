@@ -1,0 +1,46 @@
+From b3288b074f85a3c2d40862ddd7f9a04c92c7153e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Vytautas=20=C5=A0altenis?= <vytas@…>
+Date: Tue, 9 Sep 2014 20:38:37 +0300
+Subject: [PATCH] Add a list of dev packages for easy dev env setup
+
+---
+ README           |  5 +++++
+ dev-packages.txt | 10 ++++++++++
+ 2 files changed, 15 insertions(+)
+ create mode 100644 dev-packages.txt
+
+diff --git a/README b/README
+index 6b9fb6b..544dbc2 100644
+--- a/README
++++ b/README
+@@ -32,6 +32,11 @@ Requirements
+ - libxkbcommon >= 0.4.0
+ - libxkbcommon-x11 >= 0.4.0
+ 
++For convenience there's a dev-packages.txt file with all these packages, so
++you can easily install them all with one-liner like this:
++
++    $ cat dev-packages.txt | xargs sudo apt-get install -y
++
+ Running i3lock
+ -------------
+ Simply invoke the 'i3lock' command. To get out of it, enter your password and
+diff --git a/dev-packages.txt b/dev-packages.txt
+new file mode 100644
+index 0000000..ec70c6f
+--- /dev/null
++++ b/dev-packages.txt
+@@ -0,0 +1,10 @@
++libxcb-xkb-dev
++libxcb-dpms0-dev
++libpam0g-dev
++libev-dev
++libxkbcommon-dev
++libxkbcommon-x11-dev
++libcairo2-dev
++libxcb-image0-dev
++libxcb-util0-dev
++libxcb-xinerama0-dev
+-- 
+1.9.1
+

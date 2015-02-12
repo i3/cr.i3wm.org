@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 22,
+    "Comment": "We can’t just change that. The idea here is that e.g. “focus right” on the right-most container of the current output will set focus to one container right next to the currently focused one. With your change, the focus might end up far away instead (e.g. in case there’s 4 containers on the destination output and the third one is focused).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

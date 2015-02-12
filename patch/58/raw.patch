@@ -1,0 +1,66 @@
+From 6291375ed5e005f1824dd46acff0cbe91655266d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Andr=C3=A1s=20Mohari?= <andras.mohari@…>
+Date: Mon, 25 Feb 2013 11:41:02 +0100
+Subject: [PATCH] Allow min_width of a block in i3bar to be a string
+
+With this change, min_width can either be an integer (as usual), or a
+string. In the latter case, the width of the text given by min_width
+determines the minimum width of the block. This way one does not have to
+figure out a minimum width by trial and error, only to do it again every
+time the font is changed.
+---
+ docs/i3bar-protocol | 15 +++++++++++++++
+ i3bar/src/child.c   |  4 ++++
+ 2 files changed, 19 insertions(+)
+
+diff --git a/docs/i3bar-protocol b/docs/i3bar-protocol
+index 121b0c8..9225d97 100644
+--- a/docs/i3bar-protocol
++++ b/docs/i3bar-protocol
+@@ -140,6 +140,10 @@ min_width::
+ 	will be padded to the left and/or the right side, according to the +align+
+ 	key. This is useful when you want to prevent the whole status line to shift
+ 	when value take more or less space between each iteration.
++        The value can also be a string. In this case, the width of the text given
++        by +min_width+ determines the minimum width of the block. This is useful
++        when you want to set a sensible minimum width regardless of which font you
++        are using, and at what particular size.
+ align::
+ 	Align text on the +center+ (default), +right+ or +left+ of the block, when
+ 	the minimum width of the latter, specified by the +min_width+ key, is not
+@@ -178,6 +182,17 @@ of the i3bar protocol.
+ }
+ ------------------------------------------
+ 
++In the following example, the longest (widest) possible value of the block is
++used to set the minimum width:
++
++------------------------------------------
++{
++ "full_text": "CPU 4%",
++ "min_width": "CPU 100%",
++ "align": "left"
++}
++------------------------------------------
++
+ An example of a block which uses all possible entries follows:
+ 
+ *Example*:
+diff --git a/i3bar/src/child.c b/i3bar/src/child.c
+index 72e4e74..e5f4ea2 100644
+--- a/i3bar/src/child.c
++++ b/i3bar/src/child.c
+@@ -147,6 +147,10 @@ static int stdin_string(void *context, const unsigned char *val, unsigned int le
+         } else {
+             ctx->block.align = ALIGN_CENTER;
+         }
++    } else if (strcasecmp(ctx->last_map_key, "min_width") == 0) {
++        i3String *text = i3string_from_utf8_with_length((const char *)val, len);
++        ctx->block.min_width = (uint32_t)predict_text_width(text);
++        i3string_free(text);
+     }
+     return 1;
+ }
+-- 
+1.8.1.4
+

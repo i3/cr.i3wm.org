@@ -1,0 +1,50 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 90,
+    "Comment": "Beware: i3status.conf is _not_ an example config file which should be comprehensive. Instead, it should contain a reasonable default config with which many people should be fine.\n\nTherefore, please remove the tztime pacific from i3status.conf and keep it only in the manpage.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 181,
+    "Comment": "Thanks for adding this. I think it would be good to add an example, so that it’s clear how that information is useful: “Files below that path make for valid timezone strings, e.g. for \"/usr/share/zoneinfo/Europe/Berlin\" you can use \"Europe/Berlin\" in tztime.”",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 238,
+    "Comment": "It looks like your indentation is wrong here.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 18,
+    "Comment": "Sorry for being such a pain in the ass, but I think we are nearly at the “perfect” version of this patch :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Emil Mikulic",
+    "Line": 238,
+    "Comment": "How does this keep happening to me. :_(",
+    "EmailHash": "dce73ce6fdc8f512ad557eb19e65480c"
+  },
+  {
+    "Author": "Emil Mikulic",
+    "Line": 90,
+    "Comment": "Yeah, that makes much more sense.",
+    "EmailHash": "dce73ce6fdc8f512ad557eb19e65480c"
+  },
+  {
+    "Author": "Emil Mikulic",
+    "Line": 181,
+    "Comment": "Done.",
+    "EmailHash": "dce73ce6fdc8f512ad557eb19e65480c"
+  },
+  {
+    "Author": "Emil Mikulic",
+    "Line": 18,
+    "Comment": "Not at all. :) Thanks for the thorough review!\nThe next iteration is at: http://cr.i3wm.org/patch/42",
+    "EmailHash": "dce73ce6fdc8f512ad557eb19e65480c"
+  }
+]

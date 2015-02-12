@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 15,
+    "Comment": "If you look into iw_print_bitrate (see http://sources.debian.net/src/wireless-tools/30~pre9-8/iwlib.c#L1267 ), it does what we already do in print_disk_info.c. I think it’d be cleaner to use our code and adapt it so that it calls sprintf with the appropriate padding.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 76,
+    "Comment": "Without this addition, the tests will not pass.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 61,
+    "Comment": "Sorry for not getting back to you on http://cr.i3wm.org/patch/412, I must have missed your comment.\n\nWhen I apply only your changes to the testcase (but not your changes to src/x.c) the testsuite still passes. Therefore, the testsuite does not properly test the changes in behavior you are introducing.\n\nCan you please fix the test?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

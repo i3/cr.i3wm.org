@@ -1,0 +1,56 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 26,
+    "Comment": "I don’t think this is an improvement over what we currently have in the docs. The “parallel to the container’s longest side” wording makes it hard to understand IMO. Furthermore, splith and splitv are important technical terms that should be mentioned.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 37,
+    "Comment": "Please don’t hide the fact that this keybinding toggles.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Eric S. Raymond",
+    "Line": 37,
+    "Comment": "Toggles what?  As written, it is very unclear.  I don't see behavior that can reasonably be described that as 'toggling'. What I expected from that language was that $mod-e would toggle between horizontal and vertical splitting; it doesn't seem to do that. ",
+    "EmailHash": "131a55e547345f3123af2c4ddd49e6a6"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 37,
+    "Comment": "It toggles the split mode. Make sure you use a recent enough version of i3, it works fine for me.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Eric S. Raymond",
+    "Line": 37,
+    "Comment": "You say \"It toggles the split mode.\"  That doesn't tell me anything!  It conveys zero information.  This is a documentation bug, which you can't see because you are too close to the code.\n\nWhat behavior is supposed to change when this \"toggle\" is flipped?  Please explain it to me as though I am a drooling idiot who needs every detail spelled out.  Then maybe I can turn it into something people other than Michael Stapelberg can understand.",
+    "EmailHash": "131a55e547345f3123af2c4ddd49e6a6"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 37,
+    "Comment": "toggle = if it’s splitv currently, it will be set to splith. if it’s splith currently, it will be set to splitv.\n\nI appreciate your attention to detail and see where you are coming from, but I feel you are exaggerating a bit here.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Eric S. Raymond",
+    "Line": 37,
+    "Comment": "At the very least it should say \"(it toggles between horizontal and vertical split mode)\" rather than \"(it toggles)\"\n\nWhich, under the version 4.2 I have here, it doesn't. Testing again to be sure...y",
+    "EmailHash": "131a55e547345f3123af2c4ddd49e6a6"
+  },
+  {
+    "Author": "Eric S. Raymond",
+    "Line": 37,
+    "Comment": "es, it still doesn't.",
+    "EmailHash": "131a55e547345f3123af2c4ddd49e6a6"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 37,
+    "Comment": "The docs refer to the latest version. For 4.2, please use http://i3wm.org/docs/4.2/userguide.html or just upgrade — it was released a year ago and we are now at 4.5.1.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

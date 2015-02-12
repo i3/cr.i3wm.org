@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 59,
+    "Comment": "apparantly you can only use __attribute__ on function declarations, not definitions.\n\nunixwiz.net/techtips/gnu-c-attributes.html#compat",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 64,
+    "Comment": "\u003e When I was looking up how to do this, there were many grave warnings about \"buffer overflow attacks\" (which I don't know much about) that your code could be exposed to without a fixed buffer.\n\u003e \n\u003e From what I understand, it is good practice to use a fixed buffer when handling text from an outside source, such as the yajl error message.\n\nNo, you misunderstood. A buffer overflow is what you get when you have a fixed-size buffer and you overflow it, i.e. you (let the user) write more data to it than it can fit. Then the user will have write access to the surrounding memory regions.\n\nWhat I am suggesting is using vasprintf, which will allocate a buffer that is big enough to hold the data. Note that we use vasprintf (with our sasprintf wrapper) in a lot of places in i3, and in general we don’t protect users against “their own stupidity”, i.e. if they want to exceed their resources (memory in this case) by sending malicious input to i3, we let them.\n\nAlso consider that yajl error messages are not really user input :). Please switch to vasprintf().",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 59,
+    "Comment": "Fair point. Can you please add that as a comment to the source to justify the forward declaration? Also, can you make it “const char *format” instead of “char *format”? Thanks.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

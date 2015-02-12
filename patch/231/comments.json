@@ -1,0 +1,56 @@
+[
+  {
+    "Author": "Bastian",
+    "Line": 17,
+    "Comment": "Micheal, many thanks for the input from 224.\nI applied almost all of your change requests, but still there is the workaround when xcb_get_input_focus delivers a child window instead of the 'wanted' window. This happens for me for all instances of firefox (v23), like:\n\nxwininfo: Window id: 0x1600b2d \"i3 Patch: new command line argument -g for i3-input options: -g \u003cdefault,focused,WxH+X+Y\u003e default: legacy behavior focused: i3-input widget is placed at top of the window with input focus WxH+X+Y: specify fixed position in X11 geometry style - Vimperator\"\n  Root window id: 0x293 (the root window) \"i3\"\n  Parent window id: 0xa0007e \"[i3 con] container around 0xc01b40\"\n     1 child:\n     0x1600b2e (has no name): ()  1x1+-1+-1  +1851+304\n\nThe current implementation of i3-input delivers the window 0x1600b2e instead of 0x1600b2d\n\n\n\nAnd sorry for the looong topic of the patch",
+    "EmailHash": "2bd639a5f8bab8cf925706e9299bfd46"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 58,
+    "Comment": "Here and below, please make sure that the asterisks stick to the variable name, e.g. xcb_rectangle_t *geometry instead of xcb_rectangle_t* geometry",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 64,
+    "Comment": "If you could align the members of this struct, the code would look nicer. Also, please use blanks around operators, i.e. “geometry-\u003ewidth - 4”.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 64,
+    "Comment": "The “blanks around operators” comment applies here and below.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 118,
+    "Comment": "My comments from #224 for this entire function are not yet adressed, neither with a comment by you in the review system nor with following the suggestion. Please fix.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 17,
+    "Comment": "Multiple comments:\n\n• As you noted, not all of my comments were adressed yet. Please address all of them :).\n\n• With regards to the patch title, please keep the first line short (ideally 50 characters, but 80 is okay, too), then leave a blank line and write as much as you want in the following line(s). vim highlights the expected format properly.\n\n• As for the Firefox issue: you have two possibilities here:\n  1. Traverse up the window hierarchy, i.e. start with 0x1600b2e, get the parent, check if it’s the root window, if not: get the parent, repeat. If the parent is the root window, you have arrived at the decoration window. Use the child of that.\n  2. Via i3’s IPC interface, use the GET_TREE request and search the window which has \"focus\": 1. This is most likely more complicated in C than option 1.\n\nThanks!",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Bastian",
+    "Line": 58,
+    "Comment": "Do you have a configuration for a code formatter / format checker, such as indent?\nThis would tackle this issue best IMO",
+    "EmailHash": "2bd639a5f8bab8cf925706e9299bfd46"
+  },
+  {
+    "Author": "Bastian",
+    "Line": 118,
+    "Comment": "please find replies to your comments in #224",
+    "EmailHash": "2bd639a5f8bab8cf925706e9299bfd46"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 58,
+    "Comment": "Unfortunately not, because none of the available formatters works correctly with our codebase. I plan to just reformat it at some point, but clang-format is not good enough yet, i.e. all of its styles introduce too many differences, sometimes fairly ugly ones.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

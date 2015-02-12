@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 27,
+    "Comment": "You can make this “const char”",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 36,
+    "Comment": "The fact that you set this within the loop only when the tray is actually initialized means that the loop will have to run each time the windows are reconfigured. Why not set tray_configured = true; after the SLIST_FOREACH?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 29,
+    "Comment": "I don’t like this comment, but can’t put my finger on why not :). Let’s try rephrasing it, how about “Configuration sanity check: ensure this i3bar instance handles the output on which the tray should appear (i.e. don’t initialize a tray if tray_output == VGA-1 but output = [HDMI1]).”?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

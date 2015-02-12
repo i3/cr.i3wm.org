@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 68,
+    "Comment": "I think these names could use some work.\n\n\"decimal\" is most commonly known as SI.\n\nI think instead of \"custom\" you mean \"customary\" (as in \"by custom\" rather than \"by standard\" as the other two are).\n\nAnd \"binary\" does not distinguish itself from \"custom\", which is also binary.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 19,
+    "Comment": "This is an interesting read: wikipedia.org/wiki/Binary_prefix\n\nIt turns out that a \"kilobyte\" is actually 1000 bytes because in SI, \"kilo\" always means 1000. This is conventionally the unit of measurement hard drives are *sold* in (probably because it inflates the size of the drive compared to binary).\n\nA unit consisting of 1024 bytes is called a \"kibibyte\" (which is an ugly word that means \"kilo-binary byte\"). This is the unit of measurement computers conventionally give users when they request human readable file sizes.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Mats",
+    "Line": 68,
+    "Comment": "At first I thought about naming the options: iec_binary, si_decimal, and custom(ary)_binary. But this seemed to convey somewhat redundant information, that would be better off to be found here in the docs.\n\nWith “custom” I mean “made by/for oneself”, i.e., for Michael, who merged this patch already. So I think he is fine with this naming...",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "I chose to merge a patch by jj instead which he sent to me via email privately (I told him to not do that in the future :)). That patch fixes the issue in a better way, IMO.\n\nThanks anyway!",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 19,
+    "Comment": "A part of why I'm fixing bugs like this is to get credentials. Since I'm new to the project, and to programming in C, I am going to be off sometimes. However, I would like some credit when I contribute substantially to a bug fix, even if its just a thanks in the commit message.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

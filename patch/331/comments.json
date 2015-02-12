@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 51,
+    "Comment": "This is the only bit of logic that is actually changed in this patch. Setting this flag to false causes it to not be counted when configure_trayclients is deciding how many clients to allocate space for.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 20,
+    "Comment": "I think this one is a little more obvious, given the discussion in http://cr.i3wm.org/patch/328",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 51,
+    "Comment": "The next step, as you may have guessed, is to handle MapNotify events and set this flag to true when we get them.\n\nThis, however, will not be as simple as modifying or creating a handler as in the last patches because of duplicated logic that we have to remove.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 29,
+    "Comment": "This is still called on DestroyNotify, but I don't think it has to be.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

@@ -1,0 +1,27 @@
+From 8e58ea8b1e1be2c30d00f06023403bf9fd82392f Mon Sep 17 00:00:00 2001
+From: Trung Ngo <ndtrung4419@…>
+Date: Sun, 10 Nov 2013 16:10:17 +0700
+Subject: [PATCH] Update userguide on multiple criteria
+
+---
+ docs/userguide | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/docs/userguide b/docs/userguide
+index a0862e6..9a3a823 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -1286,8 +1286,8 @@ bindsym $mod+x move container to workspace 3; workspace 3
+ 
+ Furthermore, you can change the scope of a command - that is, which containers
+ should be affected by that command, by using various criteria. These are
+-prefixed in square brackets to every command. If you want to kill all windows
+-which have the class Firefox, use:
++prefixed and space-delimited in a pair of square brackets to every command.
++If you want to kill all windows which have the class Firefox, use:
+ 
+ *Example*:
+ ------------------------------------
+-- 
+1.8.4.2
+

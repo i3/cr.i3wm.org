@@ -1,0 +1,46 @@
+From c1a2e89abbb0616af448b5cbd6732d9e8b9e307b Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sun, 20 Oct 2013 07:51:50 -0400
+Subject: [PATCH] i3bar: Only configure tray on own outputs
+
+If the config specifies a `tray_output` not in the list of outputs over
+which this bar will span, do not initialize a tray for the bar.
+
+Fix former behavior, which was to initialize the tray without showing
+the icons.
+---
+ i3bar/src/xcb.c | 18 +++++++++++++-----
+ 1 file changed, 13 insertions(+), 5 deletions(-)
+
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index f407c9b..39ff2e0 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -1531,11 +1531,19 @@ void reconfig_windows(bool redraw_bars) {
+                 exit(EXIT_FAILURE);
+             }
+ 
+-            if (!tray_configured &&
+-                (!config.tray_output ||
+-                 strcasecmp("none", config.tray_output) != 0)) {
+-                init_tray();
+-                tray_configured = true;
++            char *tray_output = (config.tray_output ? config.tray_output : SLIST_FIRST(outputs)->name);
++            if (!tray_configured && strcasecmp(tray_output, "none") != 0) {
++                /* make sure the bar is actually on this output or the tray
++                 * icons might not show up */
++                i3_output *output;
++                SLIST_FOREACH(output, outputs, slist) {
++                    if (strcasecmp(output->name, tray_output) == 0 ||
++                            strcasecmp(tray_output, "primary") == 0 && output->primary) {
++                        init_tray();
++                        tray_configured = true;
++                        break;
++                    }
++                }
+             }
+         } else {
+             /* We already have a bar, so we just reconfigure it */
+-- 
+1.8.4.1
+

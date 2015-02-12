@@ -1,0 +1,35 @@
+From 1e182f8e4902891f39cf4c9ba0bdbf39b1c5d7cd Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Peter=20Bostr=C3=B6m?= <git@…>
+Date: Tue, 24 Dec 2013 12:57:34 +0100
+Subject: [PATCH] Size resizebar according to container size.
+
+---
+ src/resize.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/src/resize.c b/src/resize.c
+index cc4ba84..44f963a 100644
+--- a/src/resize.c
++++ b/src/resize.c
+@@ -125,14 +125,14 @@ int resize_graphical_handler(Con *first, Con *second, orientation_t orientation,
+     Rect helprect;
+     if (orientation == HORIZ) {
+         helprect.x = event->root_x;
+-        helprect.y = output->rect.y;
++        helprect.y = second->rect.y;
+         helprect.width = 2;
+-        helprect.height = output->rect.height;
++        helprect.height = second->rect.height;
+         new_position = event->root_x;
+     } else {
+-        helprect.x = output->rect.x;
++        helprect.x = second->rect.x;
+         helprect.y = event->root_y;
+-        helprect.width = output->rect.width;
++        helprect.width = second->rect.width;
+         helprect.height = 2;
+         new_position = event->root_y;
+     }
+-- 
+1.8.5.1
+

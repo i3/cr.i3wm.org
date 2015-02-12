@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 85,
+    "Comment": "urgent will be uninitialized if neither of the following cases is true. Please fix, preferably both by initializing it _and_ by adding an else clause.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 112,
+    "Comment": "It seems to me like this code is duplicated from the original urgency hint code. Could you factor it into a separate function please?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "Please extend the appropriate test case (t/113-urgent.t) or add a new one.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 37,
+    "Comment": "When inserting into this list, you need to change the amount of supported macros in src/ewmh.c:167",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

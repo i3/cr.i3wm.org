@@ -1,0 +1,213 @@
+From 05d12bbf69b4f20835c9259dc3edeba7cf080020 Mon Sep 17 00:00:00 2001
+From: Vadim Zubov <zubov_vadim@…>
+Date: Sun, 22 Sep 2013 01:50:35 +0400
+Subject: [PATCH] add thread usage indicator
+
+show load for every thread independently
+
+in i3config file need to add such strings:
+threads_usage {
+  format = "%usage"
+}
+---
+ i3status.c                |   6 ++
+ include/i3status.h        |   1 +
+ src/print_threads_usage.c | 150 ++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 157 insertions(+)
+ create mode 100644 src/print_threads_usage.c
+
+diff --git a/i3status.c b/i3status.c
+index e99e627..35c4c8e 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -309,6 +309,7 @@ int main(int argc, char *argv[]) {
+                 CFG_SEC("ddate", ddate_opts, CFGF_NONE),
+                 CFG_SEC("load", load_opts, CFGF_NONE),
+                 CFG_SEC("cpu_usage", usage_opts, CFGF_NONE),
++                CFG_SEC("threads_usage", usage_opts, CFGF_NONE),
+                 CFG_CUSTOM_COLOR_OPTS,
+                 CFG_END()
+         };
+@@ -530,6 +531,11 @@ int main(int argc, char *argv[]) {
+                                 print_cpu_usage(json_gen, buffer, cfg_getstr(sec, "format"));
+                                 SEC_CLOSE_MAP;
+                         }
++                        CASE_SEC("threads_usage") {
++                                SEC_OPEN_MAP("threads_usage");
++                                print_threads_usage(json_gen, buffer, cfg_getstr(sec, "format"));
++                                SEC_CLOSE_MAP;
++                        }
+                 }
+                 if (output_format == O_I3BAR) {
+                         yajl_gen_array_close(json_gen);
+diff --git a/include/i3status.h b/include/i3status.h
+index 5d8d27b..df7ee84 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -151,6 +151,7 @@ void print_wireless_info(yajl_gen json_gen, char *buffer, const char *interface,
+ void print_run_watch(yajl_gen json_gen, char *buffer, const char *title, const char *pidfile, const char *format);
+ void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const char *path, const char *format, int);
+ void print_cpu_usage(yajl_gen json_gen, char *buffer, const char *format);
++void print_threads_usage(yajl_gen json_gen, char *buffer, const char *format);
+ void print_eth_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
+ void print_load(yajl_gen json_gen, char *buffer, const char *format, const float max_threshold);
+ void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *device, const char *mixer, int mixer_idx);
+diff --git a/src/print_threads_usage.c b/src/print_threads_usage.c
+new file mode 100644
+index 0000000..848220c
+--- /dev/null
++++ b/src/print_threads_usage.c
+@@ -0,0 +1,150 @@
++// vim:sw=8:sts=8:ts=8:expandtab
++#include <stdlib.h>
++#include <limits.h>
++#include <stdio.h>
++#include <string.h>
++#include <yajl/yajl_gen.h>
++#include <yajl/yajl_version.h>
++
++#if defined(__FreeBSD__) || defined(__OpenBSD__)
++#include <sys/param.h>
++#include <sys/types.h>
++#include <sys/sysctl.h>
++#include <sys/dkstat.h>
++#endif
++
++#if defined(__DragonFly__)
++#include <sys/param.h>
++#include <sys/types.h>
++#include <sys/sysctl.h>
++#include <sys/resource.h>
++#endif
++
++#include "i3status.h"
++
++#if defined(LINUX)
++static int *prev_total = 0;
++static int *prev_idle  = 0;
++#else
++static int prev_total = 0;
++static int prev_idle  = 0;
++#endif
++
++/*
++ * Reads the threads utilization from /proc/stat and returns the usage as a
++ * percentage.
++ *
++ */
++void print_threads_usage(yajl_gen json_gen, char *buffer, const char *format) {
++        const char *walk;
++        char *outwalk = buffer;
++        char buf[1024];
++        char scanf_string[1024];
++        int curr_user = 0, curr_nice = 0, curr_system = 0, curr_idle = 0, curr_total;
++        int diff_idle, diff_total, diff_usage;
++
++#if defined(LINUX)
++        static char statpath[512];
++        strcpy(statpath, "/proc/stat");
++        if (!slurp(statpath, buf, sizeof(buf)))
++            goto error;
++
++        char *cpu_pos = buf;
++        int cpu_total = 0, cpu_counter = 0;
++        do {
++            cpu_counter++;
++            cpu_pos += strlen("cpu");
++            cpu_pos  = strstr(cpu_pos, "cpu");
++        }
++        while (cpu_pos);
++        cpu_total = cpu_counter - 1;
++        if (cpu_total <= 0)
++            goto error;
++        // cpu  ... -- skip this string
++        // cpu0 ...
++        // cpu1 ...
++
++        int *diff_usage_cpus = malloc (cpu_total * sizeof (int));
++        if (prev_total == 0)
++        {
++            prev_total = malloc (cpu_total * sizeof (int));
++            prev_idle  = malloc (cpu_total * sizeof (int));
++            memset (prev_total, 0, cpu_total * sizeof (int));
++            memset (prev_idle,  0, cpu_total * sizeof (int));
++        }
++
++        cpu_counter = 0;
++        cpu_pos = strstr(buf, "cpu");
++        for (cpu_counter = 0; cpu_counter < cpu_total; cpu_counter++) {
++                cpu_pos += strlen("cpu");
++                cpu_pos  = strstr(cpu_pos, "cpu");
++                sprintf (scanf_string, "cpu%d %s", cpu_counter, "%d %d %d %d");
++                if (sscanf(cpu_pos, scanf_string, &curr_user, &curr_nice, &curr_system, &curr_idle) != 4)
++                       goto error;
++                curr_total = curr_user + curr_nice + curr_system + curr_idle;
++                diff_idle  = curr_idle - prev_idle[cpu_counter];
++                diff_total = curr_total - prev_total[cpu_counter];
++                diff_usage = (diff_total ? (1000 * (diff_total - diff_idle)/diff_total + 5)/10 : 0);
++                prev_total[cpu_counter] = curr_total;
++                prev_idle[cpu_counter]  = curr_idle;
++                diff_usage_cpus[cpu_counter] = diff_usage;
++        }
++
++#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
++
++#if defined(__FreeBSD__) || defined(__DragonFly__)
++        size_t size;
++        long cp_time[CPUSTATES];
++        size = sizeof cp_time;
++        if (sysctlbyname("kern.cp_time", &cp_time, &size, NULL, 0) < 0)
++                goto error;
++#else
++	/* This information is taken from the boot cpu, any other cpus are currently ignored. */
++	long cp_time[CPUSTATES];
++	int mib[2];
++	size_t size = sizeof(cp_time);
++
++	mib[0] = CTL_KERN;
++	mib[1] = KERN_CPTIME;
++
++	if (sysctl(mib, 2, cp_time, &size, NULL, 0))
++		goto error;
++#endif
++
++        curr_user = cp_time[CP_USER];
++        curr_nice = cp_time[CP_NICE];
++        curr_system = cp_time[CP_SYS];
++        curr_idle = cp_time[CP_IDLE];
++        curr_total = curr_user + curr_nice + curr_system + curr_idle;
++        diff_idle  = curr_idle - prev_idle;
++        diff_total = curr_total - prev_total;
++        diff_usage = (diff_total ? (1000 * (diff_total - diff_idle)/diff_total + 5)/10 : 0);
++        prev_total = curr_total;
++        prev_idle  = curr_idle;
++#else
++        goto error;
++#endif
++        for (walk = format; *walk != '\0'; walk++) {
++                if (*walk != '%') {
++                        *(outwalk++) = *walk;
++                        continue;
++                }
++
++                if (strncmp(walk+1, "usage", strlen("usage")) == 0) {
++#if defined(LINUX)
++                        for (cpu_counter = 0; cpu_counter < cpu_total; cpu_counter++)
++                            outwalk += sprintf(outwalk, "%02d%% ", diff_usage_cpus[cpu_counter]);
++                        outwalk--;// disable last whitespace
++#else
++                        outwalk += sprintf(outwalk, "%02d%%", diff_usage);
++#endif
++                        walk += strlen("usage");
++                }
++        }
++
++        OUTPUT_FULL_TEXT(buffer);
++        return;
++error:
++        OUTPUT_FULL_TEXT("cant read threads usage");
++        (void)fputs("i3status: Cannot read threads usage\n", stderr);
++}
+-- 
+1.8.1.2
+

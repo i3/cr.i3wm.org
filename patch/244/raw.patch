@@ -1,0 +1,285 @@
+From c1b9761f2e7a49ef390b9a7651005056f527efaa Mon Sep 17 00:00:00 2001
+From: Philippe Virouleau <philippe.virouleau@…>
+Date: Wed, 2 Oct 2013 13:55:43 +0200
+Subject: [PATCH] Run authentication in different threads
+
+This replaces the commit a305e622, and fixes #895 as well as the bugs
+introduced by the previous commit (reported in #1090). It uses pthread
+and lock-free synchronization with gcc builtins atomic operations.
+---
+ i3lock.c |  172 +++++++++++++++++++++++++++++++++++++-------------------------
+ 1 file changed, 102 insertions(+), 70 deletions(-)
+
+diff --git a/i3lock.c b/i3lock.c
+index 7d1f7b3..3e0e5c0 100644
+--- a/i3lock.c
++++ b/i3lock.c
+@@ -22,7 +22,6 @@
+ #include <string.h>
+ #include <ev.h>
+ #include <sys/mman.h>
+-#include <sys/wait.h>
+ #include <X11/XKBlib.h>
+ #include <X11/extensions/XKBfile.h>
+ #include <xkbcommon/xkbcommon.h>
+@@ -32,6 +31,7 @@
+ #include "i3lock.h"
+ #include "xcb.h"
+ #include "cursors.h"
++#include "pthread.h"
+ #include "unlock_indicator.h"
+ #include "xinerama.h"
+ 
+@@ -45,13 +45,14 @@ static pam_handle_t *pam_handle;
+ int input_position = 0;
+ /* Holds the password you enter (in UTF-8). */
+ static char password[512];
++/* Holds the password to be verified (in UTF-8). */
++static char pam_password[512];
+ static bool beep = false;
+ bool debug_mode = false;
+ static bool dpms = false;
+ bool unlock_indicator = true;
+ static bool dont_fork = false;
+ struct ev_loop *main_loop;
+-static struct ev_timer *clear_pam_wrong_timeout;
+ extern unlock_state_t unlock_state;
+ extern pam_state_t pam_state;
+ 
+@@ -63,6 +64,9 @@ cairo_surface_t *img = NULL;
+ bool tile = false;
+ bool ignore_empty_password = false;
+ 
++static int waiting_authentication = 0;
++static int max_waiting_authentication = 4;
++
+ /* isutf, u8_dec © 2005 Jeff Bezanson, public domain */
+ #define isutf(c) (((c) & 0xC0) != 0x80)
+ 
+@@ -157,11 +161,11 @@ out:
+  * cold-boot attacks.
+  *
+  */
+-static void clear_password_memory(void) {
++static void clear_password_memory(char *mem) {
+     /* A volatile pointer to the password buffer to prevent the compiler from
+      * optimizing this out. */
+-    volatile char *vpassword = password;
+-    for (int c = 0; c < sizeof(password); c++)
++    volatile char *vpassword = mem;
++    for (int c = 0; c < sizeof(mem); c++)
+         /* We store a non-random pattern which consists of the (irrelevant)
+          * index plus (!) the value of the beep variable. This prevents the
+          * compiler from optimizing the calls away, since the value of 'beep'
+@@ -169,28 +173,28 @@ static void clear_password_memory(void) {
+         vpassword[c] = c + (int)beep;
+ }
+ 
+-
+ /*
+  * Resets pam_state to STATE_PAM_IDLE 2 seconds after an unsuccesful
+  * authentication event.
+  *
+  */
+-static void clear_pam_wrong(EV_P_ ev_timer *w, int revents) {
+-    DEBUG("clearing pam wrong\n");
+-    pam_state = STATE_PAM_IDLE;
+-    unlock_state = STATE_STARTED;
+-    redraw_screen();
+-
+-    /* Now free this timeout. */
+-    ev_timer_stop(main_loop, clear_pam_wrong_timeout);
+-    free(clear_pam_wrong_timeout);
+-    clear_pam_wrong_timeout = NULL;
++static void clear_pam_wrong() {
++    /* Clear the pam_wrong sign and go idle if we are in the correct state */
++    if (__sync_bool_compare_and_swap(
++                &pam_state, STATE_PAM_WRONG, STATE_PAM_IDLE)) {
++        unlock_state = STATE_STARTED;
++        redraw_screen();
++    }
+ }
+ 
+-static void clear_input(void) {
++static void reset_password(void) {
+     input_position = 0;
+-    clear_password_memory();
++    clear_password_memory(password);
+     password[input_position] = '\0';
++}
++
++static void clear_input(void) {
++    reset_password();
+ 
+     /* Hide the unlock indicator after a bit if the password buffer is
+      * empty. */
+@@ -200,78 +204,106 @@ static void clear_input(void) {
+     unlock_state = STATE_KEY_PRESSED;
+ }
+ 
+-static void auth_failed(void) {
+-    if (debug_mode)
+-        fprintf(stderr, "Authentication failure\n");
++static void *authenticate(void *arg) {
++    /*
++     * Here we can't just do :
++     * while(__sync_bool_compare_and_swap(&pam_state,
++     *      STATE_PAM_VERIFY, STATE_PAM_VERIFY))
++     *      ;
++     *
++     * And then affect STATE_PAM_VERIFY to pam_state :
++     * we need to do both in one single atomic operation, so we use comparison
++     * on all the other states.
++     *
++     */
++    DEBUG("Waiting for critical section\n");
++    __sync_add_and_fetch(&waiting_authentication, 1);
++    while (!__sync_bool_compare_and_swap(&pam_state, STATE_PAM_IDLE, STATE_PAM_VERIFY)
++            && !__sync_bool_compare_and_swap(&pam_state, STATE_PAM_WRONG, STATE_PAM_VERIFY))
++            ;
++    //Beginning of the Critical Section
++    DEBUG("Entering critical section\n");
++    __sync_sub_and_fetch(&waiting_authentication, 1);
++
++    /* Copy our private password to pam_password and clean */
++    char *the_password = (char *)arg;
++    memcpy(pam_password, the_password, sizeof(the_password));
++    clear_password_memory(the_password);
++    free(the_password);
++
++
+ 
+-    pam_state = STATE_PAM_WRONG;
+     redraw_screen();
+ 
+-    /* Clear this state after 2 seconds (unless the user enters another
+-     * password during that time). */
+-    ev_now_update(main_loop);
+-    if ((clear_pam_wrong_timeout = calloc(sizeof(struct ev_timer), 1))) {
+-        ev_timer_init(clear_pam_wrong_timeout, clear_pam_wrong, 2.0, 0.);
+-        ev_timer_start(main_loop, clear_pam_wrong_timeout);
++    if (pam_authenticate(pam_handle, 0) == PAM_SUCCESS) {
++        DEBUG("successfully authenticated\n");
++        clear_password_memory(password);
++        clear_password_memory(pam_password);
++        exit(0);
+     }
+ 
+-    /* Cancel the clear_indicator_timeout, it would hide the unlock indicator
+-     * too early. */
+-    stop_clear_indicator_timeout();
++    if (debug_mode)
++        fprintf(stderr, "Authentication failure\n");
++
++    /* Clear the pam_password memory (password has already been cleared) */
++    clear_password_memory(pam_password);
+ 
+     /* beep on authentication failure, if enabled */
+     if (beep) {
+         xcb_bell(conn, 100);
+         xcb_flush(conn);
+     }
+-}
+-
+-static void child_cb(EV_P_ ev_child *child_watcher, int revents) {
+-    if (child_watcher->rstatus != 0) {
+-        DEBUG("Authentication successfull\n");
+-        clear_password_memory();
+ 
+-        exit(0);
+-    } else {
+-        auth_failed();
++    if (!__sync_bool_compare_and_swap(&pam_state,
++                STATE_PAM_VERIFY, STATE_PAM_WRONG)) {
++        /*
++         * This is an error : once pam_state = STATE_PAM_VERIFY,
++         * only one thread can access it, so the comparison should
++         * always be true. The atomic operation is here to ensure data
++         * coherency with the main thread.
++         * Can't exit now as it would unlock the screen, so just return.
++         */
++        fprintf(stderr, "i3lock : pam_state is not \"verify\" within\
++                critical section\n");
++        return 0;
+     }
+-    ev_child_stop(main_loop, child_watcher);
+-    free(child_watcher);
++    DEBUG("Leaving critical section\n");
++    //End of Critical Section
++    redraw_screen();
++
++
++    /* Cancel the clear_indicator_timeout, it would hide the unlock indicator
++     * too early. */
++    stop_clear_indicator_timeout();
++
++    /* Wait for 2 seconds and maybe clear the pam_wrong state */
++    sleep(2);
++
++    clear_pam_wrong();
++
++    return 0;
+ }
+ 
+ static void input_done(void) {
+-    if (pam_state == STATE_PAM_VERIFY) {
++    if (waiting_authentication > max_waiting_authentication)
+         return;
+-    }
+-
+-    if (clear_pam_wrong_timeout) {
+-        ev_timer_stop(main_loop, clear_pam_wrong_timeout);
+-        free(clear_pam_wrong_timeout);
+-        clear_pam_wrong_timeout = NULL;
+-    }
++    char *threadprivate_password = malloc(sizeof(password));
++    if (threadprivate_password) {
++        memcpy(threadprivate_password, password, sizeof(password));
+ 
+-    pam_state = STATE_PAM_VERIFY;
+-    redraw_screen();
++        /* The thread */
++        pthread_t auth_thread;
+ 
+-    /* fork to unblock pam_authenticate */
+-    pid_t cpid = fork();
+-    if (cpid == 0) {
+-        exit(pam_authenticate(pam_handle, 0) == PAM_SUCCESS);
+-    } else if (cpid > 0) {
+-        clear_input();
+-        struct ev_child *child_watcher = calloc(sizeof(struct ev_io), 1);
+-        ev_child_init(child_watcher, child_cb, cpid, 0);
+-        ev_child_set(child_watcher, cpid, 0);
+-        ev_child_start(EV_DEFAULT_ child_watcher);
+-    } else if (cpid < 0) {
+-        DEBUG("Could not fork");
+-        if (pam_authenticate(pam_handle, 0) == PAM_SUCCESS) {
+-            DEBUG("successfully authenticated\n");
+-            clear_password_memory();
+-            exit(0);
++        /* Create the authentication thread, if it fails, do it in main thread */
++        if(pthread_create(&auth_thread, NULL, authenticate, threadprivate_password)) {
++            fprintf(stderr, "Error creating thread, going sequential.\n");
++            authenticate(threadprivate_password);
+         }
+-        auth_failed();
++    } else {
++        authenticate(password);
+     }
++
++    reset_password();
+ }
+ 
+ /*
+@@ -472,7 +504,7 @@ static int conv_callback(int num_msg, const struct pam_message **msg,
+ 
+         /* return code is currently not used but should be set to zero */
+         resp[c]->resp_retcode = 0;
+-        if ((resp[c]->resp = strdup(password)) == NULL) {
++        if ((resp[c]->resp = strdup(pam_password)) == NULL) {
+             perror("strdup");
+             return 1;
+         }
+-- 
+1.7.10.4
+

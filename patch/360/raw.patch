@@ -1,0 +1,49 @@
+From 08a45d4d2f11dde9ffd7366d996cf58f16b3d7a2 Mon Sep 17 00:00:00 2001
+From: none <none@…>
+Date: Fri, 3 Jan 2014 10:36:48 +0100
+Subject: [PATCH] Add support for new _NET_WM_WINDOW_TYPE
+
+Extended Window Manager Hints specification 1.5 add new hints. This patch makes
+i3 aware of them, by making windows with certain types effectively floating.
+---
+ include/atoms.xmacro | 6 ++++++
+ src/manage.c         | 6 ++++++
+ 2 files changed, 12 insertions(+)
+
+diff --git a/include/atoms.xmacro b/include/atoms.xmacro
+index 41889eb..041704c 100644
+--- a/include/atoms.xmacro
++++ b/include/atoms.xmacro
+@@ -10,6 +10,12 @@ xmacro(_NET_WM_WINDOW_TYPE_DIALOG)
+ xmacro(_NET_WM_WINDOW_TYPE_UTILITY)
+ xmacro(_NET_WM_WINDOW_TYPE_TOOLBAR)
+ xmacro(_NET_WM_WINDOW_TYPE_SPLASH)
++xmacro(_NET_WM_WINDOW_TYPE_COMBO)
++xmacro(_NET_WM_WINDOW_TYPE_DROPDOWN_MENU)
++xmacro(_NET_WM_WINDOW_TYPE_POPUP_MENU)
++xmacro(_NET_WM_WINDOW_TYPE_TOOLTIP)
++xmacro(_NET_WM_WINDOW_TYPE_NOTIFICATION)
++xmacro(_NET_WM_WINDOW_TYPE_DND)
+ xmacro(_NET_WM_DESKTOP)
+ xmacro(_NET_WM_STRUT_PARTIAL)
+ xmacro(_NET_CLIENT_LIST_STACKING)
+diff --git a/src/manage.c b/src/manage.c
+index 8874994..d4f5a3f 100644
+--- a/src/manage.c
++++ b/src/manage.c
+@@ -391,6 +391,12 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+     if (xcb_reply_contains_atom(reply, A__NET_WM_WINDOW_TYPE_DIALOG) ||
+         xcb_reply_contains_atom(reply, A__NET_WM_WINDOW_TYPE_UTILITY) ||
+         xcb_reply_contains_atom(reply, A__NET_WM_WINDOW_TYPE_TOOLBAR) ||
++        xcb_reply_contains_atom(reply, A__NET_WM_WINDOW_TYPE_DROPDOWN_MENU) ||
++        xcb_reply_contains_atom(reply, A__NET_WM_WINDOW_TYPE_POPUP_MENU) ||
++        xcb_reply_contains_atom(reply, A__NET_WM_WINDOW_TYPE_TOOLTIP) ||
++        xcb_reply_contains_atom(reply, A__NET_WM_WINDOW_TYPE_NOTIFICATION) ||
++        xcb_reply_contains_atom(reply, A__NET_WM_WINDOW_TYPE_COMBO) ||
++        xcb_reply_contains_atom(reply, A__NET_WM_WINDOW_TYPE_DND) ||
+         xcb_reply_contains_atom(reply, A__NET_WM_WINDOW_TYPE_SPLASH)) {
+         LOG("This window is a dialog window, setting floating\n");
+         want_floating = true;
+-- 
+1.8.5.2
+

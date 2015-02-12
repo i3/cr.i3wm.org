@@ -1,0 +1,24 @@
+From 6221f67c3058b3da5989c88e8f93ed5f4945b3f3 Mon Sep 17 00:00:00 2001
+From: Jean-Philippe Ouellet <jpo@…>
+Date: Tue, 26 Nov 2013 05:50:35 -0500
+Subject: ignore symbol files on OS X (only for debugging, breaks git-add -A)
+
+---
+ .gitignore | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/.gitignore b/.gitignore
+index 0160a24..aed379e 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -6,6 +6,7 @@ include/all.h.pch
+ *.swp
+ *.gcda
+ *.gcno
++*.dSYM
+ test.commands_parser
+ test.config_parser
+ testcases/MYMETA.json
+-- 
+1.7.12.1
+

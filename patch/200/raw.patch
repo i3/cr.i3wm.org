@@ -1,0 +1,38 @@
+From 92f4646e22028bd8caa190d905cd03762b56f46d Mon Sep 17 00:00:00 2001
+From: Sebastian Ullrich <sebasti@…>
+Date: Wed, 7 Aug 2013 17:20:22 +0200
+Subject: [PATCH] Respect workspace numbers when looking for a free workspace
+
+---
+ src/workspace.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/src/workspace.c b/src/workspace.c
+index af9325f..c24b261 100644
+--- a/src/workspace.c
++++ b/src/workspace.c
+@@ -197,17 +197,20 @@ Con *create_workspace_on_output(Output *output, Con *content) {
+         while (exists) {
+             c++;
+ 
++            ws->num = c;
+             FREE(ws->name);
+             sasprintf(&(ws->name), "%d", c);
+ 
+             current = NULL;
+             TAILQ_FOREACH(out, &(croot->nodes_head), nodes)
+                 GREP_FIRST(current, output_get_content(out), !strcasecmp(child->name, ws->name));
++            if (current == NULL)
++                TAILQ_FOREACH(out, &(croot->nodes_head), nodes)
++                    GREP_FIRST(current, output_get_content(out), child->num == ws->num);
+             exists = (current != NULL);
+ 
+             DLOG("result for ws %s / %d: exists = %d\n", ws->name, c, exists);
+         }
+-        ws->num = c;
+     }
+     con_attach(ws, content, false);
+ 
+-- 
+1.8.3.4
+

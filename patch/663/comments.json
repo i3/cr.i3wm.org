@@ -1,0 +1,74 @@
+[
+  {
+    "Author": "Mats",
+    "Line": 33,
+    "Comment": "This is by no means the final patch!\n\nBefore changing existing testcases and adding new ones, I wanted this version to be reviewed first, so that I can be sure that this is how the command ought to be implemented :)",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 33,
+    "Comment": "Adding a test helps people understand how the command ought to be implemented.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 201,
+    "Comment": "typo with \"enabled\"\n\nalso the parens are not consistent with the command notation (should be brackets)",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 371,
+    "Comment": "Instead of having two functions, it might be cleaner to have something like con_set_fullscreen(con, bool)",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 209,
+    "Comment": "Can this case actually happen? I only quickly glanced at the parser update, but I think the state machine doesn’t allow it…?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 371,
+    "Comment": "Agreed. On first glance, it’s not clear why you need to add so much code for functionality that is already in i3 (you’re just changing the interface, right?).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 33,
+    "Comment": "The patch already looks pretty solid. I think you should not need to change any existing tests, though (since you don’t want to break backward compatibility, right?), only add new ones.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Mats",
+    "Line": 371,
+    "Comment": "I tried to follow the pattern of the floating command whose three actions (enable, disable, and toggle) are implemented in three separate functions. Which, to me, is clearer than one function that is controlled by an argument...\n\nHow is the fullscreen command different to the floating command?",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  },
+  {
+    "Author": "Mats",
+    "Line": 209,
+    "Comment": "I tried to follow the pattern of the floating command whose three actions (enable, disable, and toggle) are implemented in three separate functions. Which, to me, is clearer than one function that is controlled by an argument...\n\nHow is the fullscreen command different to the floating command?",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  },
+  {
+    "Author": "Mats",
+    "Line": 33,
+    "Comment": "The new ones should go into t/100-fullscreen.t, right?",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  },
+  {
+    "Author": "Mats",
+    "Line": 201,
+    "Comment": "The parentheses were meant as a means to group the first alternative, i.e.,\n\n  fullscreen enable|toggle [global]\n  fullscreen disable",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  },
+  {
+    "Author": "Mats",
+    "Line": 209,
+    "Comment": "(The above comment doesn't belong here -- had clicked on 'Reply' but commented below first.)\n\nThe action argument can't be empty. Hadn't changed it after setting default arguments in the parser specification.",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  }
+]

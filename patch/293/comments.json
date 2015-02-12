@@ -1,0 +1,92 @@
+[
+  {
+    "Author": "Philippe Virouleau",
+    "Line": 15,
+    "Comment": "Ok, I implemented your suggestion about buffering keystrokes, however I'm not familiar at all with xcb, so I hope buffering press/release is enough. I arbitrary set the buffer size to 512.",
+    "EmailHash": "73e4ef48030de3c30ccb5a5c05b20e66"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 118,
+    "Comment": "Minor style nitpick: please use “const int buffered_events_max = 512;” above and use that in the definition of buffered_events instead of using sizeof/sizeof :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 125,
+    "Comment": "Instead of the hard-to-grasp break/continue here, you can use:\n\nif (pam_state == STATE_PAM_VERIFY) {\nif (event_index \u003c (buffered_events_max - 1))\nbuffered_events[event_index++] = (xcb_key_press_event_t*)event;\n} else {\nhandle_key_press((xcb_key_press_event_t*)event);\n}",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 140,
+    "Comment": "Here you have the same code (except for the type, but they are compatible), so what about using the following above the switch statement?\n\nif (pam_state == STATE_PAM_VERIFY \u0026\u0026\n    (type == XCB_KEY_PRESS || type == XCB_KEY_RELEASE)) {\n  /* Don’t process KeyPress/KeyRelease events when a verification is\n   * in progress. Try to buffer them or drop them if the buffer is full. */\n  if (event_index \u003e= (buffered_events_max - 1))\n    free(event);\n  else\n    buffered_events[event_index++] = (xcb_key_press_event_t*)event;\n  continue;\n}\n  ",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 65,
+    "Comment": "Instead of moving memory around, how about a ringbuffer? :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 73,
+    "Comment": "Is “event” not a possible name here? I’d prefer that for consistency.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 76,
+    "Comment": "Please find a way to deal with this code duplication, it should be easy after adressing my comments further below.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "Nitpick: strictly speaking, one of xcb_key_press_event_t and xcb_key_release_event_t could be larger than the other. You can use a union to have a type that will be big enough to hold the bigger of the two types.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 92,
+    "Comment": "You are not free()ing the event here, therefore leaking memory.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 15,
+    "Comment": "Buffering those should be enough, but I haven’t tested it yet. Especially testing whether shift/caps lock/num lock behave correctly in such a situation is what we should do.\n\nThanks for working on this. There are a couple of style issues and the code can be expressed cleaner. My intention is not to criticize your work uselessly, but to get towards a really clean patch for i3lock. Clarity is key in a program where security is a concern. Thanks!",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Philippe Virouleau",
+    "Line": 15,
+    "Comment": "As far as I tested it, caps lock and num lock were working well when buffered.\n\nI agree on your second point, actually I was aware of some possible improvements (ring buffer and code duplication) when submitting the patch, but I wanted to make sure that you were ok with implementation \"idea\" :p",
+    "EmailHash": "73e4ef48030de3c30ccb5a5c05b20e66"
+  },
+  {
+    "Author": "Philippe Virouleau",
+    "Line": 19,
+    "Comment": "Ok I'll do that, I did it this way because release is typedefed to press in xcb : \ntypedef xcb_key_press_event_t  xcb_key_release_event_t;\n",
+    "EmailHash": "73e4ef48030de3c30ccb5a5c05b20e66"
+  },
+  {
+    "Author": "Philippe Virouleau",
+    "Line": 65,
+    "Comment": "Would you be fine with something like this instead of keeping the array and indexes separated :\nstruct ring_buf {\n[theuniontype] buf[MAX];\nint tail;\nint head;\nint size;\n}\nand with the \"MAX\" #defined ?\n",
+    "EmailHash": "73e4ef48030de3c30ccb5a5c05b20e66"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "Yeah, that’s what I thought. Still, I find it cleaner to not rely on this fact :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 65,
+    "Comment": "I’d prefer MAX being a const int because that way the symbol name is preserved when debugging in gdb, which is not the case with a #define. Also, please use a better name than MAX of course :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

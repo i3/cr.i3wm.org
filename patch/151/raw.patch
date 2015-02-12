@@ -1,0 +1,44 @@
+From 14e2b882adc34daa6fdcb61ba15126a2afc5a9c3 Mon Sep 17 00:00:00 2001
+From: oblique <psyberbits@…>
+Date: Mon, 22 Apr 2013 20:23:45 +0300
+Subject: [PATCH] Handle synthetic UnmapNotify.
+
+Fixes #787, the first bad commit is db651679c568109b19d2c9bb5270f3359d57fd10.
+
+More info:
+    http://tronche.com/gui/x/icccm/sec-4.html#s-4.1.4
+    http://comments.gmane.org/gmane.comp.misc.suckless/6853
+---
+ src/handlers.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/src/handlers.c b/src/handlers.c
+index f4782ca..b0941e1 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -15,6 +15,7 @@
+ #include <time.h>
+ #include <sys/time.h>
+ #include <xcb/randr.h>
++#include <xcb/xcb_event.h>
+ #include <X11/XKBlib.h>
+ #define SN_API_NOT_YET_FROZEN 1
+ #include <libsn/sn-monitor.h>
+@@ -457,6 +458,14 @@ static void handle_unmap_notify_event(xcb_unmap_notify_event_t *event) {
+         goto ignore_end;
+     }
+ 
++    /* handle synthetic UnmapNotify
++     * more info: http://tronche.com/gui/x/icccm/sec-4.html#s-4.1.4
++     *            http://comments.gmane.org/gmane.comp.misc.suckless/6853
++     * this fix #787 */
++    if (event->from_configure == false && event->event == root &&
++        XCB_EVENT_SENT(event))
++        goto ignore_end;
++
+     /* See the end of this function. */
+     cookie = xcb_get_input_focus(conn);
+ 
+-- 
+1.8.2
+

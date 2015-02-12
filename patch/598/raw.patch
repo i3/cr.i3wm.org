@@ -1,0 +1,55 @@
+From c58c987ee56b4c789ba11a889233d93cc6814c63 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 20 Jun 2014 07:26:36 -0400
+Subject: [PATCH] Consider motif border for floating geometry
+
+When calculating the geometry of a floating window with motif hints that
+specify a border style, take into account that this window will have a
+different border style when calculating its position with
+floating_enable() when the window becomes managed.
+
+A nice side effect of this is that users can override motif hints with
+`new_float` config directives when they are specified other than
+`normal`.
+
+fixes #1270
+---
+ src/manage.c | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/src/manage.c b/src/manage.c
+index 202b064..c4d189a 100644
+--- a/src/manage.c
++++ b/src/manage.c
+@@ -436,11 +436,6 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+     if (nc->geometry.width == 0)
+         nc->geometry = (Rect) {geom->x, geom->y, geom->width, geom->height};
+ 
+-    if (want_floating) {
+-        DLOG("geometry = %d x %d\n", nc->geometry.width, nc->geometry.height);
+-        floating_enable(nc, true);
+-    }
+-
+     if (motif_border_style != BS_NORMAL) {
+         DLOG("MOTIF_WM_HINTS specifies decorations (border_style = %d)\n", motif_border_style);
+         if (want_floating) {
+@@ -450,6 +445,16 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+         }
+     }
+ 
++    if (want_floating) {
++        DLOG("geometry = %d x %d\n", nc->geometry.width, nc->geometry.height);
++        /* motif hints will be applied only when `new_float` is `normal` or not
++         * specified */
++        bool automatic_border = (config.default_floating_border != BS_NORMAL &&
++                motif_border_style == BS_NORMAL);
++
++        floating_enable(nc, automatic_border);
++    }
++
+     /* to avoid getting an UnmapNotify event due to reparenting, we temporarily
+      * declare no interest in any state change event of this window */
+     values[0] = XCB_NONE;
+-- 
+2.0.0
+

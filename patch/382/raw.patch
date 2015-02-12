@@ -1,0 +1,1100 @@
+From 5e1c905832933fb34e62e29f7975f01067b570a4 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 17 Jan 2014 02:10:45 -0500
+Subject: [PATCH] Abstract binding functions to bindings.h
+
+Adds the following new functions:
+
+* `initialize_bindings`
+* `configure_binding`
+* `run_binding`
+
+Abstracts these existing functions with minor changes:
+
+* Renames `get_binding` to `get_keyboard_binding` and switches the
+parameters `keycode` and `release`.
+* Renames `grab_keys`to `grab_bound_keys`.
+* Renames `translate_keysyms` to `translate_binding_keysyms`.
+* Renames `switch_mode` to `switch_binding_mode`.
+* Renames `check_for_duplicate_bindings` to `validate_bindings`
+
+Additionally makes the modes structure and list of modes private to
+bindings.c, and makes `modifiers_from_str` public.
+---
+ include/all.h               |   1 +
+ include/bindings.h          |  74 +++++++++
+ include/config.h            |  21 ---
+ include/config_directives.h |   6 +
+ src/bindings.c              | 364 ++++++++++++++++++++++++++++++++++++++++++++
+ src/commands.c              |   2 +-
+ src/config.c                | 214 +-------------------------
+ src/config_directives.c     |  55 ++-----
+ src/config_parser.c         |  51 +------
+ src/handlers.c              |   4 +-
+ src/key_press.c             |  11 +-
+ src/main.c                  |  12 +-
+ src/workspace.c             |   4 +-
+ 13 files changed, 476 insertions(+), 343 deletions(-)
+ create mode 100644 include/bindings.h
+ create mode 100644 src/bindings.c
+
+diff --git a/include/all.h b/include/all.h
+index 9ba4c1d..a355d3d 100644
+--- a/include/all.h
++++ b/include/all.h
+@@ -79,6 +79,7 @@
+ #include "scratchpad.h"
+ #include "commands.h"
+ #include "commands_parser.h"
++#include "bindings.h"
+ #include "config_directives.h"
+ #include "config_parser.h"
+ #include "fake_outputs.h"
+diff --git a/include/bindings.h b/include/bindings.h
+new file mode 100644
+index 0000000..e54db65
+--- /dev/null
++++ b/include/bindings.h
+@@ -0,0 +1,74 @@
++/*
++ * vim:ts=4:sw=4:expandtab
++ *
++ * i3 - an improved dynamic tiling window manager
++ * © 2009-2014 Michael Stapelberg and contributors (see also: LICENSE)
++ *
++ * bindings.h: Functions for configuring, finding, and running bindings.
++ *
++ */
++#pragma once
++
++/**
++ * The name of the default mode.
++ *
++ */
++#define DEFAULT_BINDING_MODE "default"
++
++/**
++ * Clears any existing modes and bindings and initializes the data structures.
++ * To be called before parsing or reloading the config.
++ *
++ */
++void initialize_bindings(void);
++
++/**
++ * Adds a binding from config parameters given as strings and returns a
++ * pointer to the binding structure. Returns NULL if the input code could not
++ * be parsed.
++ *
++ */
++Binding *configure_binding(const char *bindtype, const char *modifiers, const char *input_code, const char *release, const char *command, const char *mode);
++
++/**
++ * Gets the keyboard binding with the specified modifiers and keycode. Returns
++ * NULL if no such binding exists.
++ *
++ */
++Binding *get_keyboard_binding(uint16_t modifiers, uint32_t keycode, bool release);
++
++/**
++ * Runs the specified binding and returns the `CommandResult`.
++ *
++ */
++struct CommandResult *run_binding(Binding *binding);
++
++
++/**
++ * Translates keysymbols to keycodes for all bindings which use keysyms.
++ *
++ */
++void translate_binding_keysyms(void);
++
++/**
++ * Grabs the keys for which bindings exist. The server will send us keypress
++ * events for those keycodes.
++ *
++ */
++void grab_bound_keys(xcb_connection_t *conn, bool bind_mode_switch);
++
++/**
++ * Changes the set of currently active bindings to those that were configured
++ * in the specified mode if the mode exists.
++ *
++ */
++void switch_binding_mode(const char *new_mode);
++
++/**
++ * Checks for duplicate bindings (the same keycode, keysym, or button is
++ * configured more than once). If a duplicate binding is found, a message is
++ * printed to stderr and the has_errors variable is set to true, which will
++ * start i3-nagbar.
++ *
++ */
++void validate_bindings(struct context *context);
+diff --git a/include/config.h b/include/config.h
+index b625999..d7ea434 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -21,7 +21,6 @@ typedef struct Config Config;
+ typedef struct Barconfig Barconfig;
+ extern char *current_configpath;
+ extern Config config;
+-extern SLIST_HEAD(modes_head, Mode) modes;
+ extern TAILQ_HEAD(barconfig_head, Barconfig) barconfigs;
+ 
+ /**
+@@ -70,19 +69,6 @@ struct Variable {
+ };
+ 
+ /**
+- * The configuration file can contain multiple sets of bindings. Apart from the
+- * default set (name == "default"), you can specify other sets and change the
+- * currently active set of bindings by using the "mode <name>" command.
+- *
+- */
+-struct Mode {
+-    char *name;
+-    struct bindings_head *bindings;
+-
+-    SLIST_ENTRY(Mode) modes;
+-};
+-
+-/**
+  * Holds part of the configuration (the part which is not already in dedicated
+  * structures in include/data.h).
+  *
+@@ -340,13 +326,6 @@ void switch_mode(const char *new_mode);
+  */void update_barconfig();
+ 
+ /**
+- * Returns a pointer to the Binding with the specified modifiers and keycode
+- * or NULL if no such binding exists.
+- *
+- */
+-Binding *get_binding(uint16_t modifiers, bool key_release, xcb_keycode_t keycode);
+-
+-/**
+  * Kills the configerror i3-nagbar process, if any.
+  *
+  * Called when reloading/restarting.
+diff --git a/include/config_directives.h b/include/config_directives.h
+index e6b792c..a95a647 100644
+--- a/include/config_directives.h
++++ b/include/config_directives.h
+@@ -11,6 +11,12 @@
+ 
+ #include "config_parser.h"
+ 
++/**
++ * A utility function to convert a string of modifiers to the corresponding bit
++ * mask.
++ */
++uint32_t modifiers_from_str(const char *str);
++
+ /** The beginning of the prototype for every cfg_ function. */
+ #define I3_CFG Match *current_match, struct ConfigResult *result
+ 
+diff --git a/src/bindings.c b/src/bindings.c
+new file mode 100644
+index 0000000..e0942ba
+--- /dev/null
++++ b/src/bindings.c
+@@ -0,0 +1,364 @@
++/*
++ * vim:ts=4:sw=4:expandtab
++ *
++ * i3 - an improved dynamic tiling window manager
++ * © 2009-2014 Michael Stapelberg and contributors (see also: LICENSE)
++ *
++ * binding.c: Functions for configuring, finding and, running bindings.
++ */
++#include "all.h"
++
++/* We need Xlib for XStringToKeysym */
++#include <X11/Xlib.h>
++
++/*
++ * The configuration file can contain multiple sets of bindings. Apart from the
++ * default set, you can specify other sets and change the currently active set
++ * of bindings by using the "mode <name>" command.
++ *
++ */
++static SLIST_HEAD(modes_head, Mode) modes;
++
++struct Mode {
++    char *name;
++    struct bindings_head *bindings;
++
++    SLIST_ENTRY(Mode) modes;
++};
++
++/*
++ * Returns the mode specified by `name` or creates a new mode and adds it to
++ * the list of modes.
++ */
++static struct Mode *mode_from_name(const char *name) {
++    struct Mode *mode;
++    SLIST_FOREACH(mode, &modes, modes) {
++        if (strcmp(mode->name, name) == 0)
++            break;
++    }
++
++    if (mode == NULL) {
++        mode = scalloc(sizeof(struct Mode));
++        mode->name = sstrdup(name);
++        mode->bindings = scalloc(sizeof(struct bindings_head));
++        TAILQ_INIT(mode->bindings);
++        SLIST_INSERT_HEAD(&modes, mode, modes);
++    }
++
++    return mode;
++}
++
++/*
++ * Destroys all bindings and all modes.
++ */
++static void clear_bindings(void) {
++    struct Mode *mode;
++    Binding *bind;
++    while (!SLIST_EMPTY(&modes)) {
++        mode = SLIST_FIRST(&modes);
++        FREE(mode->name);
++
++        /* Clear the old binding list */
++        bindings = mode->bindings;
++        while (!TAILQ_EMPTY(bindings)) {
++            bind = TAILQ_FIRST(bindings);
++            TAILQ_REMOVE(bindings, bind, bindings);
++            FREE(bind->translated_to);
++            FREE(bind->command);
++            FREE(bind);
++        }
++        FREE(bindings);
++        SLIST_REMOVE(&modes, mode, Mode, modes);
++    }
++}
++
++/*
++ * Clears any existing modes and bindings and initializes the data structures.
++ * To be called before parsing or reloading the config.
++ *
++ */
++void initialize_bindings() {
++    if (bindings != NULL)
++        clear_bindings();
++
++    SLIST_INIT(&modes);
++    struct Mode *default_mode = mode_from_name(DEFAULT_BINDING_MODE);
++    bindings = default_mode->bindings;
++}
++
++/*
++ * Adds a binding from config parameters given as strings and returns a
++ * pointer to the binding structure. Returns NULL if the input code could not
++ * be parsed.
++ *
++ */
++Binding *configure_binding(const char *bindtype, const char *modifiers, const char *input_code, const char *release, const char *command, const char *modename) {
++    Binding *new_binding = scalloc(sizeof(Binding));
++    DLOG("bindtype %s, modifiers %s, input code %s, release %s\n", bindtype, modifiers, input_code, release);
++    new_binding->release = (release != NULL ? B_UPON_KEYRELEASE : B_UPON_KEYPRESS);
++    if (strcmp(bindtype, "bindsym") == 0) {
++        new_binding->symbol = sstrdup(input_code);
++    } else {
++        // TODO: strtol with proper error handling
++        new_binding->keycode = atoi(input_code);
++        if (new_binding->keycode == 0) {
++            ELOG("Could not parse \"%s\" as an input code, ignoring this binding.\n", input_code);
++            return NULL;
++        }
++    }
++    new_binding->mods = modifiers_from_str(modifiers);
++    new_binding->command = sstrdup(command);
++    new_binding->input_type = B_KEYBOARD;
++
++    struct Mode *mode = mode_from_name(modename);
++    TAILQ_INSERT_TAIL(mode->bindings, new_binding, bindings);
++
++    return new_binding;
++}
++
++/*
++ * Gets the keyboard binding with the specified modifiers and keycode. Returns
++ * NULL if no such binding exists.
++ *
++ */
++Binding *get_keyboard_binding(uint16_t modifiers, uint32_t keycode, bool key_release) {
++    Binding *bind;
++
++    if (!key_release) {
++        /* On a KeyPress event, we first reset all
++         * B_UPON_KEYRELEASE_IGNORE_MODS bindings back to B_UPON_KEYRELEASE */
++        TAILQ_FOREACH(bind, bindings, bindings) {
++            if (bind->release == B_UPON_KEYRELEASE_IGNORE_MODS)
++                bind->release = B_UPON_KEYRELEASE;
++        }
++    }
++
++    TAILQ_FOREACH(bind, bindings, bindings) {
++        /* First compare the modifiers (unless this is a
++         * B_UPON_KEYRELEASE_IGNORE_MODS binding and this is a KeyRelease
++         * event) */
++        if (bind->mods != modifiers &&
++            (bind->release != B_UPON_KEYRELEASE_IGNORE_MODS ||
++             !key_release))
++            continue;
++
++        /* If a symbol was specified by the user, we need to look in
++         * the array of translated keycodes for the event’s keycode */
++        if (bind->symbol != NULL) {
++            if (memmem(bind->translated_to,
++                       bind->number_keycodes * sizeof(xcb_keycode_t),
++                       &keycode, sizeof(xcb_keycode_t)) == NULL)
++                continue;
++        } else {
++            /* This case is easier: The user specified a keycode */
++            if (bind->keycode != keycode)
++                continue;
++        }
++
++        /* If this keybinding is a KeyRelease binding, it matches the key which
++         * the user pressed. We therefore mark it as
++         * B_UPON_KEYRELEASE_IGNORE_MODS for later, so that the user can
++         * release the modifiers before the actual key and the KeyRelease will
++         * still be matched. */
++        if (bind->release == B_UPON_KEYRELEASE && !key_release)
++            bind->release = B_UPON_KEYRELEASE_IGNORE_MODS;
++
++        /* Check if the binding is for a KeyPress or a KeyRelease event */
++        if ((bind->release == B_UPON_KEYPRESS && key_release) ||
++            (bind->release >= B_UPON_KEYRELEASE && !key_release))
++            continue;
++
++        break;
++    }
++
++    return (bind == TAILQ_END(bindings) ? NULL : bind);
++}
++
++/*
++ * Runs the specified binding and returns the `CommandResult`.
++ *
++ */
++struct CommandResult *run_binding(Binding *binding) {
++    char *command_copy = sstrdup(binding->command);
++    struct CommandResult *command_output = parse_command(command_copy);
++    free(command_copy);
++
++    if (command_output->needs_tree_render)
++        tree_render();
++
++    return command_output;
++}
++
++
++static void grab_keycode_for_binding(xcb_connection_t *conn, Binding *bind, uint32_t keycode) {
++    DLOG("Grabbing %d with modifiers %d (with mod_mask_lock %d)\n", keycode, bind->mods, bind->mods | XCB_MOD_MASK_LOCK);
++    /* Grab the key in all combinations */
++    #define GRAB_KEY(modifier) \
++        do { \
++            xcb_grab_key(conn, 0, root, modifier, keycode, \
++                         XCB_GRAB_MODE_SYNC, XCB_GRAB_MODE_ASYNC); \
++        } while (0)
++    int mods = bind->mods;
++    if ((bind->mods & BIND_MODE_SWITCH) != 0) {
++        mods &= ~BIND_MODE_SWITCH;
++        if (mods == 0)
++            mods = XCB_MOD_MASK_ANY;
++    }
++    GRAB_KEY(mods);
++    GRAB_KEY(mods | xcb_numlock_mask);
++    GRAB_KEY(mods | XCB_MOD_MASK_LOCK);
++    GRAB_KEY(mods | xcb_numlock_mask | XCB_MOD_MASK_LOCK);
++}
++
++/*
++ * Translates keysymbols to keycodes for all bindings which use keysyms.
++ *
++ */
++void translate_binding_keysyms(void) {
++    Binding *bind;
++    xcb_keysym_t keysym;
++    int col;
++    xcb_keycode_t i,
++                  min_keycode = xcb_get_setup(conn)->min_keycode,
++                  max_keycode = xcb_get_setup(conn)->max_keycode;
++
++    TAILQ_FOREACH(bind, bindings, bindings) {
++        if (bind->keycode > 0)
++            continue;
++
++        /* We need to translate the symbol to a keycode */
++        keysym = XStringToKeysym(bind->symbol);
++        if (keysym == NoSymbol) {
++            ELOG("Could not translate string to key symbol: \"%s\"\n",
++                 bind->symbol);
++            continue;
++        }
++
++        /* Base column we use for looking up key symbols. We always consider
++         * the base column and the corresponding shift column, so without
++         * mode_switch, we look in 0 and 1, with mode_switch we look in 2 and
++         * 3. */
++        col = (bind->mods & BIND_MODE_SWITCH ? 2 : 0);
++
++        FREE(bind->translated_to);
++        bind->number_keycodes = 0;
++
++        for (i = min_keycode; i && i <= max_keycode; i++) {
++            if ((xcb_key_symbols_get_keysym(keysyms, i, col) != keysym) &&
++                (xcb_key_symbols_get_keysym(keysyms, i, col+1) != keysym))
++                continue;
++            bind->number_keycodes++;
++            bind->translated_to = srealloc(bind->translated_to,
++                                           (sizeof(xcb_keycode_t) *
++                                            bind->number_keycodes));
++            bind->translated_to[bind->number_keycodes-1] = i;
++        }
++
++        DLOG("Translated symbol \"%s\" to %d keycode\n", bind->symbol,
++             bind->number_keycodes);
++    }
++}
++
++/*
++ * Grabs the keys for which bindings exist. The server will send us keypress
++ * events for those keycodes.
++ *
++ */
++void grab_bound_keys(xcb_connection_t *conn, bool bind_mode_switch) {
++    Binding *bind;
++    TAILQ_FOREACH(bind, bindings, bindings) {
++        if ((bind_mode_switch && (bind->mods & BIND_MODE_SWITCH) == 0) ||
++            (!bind_mode_switch && (bind->mods & BIND_MODE_SWITCH) != 0))
++            continue;
++
++        /* The easy case: the user specified a keycode directly. */
++        if (bind->keycode > 0) {
++            grab_keycode_for_binding(conn, bind, bind->keycode);
++            continue;
++        }
++
++        xcb_keycode_t *walk = bind->translated_to;
++        for (uint32_t i = 0; i < bind->number_keycodes; i++)
++            grab_keycode_for_binding(conn, bind, *walk++);
++    }
++}
++
++/*
++ * Changes the set of currently active bindings to those that were configured
++ * in the specified mode if the mode exists.
++ *
++ */
++void switch_binding_mode(const char *new_mode) {
++    struct Mode *mode;
++
++    LOG("Switching to mode %s\n", new_mode);
++
++    SLIST_FOREACH(mode, &modes, modes) {
++        if (strcasecmp(mode->name, new_mode) != 0)
++            continue;
++
++        ungrab_all_keys(conn);
++        bindings = mode->bindings;
++        translate_binding_keysyms();
++        grab_bound_keys(conn, false);
++
++        char *event_msg;
++        sasprintf(&event_msg, "{\"change\":\"%s\"}", mode->name);
++
++        ipc_send_event("mode", I3_IPC_EVENT_MODE, event_msg);
++        FREE(event_msg);
++
++        return;
++    }
++
++    ELOG("ERROR: Mode not found\n");
++}
++
++/*
++ * Checks for duplicate bindings (the same keycode, keysym, or button is
++ * configured more than once). If a duplicate binding is found, a message is
++ * printed to stderr and the has_errors variable is set to true, which will
++ * start i3-nagbar.
++ *
++ */
++void validate_bindings(struct context *context) {
++    Binding *bind, *current;
++    TAILQ_FOREACH(current, bindings, bindings) {
++        TAILQ_FOREACH(bind, bindings, bindings) {
++            /* Abort when we reach the current keybinding, only check the
++             * bindings before */
++            if (bind == current)
++                break;
++
++            /* Check if one is using keysym while the other is using bindsym.
++             * If so, skip. */
++            /* XXX: It should be checked at a later place (when translating the
++             * keysym to keycodes) if there are any duplicates */
++            if ((bind->symbol == NULL && current->symbol != NULL) ||
++                (bind->symbol != NULL && current->symbol == NULL))
++                continue;
++
++            /* If bind is NULL, current has to be NULL, too (see above).
++             * If the keycodes differ, it can't be a duplicate. */
++            if (bind->symbol != NULL &&
++                strcasecmp(bind->symbol, current->symbol) != 0)
++                continue;
++
++            /* Check if the keycodes or modifiers are different. If so, they
++             * can't be duplicate */
++            if (bind->keycode != current->keycode ||
++                bind->mods != current->mods ||
++                bind->release != current->release)
++                continue;
++
++            context->has_errors = true;
++            if (current->keycode != 0) {
++                ELOG("Duplicate keybinding in config file:\n  modmask %d with keycode %d, command \"%s\"\n",
++                     current->mods, current->keycode, current->command);
++            } else {
++                ELOG("Duplicate keybinding in config file:\n  modmask %d with keysym %s, command \"%s\"\n",
++                     current->mods, current->symbol, current->command);
++            }
++        }
++    }
++}
+diff --git a/src/commands.c b/src/commands.c
+index 7ad3aba..acbdf0b 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -1057,7 +1057,7 @@ void cmd_unmark(I3_CMD, char *mark) {
+  */
+ void cmd_mode(I3_CMD, char *mode) {
+     DLOG("mode=%s\n", mode);
+-    switch_mode(mode);
++    switch_binding_mode(mode);
+ 
+     // XXX: default reply for now, make this a better reply
+     ysuccess(true);
+diff --git a/src/config.c b/src/config.c
+index 4ce45ad..bcae6d3 100644
+--- a/src/config.c
++++ b/src/config.c
+@@ -17,7 +17,6 @@
+ 
+ char *current_configpath = NULL;
+ Config config;
+-struct modes_head modes;
+ struct barconfig_head barconfigs = TAILQ_HEAD_INITIALIZER(barconfigs);
+ 
+ /**
+@@ -30,186 +29,6 @@ void ungrab_all_keys(xcb_connection_t *conn) {
+     xcb_ungrab_key(conn, XCB_GRAB_ANY, root, XCB_BUTTON_MASK_ANY);
+ }
+ 
+-static void grab_keycode_for_binding(xcb_connection_t *conn, Binding *bind, uint32_t keycode) {
+-    DLOG("Grabbing %d with modifiers %d (with mod_mask_lock %d)\n", keycode, bind->mods, bind->mods | XCB_MOD_MASK_LOCK);
+-    /* Grab the key in all combinations */
+-    #define GRAB_KEY(modifier) \
+-        do { \
+-            xcb_grab_key(conn, 0, root, modifier, keycode, \
+-                         XCB_GRAB_MODE_SYNC, XCB_GRAB_MODE_ASYNC); \
+-        } while (0)
+-    int mods = bind->mods;
+-    if ((bind->mods & BIND_MODE_SWITCH) != 0) {
+-        mods &= ~BIND_MODE_SWITCH;
+-        if (mods == 0)
+-            mods = XCB_MOD_MASK_ANY;
+-    }
+-    GRAB_KEY(mods);
+-    GRAB_KEY(mods | xcb_numlock_mask);
+-    GRAB_KEY(mods | XCB_MOD_MASK_LOCK);
+-    GRAB_KEY(mods | xcb_numlock_mask | XCB_MOD_MASK_LOCK);
+-}
+-
+-/*
+- * Returns a pointer to the Binding with the specified modifiers and keycode
+- * or NULL if no such binding exists.
+- *
+- */
+-Binding *get_binding(uint16_t modifiers, bool key_release, xcb_keycode_t keycode) {
+-    Binding *bind;
+-
+-    if (!key_release) {
+-        /* On a KeyPress event, we first reset all
+-         * B_UPON_KEYRELEASE_IGNORE_MODS bindings back to B_UPON_KEYRELEASE */
+-        TAILQ_FOREACH(bind, bindings, bindings) {
+-            if (bind->release == B_UPON_KEYRELEASE_IGNORE_MODS)
+-                bind->release = B_UPON_KEYRELEASE;
+-        }
+-    }
+-
+-    TAILQ_FOREACH(bind, bindings, bindings) {
+-        /* First compare the modifiers (unless this is a
+-         * B_UPON_KEYRELEASE_IGNORE_MODS binding and this is a KeyRelease
+-         * event) */
+-        if (bind->mods != modifiers &&
+-            (bind->release != B_UPON_KEYRELEASE_IGNORE_MODS ||
+-             !key_release))
+-            continue;
+-
+-        /* If a symbol was specified by the user, we need to look in
+-         * the array of translated keycodes for the event’s keycode */
+-        if (bind->symbol != NULL) {
+-            if (memmem(bind->translated_to,
+-                       bind->number_keycodes * sizeof(xcb_keycode_t),
+-                       &keycode, sizeof(xcb_keycode_t)) == NULL)
+-                continue;
+-        } else {
+-            /* This case is easier: The user specified a keycode */
+-            if (bind->keycode != keycode)
+-                continue;
+-        }
+-
+-        /* If this keybinding is a KeyRelease binding, it matches the key which
+-         * the user pressed. We therefore mark it as
+-         * B_UPON_KEYRELEASE_IGNORE_MODS for later, so that the user can
+-         * release the modifiers before the actual key and the KeyRelease will
+-         * still be matched. */
+-        if (bind->release == B_UPON_KEYRELEASE && !key_release)
+-            bind->release = B_UPON_KEYRELEASE_IGNORE_MODS;
+-
+-        /* Check if the binding is for a KeyPress or a KeyRelease event */
+-        if ((bind->release == B_UPON_KEYPRESS && key_release) ||
+-            (bind->release >= B_UPON_KEYRELEASE && !key_release))
+-            continue;
+-
+-        break;
+-    }
+-
+-    return (bind == TAILQ_END(bindings) ? NULL : bind);
+-}
+-
+-/*
+- * Translates keysymbols to keycodes for all bindings which use keysyms.
+- *
+- */
+-void translate_keysyms(void) {
+-    Binding *bind;
+-    xcb_keysym_t keysym;
+-    int col;
+-    xcb_keycode_t i,
+-                  min_keycode = xcb_get_setup(conn)->min_keycode,
+-                  max_keycode = xcb_get_setup(conn)->max_keycode;
+-
+-    TAILQ_FOREACH(bind, bindings, bindings) {
+-        if (bind->keycode > 0)
+-            continue;
+-
+-        /* We need to translate the symbol to a keycode */
+-        keysym = XStringToKeysym(bind->symbol);
+-        if (keysym == NoSymbol) {
+-            ELOG("Could not translate string to key symbol: \"%s\"\n",
+-                 bind->symbol);
+-            continue;
+-        }
+-
+-        /* Base column we use for looking up key symbols. We always consider
+-         * the base column and the corresponding shift column, so without
+-         * mode_switch, we look in 0 and 1, with mode_switch we look in 2 and
+-         * 3. */
+-        col = (bind->mods & BIND_MODE_SWITCH ? 2 : 0);
+-
+-        FREE(bind->translated_to);
+-        bind->number_keycodes = 0;
+-
+-        for (i = min_keycode; i && i <= max_keycode; i++) {
+-            if ((xcb_key_symbols_get_keysym(keysyms, i, col) != keysym) &&
+-                (xcb_key_symbols_get_keysym(keysyms, i, col+1) != keysym))
+-                continue;
+-            bind->number_keycodes++;
+-            bind->translated_to = srealloc(bind->translated_to,
+-                                           (sizeof(xcb_keycode_t) *
+-                                            bind->number_keycodes));
+-            bind->translated_to[bind->number_keycodes-1] = i;
+-        }
+-
+-        DLOG("Translated symbol \"%s\" to %d keycode\n", bind->symbol,
+-             bind->number_keycodes);
+-    }
+-}
+-
+-/*
+- * Grab the bound keys (tell X to send us keypress events for those keycodes)
+- *
+- */
+-void grab_all_keys(xcb_connection_t *conn, bool bind_mode_switch) {
+-    Binding *bind;
+-    TAILQ_FOREACH(bind, bindings, bindings) {
+-        if ((bind_mode_switch && (bind->mods & BIND_MODE_SWITCH) == 0) ||
+-            (!bind_mode_switch && (bind->mods & BIND_MODE_SWITCH) != 0))
+-            continue;
+-
+-        /* The easy case: the user specified a keycode directly. */
+-        if (bind->keycode > 0) {
+-            grab_keycode_for_binding(conn, bind, bind->keycode);
+-            continue;
+-        }
+-
+-        xcb_keycode_t *walk = bind->translated_to;
+-        for (uint32_t i = 0; i < bind->number_keycodes; i++)
+-            grab_keycode_for_binding(conn, bind, *walk++);
+-    }
+-}
+-
+-/*
+- * Switches the key bindings to the given mode, if the mode exists
+- *
+- */
+-void switch_mode(const char *new_mode) {
+-    struct Mode *mode;
+-
+-    LOG("Switching to mode %s\n", new_mode);
+-
+-    SLIST_FOREACH(mode, &modes, modes) {
+-        if (strcasecmp(mode->name, new_mode) != 0)
+-            continue;
+-
+-        ungrab_all_keys(conn);
+-        bindings = mode->bindings;
+-        translate_keysyms();
+-        grab_all_keys(conn, false);
+-
+-        char *event_msg;
+-        sasprintf(&event_msg, "{\"change\":\"%s\"}", mode->name);
+-
+-        ipc_send_event("mode", I3_IPC_EVENT_MODE, event_msg);
+-        FREE(event_msg);
+-
+-        return;
+-    }
+-
+-    ELOG("ERROR: Mode not found\n");
+-}
+-
+ /*
+  * Sends the current bar configuration as an event to all barconfig_update listeners.
+  * This update mechnism currently only includes the hidden_state and the mode in the config.
+@@ -344,25 +163,6 @@ void load_configuration(xcb_connection_t *conn, const char *override_configpath,
+         /* First ungrab the keys */
+         ungrab_all_keys(conn);
+ 
+-        struct Mode *mode;
+-        Binding *bind;
+-        while (!SLIST_EMPTY(&modes)) {
+-            mode = SLIST_FIRST(&modes);
+-            FREE(mode->name);
+-
+-            /* Clear the old binding list */
+-            bindings = mode->bindings;
+-            while (!TAILQ_EMPTY(bindings)) {
+-                bind = TAILQ_FIRST(bindings);
+-                TAILQ_REMOVE(bindings, bind, bindings);
+-                FREE(bind->translated_to);
+-                FREE(bind->command);
+-                FREE(bind);
+-            }
+-            FREE(bindings);
+-            SLIST_REMOVE(&modes, mode, Mode, modes);
+-        }
+-
+         struct Assignment *assign;
+         while (!TAILQ_EMPTY(&assignments)) {
+             assign = TAILQ_FIRST(&assignments);
+@@ -424,15 +224,7 @@ void load_configuration(xcb_connection_t *conn, const char *override_configpath,
+         free_font();
+     }
+ 
+-    SLIST_INIT(&modes);
+-
+-    struct Mode *default_mode = scalloc(sizeof(struct Mode));
+-    default_mode->name = sstrdup("default");
+-    default_mode->bindings = scalloc(sizeof(struct bindings_head));
+-    TAILQ_INIT(default_mode->bindings);
+-    SLIST_INSERT_HEAD(&modes, default_mode, modes);
+-
+-    bindings = default_mode->bindings;
++    initialize_bindings();
+ 
+ #define REQUIRED_OPTION(name) \
+     if (config.name == NULL) \
+@@ -477,8 +269,8 @@ void load_configuration(xcb_connection_t *conn, const char *override_configpath,
+     parse_configuration(override_configpath);
+ 
+     if (reload) {
+-        translate_keysyms();
+-        grab_all_keys(conn, false);
++        translate_binding_keysyms();
++        grab_bound_keys(conn, false);
+     }
+ 
+     if (config.font.type == FONT_TYPE_NONE) {
+diff --git a/src/config_directives.c b/src/config_directives.c
+index 96d29ee..a27a861 100644
+--- a/src/config_directives.c
++++ b/src/config_directives.c
+@@ -130,7 +130,11 @@ static bool eval_boolstr(const char *str) {
+             strcasecmp(str, "active") == 0);
+ }
+ 
+-static uint32_t modifiers_from_str(const char *str) {
++/*
++ * A utility function to convert a string of modifiers to the corresponding bit
++ * mask.
++ */
++uint32_t modifiers_from_str(const char *str) {
+     /* It might be better to use strtok() here, but the simpler strstr() should
+      * do for now. */
+     uint32_t result = 0;
+@@ -167,24 +171,8 @@ CFGFUN(font, const char *font) {
+ 	font_pattern = sstrdup(font);
+ }
+ 
+-// TODO: refactor with mode_binding
+ CFGFUN(binding, const char *bindtype, const char *modifiers, const char *key, const char *release, const char *command) {
+-    Binding *new_binding = scalloc(sizeof(Binding));
+-    DLOG("bindtype %s, modifiers %s, key %s, release %s\n", bindtype, modifiers, key, release);
+-    new_binding->release = (release != NULL ? B_UPON_KEYRELEASE : B_UPON_KEYPRESS);
+-    if (strcmp(bindtype, "bindsym") == 0) {
+-        new_binding->symbol = sstrdup(key);
+-    } else {
+-        // TODO: strtol with proper error handling
+-        new_binding->keycode = atoi(key);
+-        if (new_binding->keycode == 0) {
+-            ELOG("Could not parse \"%s\" as a keycode, ignoring this binding.\n", key);
+-            return;
+-        }
+-    }
+-    new_binding->mods = modifiers_from_str(modifiers);
+-    new_binding->command = sstrdup(command);
+-    TAILQ_INSERT_TAIL(bindings, new_binding, bindings);
++    configure_binding(bindtype, modifiers, key, release, command, DEFAULT_BINDING_MODE);
+ }
+ 
+ 
+@@ -192,39 +180,20 @@ CFGFUN(binding, const char *bindtype, const char *modifiers, const char *key, co
+  * Mode handling
+  ******************************************************************************/
+ 
+-static struct bindings_head *current_bindings;
++static char *current_mode;
+ 
+ CFGFUN(mode_binding, const char *bindtype, const char *modifiers, const char *key, const char *release, const char *command) {
+-    Binding *new_binding = scalloc(sizeof(Binding));
+-    DLOG("bindtype %s, modifiers %s, key %s, release %s\n", bindtype, modifiers, key, release);
+-    new_binding->release = (release != NULL ? B_UPON_KEYRELEASE : B_UPON_KEYPRESS);
+-    if (strcmp(bindtype, "bindsym") == 0) {
+-        new_binding->symbol = sstrdup(key);
+-    } else {
+-        // TODO: strtol with proper error handling
+-        new_binding->keycode = atoi(key);
+-        if (new_binding->keycode == 0) {
+-            ELOG("Could not parse \"%s\" as a keycode, ignoring this binding.\n", key);
+-            return;
+-        }
+-    }
+-    new_binding->mods = modifiers_from_str(modifiers);
+-    new_binding->command = sstrdup(command);
+-    TAILQ_INSERT_TAIL(current_bindings, new_binding, bindings);
++    configure_binding(bindtype, modifiers, key, release, command, current_mode);
+ }
+ 
+ CFGFUN(enter_mode, const char *modename) {
+-    if (strcasecmp(modename, "default") == 0) {
+-        ELOG("You cannot use the name \"default\" for your mode\n");
++    if (strcasecmp(modename,DEFAULT_BINDING_MODE) == 0) {
++        ELOG("You cannot use the name %s for your mode\n", DEFAULT_BINDING_MODE);
+         exit(1);
+     }
+     DLOG("\t now in mode %s\n", modename);
+-    struct Mode *mode = scalloc(sizeof(struct Mode));
+-    mode->name = sstrdup(modename);
+-    mode->bindings = scalloc(sizeof(struct bindings_head));
+-    TAILQ_INIT(mode->bindings);
+-    current_bindings = mode->bindings;
+-    SLIST_INSERT_HEAD(&modes, mode, modes);
++    FREE(current_mode);
++    current_mode = sstrdup(modename);
+ }
+ 
+ CFGFUN(exec, const char *exectype, const char *no_startup_id, const char *command) {
+diff --git a/src/config_parser.c b/src/config_parser.c
+index cb21dae..04e4a4d 100644
+--- a/src/config_parser.c
++++ b/src/config_parser.c
+@@ -844,55 +844,6 @@ static char *migrate_config(char *input, off_t size) {
+ }
+ 
+ /*
+- * Checks for duplicate key bindings (the same keycode or keysym is configured
+- * more than once). If a duplicate binding is found, a message is printed to
+- * stderr and the has_errors variable is set to true, which will start
+- * i3-nagbar.
+- *
+- */
+-static void check_for_duplicate_bindings(struct context *context) {
+-    Binding *bind, *current;
+-    TAILQ_FOREACH(current, bindings, bindings) {
+-        TAILQ_FOREACH(bind, bindings, bindings) {
+-            /* Abort when we reach the current keybinding, only check the
+-             * bindings before */
+-            if (bind == current)
+-                break;
+-
+-            /* Check if one is using keysym while the other is using bindsym.
+-             * If so, skip. */
+-            /* XXX: It should be checked at a later place (when translating the
+-             * keysym to keycodes) if there are any duplicates */
+-            if ((bind->symbol == NULL && current->symbol != NULL) ||
+-                (bind->symbol != NULL && current->symbol == NULL))
+-                continue;
+-
+-            /* If bind is NULL, current has to be NULL, too (see above).
+-             * If the keycodes differ, it can't be a duplicate. */
+-            if (bind->symbol != NULL &&
+-                strcasecmp(bind->symbol, current->symbol) != 0)
+-                continue;
+-
+-            /* Check if the keycodes or modifiers are different. If so, they
+-             * can't be duplicate */
+-            if (bind->keycode != current->keycode ||
+-                bind->mods != current->mods ||
+-                bind->release != current->release)
+-                continue;
+-
+-            context->has_errors = true;
+-            if (current->keycode != 0) {
+-                ELOG("Duplicate keybinding in config file:\n  modmask %d with keycode %d, command \"%s\"\n",
+-                     current->mods, current->keycode, current->command);
+-            } else {
+-                ELOG("Duplicate keybinding in config file:\n  modmask %d with keysym %s, command \"%s\"\n",
+-                     current->mods, current->symbol, current->command);
+-            }
+-        }
+-    }
+-}
+-
+-/*
+  * Parses the given file by first replacing the variables, then calling
+  * parse_config and possibly launching i3-nagbar.
+  *
+@@ -1056,7 +1007,7 @@ void parse_file(const char *f) {
+     struct ConfigResult *config_output = parse_config(new, context);
+     yajl_gen_free(config_output->json_gen);
+ 
+-    check_for_duplicate_bindings(context);
++    validate_bindings(context);
+ 
+     if (context->has_errors || context->has_warnings) {
+         ELOG("FYI: You are using i3 version " I3_VERSION "\n");
+diff --git a/src/handlers.c b/src/handlers.c
+index 312372a..7bdb544 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -259,8 +259,8 @@ static void handle_mapping_notify(xcb_mapping_notify_event_t *event) {
+     xcb_numlock_mask = aio_get_mod_mask_for(XCB_NUM_LOCK, keysyms);
+ 
+     ungrab_all_keys(conn);
+-    translate_keysyms();
+-    grab_all_keys(conn, false);
++    translate_binding_keysyms();
++    grab_bound_keys(conn, false);
+ 
+     return;
+ }
+diff --git a/src/key_press.c b/src/key_press.c
+index b8c8cd2..582715f 100644
+--- a/src/key_press.c
++++ b/src/key_press.c
+@@ -84,7 +84,7 @@ void handle_key_press(xcb_key_press_event_t *event) {
+     DLOG("(checked mode_switch, state %d)\n", state_filtered);
+ 
+     /* Find the binding */
+-    Binding *bind = get_binding(state_filtered, key_release, event->detail);
++    Binding *bind = get_keyboard_binding(state_filtered, event->detail, key_release);
+ 
+     /* No match? Then the user has Mode_switch enabled but does not have a
+      * specific keybinding. Fall back to the default keybindings (without
+@@ -93,7 +93,7 @@ void handle_key_press(xcb_key_press_event_t *event) {
+     if (bind == NULL) {
+         state_filtered &= ~(BIND_MODE_SWITCH);
+         DLOG("no match, new state_filtered = %d\n", state_filtered);
+-        if ((bind = get_binding(state_filtered, key_release, event->detail)) == NULL) {
++        if ((bind = get_keyboard_binding(state_filtered, event->detail, key_release)) == NULL) {
+             /* This is not a real error since we can have release and
+              * non-release keybindings. On a KeyPress event for which there is
+              * only a !release-binding, but no release-binding, the
+@@ -105,12 +105,7 @@ void handle_key_press(xcb_key_press_event_t *event) {
+         }
+     }
+ 
+-    char *command_copy = sstrdup(bind->command);
+-    struct CommandResult *command_output = parse_command(command_copy);
+-    free(command_copy);
+-
+-    if (command_output->needs_tree_render)
+-        tree_render();
++    struct CommandResult *command_output = run_binding(bind);
+ 
+     /* We parse the JSON reply to figure out whether there was an error
+      * ("success" being false in on of the returned dictionaries). */
+diff --git a/src/main.c b/src/main.c
+index 878ea5b..30ba2cf 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -206,13 +206,13 @@ static void xkb_got_event(EV_P_ struct ev_io *w, int revents) {
+ 
+         if (ev.state.group == XkbGroup2Index) {
+             DLOG("Mode_switch enabled\n");
+-            grab_all_keys(conn, true);
++            grab_bound_keys(conn, true);
+         }
+ 
+         if (ev.state.group == XkbGroup1Index) {
+             DLOG("Mode_switch disabled\n");
+             ungrab_all_keys(conn);
+-            grab_all_keys(conn, false);
++            grab_bound_keys(conn, false);
+         }
+     }
+ 
+@@ -227,8 +227,8 @@ static void xkb_got_event(EV_P_ struct ev_io *w, int revents) {
+ 
+     ungrab_all_keys(conn);
+     DLOG("Re-grabbing...\n");
+-    translate_keysyms();
+-    grab_all_keys(conn, (xkb_current_group == XkbGroup2Index));
++    translate_binding_keysyms();
++    grab_bound_keys(conn, (xkb_current_group == XkbGroup2Index));
+     DLOG("Done\n");
+ }
+ 
+@@ -663,8 +663,8 @@ int main(int argc, char *argv[]) {
+ 
+     xcb_numlock_mask = aio_get_mod_mask_for(XCB_NUM_LOCK, keysyms);
+ 
+-    translate_keysyms();
+-    grab_all_keys(conn, false);
++    translate_binding_keysyms();
++    grab_bound_keys(conn, false);
+ 
+     bool needs_tree_init = true;
+     if (layout_path) {
+diff --git a/src/workspace.c b/src/workspace.c
+index 670322a..6ccf33b 100644
+--- a/src/workspace.c
++++ b/src/workspace.c
+@@ -116,7 +116,9 @@ Con *create_workspace_on_output(Output *output, Con *content) {
+     Con *ws = con_new(NULL, NULL);
+     ws->type = CT_WORKSPACE;
+ 
+-    /* try the configured workspace bindings first to find a free name */
++    /* try the configured workspace bindings first to find a free name.
++    *  TODO: try to figure out a way to do this without directly using the list
++    *  of bindings.*/
+     Binding *bind;
+     TAILQ_FOREACH(bind, bindings, bindings) {
+         DLOG("binding with command %s\n", bind->command);
+-- 
+1.8.5.3
+

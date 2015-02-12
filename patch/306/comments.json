@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "The patch seems fine to me, but I have one tiny nitpick: please add a comment to the dpms_set_mode(conn, XCB_DPMS_DPMS_MODE_ON); call explaining why it needs to be there. It also would not hurt to mention it in the commit message instead of just referring to the bug :).\n\nThanks!",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

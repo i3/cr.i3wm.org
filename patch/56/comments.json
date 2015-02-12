@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "oblique",
+    "Line": 73,
+    "Comment": "I was thinking if it's better if I do:\nAPPLY_COLORS(focused);\nconfig.client.focused_float = config.client.focused;\nAPPLU_COLORS(focused_float);\n\nSo, if the user don't have \"client.focused_float\" in his config, it will fallback to \"client.focused\", what do you think?\nAlso, in this case I have to remove INIT_COLOR because is not needed.",
+    "EmailHash": "c15e88cb370e3acf3be902f01101c7cc"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "This is not going to be merged since I don’t like to have every option duplicated for floating windows. Given that floating windows are for password dialogs and the like only, adding complexity for them is really not worth it.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

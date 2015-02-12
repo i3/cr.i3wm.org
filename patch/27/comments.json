@@ -1,0 +1,74 @@
+[
+  {
+    "Author": "anonymous",
+    "Line": 184,
+    "Comment": "Depending on the configuration, ddate can be before or after tztime or time. So I think you also have to set $TZ to \"\" here.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 158,
+    "Comment": "I think it would be good to refer to the possible timezones, too. Is there a better way than pointing the user to /usr/share/zoneinfo?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 86,
+    "Comment": "I don’t think it makes much sense to endorse usage of time _and_ tztime. Could you switch the default config (and manpage) to only use tztime? (We still need to support time for old configs, of course)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 23,
+    "Comment": "The default should be sane :-p\n\ni.e. %Y-%m-%d %H:%M:%S %Z",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 86,
+    "Comment": "Marcelo Cerri says: I don't think tztime should replace time. tztime requires a timezone, and I don't think that \"US/Pacific\" should be default.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Emil Mikulic",
+    "Line": 23,
+    "Comment": "Agreed.\n\nIn my defense, I copied this from \"cfg_opt_t time_opts\" which you might want to change...",
+    "EmailHash": "dce73ce6fdc8f512ad557eb19e65480c"
+  },
+  {
+    "Author": "Emil Mikulic",
+    "Line": 86,
+    "Comment": "Can do.",
+    "EmailHash": "dce73ce6fdc8f512ad557eb19e65480c"
+  },
+  {
+    "Author": "Emil Mikulic",
+    "Line": 86,
+    "Comment": "\"Can do\" was wrt \"switch the default config to only use tztime\"",
+    "EmailHash": "dce73ce6fdc8f512ad557eb19e65480c"
+  },
+  {
+    "Author": "Emil Mikulic",
+    "Line": 86,
+    "Comment": "\u003e Marcelo Cerri says: I don't think tztime should replace time.\n\u003e tztime requires a timezone, and I don't think that \"US/Pacific\"\n\u003e should be default.\n\n[In the next patch] tztime doesn't require a timezone, eliding it, or setting it to the empty string, will give you localtime.  \"US/Pacific\" is just an example.",
+    "EmailHash": "dce73ce6fdc8f512ad557eb19e65480c"
+  },
+  {
+    "Author": "Emil Mikulic",
+    "Line": 158,
+    "Comment": "Not that I can think of.  Adding pointer to zoneinfo though.",
+    "EmailHash": "dce73ce6fdc8f512ad557eb19e65480c"
+  },
+  {
+    "Author": "Emil Mikulic",
+    "Line": 18,
+    "Comment": "I've submitted the next version of this patch as:\nhttp://cr.i3wm.org/patch/41",
+    "EmailHash": "dce73ce6fdc8f512ad557eb19e65480c"
+  },
+  {
+    "Author": "Emil Mikulic",
+    "Line": 184,
+    "Comment": "Good call.  Fixed and tested.",
+    "EmailHash": "dce73ce6fdc8f512ad557eb19e65480c"
+  }
+]

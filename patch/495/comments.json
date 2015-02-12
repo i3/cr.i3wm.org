@@ -1,0 +1,56 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 26,
+    "Comment": "Sorry for taking so long to review this patch.\n\nYou are missing updates to docs/userguide and a test case.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 34,
+    "Comment": "This comment sounds a little bit weird, most likely because English is not your native language (mine neither) :).\n\nI suggest something like this:\n\nBy default, the mouse cursor is warped into the center of the destination window/workspace when switching focus to a different monitor.\n\nThis option allows the user to disable mouse cursor warping entirely.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 60,
+    "Comment": "Indentation looks wrong.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 26,
+    "Comment": "Also, please add “fixes #780” to the description in a separate line — our infrastructure will then close the ticket.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Atte Peltomaki",
+    "Line": 26,
+    "Comment": "Installing dependencies for running tests failed, so I was unable to try even the test changes I did make. I'll retry, perhaps there was a temporary problem with Perl libs.\n\nBeyond that, I'm not sure I know how to write a test case. I'll try.\n\nDocs/userguide update will do.",
+    "EmailHash": "49ceee64b6f02a21cf9fdad5cc26c8a7"
+  },
+  {
+    "Author": "Atte Peltomaki",
+    "Line": 34,
+    "Comment": "Ack. I tried to explain _why_ this would be useful, but it's a bit difficult.",
+    "EmailHash": "49ceee64b6f02a21cf9fdad5cc26c8a7"
+  },
+  {
+    "Author": "Atte Peltomaki",
+    "Line": 60,
+    "Comment": "Ack. Typo.",
+    "EmailHash": "49ceee64b6f02a21cf9fdad5cc26c8a7"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 26,
+    "Comment": "If you keep having trouble with the testsuite, please ask on IRC (and have some patience). I haven’t come across a testsuite problem that we could not solve so far :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Atte Peltomaki",
+    "Line": 26,
+    "Comment": "Apologies, I've been very busy with work and then on vacation abroad. I'll try to find some time next week to push this forward.",
+    "EmailHash": "49ceee64b6f02a21cf9fdad5cc26c8a7"
+  }
+]

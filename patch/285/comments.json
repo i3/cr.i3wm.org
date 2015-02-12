@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 51,
+    "Comment": "Uhm, this is really ugly because it shadows a variable, and also it makes the other tests meaningless, right?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 18,
+    "Comment": "I think a better way to fix this is to abort the drag/resize when the involved window(s) vanish.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

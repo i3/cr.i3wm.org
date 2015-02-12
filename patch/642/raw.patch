@@ -1,0 +1,48 @@
+From 9e83eaaa14d1818fbb63fa8dd594ade90c127c92 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sat, 20 Sep 2014 17:21:08 -0400
+Subject: [PATCH] Do not resend focus on click
+
+Do not set focused_id to XCB_NONE in route click to force resend focus,
+in some cases to an already focused window.
+
+Sending focus again on click is not necessary and may cause problems
+with certain wine or mono apps. Resending focus makes combo boxes not
+work in Office 2010.
+---
+ src/click.c | 1 -
+ src/x.c     | 6 +++---
+ 2 files changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/src/click.c b/src/click.c
+index f501c76..5c36aeb 100644
+--- a/src/click.c
++++ b/src/click.c
+@@ -214,7 +214,6 @@ static int route_click(Con *con, xcb_button_press_event_t *event, const bool mod
+ 
+     if (ws != focused_workspace)
+         workspace_show(ws);
+-    focused_id = XCB_NONE;
+ 
+     /* get the floating con */
+     Con *floatingcon = con_inside_floating(con);
+diff --git a/src/x.c b/src/x.c
+index ff0a229..ae97ef0 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -15,9 +15,9 @@
+ /* Stores the X11 window ID of the currently focused window */
+ xcb_window_t focused_id = XCB_NONE;
+ 
+-/* Because 'focused_id' might be reset to force input focus (after click to
+- * raise), we separately keep track of the X11 window ID to be able to always
+- * tell whether the focused window actually changed. */
++/* Because 'focused_id' might be reset to force input focus, we separately keep
++ * track of the X11 window ID to be able to always tell whether the focused
++ * window actually changed. */
+ static xcb_window_t last_focused = XCB_NONE;
+ 
+ /* Stores coordinates to warp mouse pointer to if set */
+-- 
+2.1.0
+

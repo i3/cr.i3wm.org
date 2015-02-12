@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 22,
+    "Comment": "I think this is most of the usefulness of the mouse binding feature.\n\nThis might not be the final implementation of the configuration interface, but having a working implementation will be useful for getting feedback on what sort of tweaks would make this better. I have some ideas I will post to the bug tracker issue on how to handle bindings to the window area.\n\nOther than that, I think the last thing to do is mouse bindings to the bar, which I think will be mostly independent of this.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 22,
+    "Comment": "I would like it if you considered putting this in 4.8.\n\nMouse bindings on the bar may not even be that useful, so I think this stands on its own just fine.\n\nWhatever changes this needs I think will be minor at this point, and as it is, I think this could be a really big improvement to the wm.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 22,
+    "Comment": "If problems arise, I am prepared to fix them in a dot release.\n\nWith all the work this took, I wouldn't want to delay this for people another 3-5 months.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 20,
+    "Comment": "I'm going to redo this",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 22,
+    "Comment": "Sorry, I didn’t see these messages before doing the release. But even if I had read them, this is not the way we stabilize new features. Merging them as early as possible into “next” after a release is a much better way. Every release is costly in terms of manpower and distribution, so I’d like to avoid dot releases.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

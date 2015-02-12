@@ -1,0 +1,651 @@
+From cd8cd1021c109aaf579dca7f614334689bc6469c Mon Sep 17 00:00:00 2001
+From: S0lll0s <S0lll0s@…>
+Date: Mon, 10 Feb 2014 16:16:34 +0100
+Subject: [PATCH] Add support for double-sided i3bar, background colors and
+ centered text
+
+---
+ i3bar/include/common.h        |   9 +-
+ i3bar/include/config.h        |   1 +
+ i3bar/src/child.c             |  77 ++++++++++++-----
+ i3bar/src/main.c              |   3 +-
+ i3bar/src/parse_json_header.c |   6 ++
+ i3bar/src/xcb.c               | 196 ++++++++++++++++++++++++++++++------------
+ libi3/font.c                  |  12 +++
+ 7 files changed, 220 insertions(+), 84 deletions(-)
+
+diff --git a/i3bar/include/common.h b/i3bar/include/common.h
+index d63780d..84df8e9 100644
+--- a/i3bar/include/common.h
++++ b/i3bar/include/common.h
+@@ -16,8 +16,10 @@
+ typedef struct rect_t rect;
+ 
+ struct ev_loop* main_loop;
+-char            *statusline;
+-char            *statusline_buffer;
++char            *l_statusline;
++char            *r_statusline;
++char            *l_statusline_buffer;
++char            *r_statusline_buffer;
+ 
+ struct rect_t {
+     int x;
+@@ -38,6 +40,7 @@ struct status_block {
+     i3String *full_text;
+ 
+     char *color;
++    char *bgcolor;
+     uint32_t min_width;
+     blockalign_t align;
+ 
+@@ -60,7 +63,7 @@ struct status_block {
+     TAILQ_ENTRY(status_block) blocks;
+ };
+ 
+-TAILQ_HEAD(statusline_head, status_block) statusline_head;
++TAILQ_HEAD(statusline_head, status_block) l_statusline_head, r_statusline_head;
+ 
+ #include "child.h"
+ #include "ipc.h"
+diff --git a/i3bar/include/config.h b/i3bar/include/config.h
+index e0b0efe..e865fd2 100644
+--- a/i3bar/include/config.h
++++ b/i3bar/include/config.h
+@@ -27,6 +27,7 @@ typedef struct config_t {
+     struct xcb_color_strings_t colors;
+     bool         disable_binding_mode_indicator;
+     bool         disable_ws;
++    bool         custom_ws;
+     char         *bar_id;
+     char         *command;
+     char         *fontname;
+diff --git a/i3bar/src/child.c b/i3bar/src/child.c
+index d19192f..a256eb5 100644
+--- a/i3bar/src/child.c
++++ b/i3bar/src/child.c
+@@ -30,6 +30,8 @@
+ /* Global variables for child_*() */
+ i3bar_child child;
+ 
++int inbar = 0;
++
+ /* stdin- and sigchild-watchers */
+ ev_io    *stdin_io;
+ ev_child *child_sig;
+@@ -55,8 +57,10 @@ typedef struct parser_ctx {
+ parser_ctx parser_context;
+ 
+ /* The buffer statusline points to */
+-struct statusline_head statusline_head = TAILQ_HEAD_INITIALIZER(statusline_head);
+-char *statusline_buffer = NULL;
++struct statusline_head l_statusline_head = TAILQ_HEAD_INITIALIZER(l_statusline_head);
++struct statusline_head r_statusline_head = TAILQ_HEAD_INITIALIZER(r_statusline_head);
++char *l_statusline_buffer = NULL;
++char *r_statusline_buffer = NULL;
+ 
+ int child_stdin;
+ 
+@@ -66,10 +70,16 @@ int child_stdin;
+  */
+ static void clear_status_blocks() {
+     struct status_block *first;
+-    while (!TAILQ_EMPTY(&statusline_head)) {
+-        first = TAILQ_FIRST(&statusline_head);
++    while (!TAILQ_EMPTY(&l_statusline_head)) {
++        first = TAILQ_FIRST(&l_statusline_head);
+         I3STRING_FREE(first->full_text);
+-        TAILQ_REMOVE(&statusline_head, first, blocks);
++        TAILQ_REMOVE(&l_statusline_head, first, blocks);
++        free(first);
++    }
++    while (!TAILQ_EMPTY(&r_statusline_head)) {
++        first = TAILQ_FIRST(&r_statusline_head);
++        I3STRING_FREE(first->full_text);
++        TAILQ_REMOVE(&r_statusline_head, first, blocks);
+         free(first);
+     }
+ }
+@@ -100,8 +110,8 @@ __attribute__ ((format (printf, 1, 2))) static void set_statusline_error(const c
+     message_block->color = "red";
+     message_block->no_separator = true;
+ 
+-    TAILQ_INSERT_HEAD(&statusline_head, err_block, blocks);
+-    TAILQ_INSERT_TAIL(&statusline_head, message_block, blocks);
++    TAILQ_INSERT_HEAD(&r_statusline_head, err_block, blocks);
++    TAILQ_INSERT_TAIL(&r_statusline_head, message_block, blocks);
+ 
+     FREE(message);
+     va_end(args);
+@@ -115,9 +125,11 @@ void cleanup(void) {
+     if (stdin_io != NULL) {
+         ev_io_stop(main_loop, stdin_io);
+         FREE(stdin_io);
+-        FREE(statusline_buffer);
++        FREE(l_statusline_buffer);
++        FREE(r_statusline_buffer);
+         /* statusline pointed to memory within statusline_buffer */
+-        statusline = NULL;
++        l_statusline = NULL;
++        r_statusline = NULL;
+     }
+ 
+     if (child_sig != NULL) {
+@@ -134,16 +146,27 @@ void cleanup(void) {
+  *
+  */
+ static int stdin_start_array(void *context) {
+-    struct status_block *first;
+-    while (!TAILQ_EMPTY(&statusline_head)) {
+-        first = TAILQ_FIRST(&statusline_head);
+-        I3STRING_FREE(first->full_text);
+-        FREE(first->color);
+-        FREE(first->name);
+-        FREE(first->instance);
+-        TAILQ_REMOVE(&statusline_head, first, blocks);
+-        free(first);
+-    }
++	if ( inbar || !config.custom_ws ) { 
++    	struct status_block *first;
++		struct statusline_head *head;
++
++		if ( inbar == 2 || !config.custom_ws )
++			head = &r_statusline_head;
++		else
++			head = &l_statusline_head;
++
++    	while (!TAILQ_EMPTY(head)) {
++	        first = TAILQ_FIRST(head);
++    	    I3STRING_FREE(first->full_text);
++	        FREE(first->color);
++	        FREE(first->name);
++	        FREE(first->instance);
++	        TAILQ_REMOVE(head, first, blocks);
++	        free(first);
++	    }
++	} else {
++		inbar = 2;
++	}
+     return 1;
+ }
+ 
+@@ -195,6 +218,9 @@ static int stdin_string(void *context, const unsigned char *val, unsigned int le
+     if (strcasecmp(ctx->last_map_key, "color") == 0) {
+         sasprintf(&(ctx->block.color), "%.*s", len, val);
+     }
++    if (strcasecmp(ctx->last_map_key, "background_color") == 0) {
++        sasprintf(&(ctx->block.bgcolor), "%.*s", len, val);
++    }
+     if (strcasecmp(ctx->last_map_key, "align") == 0) {
+         if (len == strlen("left") && !strncmp((const char*)val, "left", strlen("left"))) {
+             ctx->block.align = ALIGN_LEFT;
+@@ -248,18 +274,23 @@ static int stdin_end_map(void *context) {
+         new_block->full_text = i3string_from_utf8("SPEC VIOLATION (null)");
+     if (new_block->urgent)
+         ctx->has_urgent = true;
+-    TAILQ_INSERT_TAIL(&statusline_head, new_block, blocks);
++	if ( inbar == 2 || !config.custom_ws )
++    	TAILQ_INSERT_TAIL(&r_statusline_head, new_block, blocks);
++	else
++    	TAILQ_INSERT_TAIL(&l_statusline_head, new_block, blocks);
+     return 1;
+ }
+ 
+ static int stdin_end_array(void *context) {
+     DLOG("dumping statusline:\n");
+     struct status_block *current;
+-    TAILQ_FOREACH(current, &statusline_head, blocks) {
++    TAILQ_FOREACH(current, &r_statusline_head, blocks) {
+         DLOG("full_text = %s\n", i3string_as_utf8(current->full_text));
+         DLOG("color = %s\n", current->color);
+     }
+     DLOG("end of dump\n");
++	if ( inbar )
++		inbar--;
+     return 1;
+ }
+ 
+@@ -307,7 +338,7 @@ static unsigned char *get_buffer(ev_io *watcher, int *ret_buffer_len) {
+ }
+ 
+ static void read_flat_input(char *buffer, int length) {
+-    struct status_block *first = TAILQ_FIRST(&statusline_head);
++    struct status_block *first = TAILQ_FIRST(&r_statusline_head);
+     /* Clear the old buffer if any. */
+     I3STRING_FREE(first->full_text);
+     /* Remove the trailing newline and terminate the string at the same
+@@ -391,7 +422,7 @@ void stdin_io_first_line_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
+         /* In case of plaintext, we just add a single block and change its
+          * full_text pointer later. */
+         struct status_block *new_block = scalloc(sizeof(struct status_block));
+-        TAILQ_INSERT_TAIL(&statusline_head, new_block, blocks);
++        TAILQ_INSERT_TAIL(&r_statusline_head, new_block, blocks);
+         read_flat_input((char*)buffer, rec);
+     }
+     free(buffer);
+diff --git a/i3bar/src/main.c b/i3bar/src/main.c
+index 8c4cbf6..c782b73 100644
+--- a/i3bar/src/main.c
++++ b/i3bar/src/main.c
+@@ -172,7 +172,8 @@ int main(int argc, char **argv) {
+ 
+     kill_child();
+ 
+-    FREE(statusline_buffer);
++    FREE(l_statusline_buffer);
++    FREE(r_statusline_buffer);
+ 
+     clean_xcb();
+     ev_default_destroy();
+diff --git a/i3bar/src/parse_json_header.c b/i3bar/src/parse_json_header.c
+index 86afab3..3d49a23 100644
+--- a/i3bar/src/parse_json_header.c
++++ b/i3bar/src/parse_json_header.c
+@@ -32,6 +32,7 @@ static enum {
+     KEY_STOP_SIGNAL,
+     KEY_CONT_SIGNAL,
+     KEY_CLICK_EVENTS,
++	KEY_CUSTOM_WS,
+     NO_KEY
+ } current_key;
+ 
+@@ -66,6 +67,9 @@ static int header_boolean(void *ctx, int val) {
+         case KEY_CLICK_EVENTS:
+             child->click_events = val;
+             break;
++		case KEY_CUSTOM_WS:
++            config.custom_ws = (bool)val;
++            break;
+         default:
+             break;
+     }
+@@ -89,6 +93,8 @@ static int header_map_key(void *ctx, const unsigned char *stringval, unsigned in
+         current_key = KEY_CONT_SIGNAL;
+     } else if (CHECK_KEY("click_events")) {
+         current_key = KEY_CLICK_EVENTS;
++    } else if (CHECK_KEY("custom_workspace")) {
++        current_key = KEY_CUSTOM_WS;
+     }
+     return 1;
+ }
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index 928771d..bba733f 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -69,10 +69,14 @@ int              mod_pressed = 0;
+ 
+ /* Because the statusline is the same on all outputs, we have
+  * global buffer to render it on */
+-xcb_gcontext_t   statusline_ctx;
+-xcb_gcontext_t   statusline_clear;
+-xcb_pixmap_t     statusline_pm;
+-uint32_t         statusline_width;
++xcb_gcontext_t   l_statusline_ctx;
++xcb_gcontext_t   r_statusline_ctx;
++xcb_gcontext_t   l_statusline_clear;
++xcb_gcontext_t   r_statusline_clear;
++xcb_pixmap_t     l_statusline_pm;
++xcb_pixmap_t     r_statusline_pm;
++uint32_t         l_statusline_width;
++uint32_t         r_statusline_width;
+ 
+ /* Event-Watchers, to interact with the user */
+ ev_prepare *xcb_prep;
+@@ -121,14 +125,28 @@ int _xcb_request_failed(xcb_void_cookie_t cookie, char *err_msg, int line) {
+  * Redraws the statusline to the buffer
+  *
+  */
+-void refresh_statusline(void) {
++void refresh_statusline( bool left ) {
+     struct status_block *block;
+ 
+-    uint32_t old_statusline_width = statusline_width;
+-    statusline_width = 0;
++	xcb_gcontext_t	*statusline_ctx		= &r_statusline_ctx;
++	xcb_gcontext_t  *statusline_clear	= &r_statusline_clear;
++	xcb_pixmap_t    *statusline_pm		= &r_statusline_pm;
++	uint32_t        *statusline_width	= &r_statusline_width;
++	struct statusline_head *statusline_head	= &r_statusline_head;
++
++	if ( left ) {
++		statusline_ctx		= &l_statusline_ctx;
++		statusline_clear	= &l_statusline_clear;
++		statusline_pm		= &l_statusline_pm;
++		statusline_width	= &l_statusline_width;
++		statusline_head		= &l_statusline_head;
++	}
++
++    uint32_t old_statusline_width = (*statusline_width);
++    (*statusline_width) = 0;
+ 
+     /* Predict the text width of all blocks (in pixels). */
+-    TAILQ_FOREACH(block, &statusline_head, blocks) {
++    TAILQ_FOREACH(block, statusline_head, blocks) {
+         if (i3string_get_num_bytes(block->full_text) == 0)
+             continue;
+ 
+@@ -158,28 +176,29 @@ void refresh_statusline(void) {
+         if (TAILQ_NEXT(block, blocks) != NULL)
+             block->width += block->sep_block_width;
+ 
+-        statusline_width += block->width + block->x_offset + block->x_append;
++        (*statusline_width) += block->width + block->x_offset + block->x_append;
+     }
+ 
+     /* If the statusline is bigger than our screen we need to make sure that
+      * the pixmap provides enough space, so re-allocate if the width grew */
+-    if (statusline_width > root_screen->width_in_pixels &&
+-        statusline_width > old_statusline_width)
++    if ((*statusline_width) > root_screen->width_in_pixels &&
++        (*statusline_width) > old_statusline_width)
+         realloc_sl_buffer();
+ 
+     /* Clear the statusline pixmap. */
+     xcb_rectangle_t rect = { 0, 0, root_screen->width_in_pixels, font.height + 2 };
+-    xcb_poly_fill_rectangle(xcb_connection, statusline_pm, statusline_clear, 1, &rect);
++    xcb_poly_fill_rectangle(xcb_connection, (*statusline_pm), (*statusline_clear), 1, &rect);
+ 
+     /* Draw the text of each block. */
+     uint32_t x = 0;
+-    TAILQ_FOREACH(block, &statusline_head, blocks) {
++    TAILQ_FOREACH(block, statusline_head, blocks) {
+         if (i3string_get_num_bytes(block->full_text) == 0)
+             continue;
+ 
+         uint32_t colorpixel = (block->color ? get_colorpixel(block->color) : colors.bar_fg);
+-        set_font_colors(statusline_ctx, colorpixel, colors.bar_bg);
+-        draw_text(block->full_text, statusline_pm, statusline_ctx, x + block->x_offset, 1, block->width);
++		uint32_t bgcolorpix = (block->bgcolor ? get_colorpixel(block->bgcolor) : colors.bar_bg);
++        set_font_colors((*statusline_ctx), colorpixel, bgcolorpix);
++        draw_text(block->full_text, (*statusline_pm), (*statusline_ctx), x + block->x_offset, 1, block->width);
+         x += block->width + block->x_offset + block->x_append;
+ 
+         if (TAILQ_NEXT(block, blocks) != NULL && !block->no_separator && block->sep_block_width > 0) {
+@@ -187,9 +206,9 @@ void refresh_statusline(void) {
+             uint32_t sep_offset = block->sep_block_width/2 + block->sep_block_width % 2;
+             uint32_t mask = XCB_GC_FOREGROUND | XCB_GC_BACKGROUND;
+             uint32_t values[] = { colors.sep_fg, colors.bar_bg };
+-            xcb_change_gc(xcb_connection, statusline_ctx, mask, values);
+-            xcb_poly_line(xcb_connection, XCB_COORD_MODE_ORIGIN, statusline_pm,
+-                          statusline_ctx, 2,
++            xcb_change_gc(xcb_connection, (*statusline_ctx), mask, values);
++            xcb_poly_line(xcb_connection, XCB_COORD_MODE_ORIGIN, (*statusline_pm),
++                          (*statusline_ctx), 2,
+                           (xcb_point_t[]){ { x - sep_offset, 2 },
+                                            { x - sep_offset, font.height - 2 } });
+         }
+@@ -376,7 +395,7 @@ void handle_button(xcb_button_press_event_t *event) {
+                 }
+ 
+                 int block_x = 0, last_block_x;
+-                int offset = (walk->rect.w - (statusline_width + tray_width)) - 10;
++                int offset = (walk->rect.w - (r_statusline_width + tray_width)) - 10;
+ 
+                 x = original_x - offset;
+                 if (x < 0)
+@@ -384,7 +403,7 @@ void handle_button(xcb_button_press_event_t *event) {
+ 
+                 struct status_block *block;
+ 
+-                TAILQ_FOREACH(block, &statusline_head, blocks) {
++                TAILQ_FOREACH(block, &r_statusline_head, blocks) {
+                     last_block_x = block_x;
+                     block_x += block->width + block->x_offset + block->x_append;
+ 
+@@ -983,24 +1002,43 @@ char *init_xcb_early() {
+     uint32_t mask = XCB_GC_FOREGROUND;
+     uint32_t vals[] = { colors.bar_bg, colors.bar_bg };
+ 
+-    statusline_clear = xcb_generate_id(xcb_connection);
+-    xcb_void_cookie_t clear_ctx_cookie = xcb_create_gc_checked(xcb_connection,
+-                                                               statusline_clear,
++    l_statusline_clear = xcb_generate_id(xcb_connection);
++    r_statusline_clear = xcb_generate_id(xcb_connection);
++    xcb_void_cookie_t l_clear_ctx_cookie = xcb_create_gc_checked(xcb_connection,
++                                                               l_statusline_clear,
++                                                               xcb_root,
++                                                               mask,
++                                                               vals);
++    xcb_void_cookie_t r_clear_ctx_cookie = xcb_create_gc_checked(xcb_connection,
++                                                               r_statusline_clear,
+                                                                xcb_root,
+                                                                mask,
+                                                                vals);
+ 
+-    statusline_ctx = xcb_generate_id(xcb_connection);
+-    xcb_void_cookie_t sl_ctx_cookie = xcb_create_gc_checked(xcb_connection,
+-                                                            statusline_ctx,
++    l_statusline_ctx = xcb_generate_id(xcb_connection);
++    r_statusline_ctx = xcb_generate_id(xcb_connection);
++    xcb_void_cookie_t l_sl_ctx_cookie = xcb_create_gc_checked(xcb_connection,
++                                                            l_statusline_ctx,
++                                                            xcb_root,
++                                                            0,
++                                                            NULL);
++    xcb_void_cookie_t r_sl_ctx_cookie = xcb_create_gc_checked(xcb_connection,
++                                                            r_statusline_ctx,
+                                                             xcb_root,
+                                                             0,
+                                                             NULL);
+ 
+-    statusline_pm = xcb_generate_id(xcb_connection);
+-    xcb_void_cookie_t sl_pm_cookie = xcb_create_pixmap_checked(xcb_connection,
++    l_statusline_pm = xcb_generate_id(xcb_connection);
++    r_statusline_pm = xcb_generate_id(xcb_connection);
++    xcb_void_cookie_t l_sl_pm_cookie = xcb_create_pixmap_checked(xcb_connection,
+                                                                root_screen->root_depth,
+-                                                               statusline_pm,
++                                                               l_statusline_pm,
++                                                               xcb_root,
++                                                               root_screen->width_in_pixels,
++                                                               root_screen->height_in_pixels);
++    xcb_void_cookie_t r_sl_pm_cookie = xcb_create_pixmap_checked(xcb_connection,
++                                                               root_screen->root_depth,
++                                                               r_statusline_pm,
+                                                                xcb_root,
+                                                                root_screen->width_in_pixels,
+                                                                root_screen->height_in_pixels);
+@@ -1024,9 +1062,14 @@ char *init_xcb_early() {
+ 
+     char *path = root_atom_contents("I3_SOCKET_PATH", xcb_connection, screen);
+ 
+-    if (xcb_request_failed(sl_pm_cookie, "Could not allocate statusline-buffer") ||
+-        xcb_request_failed(clear_ctx_cookie, "Could not allocate statusline-buffer-clearcontext") ||
+-        xcb_request_failed(sl_ctx_cookie, "Could not allocate statusline-buffer-context")) {
++    if (xcb_request_failed(l_sl_pm_cookie, "Could not allocate statusline-buffer") ||
++        xcb_request_failed(l_clear_ctx_cookie, "Could not allocate statusline-buffer-clearcontext") ||
++        xcb_request_failed(l_sl_ctx_cookie, "Could not allocate statusline-buffer-context")) {
++        exit(EXIT_FAILURE);
++    }
++    if (xcb_request_failed(r_sl_pm_cookie, "Could not allocate statusline-buffer") ||
++        xcb_request_failed(r_clear_ctx_cookie, "Could not allocate statusline-buffer-clearcontext") ||
++        xcb_request_failed(r_sl_ctx_cookie, "Could not allocate statusline-buffer-context")) {
+         exit(EXIT_FAILURE);
+     }
+ 
+@@ -1373,39 +1416,66 @@ void destroy_window(i3_output *output) {
+  */
+ void realloc_sl_buffer(void) {
+     DLOG("Re-allocating statusline-buffer, statusline_width = %d, root_screen->width_in_pixels = %d\n",
+-         statusline_width, root_screen->width_in_pixels);
+-    xcb_free_pixmap(xcb_connection, statusline_pm);
+-    statusline_pm = xcb_generate_id(xcb_connection);
+-    xcb_void_cookie_t sl_pm_cookie = xcb_create_pixmap_checked(xcb_connection,
++         r_statusline_width, root_screen->width_in_pixels);
++    xcb_free_pixmap(xcb_connection, l_statusline_pm);
++    xcb_free_pixmap(xcb_connection, r_statusline_pm);
++    l_statusline_pm = xcb_generate_id(xcb_connection);
++    r_statusline_pm = xcb_generate_id(xcb_connection);
++    xcb_void_cookie_t l_sl_pm_cookie = xcb_create_pixmap_checked(xcb_connection,
+                                                                root_screen->root_depth,
+-                                                               statusline_pm,
++                                                               l_statusline_pm,
+                                                                xcb_root,
+-                                                               MAX(root_screen->width_in_pixels, statusline_width),
++                                                               MAX(root_screen->width_in_pixels, l_statusline_width),
++                                                               bar_height);
++    xcb_void_cookie_t r_sl_pm_cookie = xcb_create_pixmap_checked(xcb_connection,
++                                                               root_screen->root_depth,
++                                                               r_statusline_pm,
++                                                               xcb_root,
++                                                               MAX(root_screen->width_in_pixels, r_statusline_width),
+                                                                bar_height);
+ 
+     uint32_t mask = XCB_GC_FOREGROUND;
+     uint32_t vals[2] = { colors.bar_bg, colors.bar_bg };
+-    xcb_free_gc(xcb_connection, statusline_clear);
+-    statusline_clear = xcb_generate_id(xcb_connection);
+-    xcb_void_cookie_t clear_ctx_cookie = xcb_create_gc_checked(xcb_connection,
+-                                                               statusline_clear,
++    xcb_free_gc(xcb_connection, l_statusline_clear);
++    xcb_free_gc(xcb_connection, r_statusline_clear);
++    l_statusline_clear = xcb_generate_id(xcb_connection);
++    r_statusline_clear = xcb_generate_id(xcb_connection);
++    xcb_void_cookie_t l_clear_ctx_cookie = xcb_create_gc_checked(xcb_connection,
++                                                               l_statusline_clear,
++                                                               xcb_root,
++                                                               mask,
++                                                               vals);
++    xcb_void_cookie_t r_clear_ctx_cookie = xcb_create_gc_checked(xcb_connection,
++                                                               r_statusline_clear,
+                                                                xcb_root,
+                                                                mask,
+                                                                vals);
+ 
+     mask |= XCB_GC_BACKGROUND;
+     vals[0] = colors.bar_fg;
+-    xcb_free_gc(xcb_connection, statusline_ctx);
+-    statusline_ctx = xcb_generate_id(xcb_connection);
+-    xcb_void_cookie_t sl_ctx_cookie = xcb_create_gc_checked(xcb_connection,
+-                                                            statusline_ctx,
++    l_statusline_ctx = xcb_generate_id(xcb_connection);
++    r_statusline_ctx = xcb_generate_id(xcb_connection);
++    xcb_free_gc(xcb_connection, l_statusline_ctx);
++    xcb_free_gc(xcb_connection, r_statusline_ctx);
++    xcb_void_cookie_t l_sl_ctx_cookie = xcb_create_gc_checked(xcb_connection,
++                                                            l_statusline_ctx,
++                                                            xcb_root,
++                                                            mask,
++                                                            vals);
++    xcb_void_cookie_t r_sl_ctx_cookie = xcb_create_gc_checked(xcb_connection,
++                                                            r_statusline_ctx,
+                                                             xcb_root,
+                                                             mask,
+                                                             vals);
+ 
+-    if (xcb_request_failed(sl_pm_cookie, "Could not allocate statusline-buffer") ||
+-        xcb_request_failed(clear_ctx_cookie, "Could not allocate statusline-buffer-clearcontext") ||
+-        xcb_request_failed(sl_ctx_cookie, "Could not allocate statusline-buffer-context")) {
++    if (xcb_request_failed(l_sl_pm_cookie, "Could not allocate statusline-buffer") ||
++        xcb_request_failed(l_clear_ctx_cookie, "Could not allocate statusline-buffer-clearcontext") ||
++        xcb_request_failed(l_sl_ctx_cookie, "Could not allocate statusline-buffer-context")) {
++        exit(EXIT_FAILURE);
++    }
++    if (xcb_request_failed(r_sl_pm_cookie, "Could not allocate statusline-buffer") ||
++        xcb_request_failed(r_clear_ctx_cookie, "Could not allocate statusline-buffer-clearcontext") ||
++        xcb_request_failed(r_sl_ctx_cookie, "Could not allocate statusline-buffer-context")) {
+         exit(EXIT_FAILURE);
+     }
+ 
+@@ -1669,7 +1739,9 @@ void draw_bars(bool unhide) {
+     DLOG("Drawing Bars...\n");
+     int i = 0;
+ 
+-    refresh_statusline();
++	if ( config.custom_ws )
++		refresh_statusline( 1 );
++    refresh_statusline( 0 );
+ 
+     i3_output *outputs_walk;
+     SLIST_FOREACH(outputs_walk, outputs, slist) {
+@@ -1694,7 +1766,7 @@ void draw_bars(bool unhide) {
+                                 1,
+                                 &rect);
+ 
+-        if (!TAILQ_EMPTY(&statusline_head)) {
++        if (!TAILQ_EMPTY(&r_statusline_head)) {
+             DLOG("Printing statusline!\n");
+ 
+             /* Luckily we already prepared a seperate pixmap containing the rendered
+@@ -1714,17 +1786,27 @@ void draw_bars(bool unhide) {
+             if (traypx > 0)
+                 traypx += 2;
+             xcb_copy_area(xcb_connection,
+-                          statusline_pm,
++                          r_statusline_pm,
+                           outputs_walk->buffer,
+                           outputs_walk->bargc,
+-                          MAX(0, (int16_t)(statusline_width - outputs_walk->rect.w + 4)), 0,
+-                          MAX(0, (int16_t)(outputs_walk->rect.w - statusline_width - traypx - 4)), 3,
+-                          MIN(outputs_walk->rect.w - traypx - 4, (int)statusline_width), font.height + 2);
++                          MAX(0, (int16_t)(r_statusline_width - outputs_walk->rect.w + 4)), 0,
++                          MAX(0, (int16_t)(outputs_walk->rect.w - r_statusline_width - traypx - 4)), 2,
++                          MIN(outputs_walk->rect.w - traypx - 4, r_statusline_width), font.height + 2);
+         }
+ 
+         if (!config.disable_ws) {
+             i3_ws *ws_walk;
+-            TAILQ_FOREACH(ws_walk, outputs_walk->workspaces, tailq) {
++
++        	TAILQ_FOREACH(ws_walk, outputs_walk->workspaces, tailq) {
++			if (config.custom_ws) {
++				xcb_copy_area(xcb_connection,
++							  l_statusline_pm,
++							  outputs_walk->buffer,
++							  outputs_walk->bargc,
++							  0, 0,
++							  0, 2,
++							  l_statusline_width, font.height + 2 );
++			} else {
+                 DLOG("Drawing Button for WS %s at x = %d, len = %d\n",
+                      i3string_as_utf8(ws_walk->name), i, ws_walk->name_width);
+                 uint32_t fg_color = colors.inactive_ws_fg;
+@@ -1813,7 +1895,7 @@ void draw_bars(bool unhide) {
+ 
+             unhide = true;
+         }
+-
++		}
+         i = 0;
+     }
+ 
+diff --git a/libi3/font.c b/libi3/font.c
+index e1e5b82..5899f92 100644
+--- a/libi3/font.c
++++ b/libi3/font.c
+@@ -29,6 +29,9 @@ static xcb_visualtype_t *root_visual_type;
+ static double pango_font_red;
+ static double pango_font_green;
+ static double pango_font_blue;
++static double pango_bgfont_red;
++static double pango_bgfont_green;
++static double pango_bgfont_blue;
+ 
+ /* Necessary to track whether the dpi changes and trigger a LOG() message,
+  * which is more easily visible to users. */
+@@ -120,6 +123,10 @@ static void draw_text_pango(const char *text, size_t text_len,
+     pango_layout_set_text(layout, text, text_len);
+ 
+     /* Do the drawing */
++	cairo_set_source_rgb(cr, pango_bgfont_red, pango_bgfont_green, pango_bgfont_blue);
++	cairo_rectangle(cr, x, y, max_width, savedFont->height); 
++	cairo_fill(cr);
++
+     cairo_set_source_rgb(cr, pango_font_red, pango_font_green, pango_font_blue);
+     pango_cairo_update_layout(cr, layout);
+     pango_layout_get_pixel_size(layout, NULL, &height);
+@@ -303,6 +310,11 @@ void set_font_colors(xcb_gcontext_t gc, uint32_t foreground, uint32_t background
+             pango_font_red = ((foreground >> 16) & 0xff) / 255.0;
+             pango_font_green = ((foreground >> 8) & 0xff) / 255.0;
+             pango_font_blue = (foreground & 0xff) / 255.0;
++
++            /* Save the background font */
++            pango_bgfont_red = ((background >> 16) & 0xff) / 255.0;
++            pango_bgfont_green = ((background >> 8) & 0xff) / 255.0;
++            pango_bgfont_blue = (background & 0xff) / 255.0;
+             break;
+ #endif
+         default:
+-- 
+1.8.5.3
+

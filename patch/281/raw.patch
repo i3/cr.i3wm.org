@@ -1,0 +1,47 @@
+From b14f3d63973d94c2c63eb76d61fa810ca5e92af3 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sun, 20 Oct 2013 07:51:50 -0400
+Subject: [PATCH] i3bar: Only configure tray on own outputs
+
+If the config specifies a `tray_output` not in the list of outputs over
+which this bar will span, do not initialize a tray for the bar.
+
+Fixes former behavior, which was to initialize the tray without showing
+the icons, causing disapearing tray icons in multi-monitor environments
+when `tray_output` isnt `output`.
+---
+ i3bar/src/xcb.c | 18 ++++++++++++++----
+ 1 file changed, 14 insertions(+), 4 deletions(-)
+
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index f407c9b..4564863 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -1531,10 +1531,20 @@ void reconfig_windows(bool redraw_bars) {
+                 exit(EXIT_FAILURE);
+             }
+ 
+-            if (!tray_configured &&
+-                (!config.tray_output ||
+-                 strcasecmp("none", config.tray_output) != 0)) {
+-                init_tray();
++            const char *tray_output = (config.tray_output ? config.tray_output : SLIST_FIRST(outputs)->name);
++            if (!tray_configured && strcasecmp(tray_output, "none") != 0) {
++                /* Configuration sanity check: ensure this i3bar instance handles the output on
++                 * which the tray should appear (e.g. don’t initialize a tray if tray_output ==
++                 * VGA-1 but output == [HDMI-1]).
++                 */
++                i3_output *output;
++                SLIST_FOREACH(output, outputs, slist) {
++                    if (strcasecmp(output->name, tray_output) == 0 ||
++                            (strcasecmp(tray_output, "primary") == 0 && output->primary)) {
++                        init_tray();
++                        break;
++                    }
++                }
+                 tray_configured = true;
+             }
+         } else {
+-- 
+1.8.4.1
+

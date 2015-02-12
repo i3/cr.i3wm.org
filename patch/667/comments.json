@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 28,
+    "Comment": "As far as I can tell, this does not break the problems that were solved in the commit you mentioned earlier.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 21,
+    "Comment": "Oops I forgot to run the tests and some of them don't pass sometimes. Disregard this please.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 21,
+    "Comment": "They break for me too. Will mark this patch as rejected.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

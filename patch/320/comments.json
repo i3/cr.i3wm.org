@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 30,
+    "Comment": "This seems like a good idea at first, but it does not work properly. Regular containers (CT_CON, L_SPLITH) are affected by it throughout the testsuite. I added this code:\n\n    if (con_get_workspace(con) == NULL \u0026\u0026 !(con-\u003etype == CT_OUTPUT || con-\u003etype == CT_ROOT || con-\u003etype == CT_DOCKAREA)) {\n        DLOG(\"WRONG, type == %d, layout %d \\n\", con-\u003etype, con-\u003elayout);\n    }\n\nThen I ran the testsuite and grepped for WRONG, finding many instances.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 23,
+    "Comment": "Also, please explain better in the commit description which containers (i.e. under which circumstances) are actually forgotten currently. And add a test, please?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

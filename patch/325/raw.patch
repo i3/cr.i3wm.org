@@ -1,0 +1,29 @@
+From 3a01d8120b4b3f280c8e5c94d2dfc68b04a7c98f Mon Sep 17 00:00:00 2001
+From: Kinware AB <oss@…>
+Date: Fri, 22 Nov 2013 15:08:41 +0100
+Subject: [PATCH] Fix incorrect wording in manual for run_watch.
+
+---
+ man/i3status.man |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/man/i3status.man b/man/i3status.man
+index 052271f..815a694 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -192,9 +192,9 @@ percentage_free, percentage_avail and percentage_used_of_avail formats.
+ 
+ === Run-watch
+ 
+-Expands the given path to a pidfile and checks if the process ID found inside
+-is valid (that is, if the process is running). You can use this to check if
+-a specific application, such as a VPN client or your DHCP client is running.
++Uses the given path as a pidfile and checks if the process ID found inside is
++valid (that is, if the process is running). You can use this to check if a
++specific application, such as a VPN client or your DHCP client is running.
+ 
+ *Example order*: +run_watch DHCP+
+ 
+-- 
+1.7.10.4
+

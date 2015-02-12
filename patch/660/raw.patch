@@ -1,0 +1,25 @@
+From dcb38ba39030f60a050c8bef618b47482d96e4b1 Mon Sep 17 00:00:00 2001
+From: Mats <d912e3@…>
+Date: Wed, 22 Oct 2014 14:08:30 +0200
+Subject: [PATCH 1/2] t/234-layout-restore-output: Remove unused import
+
+List::MoreUtils is imported but not used.
+---
+ testcases/t/234-layout-restore-output.t | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/testcases/t/234-layout-restore-output.t b/testcases/t/234-layout-restore-output.t
+index b75f4be..12d04b8 100644
+--- a/testcases/t/234-layout-restore-output.t
++++ b/testcases/t/234-layout-restore-output.t
+@@ -19,7 +19,6 @@
+ # Bug still in: 4.8-26-gf96ec19
+ use i3test;
+ use File::Temp qw(tempfile);
+-use List::MoreUtils qw(uniq);
+ use IO::Handle;
+ 
+ my $ws = fresh_workspace;
+-- 
+2.1.2
+

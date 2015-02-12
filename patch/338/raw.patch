@@ -1,0 +1,25 @@
+From 1fc7f4c95cb37dbebfd971fbccef38b41b555461 Mon Sep 17 00:00:00 2001
+From: Jean-Philippe Ouellet <jpo@…>
+Date: Tue, 26 Nov 2013 23:13:30 -0500
+Subject: Remove flex/bison from common.mk since they aren't used anymore
+
+---
+ common.mk | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/common.mk b/common.mk
+index e3c92fa..23ac8e3 100644
+--- a/common.mk
++++ b/common.mk
+@@ -2,8 +2,6 @@ UNAME=$(shell uname)
+ DEBUG=1
+ COVERAGE=0
+ INSTALL=install
+-FLEX=flex
+-BISON=bison
+ ifndef PREFIX
+   PREFIX=/usr
+ endif
+-- 
+1.7.12.1
+

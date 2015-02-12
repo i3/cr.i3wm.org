@@ -1,0 +1,28 @@
+From 156e9635a0320d6da9ad24a3a8de2bfe1d78eb79 Mon Sep 17 00:00:00 2001
+From: Baptiste Daroussin <bapt@…>
+Date: Wed, 20 Mar 2013 17:01:12 +0100
+Subject: [PATCH 3/3] FreeBSD expect a real path on the filesystem for shm_open
+
+---
+ src/log.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/log.c b/src/log.c
+index e490cf3..0269fb2 100644
+--- a/src/log.c
++++ b/src/log.c
+@@ -107,7 +107,11 @@ void init_logging(void) {
+                                         sysconf(_SC_PAGESIZE);
+ #endif
+         logbuffer_size = min(physical_mem_bytes * 0.01, shmlog_size);
++#if defined(__FreeBSD__)
++        sasprintf(&shmlogname, "/tmp/i3-log-%d", getpid());
++#else
+         sasprintf(&shmlogname, "/i3-log-%d", getpid());
++#endif
+         logbuffer_shm = shm_open(shmlogname, O_RDWR | O_CREAT, S_IREAD | S_IWRITE);
+         if (logbuffer_shm == -1) {
+             fprintf(stderr, "Could not shm_open SHM segment for the i3 log: %s\n", strerror(errno));
+-- 
+1.8.1.3
+

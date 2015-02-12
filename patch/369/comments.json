@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 19,
+    "Comment": "This is for the move focus bug, obviously.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 19,
+    "Comment": "I forgot to terminate my markdown grave in the description.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "Which one specifically?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "You also have a typo in ipc.h",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 17,
+    "Comment": "This patch only moves a function around, right? I suspect there is another commit which then makes use of the function somewhere else? Can you squash the two together please?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

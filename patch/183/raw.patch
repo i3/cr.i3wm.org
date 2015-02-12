@@ -1,0 +1,172 @@
+From 66293243a3f6e4c329b603424ab11db0489248a9 Mon Sep 17 00:00:00 2001
+From: Alexander Berntsen <alexander@…>
+Date: Wed, 5 Jun 2013 15:06:53 +0200
+Subject: [PATCH] Implement debuglog command
+
+Add debuglog command that takes toggle|on|off. Add get_debug_logging()
+to be able to toggle. Make t/187-commands-parser.t expect 'debuglog'.
+Document the debuglog command in userguide.
+---
+ docs/userguide                    | 21 +++++++++++++++++++++
+ include/commands.h                |  6 ++++++
+ include/log.h                     |  6 ++++++
+ parser-specs/commands.spec        |  6 ++++++
+ src/commands.c                    | 16 ++++++++++++++++
+ src/log.c                         |  8 ++++++++
+ testcases/t/187-commands-parser.t |  2 +-
+ 7 files changed, 64 insertions(+), 1 deletion(-)
+
+diff --git a/docs/userguide b/docs/userguide
+index 60345be..8f6d17c 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -1762,6 +1762,8 @@ stack-limit rows 5
+ image:stacklimit.png[Container limited to two columns]
+ ///////////////////////////////////////////////////////////////////////////////
+ 
++[[shmlog]]
++
+ === Enabling shared memory logging
+ 
+ As described in http://i3wm.org/docs/debugging.html, i3 can log to a shared
+@@ -1787,6 +1789,25 @@ bindsym $mod+x shmlog toggle
+ i3-msg shmlog $((50*1024*1024))
+ ---------------
+ 
++=== Enabling debug logging
++
++The above-described <<shmlog>> may log to STDOUT while prefixing the current
++time to it, if debug logging is activated. The +debuglog+ command
++allows you to enable or disable debug logging at runtime.
++
++*Syntax*:
++------------------------
++debuglog <on|off|toggle>
++------------------------
++
++*Examples*:
++------------
++# Enable/disable logging
++bindsym $mod-shift-x debuglog toggle
++# or, from terminal:
++i3-msg debug on
++------------
++
+ === Reloading/Restarting/Exiting
+ 
+ You can make i3 reload its configuration file with +reload+. You can also
+diff --git a/include/commands.h b/include/commands.h
+index a09e746..21f2238 100644
+--- a/include/commands.h
++++ b/include/commands.h
+@@ -277,4 +277,10 @@ void cmd_bar(I3_CMD, char *bar_type, char *bar_value, char *bar_id);
+  */
+ void cmd_shmlog(I3_CMD, char *argument);
+ 
++/*
++ * Implementation of 'debuglog toggle|on|off'
++ *
++ */
++void cmd_debuglog(I3_CMD, char *argument);
++
+ #endif
+diff --git a/include/log.h b/include/log.h
+index c9d1d0c..c8e3c8e 100644
+--- a/include/log.h
++++ b/include/log.h
+@@ -51,6 +51,12 @@ void open_logbuffer(void);
+ void close_logbuffer(void);
+ 
+ /**
++ * Checks if debug logging is active.
++ *
++ */
++bool get_debug_logging(void);
++
++/**
+  * Set debug logging.
+  *
+  */
+diff --git a/parser-specs/commands.spec b/parser-specs/commands.spec
+index 4407158..88fbfe6 100644
+--- a/parser-specs/commands.spec
++++ b/parser-specs/commands.spec
+@@ -20,6 +20,7 @@ state INITIAL:
+   'restart' -> call cmd_restart()
+   'reload' -> call cmd_reload()
+   'shmlog' -> SHMLOG
++  'debuglog' -> DEBUGLOG
+   'border' -> BORDER
+   'layout' -> LAYOUT
+   'append_layout' -> APPEND_LAYOUT
+@@ -69,6 +70,11 @@ state SHMLOG:
+   argument = string
+     -> call cmd_shmlog($argument)
+ 
++# debuglog toggle|on|off
++state DEBUGLOG:
++  argument = 'toggle', 'on', 'off'
++    -> call cmd_debuglog($argument)
++
+ # border normal|none|1pixel|toggle|1pixel
+ state BORDER:
+   border_style = 'normal', 'pixel'
+diff --git a/src/commands.c b/src/commands.c
+index fbe4b11..c74f05f 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -2059,3 +2059,19 @@ void cmd_shmlog(I3_CMD, char *argument) {
+     // XXX: default reply for now, make this a better reply
+     ysuccess(true);
+ }
++
++/*
++ * Implementation of 'debuglog toggle|on|off'
++ *
++ */
++void cmd_debuglog(I3_CMD, char *argument) {
++    LOG("%s debug logging\n", get_debug_logging() ? "Disabling" : "Enabling");
++    if (!strcmp(argument,"toggle"))
++        set_debug_logging(!get_debug_logging());
++    else if (!strcmp(argument, "on"))
++        set_debug_logging(true);
++    else if (!strcmp(argument, "off"))
++        set_debug_logging(false);
++    // XXX: default reply for now, make this a better reply
++    ysuccess(true);
++}
+diff --git a/src/log.c b/src/log.c
+index 68131af..5be0f56 100644
+--- a/src/log.c
++++ b/src/log.c
+@@ -181,6 +181,14 @@ void set_verbosity(bool _verbose) {
+ }
+ 
+ /*
++ * Get debug logging.
++ *
++ */
++bool get_debug_logging() {
++    return debug_logging;
++}
++
++/*
+  * Set debug logging.
+  *
+  */
+diff --git a/testcases/t/187-commands-parser.t b/testcases/t/187-commands-parser.t
+index a6bb1c5..3e97699 100644
+--- a/testcases/t/187-commands-parser.t
++++ b/testcases/t/187-commands-parser.t
+@@ -144,7 +144,7 @@ is(parser_calls("\nworkspace test"),
+ ################################################################################
+ 
+ is(parser_calls('unknown_literal'),
+-   "ERROR: Expected one of these tokens: <end>, '[', 'move', 'exec', 'exit', 'restart', 'reload', 'shmlog', 'border', 'layout', 'append_layout', 'workspace', 'focus', 'kill', 'open', 'fullscreen', 'split', 'floating', 'mark', 'resize', 'rename', 'nop', 'scratchpad', 'mode', 'bar'\n" .
++   "ERROR: Expected one of these tokens: <end>, '[', 'move', 'exec', 'exit', 'restart', 'reload', 'shmlog', 'debuglog', 'border', 'layout', 'append_layout', 'workspace', 'focus', 'kill', 'open', 'fullscreen', 'split', 'floating', 'mark', 'resize', 'rename', 'nop', 'scratchpad', 'mode', 'bar'\n" .
+    "ERROR: Your command: unknown_literal\n" .
+    "ERROR:               ^^^^^^^^^^^^^^^",
+    'error for unknown literal ok');
+-- 
+1.8.1.5
+

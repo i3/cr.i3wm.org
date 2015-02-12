@@ -1,0 +1,32 @@
+From 64e6489dcc800688ca90b219058335ac21f4598d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Andr=C3=A1s=20Mohari?= <andras.mohari@…>
+Date: Mon, 25 Feb 2013 10:27:59 +0100
+Subject: [PATCH] Allow min_width of a block in i3bar to be a string
+
+With this change, min_width can either be an integer (as usual), or a
+string. In the latter case, the width of the text given by min_width
+determines the minimum width of the block. This way one does not have to
+figure out a minimum width by trial and error, only to do it again every
+time the font is changed.
+---
+ i3bar/src/child.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/i3bar/src/child.c b/i3bar/src/child.c
+index bea1d58..f5376ea 100644
+--- a/i3bar/src/child.c
++++ b/i3bar/src/child.c
+@@ -140,6 +140,10 @@ static int stdin_string(void *context, const unsigned char *val, unsigned int le
+         } else {
+             ctx->block.align = ALIGN_CENTER;
+         }
++    } else if (strcasecmp(ctx->last_map_key, "min_width") == 0) {
++        i3String *text = i3string_from_utf8_with_length((const char *)val, len);
++        ctx->block.min_width = (uint32_t)predict_text_width(text);
++        i3string_free(text);
+     }
+     return 1;
+ }
+-- 
+1.8.1.4
+

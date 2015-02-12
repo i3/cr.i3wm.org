@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 19,
+    "Comment": "We already did this in the development version (the `next` branch)",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "Indeed: commit 00ee86de79800d80cacc014b53b47585eacdb90b already introduces this functionality.\n\nSorry for the wasted effort.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

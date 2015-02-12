@@ -1,0 +1,36 @@
+From dadc86a4b42135b48fbd347a92e80c4b670405d9 Mon Sep 17 00:00:00 2001
+From: Alexander Berntsen <alexander@…>
+Date: Mon, 28 Apr 2014 00:50:27 +0200
+Subject: [PATCH 1/3] Make all workspaces starting with "__" internal
+
+Workspaces won't work properly if they start with "__", so reserve that
+namespace altogether.
+---
+ src/commands.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/commands.c b/src/commands.c
+index e1aa063..e8a52e2 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -483,7 +483,7 @@ void cmd_move_con_to_workspace_back_and_forth(I3_CMD) {
+  *
+  */
+ void cmd_move_con_to_workspace_name(I3_CMD, char *name) {
+-    if (strncasecmp(name, "__i3_", strlen("__i3_")) == 0) {
++    if (strncasecmp(name, "__", strlen("__")) == 0) {
+         LOG("You cannot switch to the i3 internal workspaces.\n");
+         ysuccess(false);
+         return;
+@@ -998,7 +998,7 @@ void cmd_workspace_back_and_forth(I3_CMD) {
+  *
+  */
+ void cmd_workspace_name(I3_CMD, char *name) {
+-    if (strncasecmp(name, "__i3_", strlen("__i3_")) == 0) {
++    if (strncasecmp(name, "__", strlen("__")) == 0) {
+         LOG("You cannot switch to the i3 internal workspaces.\n");
+         ysuccess(false);
+         return;
+-- 
+1.8.3.2
+

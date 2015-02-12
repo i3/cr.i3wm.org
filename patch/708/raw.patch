@@ -1,0 +1,38 @@
+From d07b55a11ea7a69c2fdc1793060ca46a6682a0d4 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=98ystein=20Dale?= <oystedal@…>
+Date: Sat, 31 Jan 2015 17:35:35 +0100
+Subject: [PATCH] i3bar: Fix "off by one"-error when rendering workspace
+ buttons in i3bar
+
+The height of the buttons were depending on the font height rather than the
+height of the bar itself, leaving room for a 1px gap between the border
+of the button and the bottom edge of the bar.
+---
+ i3bar/src/xcb.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index 6f5f0ca..199a0e5 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -1814,7 +1814,7 @@ void draw_bars(bool unhide) {
+                 xcb_rectangle_t rect_border = {i,
+                                                logical_px(1),
+                                                ws_walk->name_width + logical_px(10),
+-                                               font.height + logical_px(4)};
++                                               bar_height};
+                 xcb_poly_fill_rectangle(xcb_connection,
+                                         outputs_walk->buffer,
+                                         outputs_walk->bargc,
+@@ -1828,7 +1828,7 @@ void draw_bars(bool unhide) {
+                 xcb_rectangle_t rect = {i + logical_px(1),
+                                         2 * logical_px(1),
+                                         ws_walk->name_width + logical_px(8),
+-                                        font.height + logical_px(2)};
++                                        bar_height - logical_px(3)};
+                 xcb_poly_fill_rectangle(xcb_connection,
+                                         outputs_walk->buffer,
+                                         outputs_walk->bargc,
+-- 
+2.2.2
+

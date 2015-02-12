@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "I wonder what this check is about. Even when using i3-msg '[con_id=\"$ws\"] kill' with $ws being the container id of a workspace, I cannot get that message to appear.\n\nWhich case does it cover? Is that just a theoretical check or did you actually test this? If so, why is there no test case for it? Or is there and I am missing it? :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 19,
+    "Comment": "This check is to make sure that a workspace is not killed when it is visible. You cannot see the message as long as you close a workspace with minimum one client mapped on it, because then WM_DELETE is sent to the client and the close_tree command exits with \"One of the children could not be killed immediately (WM_DELETE sent), aborting.\". But if you try to close an empty workspace and leave out this check, i3 would leave the ws visible but would close it and thus make it impossible to interact with it. Issuing a kill command on an empty workspace is already checked in testcase \"126-regress-close.t\".",
+    "EmailHash": ""
+  }
+]

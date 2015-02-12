@@ -1,0 +1,105 @@
+From 9f603b329b21c8050ae50f50735361bb2f76b59f Mon Sep 17 00:00:00 2001
+From: Iakov Davydov <davydov@…>
+Date: Wed, 5 Feb 2014 11:12:47 +0100
+Subject: [PATCH] Add hide_seconds option
+
+fixes: #1134
+---
+ i3status.c               |  3 ++-
+ include/i3status.h       |  2 +-
+ man/i3status.man         |  3 ++-
+ src/print_battery_info.c | 18 +++++++++++++-----
+ 4 files changed, 18 insertions(+), 8 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index b359370..09379e6 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -246,6 +246,7 @@ int main(int argc, char *argv[]) {
+                 CFG_STR("threshold_type", "time", CFGF_NONE),
+                 CFG_BOOL("last_full_capacity", false, CFGF_NONE),
+                 CFG_BOOL("integer_battery_capacity", false, CFGF_NONE),
++                CFG_BOOL("hide_seconds", false, CFGF_NONE),
+                 CFG_CUSTOM_COLOR_OPTS,
+                 CFG_END()
+         };
+@@ -480,7 +481,7 @@ int main(int argc, char *argv[]) {
+ 
+                         CASE_SEC_TITLE("battery") {
+                                 SEC_OPEN_MAP("battery");
+-                                print_battery_info(json_gen, buffer, atoi(title), cfg_getstr(sec, "path"), cfg_getstr(sec, "format"), cfg_getstr(sec, "format_down"), cfg_getint(sec, "low_threshold"), cfg_getstr(sec, "threshold_type"), cfg_getbool(sec, "last_full_capacity"), cfg_getbool(sec, "integer_battery_capacity"));
++                                print_battery_info(json_gen, buffer, atoi(title), cfg_getstr(sec, "path"), cfg_getstr(sec, "format"), cfg_getstr(sec, "format_down"), cfg_getint(sec, "low_threshold"), cfg_getstr(sec, "threshold_type"), cfg_getbool(sec, "last_full_capacity"), cfg_getbool(sec, "integer_battery_capacity"), cfg_getbool(sec, "hide_seconds"));
+                                 SEC_CLOSE_MAP;
+                         }
+ 
+diff --git a/include/i3status.h b/include/i3status.h
+index 5ab310b..e1246b9 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -146,7 +146,7 @@ void set_timezone(const char *tz);
+ 
+ void print_ipv6_info(yajl_gen json_gen, char *buffer, const char *format_up, const char *format_down);
+ void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format, const char *prefix_type);
+-void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, const char *format_down, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity);
++void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, const char *format_down, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity, bool hide_seconds);
+ void print_time(yajl_gen json_gen, char *buffer, const char *format, const char *tz, time_t t);
+ void print_ddate(yajl_gen json_gen, char *buffer, const char *format, time_t t);
+ const char *get_ip_addr();
+diff --git a/man/i3status.man b/man/i3status.man
+index c36694a..614e22c 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -251,7 +251,8 @@ estimated to be empty. If you want to use the last full capacity instead of the
+ design capacity (when using the design capacity, it may happen that your
+ battery is at 23% when fully charged because it’s old. In general, I want to
+ see it this way, because it tells me how worn off my battery is.), just specify
+-+last_full_capacity = true+.
+++last_full_capacity = true+. You can hide seconds in the remaining time and
++empty time estimations by setting +hide_seconds = true+.
+ 
+ If you want the battery percentage to be shown without decimals, add
+ +integer_battery_capacity = true+.
+diff --git a/src/print_battery_info.c b/src/print_battery_info.c
+index 03bacdf..bd3ff5c 100644
+--- a/src/print_battery_info.c
++++ b/src/print_battery_info.c
+@@ -30,7 +30,7 @@
+  * worn off your battery is.
+  *
+  */
+-void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, const char *format_down, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity) {
++void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, const char *format_down, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity, bool hide_seconds) {
+         time_t empty_time;
+         struct tm *empty_tm;
+         char buf[1024];
+@@ -166,15 +166,23 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+                         }
+                 }
+ 
+-                (void)snprintf(remainingbuf, sizeof(remainingbuf), "%02d:%02d:%02d",
+-                        max(hours, 0), max(minutes, 0), max(seconds, 0));
++                if (hide_seconds)
++                        (void)snprintf(remainingbuf, sizeof(remainingbuf), "%02d:%02d",
++                                max(hours, 0), max(minutes, 0));
++                else
++                        (void)snprintf(remainingbuf, sizeof(remainingbuf), "%02d:%02d:%02d",
++                                max(hours, 0), max(minutes, 0), max(seconds, 0));
+ 
+                 empty_time = time(NULL);
+                 empty_time += seconds_remaining;
+                 empty_tm = localtime(&empty_time);
+ 
+-                (void)snprintf(emptytimebuf, sizeof(emptytimebuf), "%02d:%02d:%02d",
+-                        max(empty_tm->tm_hour, 0), max(empty_tm->tm_min, 0), max(empty_tm->tm_sec, 0));
++                if (hide_seconds)
++                        (void)snprintf(emptytimebuf, sizeof(emptytimebuf), "%02d:%02d",
++                                max(empty_tm->tm_hour, 0), max(empty_tm->tm_min, 0));
++                else
++                        (void)snprintf(emptytimebuf, sizeof(emptytimebuf), "%02d:%02d:%02d",
++                                max(empty_tm->tm_hour, 0), max(empty_tm->tm_min, 0), max(empty_tm->tm_sec, 0));
+ 
+                 (void)snprintf(consumptionbuf, sizeof(consumptionbuf), "%1.2fW",
+                         ((float)present_rate / 1000.0 / 1000.0));
+-- 
+1.8.3.2
+

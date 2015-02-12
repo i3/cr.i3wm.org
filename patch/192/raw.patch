@@ -1,0 +1,244 @@
+From a76c120dfa9aa80a21a746b061d6418a7497e6cc Mon Sep 17 00:00:00 2001
+From: koebi <koebischnell@…>
+Date: Tue, 16 Jul 2013 00:33:14 +0200
+Subject: [PATCH] implement unmark command
+
+---
+ docs/ipc                          |    4 +-
+ docs/userguide                    |    9 +++--
+ include/commands.h                |    6 +++
+ parser-specs/commands.spec        |    8 ++++
+ src/commands.c                    |   25 ++++++++++++
+ testcases/t/187-commands-parser.t |    2 +-
+ testcases/t/210-mark-unmark.t     |   79 +++++++++++++++++++++++++++++++++++++
+ 7 files changed, 126 insertions(+), 7 deletions(-)
+ create mode 100644 testcases/t/210-mark-unmark.t
+
+diff --git a/docs/ipc b/docs/ipc
+index 99bc585..0c53dcc 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -458,9 +458,7 @@ JSON dump:
+ === MARKS reply
+ 
+ The reply consists of a single array of strings for each container that has a
+-mark. The order of that array is undefined. If more than one container has the
+-same mark, it will be represented multiple times in the reply (the array
+-contents are not unique).
++mark. The order of that array is undefined.
+ 
+ If no window has a mark the response will be the empty array [].
+ 
+diff --git a/docs/userguide b/docs/userguide
+index aafea44..f264599 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -1679,9 +1679,10 @@ bindsym $mod+a [class="urxvt" title="VIM"] focus
+ This feature is like the jump feature: It allows you to directly jump to a
+ specific window (this means switching to the appropriate workspace and setting
+ focus to the windows). However, you can directly mark a specific window with
+-an arbitrary label and use it afterwards.  You do not need to ensure that your
+-windows have unique classes or titles, and you do not need to change your
+-configuration file.
++an arbitrary label and use it afterwards. You can unmark the label in the same
++way, using the unmark command. If you don't specify a label, unmark removes all
++marks. You do not need to ensure that your windows have unique classes or
++titles, and you do not need to change your configuration file.
+ 
+ As the command needs to include the label with which you want to mark the
+ window, you cannot simply bind it to a key.  +i3-input+ is a tool created
+@@ -1692,12 +1693,14 @@ can also prefix this command and display a custom prompt for the input dialog.
+ ------------------------------
+ mark identifier
+ [con_mark="identifier"] focus
++unmark identifier
+ ------------------------------
+ 
+ *Example (in a terminal)*:
+ ------------------------------
+ $ i3-msg mark irssi
+ $ i3-msg '[con_mark="irssi"] focus'
++$ i3-msg unmark irssi
+ ------------------------------
+ 
+ ///////////////////////////////////////////////////////////////////
+diff --git a/include/commands.h b/include/commands.h
+index 21f2238..bbf45ba 100644
+--- a/include/commands.h
++++ b/include/commands.h
+@@ -116,6 +116,12 @@ void cmd_workspace_name(I3_CMD, char *name);
+ void cmd_mark(I3_CMD, char *mark);
+ 
+ /**
++ * Implementation of 'unmark [mark]'
++ *
++ */
++void cmd_unmark(I3_CMD, char *mark);
++
++/**
+  * Implementation of 'mode <string>'.
+  *
+  */
+diff --git a/parser-specs/commands.spec b/parser-specs/commands.spec
+index 88fbfe6..2c640c6 100644
+--- a/parser-specs/commands.spec
++++ b/parser-specs/commands.spec
+@@ -32,6 +32,7 @@ state INITIAL:
+   'split' -> SPLIT
+   'floating' -> FLOATING
+   'mark' -> MARK
++  'unmark' -> UNMARK
+   'resize' -> RESIZE
+   'rename' -> RENAME
+   'nop' -> NOP
+@@ -177,6 +178,13 @@ state MARK:
+   mark = string
+       -> call cmd_mark($mark)
+ 
++# unmark [mark]
++state UNMARK:
++  end
++      -> call cmd_unmark($mark)
++  mark = string
++      -> call cmd_unmark($mark)
++
+ # resize
+ state RESIZE:
+   way = 'grow', 'shrink'
+diff --git a/src/commands.c b/src/commands.c
+index 07af140..ca9a332 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -1032,6 +1032,31 @@ void cmd_mark(I3_CMD, char *mark) {
+ }
+ 
+ /*
++ * Implementation of 'unmark [mark]'
++ *
++ */
++void cmd_unmark(I3_CMD, char *mark) {
++   if (mark == NULL) {
++       Con *con;
++       TAILQ_FOREACH(con, &all_cons, all_cons) {
++           FREE(con->mark);
++       }
++       DLOG("removed all window marks");
++   } else {
++       Con *con;
++       TAILQ_FOREACH(con, &all_cons, all_cons) {
++           if (con->mark && strcmp(con->mark, mark) == 0)
++               FREE(con->mark);
++       }
++       DLOG("removed window mark %s\n", mark);
++    }
++
++    cmd_output->needs_tree_render = true;
++    // XXX: default reply for now, make this a better reply
++    ysuccess(true);
++}
++
++/*
+  * Implementation of 'mode <string>'.
+  *
+  */
+diff --git a/testcases/t/187-commands-parser.t b/testcases/t/187-commands-parser.t
+index 3e97699..bbb89d9 100644
+--- a/testcases/t/187-commands-parser.t
++++ b/testcases/t/187-commands-parser.t
+@@ -144,7 +144,7 @@ is(parser_calls("\nworkspace test"),
+ ################################################################################
+ 
+ is(parser_calls('unknown_literal'),
+-   "ERROR: Expected one of these tokens: <end>, '[', 'move', 'exec', 'exit', 'restart', 'reload', 'shmlog', 'debuglog', 'border', 'layout', 'append_layout', 'workspace', 'focus', 'kill', 'open', 'fullscreen', 'split', 'floating', 'mark', 'resize', 'rename', 'nop', 'scratchpad', 'mode', 'bar'\n" .
++   "ERROR: Expected one of these tokens: <end>, '[', 'move', 'exec', 'exit', 'restart', 'reload', 'shmlog', 'debuglog', 'border', 'layout', 'append_layout', 'workspace', 'focus', 'kill', 'open', 'fullscreen', 'split', 'floating', 'mark', 'unmark', 'resize', 'rename', 'nop', 'scratchpad', 'mode', 'bar'\n" .
+    "ERROR: Your command: unknown_literal\n" .
+    "ERROR:               ^^^^^^^^^^^^^^^",
+    'error for unknown literal ok');
+diff --git a/testcases/t/210-mark-unmark.t b/testcases/t/210-mark-unmark.t
+new file mode 100644
+index 0000000..f285338
+--- /dev/null
++++ b/testcases/t/210-mark-unmark.t
+@@ -0,0 +1,79 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# checks if mark and unmark work correctly
++use i3test;
++
++sub get_marks {
++    return i3(get_socket_path())->get_marks->recv;
++}
++
++##############################################################
++# 1: check that there are no marks set yet
++##############################################################
++
++my $tmp = fresh_workspace;
++
++cmd 'split h';
++
++is_deeply(get_marks(), [], 'no marks set yet');
++
++
++##############################################################
++# 2: mark a con, check that it's marked, unmark it, check that
++##############################################################
++
++my $one = open_window;
++cmd 'mark foo';
++
++is_deeply(get_marks(), ["foo"], 'mark foo set');
++
++cmd 'unmark foo';
++
++is_deeply(get_marks(), [], 'mark foo removed');
++
++##############################################################
++# 3: mark three cons, check that they are marked
++#    unmark one con, check that it's unmarked
++#    unmark all cons, check that they are unmarked
++##############################################################
++
++my $left = open_window;
++my $middle = open_window;
++my $right = open_window;
++
++cmd 'mark right';
++cmd 'focus left';
++cmd 'mark middle';
++cmd 'focus left';
++cmd 'mark left';
++
++#
++# get_marks replys an array of marks, whose order is undefined,
++# so we use sort to be able to compare the output
++#
++
++is_deeply(sort(get_marks()), ["left","middle","right"], 'all three marks set');
++
++cmd 'unmark right';
++
++is_deeply(sort(get_marks()), ["left","middle"], 'mark right removed');
++
++cmd 'unmark';
++
++is_deeply(get_marks(), [], 'all marks removed');
++
++done_testing;
+-- 
+1.7.10.4
+

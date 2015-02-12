@@ -1,0 +1,37 @@
+From b27796f031d4579c1ff51bdc2aa356fc2f6800b3 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Wed, 20 Nov 2013 09:39:54 -0500
+Subject: [PATCH] Remove-child callback will not handle output cons
+
+Every container 'above' (in the hierarchy) the workspace content should
+not be closed when the last child was removed.
+
+Test whether the container is 'above' workspace content by calling
+`con_get_workspace` and seeing if it is null. This test is more robust
+than checking if the container is an output, the root, or a dockarea
+because it includes output "container cons" which should not be handled.
+
+Fixes an issue that caused output "container cons" to become urgent when
+the output is killed with RandR.
+---
+ src/con.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/src/con.c b/src/con.c
+index 84063eb..f063c51 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -1353,9 +1353,7 @@ static void con_on_remove_child(Con *con) {
+ 
+     /* Every container 'above' (in the hierarchy) the workspace content should
+      * not be closed when the last child was removed */
+-    if (con->type == CT_OUTPUT ||
+-        con->type == CT_ROOT ||
+-        con->type == CT_DOCKAREA) {
++    if (con_get_workspace(con) == NULL) {
+         DLOG("not handling, type = %d\n", con->type);
+         return;
+     }
+-- 
+1.8.4.2
+

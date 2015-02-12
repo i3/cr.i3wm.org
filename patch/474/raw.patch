@@ -1,0 +1,25 @@
+From 4a0f4764a6fb78e42665a59b6c0f27c8f1e2b4ff Mon Sep 17 00:00:00 2001
+From: jeroentbt <jeroen@…>
+Date: Mon, 17 Mar 2014 00:59:01 +0100
+Subject: [PATCH] fix typo
+
+---
+ docs/userguide | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/docs/userguide b/docs/userguide
+index f87cdd8..dd937fe 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -204,7 +204,7 @@ orientation (horizontal, vertical or unspecified) and the orientation depends
+ on the layout the container is in (vertical for splitv and stacking, horizontal
+ for splith and tabbed). So, in our example with the workspace, the default
+ layout of the workspace +Container+ is splith (most monitors are widescreen
+-nowadays). If you change the layout to splitv (+$mod+l+ in the default config)
++nowadays). If you change the layout to splitv (+$mod+v+ in the default config)
+ and *then* open two terminals, i3 will configure your windows like this:
+ 
+ image::tree-shot2.png["shot2",title="Vertical Workspace Orientation"]
+-- 
+1.9.0
+

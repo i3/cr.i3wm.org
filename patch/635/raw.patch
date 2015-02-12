@@ -1,0 +1,71 @@
+From b0bb5416d614c19b24282579038eb0e90db0abba Mon Sep 17 00:00:00 2001
+From: Robin Hahling <robin.hahling@…>
+Date: Mon, 4 Aug 2014 16:54:08 +0200
+Subject: Fix Dragonfly BSD CPU temperature gauge
+
+This patch fixes CPU temperature gauge for DragonFly BSD.
+Commit 0eeded8 assumed that fetching CPU temperature for DragonFly
+BSD was similar to that of FreeBSD but this assumption is false.
+---
+ src/print_cpu_temperature.c | 31 +++++++++++++++++++++++++++++--
+ 1 file changed, 29 insertions(+), 2 deletions(-)
+
+diff --git a/src/print_cpu_temperature.c b/src/print_cpu_temperature.c
+index 51df790..c687474 100644
+--- a/src/print_cpu_temperature.c
++++ b/src/print_cpu_temperature.c
+@@ -8,7 +8,7 @@
+ 
+ #include "i3status.h"
+ 
+-#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__DragonFly__)
++#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
+ #include <err.h>
+ #include <sys/types.h>
+ #include <sys/sysctl.h>
+@@ -17,6 +17,13 @@
+ #define TZ_AVG(x) ((x) - TZ_ZEROC) / 10
+ #endif
+ 
++#if defined(__DragonFly__)
++#include <sys/sysctl.h>
++#include <sys/types.h>
++#include <sys/sensors.h>
++#define MUKTOC(v) ((v - 273150000) / 1000000.0)
++#endif
++
+ #if defined(__OpenBSD__)
+ #include <sys/param.h>
+ #include <sys/types.h>
+@@ -82,7 +89,27 @@ void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const
+                                         colorful_output = false;
+                                 }
+                         }
+-#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__DragonFly__)
++#elif defined(__DragonFly__)
++			struct sensor th_sensor;
++			size_t th_sensorlen;
++
++			th_sensorlen = sizeof(th_sensor);
++
++			if (sysctlbyname(thermal_zone, &th_sensor, &th_sensorlen, NULL, 0) == -1) {
++				perror("sysctlbyname");
++				goto error;
++			}
++			if (MUKTOC(th_sensor.value) >= max_threshold) {
++				START_COLOR("color_bad");
++				colorful_output = true;
++			}
++			outwalk += sprintf(outwalk, "%.2f", MUKTOC(th_sensor.value));
++			if (colorful_output) {
++				END_COLOR;
++				colorful_output = false;
++			}
++
++#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
+                         int sysctl_rslt;
+                         size_t sysctl_size = sizeof(sysctl_rslt);
+                         if (sysctlbyname(thermal_zone, &sysctl_rslt, &sysctl_size, NULL, 0))
+-- 
+2.0.0
+

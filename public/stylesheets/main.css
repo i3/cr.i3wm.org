@@ -1,0 +1,130 @@
+html, body {
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	padding-left: 1em;
+	padding-right: 1em;
+}
+
+tr, td, pre {
+	margin: 0;
+	padding: 0;
+}
+
+th {
+	text-align: left;
+}
+
+.patch, pre {
+	/*font-family: 'Ubuntu Mono', 'Courier', monospace;*/
+	font-family: Consolas, 'Liberation Mono', Courier, monospace;
+	font-size: 12px;
+	line-height: 1.4;
+}
+
+pre {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+.add-bubble {
+	background-color: red;
+}
+
+.add {
+	background-color: #ddffdd;
+}
+
+.del {
+	background-color: #ffdddd;
+}
+
+.hunk {
+	background-color: #eaf2f5;
+}
+
+.line:hover {
+	background-color: #ffffcc;
+}
+
+.patch {
+	background-color: #f8f8ff;
+	border-top: 1px solid #ccc;
+}
+
+.line-number {
+	color: #aaa;
+	border-right: 1px solid #ddd;
+	text-align: right;
+	padding: 0 6px;
+}
+
+.comment {
+	margin-left: 1.5em;
+	margin-bottom: 0.25em;
+	border: 1px solid #d0cabd;
+	width: 800px;
+	background-color: #fff;
+}
+
+.comment div {
+	padding: 0.25em;
+}
+
+.c-header {
+	background-color: #f0eeea;
+}
+
+.c-comment {
+	background-color: #fff;
+	width: 720px;
+	padding-right: 1em;
+	white-space: pre-wrap;
+}
+
+code {
+	border: 1px solid #ccc;
+	color: #000;
+	background: #eee;
+	padding-left: 0.25em;
+	padding-right: 0.25em;
+	padding-top: 0.1em;
+	padding-bottom: 0.1em;
+	border-radius: 4px;
+}
+
+.pstatus > span {
+	color: #000;
+	padding: .25em;
+	border-radius: 5px;
+}
+
+.pstatus-pending > span {
+	background-color: #5bb75b;
+}
+
+.pstatus-merged > span, .pstatus-superseded > span {
+	background-color: #49afcd;
+}
+
+.pstatus-needinfo > span {
+	background-color: #faa732;
+}
+
+.pstatus-rejected > span {
+	background-color: #da4f49;
+}
+
+.pstatus, .timestamp, .pauthor {
+	white-space: nowrap;
+}
+
+.error {
+    color: red;
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 24,
+    "Comment": "This looks good. Can you add a testcase to the testsuite to verify this behavior please?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Adrien Schildknecht",
+    "Line": 28,
+    "Comment": "I should rather put theses lines in the tree_close function, isn't it ?",
+    "EmailHash": "6c45883b677b1cd8a1d99ff629d03be6"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 28,
+    "Comment": "Good point, yes. They make even more sense there :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Adrien Schildknecht",
+    "Line": 28,
+    "Comment": "btw, to reproduce this bug:\n    - open 2 terminals in a new workspace\n    - execute sleep 2; echo -e \"\\a\"; exit\n    - go to another workspace",
+    "EmailHash": "6c45883b677b1cd8a1d99ff629d03be6"
+  },
+  {
+    "Author": "Adrien Schildknecht",
+    "Line": 28,
+    "Comment": "btw, to reproduce this bug:\n    - open 2 terminals in a new workspace\n    - execute sleep 2; echo -e \"\\a\"; exit\n    - go to another workspace",
+    "EmailHash": "6c45883b677b1cd8a1d99ff629d03be6"
+  }
+]

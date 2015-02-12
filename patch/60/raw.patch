@@ -1,0 +1,134 @@
+From a8cedc59b0bd91e916b82997feee5895204e6687 Mon Sep 17 00:00:00 2001
+From: oblique <psyberbits@…>
+Date: Tue, 26 Feb 2013 02:37:35 +0200
+Subject: [PATCH] Add support for _NET_WM_STATE_DEMANDS_ATTENTION.
+
+_NET_WM_STATE_DEMANDS_ATTENTION indicates that some action in or with
+the window happened. It's a weaker hint than urgency flag of WM_HINTS,
+but some applications and almost all Qt applications use it instead of
+WM_HINTS' urgency flag (one example is Skype).
+---
+ docs/hacking-howto   |  3 ++-
+ include/atoms.xmacro |  1 +
+ src/handlers.c       | 65 +++++++++++++++++++++++++++++++++++++++++-----------
+ 3 files changed, 54 insertions(+), 15 deletions(-)
+
+diff --git a/docs/hacking-howto b/docs/hacking-howto
+index 6bdd0dc..633c277 100644
+--- a/docs/hacking-howto
++++ b/docs/hacking-howto
+@@ -28,7 +28,8 @@ In the case of i3, the tasks (and order of them) are the following:
+   the first client of X) and manage them (reparent them, create window
+   decorations, etc.)
+ . When new windows are created, manage them
+-. Handle the client’s `_WM_STATE` property, but only the `_WM_STATE_FULLSCREEN`
++. Handle the client’s `_WM_STATE` property, but only `_WM_STATE_FULLSCREEN` and
++  `_NET_WM_STATE_DEMANDS_ATTENTION`
+ . Handle the client’s `WM_NAME` property
+ . Handle the client’s size hints to display them proportionally
+ . Handle the client’s urgency hint
+diff --git a/include/atoms.xmacro b/include/atoms.xmacro
+index af60b96..205efa1 100644
+--- a/include/atoms.xmacro
++++ b/include/atoms.xmacro
+@@ -2,6 +2,7 @@ xmacro(_NET_SUPPORTED)
+ xmacro(_NET_SUPPORTING_WM_CHECK)
+ xmacro(_NET_WM_NAME)
+ xmacro(_NET_WM_STATE_FULLSCREEN)
++xmacro(_NET_WM_STATE_DEMANDS_ATTENTION)
+ xmacro(_NET_WM_STATE)
+ xmacro(_NET_WM_WINDOW_TYPE)
+ xmacro(_NET_WM_WINDOW_TYPE_DOCK)
+diff --git a/src/handlers.c b/src/handlers.c
+index 4f2d870..ed9fa41 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -619,10 +619,10 @@ static void handle_client_message(xcb_client_message_event_t *event) {
+ 
+     LOG("ClientMessage for window 0x%08x\n", event->window);
+     if (event->type == A__NET_WM_STATE) {
+-        if (event->format != 32 || event->data.data32[1] != A__NET_WM_STATE_FULLSCREEN) {
+-            DLOG("atom in clientmessage is %d, fullscreen is %d\n",
+-                    event->data.data32[1], A__NET_WM_STATE_FULLSCREEN);
+-            DLOG("not about fullscreen atom\n");
++        if (event->format != 32 ||
++            (event->data.data32[1] != A__NET_WM_STATE_FULLSCREEN &&
++             event->data.data32[1] != A__NET_WM_STATE_DEMANDS_ATTENTION)) {
++            DLOG("Unknown atom in clientmessage of type %d\n", event->data.data32[1]);
+             return;
+         }
+ 
+@@ -632,15 +632,52 @@ static void handle_client_message(xcb_client_message_event_t *event) {
+             return;
+         }
+ 
+-        /* Check if the fullscreen state should be toggled */
+-        if ((con->fullscreen_mode != CF_NONE &&
+-             (event->data.data32[0] == _NET_WM_STATE_REMOVE ||
+-              event->data.data32[0] == _NET_WM_STATE_TOGGLE)) ||
+-            (con->fullscreen_mode == CF_NONE &&
+-             (event->data.data32[0] == _NET_WM_STATE_ADD ||
+-              event->data.data32[0] == _NET_WM_STATE_TOGGLE))) {
+-            DLOG("toggling fullscreen\n");
+-            con_toggle_fullscreen(con, CF_OUTPUT);
++        if (event->data.data32[1] == A__NET_WM_STATE_FULLSCREEN) {
++            /* Check if the fullscreen state should be toggled */
++            if ((con->fullscreen_mode != CF_NONE &&
++                 (event->data.data32[0] == _NET_WM_STATE_REMOVE ||
++                  event->data.data32[0] == _NET_WM_STATE_TOGGLE)) ||
++                (con->fullscreen_mode == CF_NONE &&
++                 (event->data.data32[0] == _NET_WM_STATE_ADD ||
++                  event->data.data32[0] == _NET_WM_STATE_TOGGLE))) {
++                DLOG("toggling fullscreen\n");
++                con_toggle_fullscreen(con, CF_OUTPUT);
++            }
++        } else if (event->data.data32[1] == A__NET_WM_STATE_DEMANDS_ATTENTION) {
++            bool urgent;
++
++            /* Check if the urgent flag must be set */
++            if (event->data.data32[0] == _NET_WM_STATE_ADD)
++                urgent = true;
++            else if (event->data.data32[0] == _NET_WM_STATE_REMOVE)
++                urgent = false;
++            else if (event->data.data32[0] == _NET_WM_STATE_TOGGLE)
++                urgent = !con->urgent;
++
++            if (con->urgency_timer == NULL) {
++                con->urgent = urgent;
++            } else
++                DLOG("Discarding urgency WM_HINT because timer is running\n");
++
++            //CLIENT_LOG(con);
++            if (con->window) {
++                if (con->urgent) {
++                    gettimeofday(&con->window->urgent, NULL);
++                } else {
++                    con->window->urgent.tv_sec = 0;
++                    con->window->urgent.tv_usec = 0;
++                }
++            }
++
++            con_update_parents_urgency(con);
++
++            LOG("Urgency flag changed to %d\n", con->urgent);
++
++            Con *ws;
++            /* Set the urgency flag on the workspace, if a workspace could be found
++             * (for dock clients, that is not the case). */
++            if ((ws = con_get_workspace(con)) != NULL)
++                workspace_update_urgent_flag(ws);
+         }
+ 
+         tree_render();
+@@ -1094,7 +1131,7 @@ void handle_event(int type, xcb_generic_event_t *event) {
+ 
+         /* Client message are sent to the root window. The only interesting
+          * client message for us is _NET_WM_STATE, we honour
+-         * _NET_WM_STATE_FULLSCREEN */
++         * _NET_WM_STATE_FULLSCREEN and _NET_WM_STATE_DEMANDS_ATTENTION */
+         case XCB_CLIENT_MESSAGE:
+             handle_client_message((xcb_client_message_event_t*)event);
+             break;
+-- 
+1.8.1.4
+

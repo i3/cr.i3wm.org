@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "anonymous",
+    "Line": 19,
+    "Comment": "This patch does not handle the invisible mode correctly. When in invisible mode, i3bar should stay hidden by all means. But, here, having set hidden_state = show and switching to invisible mode would leave the bar unhidden.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 19,
+    "Comment": "I just tested it here and that actually seems to work ok. However, I just found a serious problem where if you press the mod key to hide the bar, it will show up again when you switch workspaces and a window is urgent.\n\nSorry, I'm writing tests for the bar now that should prevent me from submitting bad patches like this.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

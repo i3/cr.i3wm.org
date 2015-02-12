@@ -1,0 +1,44 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 43,
+    "Comment": "I could do this in small commits, but then you wouldn't know why I was doing any of it.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 43,
+    "Comment": "Anyway, this obviously needed to get done, so I figured that while I was refactoring things, I would refactor this before finishing up the bindmouse stuff.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 191,
+    "Comment": "just adding a check for the gen here so it does not crash",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 430,
+    "Comment": "check out handle_key_press from this point on to see the motivation for this change.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 430,
+    "Comment": "oops, I meant before this point",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 95,
+    "Comment": "I cannot see where you actually use the error_message? Why are you setting it? :)\n\nAlso, please move the comment above the variable definition.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 95,
+    "Comment": "Well right now, the only way to run a command is by generating json, and then parsing the result if you want to check for errors.\n\nIf conserving cpu cycles is a goal, then this is a good optimization.\n\nI will use this in the code that runs bindings and it will knock off ~100 lines of code off src/key_press.c and be reused for mouse bindings.\n\n",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

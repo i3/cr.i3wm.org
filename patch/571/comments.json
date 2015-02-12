@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 24,
+    "Comment": "Should fix this issue from the mailing list:\n\n\u003e\u003e\u003e\n\nI just noticed one issue now, this is from 7482a0f which I've been\nusing for about a week. I had focus in one window (and the window is\nactive), however when I type it ends up in another window.\n\nUnfortunately I jumped in and out of windows trying to figure out what\nwas going on. The problem I saw was the jetbrains/intellij window had\nfocus, I typed and it ended up in gnome-terminal. Switching to another\nworkspace and back seemed to fix it, and the last few characters typed\nended up in the correct window.\n\nSo the problem is from this log, before switching workspace to 2 and\nthen back to 1 again.\n\n\u003e\u003e\u003e",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 24,
+    "Comment": "Another fix might be to take enter notify out of the event mask for those particular windows, but this is more robust and takes less time.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

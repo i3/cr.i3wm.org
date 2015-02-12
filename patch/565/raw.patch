@@ -1,0 +1,27 @@
+From ba4a2b93fee1931fe7475c9876e74fcb4fe12fff Mon Sep 17 00:00:00 2001
+From: Matthias Thubauville <matthias.thubo@…>
+Date: Tue, 3 Jun 2014 08:38:11 +0200
+Subject: [PATCH] Mod i3.xsession.desktop for autostart Ubuntu 14.04
+
+i3 started from lightdm properly, but autostart did not work. The line
+"X-LightDM-DesktopName=i3" seems to be responsible to allow autostart.
+
+Tested on a clean install of Ubuntu 14.04.
+---
+ i3.xsession.desktop | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/i3.xsession.desktop b/i3.xsession.desktop
+index ff698f2..d370352 100644
+--- a/i3.xsession.desktop
++++ b/i3.xsession.desktop
+@@ -2,4 +2,6 @@
+ Name=i3
+ Comment=improved dynamic tiling window manager
+ Exec=i3
++TryExec=13
+ Type=Application
++X-LightDM-DesktopName=i3
+-- 
+1.8.3.2
+

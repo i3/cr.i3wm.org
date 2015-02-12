@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 35,
+    "Comment": "Please add a comment here explaining how current_output can be NULL. The commit message explains it, but I’d like to have it explicit in the code.",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "Can you add a testcase please?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

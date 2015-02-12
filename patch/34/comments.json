@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 88,
+    "Comment": "You previously wrote:\n“As it was noted in the previous attempt, it would be useful to have 0 gap between the items. Now, as \"separatpr\" in i3bar protocol only triggers the drawing of the line, the separator-block-width should come from somewhere. It is unlikely, that you would want to have different gaps for different items, however it is very likely that you may want to trigger the width of the gap globally. We can add triggering of the gap width via i3bar protocol later, if needed.”\n\nI still think that having an option for that here is not a good idea.\n\nAlso, note that it is not unlikely to have different gaps. In fact, this has already been requested long before your patch. The use case is to make a “single item” have multiple different colors. For that, you could have a separator of 9 px by default, but have 0 px for the two items which should be combined into one logical item.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Artem Shinkarov",
+    "Line": 88,
+    "Comment": "I do understand the use-case when 0px is handy between specific items, and I am happy to implement such a functionality in the next patch(es).  Please point me to the relevant bug/feature-request.\n\nThe current patch makes the default gap size configurable globally.  It comes very useful when you disable drawing of the separator (globally) and want to decrease the gap.\n\nSo how do we proceed from here in order to finish with this patch?",
+    "EmailHash": "7fd477828fcfd4379e5c966ca8678644"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 88,
+    "Comment": "We finish with this patch when you remove this global option :).\n\nTo be very clear: I don’t want this option. I want this to go into the tool which _produces_ the output, not in the tool which displays it.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Artem Shinkarov",
+    "Line": 88,
+    "Comment": "Here we go.  The option is moved to the i3bar-protocol.\n\nFYI.  It was kind of confusing when you spotted a number of things to fix in the code that you never wanted to merge.  Let's pay some respect to our time.",
+    "EmailHash": "7fd477828fcfd4379e5c966ca8678644"
+  }
+]

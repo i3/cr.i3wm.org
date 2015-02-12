@@ -1,0 +1,26 @@
+From 41b0b309faab4a020719953e85eb35c0ee2aba82 Mon Sep 17 00:00:00 2001
+From: Bas Pape <baspape@…>
+Date: Sat, 7 Jun 2014 15:48:11 +0200
+Subject: [PATCH] Clarify color_separator relation to output_format
+
+---
+ man/i3status.man | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/man/i3status.man b/man/i3status.man
+index 1182e54..27a76ed 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -132,7 +132,8 @@ color_good = "#00FF00"
+ 
+ Likewise, you can use the +color_separator+ directive to specify the color that
+ will be used to paint the separator bar. The separator is always output in
+-color, even when colors are disabled by the +colors+ directive.
++color, even when colors are disabled by the +colors+ directive. This option has
++no effect when +output_format+ is set to +i3bar+ or +none+.
+ 
+ The +interval+ directive specifies the time in seconds for which i3status will
+ sleep before printing the next status line.
+-- 
+1.8.5.2
+

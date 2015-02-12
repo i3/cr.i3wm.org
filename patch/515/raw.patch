@@ -1,0 +1,75 @@
+From 954399c21f957dffc3c4a16f50c4c47e0e49761a Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sun, 27 Apr 2014 06:52:37 -0400
+Subject: [PATCH] Feature: support ewmh _NET_NUMBER_OF_DESKTOPS
+
+This property is set on the root window.
+
+http://standards.freedesktop.org/wm-spec/1.3/ar01s03.html
+
+> _NET_NUMBER_OF_DESKTOPS, CARDINAL/32
+> This property SHOULD be set and updated by the Window Manager to indicate the number of virtual desktops.
+---
+ include/atoms.xmacro | 1 +
+ include/ewmh.h       | 3 ++-
+ src/ewmh.c           | 7 +++++--
+ 3 files changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/include/atoms.xmacro b/include/atoms.xmacro
+index 90b0261..12e9ee2 100644
+--- a/include/atoms.xmacro
++++ b/include/atoms.xmacro
+@@ -16,6 +16,7 @@ xmacro(_NET_WM_STRUT_PARTIAL)
+ xmacro(_NET_CLIENT_LIST)
+ xmacro(_NET_CLIENT_LIST_STACKING)
+ xmacro(_NET_CURRENT_DESKTOP)
++xmacro(_NET_NUMBER_OF_DESKTOPS)
+ xmacro(_NET_ACTIVE_WINDOW)
+ xmacro(_NET_STARTUP_ID)
+ xmacro(_NET_WORKAREA)
+diff --git a/include/ewmh.h b/include/ewmh.h
+index 46d6c98..e2fd574 100644
+--- a/include/ewmh.h
++++ b/include/ewmh.h
+@@ -10,7 +10,8 @@
+ #pragma once
+ 
+ /**
+- * Updates _NET_CURRENT_DESKTOP with the current desktop number.
++ * Updates _NET_CURRENT_DESKTOP with the current desktop number and
++ * _NET_NUMBER_OF_DESKTOPS to the total number of desktops.
+  *
+  * EWMH: The index of the current desktop. This is always an integer between 0
+  * and _NET_NUMBER_OF_DESKTOPS - 1.
+diff --git a/src/ewmh.c b/src/ewmh.c
+index 16c9858..d9f6923 100644
+--- a/src/ewmh.c
++++ b/src/ewmh.c
+@@ -12,7 +12,8 @@
+ #include "all.h"
+ 
+ /*
+- * Updates _NET_CURRENT_DESKTOP with the current desktop number.
++ * Updates _NET_CURRENT_DESKTOP with the current desktop number and
++ * _NET_NUMBER_OF_DESKTOPS to the total number of desktops.
+  *
+  * EWMH: The index of the current desktop. This is always an integer between 0
+  * and _NET_NUMBER_OF_DESKTOPS - 1.
+@@ -33,11 +34,13 @@ void ewmh_update_current_desktop(void) {
+             if (ws == focused_ws) {
+                 xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root,
+                         A__NET_CURRENT_DESKTOP, XCB_ATOM_CARDINAL, 32, 1, &idx);
+-                return;
+             }
+             ++idx;
+         }
+     }
++
++    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root,
++            A__NET_NUMBER_OF_DESKTOPS, XCB_ATOM_CARDINAL, 32, 1, &idx);
+ }
+ 
+ /*
+-- 
+1.9.2
+

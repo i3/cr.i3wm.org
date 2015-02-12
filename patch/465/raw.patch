@@ -1,0 +1,35 @@
+From 5b6d6aa371a038aae1a3a954736502b3876fb18c Mon Sep 17 00:00:00 2001
+From: Marco Hunsicker <i3@…>
+Date: Tue, 11 Mar 2014 20:27:49 +0100
+Subject: [PATCH] Perform minute alignment for refreshes only once per minute
+
+This patch ensures that the minute alignment for refreshes is only
+done once per minute to make sure that the refresh interval time
+is obeyed as much as possible after a refresh has been forced from
+the outside. This also reduces the total number of refreshs in such
+cases.
+---
+ i3status.c |    7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/i3status.c b/i3status.c
+index 1811884..0792b02 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -677,7 +677,12 @@ int main(int argc, char *argv[]) {
+                  * that we start with :00 on every new minute. */
+                 struct timeval current_timeval;
+                 gettimeofday(&current_timeval, NULL);
+-                struct timespec ts = {interval - 1 - (current_timeval.tv_sec % interval), (10e5 - current_timeval.tv_usec) * 1000};
++                /* how many seconds until the next full minute? */
++                int gap = 60 - (current_timeval.tv_sec % 60);
++                struct timespec ts = {
++                        interval - 1 - (interval >= gap ? current_timeval.tv_sec % interval : 0),
++                        (10e5 - current_timeval.tv_usec) * 1000
++                };
+                 nanosleep(&ts, NULL);
+         }
+ }
+-- 
+1.7.10.4
+

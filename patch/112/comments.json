@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Yuxuan Shui",
+    "Line": 14,
+    "Comment": "I don't use the click events feature, so I don't know if this patch break anything.\nI'm just trying to fix the problem I face.",
+    "EmailHash": "12a32eec8342026d988eb1893d94f8a1"
+  },
+  {
+    "Author": "Yuxuan Shui",
+    "Line": 14,
+    "Comment": "By the way, I don't think the click events feature will work without this patch if you have verbose set to true in barconfig.",
+    "EmailHash": "12a32eec8342026d988eb1893d94f8a1"
+  }
+]

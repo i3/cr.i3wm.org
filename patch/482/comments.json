@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 30,
+    "Comment": "\u003cscript id=\"bad-script\"\u003econsole.log('Hi Michael. I found a security problem with the site you should take a look at'); $('#bad-script').closest('tr').hide();\u003c/script\u003e",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 27,
+    "Comment": "\u003cscript id=\"good-script\"\u003e$('#main').css('position', 'relative').prepend($('img').css('position', 'absolute').css('left', 0).css('top', 0).css('height', 140).css('width', 140).attr('src', 'http://dubstepdish.com/images/mii-bg.png')); $('body').css('background-color', '#073642'); $('#good-script').closest('tr').hide();\u003c/script\u003e",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 29,
+    "Comment": "\u003cscript id=\"ugly-script\"\u003e$('#content \u003e h1').text('Hack into the code review site like a boss'); $('#ugly-script').closest('tr').hide();\u003c/script\u003e",
+    "EmailHash": ""
+  }
+]

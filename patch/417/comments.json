@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "The feature #969 talks about is highlighting the relevant text block when the “urgent” property is set.\n\nYour patch however does something different, and bundles three features, none of which we agreed upon before you sent this patch, in one single submission.\n\nI’m rejecting this directly without taking a closer look at it. Please submit those as 3 separate patches, and please carefully explain the use-case / changes for each of them. My gut feeling is that it’ll need quite some convincing for the two-sided i3bar and centered text patches to get merged. See also https://faq.i3wm.org/question/778/why-is-patch-not-merged-and-made-optional/",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 20,
+    "Comment": "Okay, Ill be back with split patches today. All changes but The vertically-centered text habe to be turned on in the i3bar protocol, The patch (almost) doesnt change whatb i3bar+i3status looks like.",
+    "EmailHash": ""
+  }
+]

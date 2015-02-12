@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "This patch is wrong. src/print_run_watch.c calls process_runs(), which calls glob(). It actually expands the path.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Kinware AB",
+    "Line": 20,
+    "Comment": "Oops.",
+    "EmailHash": "19ec62ff64922540d49fc700ef20e12f"
+  }
+]

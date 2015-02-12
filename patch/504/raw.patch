@@ -1,0 +1,125 @@
+From 2b4363994dab95a98a39d06b1a382d6729189fa3 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Mon, 14 Apr 2014 14:52:56 -0400
+Subject: [PATCH] Move switch_mode to bindings.[ch]
+
+---
+ include/bindings.h |  6 ++++++
+ include/config.h   |  6 ------
+ src/bindings.c     | 30 ++++++++++++++++++++++++++++++
+ src/config.c       | 30 ------------------------------
+ 4 files changed, 36 insertions(+), 36 deletions(-)
+
+diff --git a/include/bindings.h b/include/bindings.h
+index 2653202..d309790 100644
+--- a/include/bindings.h
++++ b/include/bindings.h
+@@ -42,3 +42,9 @@ Binding *get_keyboard_binding(uint16_t modifiers, bool key_release, xcb_keycode_
+  *
+  */
+ void translate_keysyms(void);
++
++/**
++ * Switches the key bindings to the given mode, if the mode exists
++ *
++ */
++void switch_mode(const char *new_mode);
+diff --git a/include/config.h b/include/config.h
+index 0c3e25d..0bd68b9 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -316,12 +316,6 @@ void load_configuration(xcb_connection_t *conn, const char *override_configfile,
+ void ungrab_all_keys(xcb_connection_t *conn);
+ 
+ /**
+- * Switches the key bindings to the given mode, if the mode exists
+- *
+- */
+-void switch_mode(const char *new_mode);
+-
+-/**
+  * Sends the current bar configuration as an event to all barconfig_update listeners.
+  * This update mechnism currently only includes the hidden_state and the mode in the config.
+  *
+diff --git a/src/bindings.c b/src/bindings.c
+index 5dfe547..c3e9c1b 100644
+--- a/src/bindings.c
++++ b/src/bindings.c
+@@ -229,3 +229,33 @@ void translate_keysyms(void) {
+              bind->number_keycodes);
+     }
+ }
++
++/*
++ * Switches the key bindings to the given mode, if the mode exists
++ *
++ */
++void switch_mode(const char *new_mode) {
++    struct Mode *mode;
++
++    DLOG("Switching to mode %s\n", new_mode);
++
++    SLIST_FOREACH(mode, &modes, modes) {
++        if (strcasecmp(mode->name, new_mode) != 0)
++            continue;
++
++        ungrab_all_keys(conn);
++        bindings = mode->bindings;
++        translate_keysyms();
++        grab_all_keys(conn, false);
++
++        char *event_msg;
++        sasprintf(&event_msg, "{\"change\":\"%s\"}", mode->name);
++
++        ipc_send_event("mode", I3_IPC_EVENT_MODE, event_msg);
++        FREE(event_msg);
++
++        return;
++    }
++
++    ELOG("ERROR: Mode not found\n");
++}
+diff --git a/src/config.c b/src/config.c
+index a8e6631..0f06511 100644
+--- a/src/config.c
++++ b/src/config.c
+@@ -31,36 +31,6 @@ void ungrab_all_keys(xcb_connection_t *conn) {
+ }
+ 
+ /*
+- * Switches the key bindings to the given mode, if the mode exists
+- *
+- */
+-void switch_mode(const char *new_mode) {
+-    struct Mode *mode;
+-
+-    LOG("Switching to mode %s\n", new_mode);
+-
+-    SLIST_FOREACH(mode, &modes, modes) {
+-        if (strcasecmp(mode->name, new_mode) != 0)
+-            continue;
+-
+-        ungrab_all_keys(conn);
+-        bindings = mode->bindings;
+-        translate_keysyms();
+-        grab_all_keys(conn, false);
+-
+-        char *event_msg;
+-        sasprintf(&event_msg, "{\"change\":\"%s\"}", mode->name);
+-
+-        ipc_send_event("mode", I3_IPC_EVENT_MODE, event_msg);
+-        FREE(event_msg);
+-
+-        return;
+-    }
+-
+-    ELOG("ERROR: Mode not found\n");
+-}
+-
+-/*
+  * Sends the current bar configuration as an event to all barconfig_update listeners.
+  * This update mechnism currently only includes the hidden_state and the mode in the config.
+  *
+-- 
+1.9.2
+

@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 33,
+    "Comment": "This will never be true — CT_DOCKAREA is for the dock area, not dock windows. The dock area will never generate an UnmapNotify event.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 35,
+    "Comment": "con_get_workspace(focused) will always return a non-NULL result.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 36,
+    "Comment": "Simpler: con_get_workspace(inside_conn) == con_get_workspace(focused)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 30,
+    "Comment": "Please add a debug message here: DLOG(\"UnmapNotify for window 0x%08x (container %p)\\n\", ((xcb_unmap_notify_event_t*)inside_event)-\u003ewindow, inside_con);",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 38,
+    "Comment": "please change to “UnmapNotify for a managed window on the current workspace, aborting\\n”",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

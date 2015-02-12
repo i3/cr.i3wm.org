@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 13,
+    "Comment": "The patch looks okay, but can you please add a testcase for it? Also, can you make the commit description contain an example? It took me a bit to understand it.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Sebastian Ullrich",
+    "Line": 13,
+    "Comment": "Updated, sorry for the unclear description. I added a new testcase file because there was no existing test pertaining create_workspace_on_output. Oh, and I realized '!strcasecmp(child-\u003ename, ws-\u003ename)' actually implies 'child-\u003enum == ws-\u003enum' so I removed the old grep.",
+    "EmailHash": "39daff4f53e49417c59cf7cd15997713"
+  }
+]

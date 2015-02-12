@@ -1,0 +1,32 @@
+From 6ed813f5cfde43d8e48117110f3c76667d907085 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 29 Apr 2014 13:34:21 -0400
+Subject: [PATCH] Bugfix: client requests to focus switch workspaces
+
+Allow client requests of type _NET_ACTIVE_WINDOW to switch workspaces.
+This allows task switchers like skippy-xd to work properly.
+
+http://standards.freedesktop.org/wm-spec/latest/ar01s03.html#idm140251368127856
+---
+ src/handlers.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/src/handlers.c b/src/handlers.c
+index 8c3bb48..746f08e 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -702,8 +702,9 @@ static void handle_client_message(xcb_client_message_event_t *event) {
+         }
+ 
+         Con *ws = con_get_workspace(con);
+-        if (!workspace_is_visible(ws)) {
+-            DLOG("Workspace not visible, ignoring _NET_ACTIVE_WINDOW\n");
++
++        if (ws == NULL) {
++            DLOG("Window is not being managed, ignoring _NET_ACTIVE_WINDOW\n");
+             return;
+         }
+ 
+-- 
+1.9.2
+

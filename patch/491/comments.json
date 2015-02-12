@@ -1,0 +1,50 @@
+[
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 216,
+    "Comment": "Is there no way to terminate a subscription? I would prefer to be able to reuse the variables from the prior test.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 216,
+    "Comment": "There isn’t. Also, I’d recommend to not overwrite the $i3 variable. You could create a new function to install a subscription on a new connection.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 211,
+    "Comment": "For clarity when debugging, please chose a different name — or kill the name =\u003e altogether, since then open_window will count on its own.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 216,
+    "Comment": "Would it be acceptable to create a new block scope with each test? This would avoid overwriting any variables and allow for consistent naming.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 63,
+    "Comment": "Further inspecting the documentation, it seems I was mislead to adjust the empty event this way. The documentation states that the empty event is send when a workspace gets *removed*, not when it becomes empty, which would no longer be the case after this change. I still think that it would be a good thing to change it the proposed way, because for me this correctly resembles the wording (and I need it ;). But this would break clients that really want to act upon workspace closing (are there any?). \n\nSo what to do? I would vote to go ahead with the change, but to additionally add a new event that is send when a workspace gets closed. What do you think?\n\n\nBTW, the documentation also states that the empty event is send when a new workspace is initialized which does not seem to correctly describe the current behavior (it is only send when the previous workspace is empty). And the third case \"Sent when the user switches to a different workspace\" seems to be wrong as well (same constraint).\n\n",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 216,
+    "Comment": "Yeah, I think that’s okay.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 63,
+    "Comment": "I agree that “empty” is a misnomer for when it’s being sent (when the workspace is closed), but I don’t feel comfortable breaking the API, no matter how many clients there are.\n\nYou could use “blank” for your new event.\n\nAs for your comment about the initialization event: I think you misread the documentation, it talks about the workspace event, not specifically the empty event. See src/workspace.c:94 for where the workspace event gets sent from whenever a new workspace gets initialized.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 216,
+    "Comment": "In the meantime I've became aware that there seems to be a special notation one can use.\n\nsubtest 'description', sub {\n};\n\nI find the resulting output a bit confusing, but coding-wise it seems like the best solution and I will use that.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  }
+]

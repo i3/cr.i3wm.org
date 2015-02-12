@@ -1,0 +1,59 @@
+From 596078e2089492a9f836d2591dcae268979b789d Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 14 Jan 2014 23:47:11 -0500
+Subject: [PATCH] Do not create container pixmap when not needed
+
+A pixmap for a floating container without a border is not necessary
+because nothing meaningful will be drawn to it. It could possibly
+obscure areas meant to be transparent by the client.
+
+Destroy any pixmap for such a container.
+
+fixes #1013
+---
+ src/x.c | 22 +++++++++++++++++++---
+ 1 file changed, 19 insertions(+), 3 deletions(-)
+
+diff --git a/src/x.c b/src/x.c
+index 366cbe1..a1aead0 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -667,9 +667,16 @@ void x_push_node(Con *con) {
+         /* As the pixmap only depends on the size and not on the position, it
+          * is enough to check if width/height have changed. Also, we don’t
+          * create a pixmap at all when the window is actually not visible
+-         * (height == 0). */
+-        if ((state->rect.width != rect.width ||
+-            state->rect.height != rect.height)) {
++         * (height == 0) or when it is not needed. */
++        bool has_rect_changed = !(state->rect.width == rect.width && state->rect.height == rect.height);
++
++        /* There is a special case where the window is visible (height > 0),
++         * but no decorations will be drawn to the container's pixmap. These
++         * windows may be overlays that expect a transparent background, so the
++         * pixmap may get in the way (see #1013). */
++        bool is_pixmap_needed = !(con->border_style == BS_NONE && con_is_floating(con));
++
++        if (has_rect_changed && is_pixmap_needed) {
+             if (con->pixmap == 0) {
+                 con->pixmap = xcb_generate_id(conn);
+                 con->pm_gc = xcb_generate_id(conn);
+@@ -705,6 +712,15 @@ void x_push_node(Con *con) {
+                 x_deco_recurse(con);
+         }
+ 
++        /* When the pixmap is not needed, the container may still have a pixmap
++         * left over from being in a previous state, so we clean that up here.
++         * */
++        if (!is_pixmap_needed && con->pixmap != XCB_NONE) {
++            xcb_free_pixmap(conn, con->pixmap);
++            xcb_free_gc(conn, con->pm_gc);
++            con->pixmap = XCB_NONE;
++        }
++
+         DLOG("setting rect (%d, %d, %d, %d)\n", rect.x, rect.y, rect.width, rect.height);
+         /* flush to ensure that the following commands are sent in a single
+          * buffer and will be processed directly afterwards (the contents of a
+-- 
+1.8.5.2
+

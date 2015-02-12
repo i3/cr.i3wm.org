@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "anonymous",
+    "Line": 167,
+    "Comment": "One use case of having no separator is to specifically have adjacent blocks of separately-modified text, and hardcoding 3 pixels of padding breaks this use case - if padding is still desired, it may be more beneficial to have it configured either in the bar config or in another i3bar-protocol addition.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 167,
+    "Comment": "I agree.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 38,
+    "Comment": "Thanks for changing the type here. Note that in your commit message, it is still unchanged.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 38,
+    "Comment": "Right, I'll fix it with the next submission which should solve the width problem.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 167,
+    "Comment": "Right, so should we have then a bar config option, which sets-up the width of the separator box, and default would be 9 pixels.  Should we control that the width is actually odd number, to draw the line right in the middle, or do we leave that to a user, and draw a line at w/2?",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 167,
+    "Comment": "I think while it is sensible to use an odd number, we should not force the user to do so :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

@@ -1,0 +1,126 @@
+From 45c1fab24e1f3559f99cfef7e06fc0fcc8c4b138 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 24 Sep 2013 20:25:44 -0400
+Subject: [PATCH 1/4] Change drag_pointer return type to int
+
+---
+ include/floating.h |  5 +++--
+ src/floating.c     | 48 +++++++++++++++++++++++++++++++++++++++++++-----
+ 2 files changed, 46 insertions(+), 7 deletions(-)
+
+diff --git a/include/floating.h b/include/floating.h
+index c858652..627fe17 100644
+--- a/include/floating.h
++++ b/include/floating.h
+@@ -138,10 +138,11 @@ void floating_toggle_hide(xcb_connection_t *conn, Workspace *workspace);
+  * Every time you move your mouse, an XCB_MOTION_NOTIFY event will be received
+  * and the given callback will be called with the parameters specified (client,
+  * border on which the click originally was), the original rect of the client,
+- * the event and the new coordinates (x, y).
++ * the event and the new coordinates (x, y). A return value of 1 indicates the
++ * user has cancelled the drag and the action should be undone.
+  *
+  */
+-void drag_pointer(Con *con, const xcb_button_press_event_t *event,
++int drag_pointer(Con *con, const xcb_button_press_event_t *event,
+                   xcb_window_t confine_to, border_t border, int cursor,
+                   callback_t callback, const void *extra);
+ 
+diff --git a/src/floating.c b/src/floating.c
+index 97b7d88..8bd0996 100644
+--- a/src/floating.c
++++ b/src/floating.c
+@@ -561,7 +561,7 @@ void floating_resize_window(Con *con, const bool proportional,
+  * the event and the new coordinates (x, y).
+  *
+  */
+-void drag_pointer(Con *con, const xcb_button_press_event_t *event, xcb_window_t
++int drag_pointer(Con *con, const xcb_button_press_event_t *event, xcb_window_t
+                 confine_to, border_t border, int cursor, callback_t callback, const void *extra)
+ {
+     uint32_t new_x, new_y;
+@@ -587,16 +587,38 @@ void drag_pointer(Con *con, const xcb_button_press_event_t *event, xcb_window_t
+ 
+     if ((reply = xcb_grab_pointer_reply(conn, cookie, NULL)) == NULL) {
+         ELOG("Could not grab pointer\n");
+-        return;
++        return 0;
+     }
+ 
+     free(reply);
+ 
++    /* Grab the keyboard */
++    xcb_grab_keyboard_cookie_t keyb_cookie;
++    xcb_grab_keyboard_reply_t *keyb_reply;
++
++    keyb_cookie = xcb_grab_keyboard(conn,
++            false, /* get all keyboard events */
++            root, /* grab the root window */
++            XCB_CURRENT_TIME,
++            XCB_GRAB_MODE_ASYNC, /* continue processing pointer events as normal */
++            XCB_GRAB_MODE_ASYNC /* keyboard mode */
++            );
++
++    if ((keyb_reply = xcb_grab_keyboard_reply(conn, keyb_cookie, NULL)) == NULL) {
++        ELOG("Could not grab keyboard\n");
++        return 0;
++    }
++
++    free(keyb_reply);
++
+     /* Go into our own event loop */
+     xcb_flush(conn);
+ 
+     xcb_generic_event_t *inside_event, *last_motion_notify = NULL;
++    xcb_key_press_event_t *inside_keyboard_event = NULL;
+     bool loop_done = false;
++    /* The return value, set to 1 on user cancel */
++    int drag_result = 0;
+     /* I’ve always wanted to have my own eventhandler… */
+     while (!loop_done && (inside_event = xcb_wait_for_event(conn))) {
+         /* We now handle all events we can get using xcb_poll_for_event */
+@@ -621,13 +643,25 @@ void drag_pointer(Con *con, const xcb_button_press_event_t *event, xcb_window_t
+                     break;
+ 
+                 case XCB_UNMAP_NOTIFY:
+-                case XCB_KEY_PRESS:
+-                case XCB_KEY_RELEASE:
+                     DLOG("Unmap-notify, aborting\n");
+                     handle_event(type, inside_event);
+                     loop_done = true;
+                     break;
+ 
++                case XCB_KEY_PRESS:
++                case XCB_KEY_RELEASE:
++                    /* Cancel the drag if the ESC key was pressed */
++                    inside_keyboard_event = (xcb_key_press_event_t *)inside_event;
++
++                    if ((int)inside_keyboard_event->detail == 9) {
++                        DLOG("ESC key was pressed, drag cancelled.");
++                        loop_done = true;
++                        drag_result = 1;
++                    }
++
++                    handle_event(type, inside_event);
++                    break;
++
+                 default:
+                     DLOG("Passing to original handler\n");
+                     /* Use original handler */
+@@ -648,8 +682,12 @@ void drag_pointer(Con *con, const xcb_button_press_event_t *event, xcb_window_t
+         FREE(last_motion_notify);
+     }
+ 
+-    xcb_ungrab_pointer(conn, XCB_CURRENT_TIME);
+     xcb_flush(conn);
++
++    xcb_ungrab_keyboard(conn, XCB_CURRENT_TIME);
++    xcb_ungrab_pointer(conn, XCB_CURRENT_TIME);
++
++    return drag_result;
+ }
+ 
+ /*
+-- 
+1.8.4
+

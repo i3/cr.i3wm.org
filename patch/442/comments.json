@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 218,
+    "Comment": "Maybe a macro for outputting a string option could be a good idea?\n\n#define OUTPUT_STR_OPT(name) \\\n    yajl_gen_string(json_gen, (const unsigned char *)name, strlen(name)); \\\n    yajl_gen_string(json_gen, (const unsigned char *)value, strlen(value)); \\",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 58,
+    "Comment": "Still not really at ease with the memory handling. Is this the right thing to do?",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 58,
+    "Comment": "I’d recommend:\n\nstruct min_width *parsed = scalloc(sizeof(struct min_width));\nparsed-\u003enum = atoi(value);\nparsed-\u003estr = sstrdup(value);\n\nresult = parsed;",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 41,
+    "Comment": "Why is the default here a special string value instead of NULL? Doesn’t that work? I’m somewhat worried because “default” is actually a reasonable thing to specify as a string length. I’d rather use something like __default__value__ if it is really not possible at all to go without a default value here.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 218,
+    "Comment": "Yeah, we have ystr() in i3. Maybe copy that.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 41,
+    "Comment": "You're right. NULL is the best choice here.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  }
+]

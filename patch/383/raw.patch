@@ -1,0 +1,49 @@
+From 68e4b870b8d9afc8913a7efdf129091e53fe1480 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sun, 19 Jan 2014 10:22:50 -0500
+Subject: [PATCH] Do not create container pixmap when not needed
+
+The pixmap of a borderless container will not be used (except for the
+titlebar in a stack or tabs). Make sure these containers do not have a
+pixmap because it can only get in the way.
+
+fixes #1013
+---
+ src/x.c | 21 ++++++++++++++++++---
+ 1 file changed, 18 insertions(+), 3 deletions(-)
+
+diff --git a/src/x.c b/src/x.c
+index 366cbe1..a306356 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -667,9 +667,24 @@ void x_push_node(Con *con) {
+         /* As the pixmap only depends on the size and not on the position, it
+          * is enough to check if width/height have changed. Also, we don’t
+          * create a pixmap at all when the window is actually not visible
+-         * (height == 0). */
+-        if ((state->rect.width != rect.width ||
+-            state->rect.height != rect.height)) {
++         * (height == 0) or when it is not needed. */
++        bool has_rect_changed = (state->rect.width != rect.width || state->rect.height != rect.height);
++
++        /* The pixmap of a borderless container will not be used (except for
++         * the titlebar in a stack or tabs). It can only get in the way. (bug
++         * #1013). */
++        bool is_pixmap_needed = (con->border_style != BS_NONE ||
++                con->parent->layout == L_STACKED ||
++                con->parent->layout == L_TABBED);
++
++        /* Check if the container has an unneeded pixmap left over from
++         * previously having a border or titlebar. */
++        if (!is_pixmap_needed && con->pixmap != XCB_NONE) {
++            xcb_free_pixmap(conn, con->pixmap);
++            con->pixmap = XCB_NONE;
++        }
++
++        if (has_rect_changed && is_pixmap_needed) {
+             if (con->pixmap == 0) {
+                 con->pixmap = xcb_generate_id(conn);
+                 con->pm_gc = xcb_generate_id(conn);
+-- 
+1.8.5.3
+

@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 20,
+    "Comment": "`cleanup` terminates the status command",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 17,
+    "Comment": "Why is this patch labeled a bugfix? It doesn’t fix a bug, does it? It just removes code which is not very useful in practice (since the message only gets displayed for a very brief time), right?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 17,
+    "Comment": "In practice, it seems like there is a race condition between the EOF error and the error from the status line process terminating as to which is actually rendered on the bar. For a given set of circumstances, it is not possible to predict which error it will show. I think that fits the common definition of a bug.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 17,
+    "Comment": "Also, since the status line process is terminated (which will show an error message) in either case, this change will never result in fewer displayed errors.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

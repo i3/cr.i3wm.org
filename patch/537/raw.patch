@@ -1,0 +1,700 @@
+From e8a6d82ee94f739c35f68cbd38f59243ad676730 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sat, 3 May 2014 21:02:54 -0400
+Subject: [PATCH] Remove yajl major version conditionals
+
+Yajl version >= 2 is required for building the i3wm.
+
+fixes #1156
+---
+ common.mk                         |  3 ---
+ i3-msg/main.c                     | 17 -----------------
+ i3bar/src/child.c                 | 29 +----------------------------
+ i3bar/src/config.c                | 17 -----------------
+ i3bar/src/mode.c                  | 17 -----------------
+ i3bar/src/outputs.c               | 21 ---------------------
+ i3bar/src/parse_json_header.c     | 14 --------------
+ i3bar/src/workspaces.c            | 21 ---------------------
+ include/yajl_utils.h              |  6 ------
+ src/commands_parser.c             |  6 +-----
+ src/config_parser.c               |  6 +-----
+ src/display_version.c             | 14 --------------
+ src/key_press.c                   | 11 -----------
+ src/load_layout.c                 | 22 ----------------------
+ src/util.c                        | 12 ------------
+ yajl-fallback/yajl/yajl_version.h |  7 -------
+ 16 files changed, 3 insertions(+), 220 deletions(-)
+ delete mode 100644 yajl-fallback/yajl/yajl_version.h
+
+diff --git a/common.mk b/common.mk
+index aae09be..b086bc8 100644
+--- a/common.mk
++++ b/common.mk
+@@ -115,9 +115,6 @@ XCURSOR_LIBS   := $(call ldflags_for_lib, xcb-cursor,xcb-cursor)
+ 
+ # yajl
+ YAJL_CFLAGS := $(call cflags_for_lib, yajl)
+-# Fallback for libyajl 1 which did not include yajl_version.h. We need
+-# YAJL_MAJOR from that file to decide which code path should be used.
+-YAJL_CFLAGS += -idirafter $(TOPDIR)/yajl-fallback
+ YAJL_LIBS   := $(call ldflags_for_lib, yajl,yajl)
+ 
+ #libev
+diff --git a/i3-msg/main.c b/i3-msg/main.c
+index 513f289..15a03ae 100644
+--- a/i3-msg/main.c
++++ b/i3-msg/main.c
+@@ -76,11 +76,7 @@ static int reply_boolean_cb(void *params, int val) {
+     return 1;
+ }
+ 
+-#if YAJL_MAJOR >= 2
+ static int reply_string_cb(void *params, const unsigned char *val, size_t len) {
+-#else
+-static int reply_string_cb(void *params, const unsigned char *val, unsigned int len) {
+-#endif
+     char *str = scalloc(len + 1);
+     strncpy(str, (const char*)val, len);
+     if (strcmp(last_key, "error") == 0)
+@@ -107,11 +103,7 @@ static int reply_end_map_cb(void *params) {
+ }
+ 
+ 
+-#if YAJL_MAJOR >= 2
+ static int reply_map_key_cb(void *params, const unsigned char *keyVal, size_t keyLen) {
+-#else
+-static int reply_map_key_cb(void *params, const unsigned char *keyVal, unsigned keyLen) {
+-#endif
+     free(last_key);
+     last_key = scalloc(keyLen + 1);
+     strncpy(last_key, (const char*)keyVal, keyLen);
+@@ -239,21 +231,12 @@ int main(int argc, char *argv[]) {
+      * If not, nicely format the error message. */
+     if (reply_type == I3_IPC_MESSAGE_TYPE_COMMAND) {
+         yajl_handle handle;
+-#if YAJL_MAJOR < 2
+-        yajl_parser_config parse_conf = { 0, 0 };
+-
+-        handle = yajl_alloc(&reply_callbacks, &parse_conf, NULL, NULL);
+-#else
+         handle = yajl_alloc(&reply_callbacks, NULL, NULL);
+-#endif
+         yajl_status state = yajl_parse(handle, (const unsigned char*)reply, reply_length);
+         switch (state) {
+             case yajl_status_ok:
+                 break;
+             case yajl_status_client_canceled:
+-#if YAJL_MAJOR < 2
+-            case yajl_status_insufficient_data:
+-#endif
+             case yajl_status_error:
+                 errx(EXIT_FAILURE, "IPC: Could not parse JSON reply.");
+         }
+diff --git a/i3bar/src/child.c b/i3bar/src/child.c
+index 0e1280d..bc5a53e 100644
+--- a/i3bar/src/child.c
++++ b/i3bar/src/child.c
+@@ -161,11 +161,7 @@ static int stdin_start_map(void *context) {
+     return 1;
+ }
+ 
+-#if YAJL_MAJOR >= 2
+ static int stdin_map_key(void *context, const unsigned char *key, size_t len) {
+-#else
+-static int stdin_map_key(void *context, const unsigned char *key, unsigned int len) {
+-#endif
+     parser_ctx *ctx = context;
+     FREE(ctx->last_map_key);
+     sasprintf(&(ctx->last_map_key), "%.*s", len, key);
+@@ -183,11 +179,7 @@ static int stdin_boolean(void *context, int val) {
+     return 1;
+ }
+ 
+-#if YAJL_MAJOR >= 2
+ static int stdin_string(void *context, const unsigned char *val, size_t len) {
+-#else
+-static int stdin_string(void *context, const unsigned char *val, unsigned int len) {
+-#endif
+     parser_ctx *ctx = context;
+     if (strcasecmp(ctx->last_map_key, "full_text") == 0) {
+         ctx->block.full_text = i3string_from_utf8_with_length((const char *)val, len);
+@@ -223,11 +215,7 @@ static int stdin_string(void *context, const unsigned char *val, unsigned int le
+     return 1;
+ }
+ 
+-#if YAJL_MAJOR >= 2
+ static int stdin_integer(void *context, long long val) {
+-#else
+-static int stdin_integer(void *context, long val) {
+-#endif
+     parser_ctx *ctx = context;
+     if (strcasecmp(ctx->last_map_key, "min_width") == 0) {
+         ctx->block.min_width = (uint32_t)val;
+@@ -321,11 +309,7 @@ static void read_flat_input(char *buffer, int length) {
+ static bool read_json_input(unsigned char *input, int length) {
+     yajl_status status = yajl_parse(parser, input, length);
+     bool has_urgent = false;
+-#if YAJL_MAJOR >= 2
+     if (status != yajl_status_ok) {
+-#else
+-    if (status != yajl_status_ok && status != yajl_status_insufficient_data) {
+-#endif
+         char *message = (char *)yajl_get_error(parser, 0, input, length);
+ 
+         /* strip the newline yajl adds to the error message */
+@@ -429,11 +413,8 @@ void child_sig_cb(struct ev_loop *loop, ev_child *watcher, int revents) {
+ void child_write_output(void) {
+     if (child.click_events) {
+         const unsigned char *output;
+-#if YAJL_MAJOR < 2
+-        unsigned int size;
+-#else
+         size_t size;
+-#endif
++
+         yajl_gen_get_buf(gen, &output, &size);
+         write(child_stdin, output, size);
+         write(child_stdin, "\n", 1);
+@@ -465,17 +446,9 @@ void start_child(char *command) {
+         .yajl_start_array = stdin_start_array,
+         .yajl_end_array = stdin_end_array,
+     };
+-#if YAJL_MAJOR < 2
+-    yajl_parser_config parse_conf = { 0, 0 };
+-
+-    parser = yajl_alloc(&callbacks, &parse_conf, NULL, (void*)&parser_context);
+-
+-    gen = yajl_gen_alloc(NULL, NULL);
+-#else
+     parser = yajl_alloc(&callbacks, NULL, &parser_context);
+ 
+     gen = yajl_gen_alloc(NULL);
+-#endif
+ 
+     int pipe_in[2]; /* pipe we read from */
+     int pipe_out[2]; /* pipe we write to */
+diff --git a/i3bar/src/config.c b/i3bar/src/config.c
+index 0e6ba3f..1390265 100644
+--- a/i3bar/src/config.c
++++ b/i3bar/src/config.c
+@@ -27,11 +27,7 @@ static char *cur_key;
+  * Essentially we just save it in cur_key.
+  *
+  */
+-#if YAJL_MAJOR >= 2
+ static int config_map_key_cb(void *params_, const unsigned char *keyVal, size_t keyLen) {
+-#else
+-static int config_map_key_cb(void *params_, const unsigned char *keyVal, unsigned keyLen) {
+-#endif
+     FREE(cur_key);
+ 
+     cur_key = smalloc(sizeof(unsigned char) * (keyLen + 1));
+@@ -61,11 +57,7 @@ static int config_null_cb(void *params_) {
+  * Parse a string
+  *
+  */
+-#if YAJL_MAJOR >= 2
+ static int config_string_cb(void *params_, const unsigned char *val, size_t _len) {
+-#else
+-static int config_string_cb(void *params_, const unsigned char *val, unsigned int _len) {
+-#endif
+     int len = (int)_len;
+     /* The id and socket_path are ignored, we already know them. */
+     if (!strcmp(cur_key, "id") || !strcmp(cur_key, "socket_path"))
+@@ -225,13 +217,7 @@ static yajl_callbacks outputs_callbacks = {
+ void parse_config_json(char *json) {
+     yajl_handle handle;
+     yajl_status state;
+-#if YAJL_MAJOR < 2
+-    yajl_parser_config parse_conf = { 0, 0 };
+-
+-    handle = yajl_alloc(&outputs_callbacks, &parse_conf, NULL, NULL);
+-#else
+     handle = yajl_alloc(&outputs_callbacks, NULL, NULL);
+-#endif
+ 
+     state = yajl_parse(handle, (const unsigned char*) json, strlen(json));
+ 
+@@ -240,9 +226,6 @@ void parse_config_json(char *json) {
+         case yajl_status_ok:
+             break;
+         case yajl_status_client_canceled:
+-#if YAJL_MAJOR < 2
+-        case yajl_status_insufficient_data:
+-#endif
+         case yajl_status_error:
+             ELOG("Could not parse config-reply!\n");
+             exit(EXIT_FAILURE);
+diff --git a/i3bar/src/mode.c b/i3bar/src/mode.c
+index a34f206..21b803a 100644
+--- a/i3bar/src/mode.c
++++ b/i3bar/src/mode.c
+@@ -27,11 +27,7 @@ struct mode_json_params {
+  * Parse a string (change)
+  *
+  */
+-#if YAJL_MAJOR >= 2
+ static int mode_string_cb(void *params_, const unsigned char *val, size_t len) {
+-#else
+-static int mode_string_cb(void *params_, const unsigned char *val, unsigned int len) {
+-#endif
+         struct mode_json_params *params = (struct mode_json_params*) params_;
+ 
+         if (!strcmp(params->cur_key, "change")) {
+@@ -56,11 +52,7 @@ static int mode_string_cb(void *params_, const unsigned char *val, unsigned int
+  * Essentially we just save it in the parsing-state
+  *
+  */
+-#if YAJL_MAJOR >= 2
+ static int mode_map_key_cb(void *params_, const unsigned char *keyVal, size_t keyLen) {
+-#else
+-static int mode_map_key_cb(void *params_, const unsigned char *keyVal, unsigned int keyLen) {
+-#endif
+     struct mode_json_params *params = (struct mode_json_params*) params_;
+     FREE(params->cur_key);
+ 
+@@ -95,13 +87,7 @@ void parse_mode_json(char *json) {
+     yajl_handle handle;
+     yajl_status state;
+ 
+-#if YAJL_MAJOR < 2
+-    yajl_parser_config parse_conf = { 0, 0 };
+-
+-    handle = yajl_alloc(&mode_callbacks, &parse_conf, NULL, (void*) &params);
+-#else
+     handle = yajl_alloc(&mode_callbacks, NULL, (void*) &params);
+-#endif
+ 
+     state = yajl_parse(handle, (const unsigned char*) json, strlen(json));
+ 
+@@ -110,9 +96,6 @@ void parse_mode_json(char *json) {
+         case yajl_status_ok:
+             break;
+         case yajl_status_client_canceled:
+-#if YAJL_MAJOR < 2
+-        case yajl_status_insufficient_data:
+-#endif
+         case yajl_status_error:
+             ELOG("Could not parse mode-event!\n");
+             exit(EXIT_FAILURE);
+diff --git a/i3bar/src/outputs.c b/i3bar/src/outputs.c
+index b407df5..2268eac 100644
+--- a/i3bar/src/outputs.c
++++ b/i3bar/src/outputs.c
+@@ -64,11 +64,7 @@ static int outputs_boolean_cb(void *params_, int val) {
+  * Parse an integer (current_workspace or the rect)
+  *
+  */
+-#if YAJL_MAJOR >= 2
+ static int outputs_integer_cb(void *params_, long long val) {
+-#else
+-static int outputs_integer_cb(void *params_, long val) {
+-#endif
+     struct outputs_json_params *params = (struct outputs_json_params*) params_;
+ 
+     if (!strcmp(params->cur_key, "current_workspace")) {
+@@ -108,11 +104,7 @@ static int outputs_integer_cb(void *params_, long val) {
+  * Parse a string (name)
+  *
+  */
+-#if YAJL_MAJOR >= 2
+ static int outputs_string_cb(void *params_, const unsigned char *val, size_t len) {
+-#else
+-static int outputs_string_cb(void *params_, const unsigned char *val, unsigned int len) {
+-#endif
+     struct outputs_json_params *params = (struct outputs_json_params*) params_;
+ 
+     if (!strcmp(params->cur_key, "current_workspace")) {
+@@ -232,11 +224,7 @@ static int outputs_end_map_cb(void *params_) {
+  * Essentially we just save it in the parsing-state
+  *
+  */
+-#if YAJL_MAJOR >= 2
+ static int outputs_map_key_cb(void *params_, const unsigned char *keyVal, size_t keyLen) {
+-#else
+-static int outputs_map_key_cb(void *params_, const unsigned char *keyVal, unsigned keyLen) {
+-#endif
+     struct outputs_json_params *params = (struct outputs_json_params*) params_;
+     FREE(params->cur_key);
+ 
+@@ -281,13 +269,7 @@ void parse_outputs_json(char *json) {
+ 
+     yajl_handle handle;
+     yajl_status state;
+-#if YAJL_MAJOR < 2
+-    yajl_parser_config parse_conf = { 0, 0 };
+-
+-    handle = yajl_alloc(&outputs_callbacks, &parse_conf, NULL, (void*) &params);
+-#else
+     handle = yajl_alloc(&outputs_callbacks, NULL, (void*) &params);
+-#endif
+ 
+     state = yajl_parse(handle, (const unsigned char*) json, strlen(json));
+ 
+@@ -296,9 +278,6 @@ void parse_outputs_json(char *json) {
+         case yajl_status_ok:
+             break;
+         case yajl_status_client_canceled:
+-#if YAJL_MAJOR < 2
+-        case yajl_status_insufficient_data:
+-#endif
+         case yajl_status_error:
+             ELOG("Could not parse outputs-reply!\n");
+             exit(EXIT_FAILURE);
+diff --git a/i3bar/src/parse_json_header.c b/i3bar/src/parse_json_header.c
+index 86afab3..bd8f5a7 100644
+--- a/i3bar/src/parse_json_header.c
++++ b/i3bar/src/parse_json_header.c
+@@ -35,11 +35,7 @@ static enum {
+     NO_KEY
+ } current_key;
+ 
+-#if YAJL_MAJOR >= 2
+ static int header_integer(void *ctx, long long val) {
+-#else
+-static int header_integer(void *ctx, long val) {
+-#endif
+     i3bar_child *child = ctx;
+ 
+     switch (current_key) {
+@@ -76,11 +72,7 @@ static int header_boolean(void *ctx, int val) {
+ #define CHECK_KEY(name) (stringlen == strlen(name) && \
+                          STARTS_WITH((const char*)stringval, stringlen, name))
+ 
+-#if YAJL_MAJOR >= 2
+ static int header_map_key(void *ctx, const unsigned char *stringval, size_t stringlen) {
+-#else
+-static int header_map_key(void *ctx, const unsigned char *stringval, unsigned int stringlen) {
+-#endif
+     if (CHECK_KEY("version")) {
+         current_key = KEY_VERSION;
+     } else if (CHECK_KEY("stop_signal")) {
+@@ -118,16 +110,10 @@ void parse_json_header(i3bar_child *child, const unsigned char *buffer, int leng
+ 
+     current_key = NO_KEY;
+ 
+-#if YAJL_MAJOR >= 2
+     yajl_handle handle = yajl_alloc(&version_callbacks, NULL, child);
+     /* Allow trailing garbage. yajl 1 always behaves that way anyways, but for
+      * yajl 2, we need to be explicit. */
+     yajl_config(handle, yajl_allow_trailing_garbage, 1);
+-#else
+-    yajl_parser_config parse_conf = { 0, 0 };
+-
+-    yajl_handle handle = yajl_alloc(&version_callbacks, &parse_conf, NULL, child);
+-#endif
+ 
+     yajl_status state = yajl_parse(handle, buffer, length);
+     if (state != yajl_status_ok) {
+diff --git a/i3bar/src/workspaces.c b/i3bar/src/workspaces.c
+index e07a430..4e6854c 100644
+--- a/i3bar/src/workspaces.c
++++ b/i3bar/src/workspaces.c
+@@ -58,11 +58,7 @@ static int workspaces_boolean_cb(void *params_, int val) {
+  * Parse an integer (num or the rect)
+  *
+  */
+-#if YAJL_MAJOR >= 2
+ static int workspaces_integer_cb(void *params_, long long val) {
+-#else
+-static int workspaces_integer_cb(void *params_, long val) {
+-#endif
+     struct workspaces_json_params *params = (struct workspaces_json_params*) params_;
+ 
+     if (!strcmp(params->cur_key, "num")) {
+@@ -103,11 +99,7 @@ static int workspaces_integer_cb(void *params_, long val) {
+  * Parse a string (name, output)
+  *
+  */
+-#if YAJL_MAJOR >= 2
+ static int workspaces_string_cb(void *params_, const unsigned char *val, size_t len) {
+-#else
+-static int workspaces_string_cb(void *params_, const unsigned char *val, unsigned int len) {
+-#endif
+         struct workspaces_json_params *params = (struct workspaces_json_params*) params_;
+ 
+         char *output_name;
+@@ -182,11 +174,7 @@ static int workspaces_start_map_cb(void *params_) {
+  * Essentially we just save it in the parsing-state
+  *
+  */
+-#if YAJL_MAJOR >= 2
+ static int workspaces_map_key_cb(void *params_, const unsigned char *keyVal, size_t keyLen) {
+-#else
+-static int workspaces_map_key_cb(void *params_, const unsigned char *keyVal, unsigned int keyLen) {
+-#endif
+     struct workspaces_json_params *params = (struct workspaces_json_params*) params_;
+     FREE(params->cur_key);
+ 
+@@ -223,13 +211,7 @@ void parse_workspaces_json(char *json) {
+ 
+     yajl_handle handle;
+     yajl_status state;
+-#if YAJL_MAJOR < 2
+-    yajl_parser_config parse_conf = { 0, 0 };
+-
+-    handle = yajl_alloc(&workspaces_callbacks, &parse_conf, NULL, (void*) &params);
+-#else
+     handle = yajl_alloc(&workspaces_callbacks, NULL, (void*) &params);
+-#endif
+ 
+     state = yajl_parse(handle, (const unsigned char*) json, strlen(json));
+ 
+@@ -238,9 +220,6 @@ void parse_workspaces_json(char *json) {
+         case yajl_status_ok:
+             break;
+         case yajl_status_client_canceled:
+-#if YAJL_MAJOR < 2
+-        case yajl_status_insufficient_data:
+-#endif
+         case yajl_status_error:
+             ELOG("Could not parse workspaces-reply!\n");
+             exit(EXIT_FAILURE);
+diff --git a/include/yajl_utils.h b/include/yajl_utils.h
+index cf96307..747e0ca 100644
+--- a/include/yajl_utils.h
++++ b/include/yajl_utils.h
+@@ -17,12 +17,6 @@
+ #define y(x, ...) yajl_gen_ ## x (gen, ##__VA_ARGS__)
+ #define ystr(str) yajl_gen_string(gen, (unsigned char*)str, strlen(str))
+ 
+-#if YAJL_MAJOR >= 2
+ #define ygenalloc() yajl_gen_alloc(NULL)
+ #define yalloc(callbacks, client) yajl_alloc(callbacks, NULL, client)
+ typedef size_t ylength;
+-#else
+-#define ygenalloc() yajl_gen_alloc(NULL, NULL);
+-#define yalloc(callbacks, client) yajl_alloc(callbacks, NULL, NULL, client)
+-typedef unsigned int ylength;
+-#endif
+diff --git a/src/commands_parser.c b/src/commands_parser.c
+index 05d39cf..8702604 100644
+--- a/src/commands_parser.c
++++ b/src/commands_parser.c
+@@ -209,12 +209,8 @@ struct CommandResult *parse_command(const char *input) {
+     DLOG("COMMAND: *%s*\n", input);
+     state = INITIAL;
+ 
+-/* A YAJL JSON generator used for formatting replies. */
+-#if YAJL_MAJOR >= 2
++    /* A YAJL JSON generator used for formatting replies. */
+     command_output.json_gen = yajl_gen_alloc(NULL);
+-#else
+-    command_output.json_gen = yajl_gen_alloc(NULL, NULL);
+-#endif
+ 
+     y(array_open);
+     command_output.needs_tree_render = false;
+diff --git a/src/config_parser.c b/src/config_parser.c
+index 63cef8d..72ba676 100644
+--- a/src/config_parser.c
++++ b/src/config_parser.c
+@@ -323,12 +323,8 @@ struct ConfigResult *parse_config(const char *input, struct context *context) {
+     state = INITIAL;
+     statelist_idx = 1;
+ 
+-/* A YAJL JSON generator used for formatting replies. */
+-#if YAJL_MAJOR >= 2
++    /* A YAJL JSON generator used for formatting replies. */
+     command_output.json_gen = yajl_gen_alloc(NULL);
+-#else
+-    command_output.json_gen = yajl_gen_alloc(NULL, NULL);
+-#endif
+ 
+     y(array_open);
+ 
+diff --git a/src/display_version.c b/src/display_version.c
+index da667ff..5b05c4b 100644
+--- a/src/display_version.c
++++ b/src/display_version.c
+@@ -21,21 +21,13 @@
+ static bool human_readable_key;
+ static char *human_readable_version;
+ 
+-#if YAJL_MAJOR >= 2
+ static int version_string(void *ctx, const unsigned char *val, size_t len) {
+-#else
+-static int version_string(void *ctx, const unsigned char *val, unsigned int len) {
+-#endif
+     if (human_readable_key)
+         sasprintf(&human_readable_version, "%.*s", (int)len, val);
+     return 1;
+ }
+ 
+-#if YAJL_MAJOR >= 2
+ static int version_map_key(void *ctx, const unsigned char *stringval, size_t stringlen) {
+-#else
+-static int version_map_key(void *ctx, const unsigned char *stringval, unsigned int stringlen) {
+-#endif
+     human_readable_key = (stringlen == strlen("human_readable") &&
+                    strncmp((const char*)stringval, "human_readable", strlen("human_readable")) == 0);
+     return 1;
+@@ -104,13 +96,7 @@ void display_running_version(void) {
+     if (reply_type != I3_IPC_MESSAGE_TYPE_GET_VERSION)
+         errx(EXIT_FAILURE, "Got reply type %d, but expected %d (GET_VERSION)", reply_type, I3_IPC_MESSAGE_TYPE_GET_VERSION);
+ 
+-#if YAJL_MAJOR >= 2
+     yajl_handle handle = yajl_alloc(&version_callbacks, NULL, NULL);
+-#else
+-    yajl_parser_config parse_conf = { 0, 0 };
+-
+-    yajl_handle handle = yajl_alloc(&version_callbacks, &parse_conf, NULL, NULL);
+-#endif
+ 
+     yajl_status state = yajl_parse(handle, (const unsigned char*)reply, (int)reply_length);
+     if (state != yajl_status_ok)
+diff --git a/src/key_press.c b/src/key_press.c
+index 65b8e57..dbd5302 100644
+--- a/src/key_press.c
++++ b/src/key_press.c
+@@ -30,11 +30,7 @@ static int json_boolean(void *ctx, int boolval) {
+     return 1;
+ }
+ 
+-#if YAJL_MAJOR >= 2
+ static int json_map_key(void *ctx, const unsigned char *stringval, size_t stringlen) {
+-#else
+-static int json_map_key(void *ctx, const unsigned char *stringval, unsigned int stringlen) {
+-#endif
+     parse_error_key = (stringlen >= strlen("parse_error") &&
+                        strncmp((const char*)stringval, "parse_error", strlen("parse_error")) == 0);
+     return 1;
+@@ -86,15 +82,8 @@ void handle_key_press(xcb_key_press_event_t *event) {
+     /* We parse the JSON reply to figure out whether there was an error
+      * ("success" being false in on of the returned dictionaries). */
+     const unsigned char *reply;
+-#if YAJL_MAJOR >= 2
+     size_t length;
+     yajl_handle handle = yajl_alloc(&command_error_callbacks, NULL, NULL);
+-#else
+-    unsigned int length;
+-    yajl_parser_config parse_conf = { 0, 0 };
+-
+-    yajl_handle handle = yajl_alloc(&command_error_callbacks, &parse_conf, NULL, NULL);
+-#endif
+     yajl_gen_get_buf(command_output->json_gen, &reply, &length);
+ 
+     current_nesting_level = 0;
+diff --git a/src/load_layout.c b/src/load_layout.c
+index cebb193..4ba62bd 100644
+--- a/src/load_layout.c
++++ b/src/load_layout.c
+@@ -133,11 +133,7 @@ static int json_end_array(void *ctx) {
+     return 1;
+ }
+ 
+-#if YAJL_MAJOR < 2
+-static int json_key(void *ctx, const unsigned char *val, unsigned int len) {
+-#else
+ static int json_key(void *ctx, const unsigned char *val, size_t len) {
+-#endif
+     LOG("key: %.*s\n", (int)len, val);
+     FREE(last_key);
+     last_key = scalloc((len+1) * sizeof(char));
+@@ -160,11 +156,7 @@ static int json_key(void *ctx, const unsigned char *val, size_t len) {
+     return 1;
+ }
+ 
+-#if YAJL_MAJOR >= 2
+ static int json_string(void *ctx, const unsigned char *val, size_t len) {
+-#else
+-static int json_string(void *ctx, const unsigned char *val, unsigned int len) {
+-#endif
+     LOG("string: %.*s for key %s\n", (int)len, val, last_key);
+     if (parsing_swallows) {
+         char *sval;
+@@ -307,13 +299,8 @@ static int json_string(void *ctx, const unsigned char *val, unsigned int len) {
+     return 1;
+ }
+ 
+-#if YAJL_MAJOR >= 2
+ static int json_int(void *ctx, long long val) {
+     LOG("int %lld for key %s\n", val, last_key);
+-#else
+-static int json_int(void *ctx, long val) {
+-    LOG("int %ld for key %s\n", val, last_key);
+-#endif
+     /* For backwards compatibility with i3 < 4.8 */
+     if (strcasecmp(last_key, "type") == 0)
+         json_node->type = val;
+@@ -427,13 +414,8 @@ void tree_append_json(Con *con, const char *filename, char **errormsg) {
+         .yajl_end_map = json_end_map,
+         .yajl_end_array = json_end_array,
+     };
+-#if YAJL_MAJOR >= 2
+     g = yajl_gen_alloc(NULL);
+     hand = yajl_alloc(&callbacks, NULL, (void*)g);
+-#else
+-    g = yajl_gen_alloc(NULL, NULL);
+-    hand = yajl_alloc(&callbacks, NULL, NULL, (void*)g);
+-#endif
+     /* Allowing comments allows for more user-friendly layout files. */
+     yajl_config(hand, yajl_allow_comments, true);
+     /* Allow multiple values, i.e. multiple nodes to attach */
+@@ -463,11 +445,7 @@ void tree_append_json(Con *con, const char *filename, char **errormsg) {
+     con_fix_percent(con);
+ 
+     setlocale(LC_NUMERIC, "");
+-#if YAJL_MAJOR >= 2
+     yajl_complete_parse(hand);
+-#else
+-    yajl_parse_complete(hand);
+-#endif
+ 
+     fclose(f);
+     if (to_focus)
+diff --git a/src/util.c b/src/util.c
+index f672cc2..c3336e1 100644
+--- a/src/util.c
++++ b/src/util.c
+@@ -188,22 +188,14 @@ static char **append_argument(char **original, char *argument) {
+ 
+ char *store_restart_layout(void) {
+     setlocale(LC_NUMERIC, "C");
+-#if YAJL_MAJOR >= 2
+     yajl_gen gen = yajl_gen_alloc(NULL);
+-#else
+-    yajl_gen gen = yajl_gen_alloc(NULL, NULL);
+-#endif
+ 
+     dump_node(gen, croot, true);
+ 
+     setlocale(LC_NUMERIC, "");
+ 
+     const unsigned char *payload;
+-#if YAJL_MAJOR >= 2
+     size_t length;
+-#else
+-    unsigned int length;
+-#endif
+     y(get_buf, &payload, &length);
+ 
+     /* create a temporary file if one hasn't been specified, or just
+@@ -241,11 +233,7 @@ char *store_restart_layout(void) {
+             return NULL;
+         }
+         written += n;
+-#if YAJL_MAJOR >= 2
+         DLOG("written: %zd of %zd\n", written, length);
+-#else
+-        DLOG("written: %d of %d\n", written, length);
+-#endif
+     }
+     close(fd);
+ 
+diff --git a/yajl-fallback/yajl/yajl_version.h b/yajl-fallback/yajl/yajl_version.h
+deleted file mode 100644
+index c6da442..0000000
+--- a/yajl-fallback/yajl/yajl_version.h
++++ /dev/null
+@@ -1,7 +0,0 @@
+-#ifndef YAJL_VERSION_H_
+-#define YAJL_VERSION_H_
+-/* Fallback for libyajl 1 which does not provide yajl_version.h */
+-#define YAJL_MAJOR 1
+-#define YAJL_MINOR 0
+-#define YAJL_MICRO 0
+-#endif
+-- 
+1.9.2
+

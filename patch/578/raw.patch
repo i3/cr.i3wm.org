@@ -1,0 +1,27 @@
+From cf6512274420b791e57ed02dbf00afe5f2d11019 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sun, 15 Jun 2014 00:21:33 -0400
+Subject: [PATCH] userguide: document exit confirmation dialog
+
+In the section "Exiting i3", document the confirmation dialog (nagbar)
+that will show when the user presses the default keys to exit in such a
+way to hint that it is configurable.
+---
+ docs/userguide | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/docs/userguide b/docs/userguide
+index ff46d62..681c19f 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -153,6 +153,7 @@ to upgrade to a newer version of i3) you can use +$mod+Shift+r+.
+ === Exiting i3
+ 
+ To cleanly exit i3 without killing your X server, you can use +$mod+Shift+e+.
++By default, a dialog will ask you to confirm if you really want to quit.
+ 
+ === Floating
+ 
+-- 
+2.0.0
+

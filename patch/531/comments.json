@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Ari Edelkind",
+    "Line": 0,
+    "Comment": "Please apply patch http://cr.i3wm.org/patch/530 (http://bugs.i3wm.org/query/ticket/1242) before testing this patch.  That bug became apparent while working on this.",
+    "EmailHash": "89935d30ca23659b4a2b846f9fd24044"
+  },
+  {
+    "Author": "Ari Edelkind",
+    "Line": 63,
+    "Comment": "The \"bind-\u003ekeycode \u003e 0\" bit is left in place here just in case the keycode is set somewhere despite the symbol being non-null.  If this never happens, it isn't necessary.",
+    "EmailHash": "89935d30ca23659b4a2b846f9fd24044"
+  },
+  {
+    "Author": "Ari Edelkind",
+    "Line": 80,
+    "Comment": "XCB_GRAB_ANY is actually 0, so this is no longer a valid check.",
+    "EmailHash": "89935d30ca23659b4a2b846f9fd24044"
+  },
+  {
+    "Author": "Ari Edelkind",
+    "Line": 46,
+    "Comment": "The global, non-inline comment doesn't appear to show, so i'll repeat this here: Please apply http://cr.i3wm.org/patch/530 (bug report: http://bugs.i3wm.org/query/ticket/1242) before testing this patch.  The bug fixed by that patch became apparent while working on this one.",
+    "EmailHash": "89935d30ca23659b4a2b846f9fd24044"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 46,
+    "Comment": "Can you make this patch work without #530?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 46,
+    "Comment": "Also, can you make it smarter with regards to modifiers? I don’t like the fact that one needs to blacklist modifiers.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 18,
+    "Comment": "Please remove the introduction message from the description — while the intention was nice, it does not need to end up in our git repository history :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 18,
+    "Comment": "Also please re-submit your patches in just one big patch, that makes it easier to handle in all aspects. Thanks!",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

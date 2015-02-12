@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 31,
+    "Comment": "Let’s make it so that i3-input shows up on the currently focused workspace instead of adding an identifier to enable a workaround.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

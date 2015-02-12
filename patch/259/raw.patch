@@ -1,0 +1,35 @@
+From b906a5cda869734201b1938d5f5d1f49a61458d4 Mon Sep 17 00:00:00 2001
+From: "jj" <haptix@…>
+Date: Wed, 9 Oct 2013 22:30:41 +0200
+Subject: [PATCH] Fix command parser: resizing tiling windows
+
+i3 would accept an invalid resize command like 'resize shrink width 10
+px or' without specifying the ppt value, and then crash. This patch
+fixes the parser specification.
+---
+ parser-specs/commands.spec | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/parser-specs/commands.spec b/parser-specs/commands.spec
+index 2c640c6..e3da62c 100644
+--- a/parser-specs/commands.spec
++++ b/parser-specs/commands.spec
+@@ -209,11 +209,11 @@ state RESIZE_TILING:
+       -> call cmd_resize($way, $direction, $resize_px, "10")
+ 
+ state RESIZE_TILING_OR:
+-  'ppt'
+-      ->
+   resize_ppt = word
+-      ->
+-  end
++      -> RESIZE_TILING_FINAL
++
++state RESIZE_TILING_FINAL:
++  'ppt', end
+       -> call cmd_resize($way, $direction, $resize_px, $resize_ppt)
+ 
+ # rename workspace <name> to <name>
+-- 
+1.8.4.rc3
+

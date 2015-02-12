@@ -1,0 +1,637 @@
+From b979626b651b033c3da367e77260beec6c09dda2 Mon Sep 17 00:00:00 2001
+From: oblique <psyberbits@…>
+Date: Tue, 26 Feb 2013 02:37:35 +0200
+Subject: [PATCH] Add support for _NET_WM_STATE_DEMANDS_ATTENTION.
+
+_NET_WM_STATE_DEMANDS_ATTENTION indicates that some action in or with
+the window happened. It's a weaker hint than urgency flag of WM_HINTS,
+but some applications and almost all Qt applications use it instead of
+WM_HINTS' urgency flag (one example is Skype).
+---
+ docs/hacking-howto       |   3 +-
+ include/atoms.xmacro     |   1 +
+ include/con.h            |   6 +
+ src/con.c                |  39 +++++++
+ src/ewmh.c               |   2 +-
+ src/handlers.c           |  72 +++++-------
+ testcases/t/113-urgent.t | 287 ++++++++++++++++++++++++++---------------------
+ 7 files changed, 232 insertions(+), 178 deletions(-)
+
+diff --git a/docs/hacking-howto b/docs/hacking-howto
+index 6bdd0dc..633c277 100644
+--- a/docs/hacking-howto
++++ b/docs/hacking-howto
+@@ -28,7 +28,8 @@ In the case of i3, the tasks (and order of them) are the following:
+   the first client of X) and manage them (reparent them, create window
+   decorations, etc.)
+ . When new windows are created, manage them
+-. Handle the client’s `_WM_STATE` property, but only the `_WM_STATE_FULLSCREEN`
++. Handle the client’s `_WM_STATE` property, but only `_WM_STATE_FULLSCREEN` and
++  `_NET_WM_STATE_DEMANDS_ATTENTION`
+ . Handle the client’s `WM_NAME` property
+ . Handle the client’s size hints to display them proportionally
+ . Handle the client’s urgency hint
+diff --git a/include/atoms.xmacro b/include/atoms.xmacro
+index af60b96..205efa1 100644
+--- a/include/atoms.xmacro
++++ b/include/atoms.xmacro
+@@ -2,6 +2,7 @@ xmacro(_NET_SUPPORTED)
+ xmacro(_NET_SUPPORTING_WM_CHECK)
+ xmacro(_NET_WM_NAME)
+ xmacro(_NET_WM_STATE_FULLSCREEN)
++xmacro(_NET_WM_STATE_DEMANDS_ATTENTION)
+ xmacro(_NET_WM_STATE)
+ xmacro(_NET_WM_WINDOW_TYPE)
+ xmacro(_NET_WM_WINDOW_TYPE_DOCK)
+diff --git a/include/con.h b/include/con.h
+index 5c104eb..62eb12d 100644
+--- a/include/con.h
++++ b/include/con.h
+@@ -325,6 +325,12 @@ bool con_has_urgent_child(Con *con);
+ void con_update_parents_urgency(Con *con);
+ 
+ /**
++ * Set urgency flag to the container, all the parent containers and the workspace.
++ *
++ */
++void con_set_urgency(Con *con, bool urgent);
++
++/**
+  * Create a string representing the subtree under con.
+  *
+  */
+diff --git a/src/con.c b/src/con.c
+index 750b1c1..559c137 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -1531,6 +1531,45 @@ void con_update_parents_urgency(Con *con) {
+ }
+ 
+ /*
++ * Set urgency flag to the container, all the parent containers and the workspace.
++ *
++ */
++void con_set_urgency(Con *con, bool urgent) {
++    if (focused == con) {
++        DLOG("Ignoring urgency flag for current client\n");
++        con->window->urgent.tv_sec = 0;
++        con->window->urgent.tv_usec = 0;
++        return;
++    }
++
++    if (con->urgency_timer == NULL) {
++        con->urgent = urgent;
++    } else
++        DLOG("Discarding urgency WM_HINT because timer is running\n");
++
++    //CLIENT_LOG(con);
++    if (con->window) {
++        if (con->urgent) {
++            gettimeofday(&con->window->urgent, NULL);
++        } else {
++            con->window->urgent.tv_sec = 0;
++            con->window->urgent.tv_usec = 0;
++        }
++    }
++
++    con_update_parents_urgency(con);
++
++    if (con->urgent == urgent)
++        LOG("Urgency flag changed to %d\n", con->urgent);
++
++    Con *ws;
++    /* Set the urgency flag on the workspace, if a workspace could be found
++     * (for dock clients, that is not the case). */
++    if ((ws = con_get_workspace(con)) != NULL)
++        workspace_update_urgent_flag(ws);
++}
++
++/*
+  * Create a string representing the subtree under con.
+  *
+  */
+diff --git a/src/ewmh.c b/src/ewmh.c
+index 45d4e5f..9021e1c 100644
+--- a/src/ewmh.c
++++ b/src/ewmh.c
+@@ -164,5 +164,5 @@ void ewmh_setup_hints(void) {
+     /* I’m not entirely sure if we need to keep _NET_WM_NAME on root. */
+     xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_WM_NAME, A_UTF8_STRING, 8, strlen("i3"), "i3");
+ 
+-    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_SUPPORTED, XCB_ATOM_ATOM, 32, 16, supported_atoms);
++    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_SUPPORTED, XCB_ATOM_ATOM, 32, 19, supported_atoms);
+ }
+diff --git a/src/handlers.c b/src/handlers.c
+index 4f2d870..f4782ca 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -619,10 +619,10 @@ static void handle_client_message(xcb_client_message_event_t *event) {
+ 
+     LOG("ClientMessage for window 0x%08x\n", event->window);
+     if (event->type == A__NET_WM_STATE) {
+-        if (event->format != 32 || event->data.data32[1] != A__NET_WM_STATE_FULLSCREEN) {
+-            DLOG("atom in clientmessage is %d, fullscreen is %d\n",
+-                    event->data.data32[1], A__NET_WM_STATE_FULLSCREEN);
+-            DLOG("not about fullscreen atom\n");
++        if (event->format != 32 ||
++            (event->data.data32[1] != A__NET_WM_STATE_FULLSCREEN &&
++             event->data.data32[1] != A__NET_WM_STATE_DEMANDS_ATTENTION)) {
++            DLOG("Unknown atom in clientmessage of type %d\n", event->data.data32[1]);
+             return;
+         }
+ 
+@@ -632,15 +632,25 @@ static void handle_client_message(xcb_client_message_event_t *event) {
+             return;
+         }
+ 
+-        /* Check if the fullscreen state should be toggled */
+-        if ((con->fullscreen_mode != CF_NONE &&
+-             (event->data.data32[0] == _NET_WM_STATE_REMOVE ||
+-              event->data.data32[0] == _NET_WM_STATE_TOGGLE)) ||
+-            (con->fullscreen_mode == CF_NONE &&
+-             (event->data.data32[0] == _NET_WM_STATE_ADD ||
+-              event->data.data32[0] == _NET_WM_STATE_TOGGLE))) {
+-            DLOG("toggling fullscreen\n");
+-            con_toggle_fullscreen(con, CF_OUTPUT);
++        if (event->data.data32[1] == A__NET_WM_STATE_FULLSCREEN) {
++            /* Check if the fullscreen state should be toggled */
++            if ((con->fullscreen_mode != CF_NONE &&
++                 (event->data.data32[0] == _NET_WM_STATE_REMOVE ||
++                  event->data.data32[0] == _NET_WM_STATE_TOGGLE)) ||
++                (con->fullscreen_mode == CF_NONE &&
++                 (event->data.data32[0] == _NET_WM_STATE_ADD ||
++                  event->data.data32[0] == _NET_WM_STATE_TOGGLE))) {
++                DLOG("toggling fullscreen\n");
++                con_toggle_fullscreen(con, CF_OUTPUT);
++            }
++        } else if (event->data.data32[1] == A__NET_WM_STATE_DEMANDS_ATTENTION) {
++            /* Check if the urgent flag must be set or not */
++            if (event->data.data32[0] == _NET_WM_STATE_ADD)
++                con_set_urgency(con, true);
++            else if (event->data.data32[0] == _NET_WM_STATE_REMOVE)
++                con_set_urgency(con, false);
++            else if (event->data.data32[0] == _NET_WM_STATE_TOGGLE)
++                con_set_urgency(con, !con->urgent);
+         }
+ 
+         tree_render();
+@@ -833,44 +843,12 @@ static bool handle_hints(void *data, xcb_connection_t *conn, uint8_t state, xcb_
+     if (!xcb_icccm_get_wm_hints_from_reply(&hints, reply))
+         return false;
+ 
+-    if (!con->urgent && focused == con) {
+-        DLOG("Ignoring urgency flag for current client\n");
+-        con->window->urgent.tv_sec = 0;
+-        con->window->urgent.tv_usec = 0;
+-        goto end;
+-    }
+-
+     /* Update the flag on the client directly */
+     bool hint_urgent = (xcb_icccm_wm_hints_get_urgency(&hints) != 0);
+-
+-    if (con->urgency_timer == NULL) {
+-        con->urgent = hint_urgent;
+-    } else
+-        DLOG("Discarding urgency WM_HINT because timer is running\n");
+-
+-    //CLIENT_LOG(con);
+-    if (con->window) {
+-        if (con->urgent) {
+-            gettimeofday(&con->window->urgent, NULL);
+-        } else {
+-            con->window->urgent.tv_sec = 0;
+-            con->window->urgent.tv_usec = 0;
+-        }
+-    }
+-
+-    con_update_parents_urgency(con);
+-
+-    LOG("Urgency flag changed to %d\n", con->urgent);
+-
+-    Con *ws;
+-    /* Set the urgency flag on the workspace, if a workspace could be found
+-     * (for dock clients, that is not the case). */
+-    if ((ws = con_get_workspace(con)) != NULL)
+-        workspace_update_urgent_flag(ws);
++    con_set_urgency(con, hint_urgent);
+ 
+     tree_render();
+ 
+-end:
+     if (con->window)
+         window_update_hints(con->window, reply);
+     else free(reply);
+@@ -1094,7 +1072,7 @@ void handle_event(int type, xcb_generic_event_t *event) {
+ 
+         /* Client message are sent to the root window. The only interesting
+          * client message for us is _NET_WM_STATE, we honour
+-         * _NET_WM_STATE_FULLSCREEN */
++         * _NET_WM_STATE_FULLSCREEN and _NET_WM_STATE_DEMANDS_ATTENTION */
+         case XCB_CLIENT_MESSAGE:
+             handle_client_message((xcb_client_message_event_t*)event);
+             break;
+diff --git a/testcases/t/113-urgent.t b/testcases/t/113-urgent.t
+index 8c8b74a..02f98af 100644
+--- a/testcases/t/113-urgent.t
++++ b/testcases/t/113-urgent.t
+@@ -17,239 +17,268 @@
+ use i3test i3_autostart => 0;
+ use List::Util qw(first);
+ 
++my $_NET_WM_STATE_REMOVE = 0;
++my $_NET_WM_STATE_ADD = 1;
++my $_NET_WM_STATE_TOGGLE = 2;
++
++sub set_urgency {
++    my ($win, $urgent_flag, $type) = @_;
++    if ($type == 1) {
++        $win->add_hint('urgency') if ($urgent_flag);
++        $win->delete_hint('urgency') if (!$urgent_flag);
++    } elsif ($type == 2) {
++        my $msg = pack "CCSLLLLLL",
++            X11::XCB::CLIENT_MESSAGE, # response_type
++            32, # format
++            0, # sequence
++            $win->id, # window
++            $x->atom(name => '_NET_WM_STATE')->id, # message type
++            ($urgent_flag ? $_NET_WM_STATE_ADD : $_NET_WM_STATE_REMOVE), # data32[0]
++            $x->atom(name => '_NET_WM_STATE_DEMANDS_ATTENTION')->id, # data32[1]
++            0, # data32[2]
++            0, # data32[3]
++            0; # data32[4]
++
++        $x->send_event(0, $x->get_root_window(), X11::XCB::EVENT_MASK_SUBSTRUCTURE_REDIRECT, $msg);
++    }
++}
++
+ my $config = <<EOT;
+ # i3 config file (v4)
+ font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
+ 
+ force_display_urgency_hint 0ms
+ EOT
+-my $pid = launch_with_config($config);
+ 
+-my $tmp = fresh_workspace;
++my $type;
++for ($type = 1; $type <= 2; $type++) {
++    my $pid = launch_with_config($config);
++    my $tmp = fresh_workspace;
+ 
+ #####################################################################
+ # Create two windows and put them in stacking mode
+ #####################################################################
+ 
+-cmd 'split v';
++    cmd 'split v';
+ 
+-my $top = open_window;
+-my $bottom = open_window;
++    my $top = open_window;
++    my $bottom = open_window;
+ 
+-my @urgent = grep { $_->{urgent} } @{get_ws_content($tmp)};
+-is(@urgent, 0, 'no window got the urgent flag');
++    my @urgent = grep { $_->{urgent} } @{get_ws_content($tmp)};
++    is(@urgent, 0, 'no window got the urgent flag');
+ 
+ # cmd 'layout stacking';
+ 
+ #####################################################################
+ # Add the urgency hint, switch to a different workspace and back again
+ #####################################################################
+-$top->add_hint('urgency');
+-sync_with_i3;
++    set_urgency($top, 1, $type);
++    sync_with_i3;
+ 
+-my @content = @{get_ws_content($tmp)};
+-@urgent = grep { $_->{urgent} } @content;
+-my $top_info = first { $_->{window} == $top->id } @content;
+-my $bottom_info = first { $_->{window} == $bottom->id } @content;
++    my @content = @{get_ws_content($tmp)};
++    @urgent = grep { $_->{urgent} } @content;
++    my $top_info = first { $_->{window} == $top->id } @content;
++    my $bottom_info = first { $_->{window} == $bottom->id } @content;
+ 
+-ok($top_info->{urgent}, 'top window is marked urgent');
+-ok(!$bottom_info->{urgent}, 'bottom window is not marked urgent');
+-is(@urgent, 1, 'exactly one window got the urgent flag');
++    ok($top_info->{urgent}, 'top window is marked urgent');
++    ok(!$bottom_info->{urgent}, 'bottom window is not marked urgent');
++    is(@urgent, 1, 'exactly one window got the urgent flag');
+ 
+-cmd '[id="' . $top->id . '"] focus';
++    cmd '[id="' . $top->id . '"] focus';
+ 
+-@urgent = grep { $_->{urgent} } @{get_ws_content($tmp)};
+-is(@urgent, 0, 'no window got the urgent flag after focusing');
++    @urgent = grep { $_->{urgent} } @{get_ws_content($tmp)};
++    is(@urgent, 0, 'no window got the urgent flag after focusing');
+ 
+-$top->add_hint('urgency');
+-sync_with_i3;
++    set_urgency($top, 1, $type);
++    sync_with_i3;
+ 
+-@urgent = grep { $_->{urgent} } @{get_ws_content($tmp)};
+-is(@urgent, 0, 'no window got the urgent flag after re-setting urgency hint');
++    @urgent = grep { $_->{urgent} } @{get_ws_content($tmp)};
++    is(@urgent, 0, 'no window got the urgent flag after re-setting urgency hint');
+ 
+ #####################################################################
+ # Check if the workspace urgency hint gets set/cleared correctly
+ #####################################################################
+ 
+-my $ws = get_ws($tmp);
+-ok(!$ws->{urgent}, 'urgent flag not set on workspace');
++    my $ws = get_ws($tmp);
++    ok(!$ws->{urgent}, 'urgent flag not set on workspace');
+ 
+-my $otmp = fresh_workspace;
++    my $otmp = fresh_workspace;
+ 
+-$top->add_hint('urgency');
+-sync_with_i3;
++    set_urgency($top, 1, $type);
++    sync_with_i3;
+ 
+-$ws = get_ws($tmp);
+-ok($ws->{urgent}, 'urgent flag set on workspace');
++    $ws = get_ws($tmp);
++    ok($ws->{urgent}, 'urgent flag set on workspace');
+ 
+-cmd "workspace $tmp";
++    cmd "workspace $tmp";
+ 
+-$ws = get_ws($tmp);
+-ok(!$ws->{urgent}, 'urgent flag not set on workspace after switching');
++    $ws = get_ws($tmp);
++    ok(!$ws->{urgent}, 'urgent flag not set on workspace after switching');
+ 
+ ################################################################################
+ # Use the 'urgent' criteria to switch to windows which have the urgency hint set.
+ ################################################################################
+ 
+ # Go to a new workspace, open a different window, verify focus is on it.
+-$otmp = fresh_workspace;
+-my $different_window = open_window;
+-is($x->input_focus, $different_window->id, 'new window focused');
++    $otmp = fresh_workspace;
++    my $different_window = open_window;
++    is($x->input_focus, $different_window->id, 'new window focused');
+ 
+ # Add the urgency hint on the other window.
+-$top->add_hint('urgency');
+-sync_with_i3;
++    set_urgency($top, 1, $type);
++    sync_with_i3;
+ 
+ # Now try to switch to that window and see if focus changes.
+-cmd '[urgent=latest] focus';
+-isnt($x->input_focus, $different_window->id, 'window no longer focused');
+-is($x->input_focus, $top->id, 'urgent window focused');
++    cmd '[urgent=latest] focus';
++    isnt($x->input_focus, $different_window->id, 'window no longer focused');
++    is($x->input_focus, $top->id, 'urgent window focused');
+ 
+ ################################################################################
+ # Same thing, but with multiple windows and using the 'urgency=latest' criteria
+ # (verify that it works in the correct order).
+ ################################################################################
+ 
+-cmd "workspace $otmp";
+-is($x->input_focus, $different_window->id, 'new window focused again');
++    cmd "workspace $otmp";
++    is($x->input_focus, $different_window->id, 'new window focused again');
+ 
+-$top->add_hint('urgency');
+-sync_with_i3;
++    set_urgency($top, 1, $type);
++    sync_with_i3;
+ 
+-$bottom->add_hint('urgency');
+-sync_with_i3;
++    set_urgency($bottom, 1, $type);
++    sync_with_i3;
+ 
+-cmd '[urgent=latest] focus';
+-is($x->input_focus, $bottom->id, 'latest urgent window focused');
+-$bottom->delete_hint('urgency');
+-sync_with_i3;
++    cmd '[urgent=latest] focus';
++    is($x->input_focus, $bottom->id, 'latest urgent window focused');
++    set_urgency($bottom, 0, $type);
++    sync_with_i3;
+ 
+-cmd '[urgent=latest] focus';
+-is($x->input_focus, $top->id, 'second urgent window focused');
+-$top->delete_hint('urgency');
+-sync_with_i3;
++    cmd '[urgent=latest] focus';
++    is($x->input_focus, $top->id, 'second urgent window focused');
++    set_urgency($top, 0, $type);
++    sync_with_i3;
+ 
+ ################################################################################
+ # Same thing, but with multiple windows and using the 'urgency=oldest' criteria
+ # (verify that it works in the correct order).
+ ################################################################################
+ 
+-cmd "workspace $otmp";
+-is($x->input_focus, $different_window->id, 'new window focused again');
++    cmd "workspace $otmp";
++    is($x->input_focus, $different_window->id, 'new window focused again');
+ 
+-$top->add_hint('urgency');
+-sync_with_i3;
++    set_urgency($top, 1, $type);
++    sync_with_i3;
+ 
+-$bottom->add_hint('urgency');
+-sync_with_i3;
++    set_urgency($bottom, 1, $type);
++    sync_with_i3;
+ 
+-cmd '[urgent=oldest] focus';
+-is($x->input_focus, $top->id, 'oldest urgent window focused');
+-$top->delete_hint('urgency');
+-sync_with_i3;
++    cmd '[urgent=oldest] focus';
++    is($x->input_focus, $top->id, 'oldest urgent window focused');
++    set_urgency($top, 0, $type);
++    sync_with_i3;
+ 
+-cmd '[urgent=oldest] focus';
+-is($x->input_focus, $bottom->id, 'oldest urgent window focused');
+-$bottom->delete_hint('urgency');
+-sync_with_i3;
++    cmd '[urgent=oldest] focus';
++    is($x->input_focus, $bottom->id, 'oldest urgent window focused');
++    set_urgency($bottom, 0, $type);
++    sync_with_i3;
+ 
+ ################################################################################
+ # Check if urgent flag gets propagated to parent containers
+ ################################################################################
+ 
+-cmd 'split v';
++    cmd 'split v';
+ 
+ 
+ 
+-sub count_urgent {
+-    my ($con) = @_;
++    sub count_urgent {
++        my ($con) = @_;
+ 
+-    my @children = (@{$con->{nodes}}, @{$con->{floating_nodes}});
+-    my $urgent = grep { $_->{urgent} } @children;
+-    $urgent += count_urgent($_) for @children;
+-    return $urgent;
+-}
++        my @children = (@{$con->{nodes}}, @{$con->{floating_nodes}});
++        my $urgent = grep { $_->{urgent} } @children;
++        $urgent += count_urgent($_) for @children;
++        return $urgent;
++    }
+ 
+-$tmp = fresh_workspace;
++    $tmp = fresh_workspace;
+ 
+-my $win1 = open_window;
+-my $win2 = open_window;
+-cmd 'layout stacked';
+-cmd 'split vertical';
+-my $win3 = open_window;
+-my $win4 = open_window;
+-cmd 'split horizontal' ;
+-my $win5 = open_window;
+-my $win6 = open_window;
++    my $win1 = open_window;
++    my $win2 = open_window;
++    cmd 'layout stacked';
++    cmd 'split vertical';
++    my $win3 = open_window;
++    my $win4 = open_window;
++    cmd 'split horizontal' ;
++    my $win5 = open_window;
++    my $win6 = open_window;
+ 
+-sync_with_i3;
++    sync_with_i3;
+ 
+ 
+-my $urgent = count_urgent(get_ws($tmp));
+-is($urgent, 0, 'no window got the urgent flag');
++    my $urgent = count_urgent(get_ws($tmp));
++    is($urgent, 0, 'no window got the urgent flag');
+ 
+-cmd '[id="' . $win2->id . '"] focus';
+-sync_with_i3;
+-$win5->add_hint('urgency');
+-$win6->add_hint('urgency');
+-sync_with_i3;
++    cmd '[id="' . $win2->id . '"] focus';
++    sync_with_i3;
++    set_urgency($win5, 1, $type);
++    set_urgency($win6, 1, $type);
++    sync_with_i3;
+ 
+ # we should have 5 urgent cons. win5, win6 and their 3 split parents.
+ 
+-$urgent = count_urgent(get_ws($tmp));
+-is($urgent, 5, '2 windows and 3 split containers got the urgent flag');
++    $urgent = count_urgent(get_ws($tmp));
++    is($urgent, 5, '2 windows and 3 split containers got the urgent flag');
+ 
+-cmd '[id="' . $win5->id . '"] focus';
+-sync_with_i3;
++    cmd '[id="' . $win5->id . '"] focus';
++    sync_with_i3;
+ 
+ # now win5 and still the split parents should be urgent.
+-$urgent = count_urgent(get_ws($tmp));
+-is($urgent, 4, '1 window and 3 split containers got the urgent flag');
++    $urgent = count_urgent(get_ws($tmp));
++    is($urgent, 4, '1 window and 3 split containers got the urgent flag');
+ 
+-cmd '[id="' . $win6->id . '"] focus';
+-sync_with_i3;
++    cmd '[id="' . $win6->id . '"] focus';
++    sync_with_i3;
+ 
+ # now now window should be urgent.
+-$urgent = count_urgent(get_ws($tmp));
+-is($urgent, 0, 'All urgent flags got cleared');
++    $urgent = count_urgent(get_ws($tmp));
++    is($urgent, 0, 'All urgent flags got cleared');
+ 
+ ################################################################################
+ # Regression test: Check that urgent floating containers work properly (ticket
+ # #821)
+ ################################################################################
+ 
+-$tmp = fresh_workspace;
+-my $floating_win = open_floating_window;
++    $tmp = fresh_workspace;
++    my $floating_win = open_floating_window;
+ 
+ # switch away
+-fresh_workspace;
++    fresh_workspace;
+ 
+-$floating_win->add_hint('urgency');
+-sync_with_i3;
++    set_urgency($floating_win, 1, $type);
++    sync_with_i3;
+ 
+-cmd "workspace $tmp";
++    cmd "workspace $tmp";
+ 
+-does_i3_live;
++    does_i3_live;
+ 
+ ###############################################################################
+ # Check if the urgency hint is still set when the urgent window is killed
+ ###############################################################################
+ 
+-my $ws1 = fresh_workspace;
+-my $ws2 = fresh_workspace;
+-cmd "workspace $ws1";
+-my $w1 = open_window;
+-my $w2 = open_window;
+-cmd "workspace $ws2";
+-sync_with_i3;
+-$w1->add_hint('urgency');
+-sync_with_i3;
+-cmd '[id="' . $w1->id . '"] kill';
+-sync_with_i3;
+-my $w = get_ws($ws1);
+-is($w->{urgent}, 0, 'Urgent flag no longer set after killing the window ' .
+-    'from another workspace');
+-
+-
+-exit_gracefully($pid);
++    my $ws1 = fresh_workspace;
++    my $ws2 = fresh_workspace;
++    cmd "workspace $ws1";
++    my $w1 = open_window;
++    my $w2 = open_window;
++    cmd "workspace $ws2";
++    sync_with_i3;
++    set_urgency($w1, 1, $type);
++    sync_with_i3;
++    cmd '[id="' . $w1->id . '"] kill';
++    sync_with_i3;
++    my $w = get_ws($ws1);
++    is($w->{urgent}, 0, 'Urgent flag no longer set after killing the window ' .
++       'from another workspace');
++
++    exit_gracefully($pid);
++}
++
+ done_testing;
+-- 
+1.8.1.4
+

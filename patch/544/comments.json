@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Aleksi Blinnikka",
+    "Line": 25,
+    "Comment": "Border widths were used also in handlers.c:776-779 but the size didn't have to be accurate, so I didn't add any checks there. If the checks are thought to be needed, I can add them there or it can be done by who decides it.",
+    "EmailHash": "2b5073a2ca17d42926c6af6ae86bef2f"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 44,
+    "Comment": "you should use con_is_floating()",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 84,
+    "Comment": "This `else` should be made explicit, at least with a comment, maybe a DLOG",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 31,
+    "Comment": "This could use a test case. It's a pretty easy one.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

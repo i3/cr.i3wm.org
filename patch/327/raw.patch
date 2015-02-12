@@ -1,0 +1,38 @@
+From 6250f066e7f69b0cf1d7c6c823ddb37541e1f62d Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 22 Nov 2013 10:00:49 -0500
+Subject: [PATCH] Remove-child callback skips output content cons
+
+Every container 'above' (in the hierarchy) the workspace content should
+not be closed when the last child was removed.
+
+Add a check for output content containers and do not handle them. These
+cons are at the root of the output container with dockarea siblings.
+They may be run through this callback when an output is killed with
+RandR.
+
+Fixes an issue that caused content cons to become urgent when the output
+is killed with RandR.
+---
+ src/con.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/src/con.c b/src/con.c
+index 84063eb..ba14e06 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -1355,8 +1355,9 @@ static void con_on_remove_child(Con *con) {
+      * not be closed when the last child was removed */
+     if (con->type == CT_OUTPUT ||
+         con->type == CT_ROOT ||
+-        con->type == CT_DOCKAREA) {
+-        DLOG("not handling, type = %d\n", con->type);
++        con->type == CT_DOCKAREA ||
++        (con->parent != NULL && con->parent->type == CT_OUTPUT)) {
++        DLOG("not handling, type = %d, name = %s\n", con->type, con->name);
+         return;
+     }
+ 
+-- 
+1.8.4.2
+

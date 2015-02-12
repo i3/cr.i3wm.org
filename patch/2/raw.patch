@@ -1,0 +1,37 @@
+From e67471762994a018c7d754260c5194750f9953a7 Mon Sep 17 00:00:00 2001
+From: David Edmondson <dme@…>
+Date: Wed, 23 Jan 2013 16:21:07 +0000
+Subject: [PATCH 49/49] Allow servers which do not support the XKB extension.
+
+If we can open the X display but the XKB extension is not available,
+continue without it.
+---
+ src/main.c |   10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/src/main.c b/src/main.c
+index 78a84fe..5db0526 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -593,13 +593,13 @@ int main(int argc, char *argv[]) {
+         int i1;
+         if (!XkbQueryExtension(xkbdpy,&i1,&xkb_event_base,&errBase,&major,&minor)) {
+             fprintf(stderr, "XKB not supported by X-server\n");
+-            return 1;
+-        }
++	    xkb_supported = false;
++        } 
+         /* end of ugliness */
+ 
+-        if (!XkbSelectEvents(xkbdpy, XkbUseCoreKbd,
+-                             XkbMapNotifyMask | XkbStateNotifyMask,
+-                             XkbMapNotifyMask | XkbStateNotifyMask)) {
++        if (xkb_supported && !XkbSelectEvents(xkbdpy, XkbUseCoreKbd,
++                                              XkbMapNotifyMask | XkbStateNotifyMask,
++                                              XkbMapNotifyMask | XkbStateNotifyMask)) {
+             fprintf(stderr, "Could not set XKB event mask\n");
+             return 1;
+         }
+-- 
+1.7.10.4
+

@@ -1,0 +1,38 @@
+From 401743d60f6dbdc6ee4482231ab59b05479841f2 Mon Sep 17 00:00:00 2001
+From: Thomas Adam <thomas@…>
+Date: Sun, 12 May 2013 17:49:23 +0100
+Subject: [PATCH] i3bar: Fix pixel offset calculation in dual-head
+
+When running i3bar on a dual-head display with workspaces enabled in i3bar's
+config, the second monitor wouldn't use a correct x position offset and
+would draw its label too close to the screen's edge.  In comparison to the
+first monitor, this is inconsistent because that starts with a pixel offset
+of 1.
+---
+ i3bar/src/xcb.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index b09f63d..b8bfbb6 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -1557,7 +1557,7 @@ void reconfig_windows(void) {
+  */
+ void draw_bars(bool unhide) {
+     DLOG("Drawing Bars...\n");
+-    int i = 1;
++    int i = 0;
+ 
+     refresh_statusline();
+ 
+@@ -1621,6 +1621,7 @@ void draw_bars(bool unhide) {
+ 
+         i3_ws *ws_walk;
+ 
++	i++;
+         TAILQ_FOREACH(ws_walk, outputs_walk->workspaces, tailq) {
+             DLOG("Drawing Button for WS %s at x = %d, len = %d\n", i3string_as_utf8(ws_walk->name), i, ws_walk->name_width);
+             uint32_t fg_color = colors.inactive_ws_fg;
+-- 
+1.7.10.4
+

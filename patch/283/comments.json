@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Philippe Virouleau",
+    "Line": 15,
+    "Comment": "The patch submitted by oblique gave me an idea so I implemented it right away...\nThis enable the user to immediately re-enter a password after an incorrect attempt, without having to hit enter again after nor to wait for the end of the previous authentication.\nNo pthread ;)\nStill an arbitrary number of running authentication set to 4.",
+    "EmailHash": "73e4ef48030de3c30ccb5a5c05b20e66"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 15,
+    "Comment": "AFAICT, this will allow the following behavior:\n\n1) Attacker enters wrong password.\n2) Attacker enters good password.\n3) i3lock immediately unlocks, without waiting for the wrong attempt in ① to finish.\n\nSo this effectively reduces PAM’s security feature of waiting for n seconds on a wrong password entry by a factor of 4.\n\nI don’t think that’s reasonable behavior — we should wait until _all_ children are terminated before unlocking.\n\nI think the simplest approach is some kind of queue where key presses go, so that they are buffered and can be handled once the child terminated.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

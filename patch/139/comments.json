@@ -1,0 +1,86 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 284,
+    "Comment": "I think this syntax is unnecessarily the wrong way around. I.e. bar hide|show|forcehide|toggle [bar_id] is easier to parse and give error messages for.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 116,
+    "Comment": "Was it really necessary to add another event? Did you try just sending the config reply in order to update? Didn’t that work? If not, why not?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 162,
+    "Comment": "code style: please use parens around the condition, i.e. state_unhide = (…);",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 187,
+    "Comment": "code style: please use char *bar_id",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 231,
+    "Comment": "code style: char *bar_id",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 490,
+    "Comment": "code style: char *buf",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 492,
+    "Comment": "beware: you are creating a memleak here. buf is already allocated by sasprintf(), so there is no need to sstrdup() it.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "jj",
+    "Line": 116,
+    "Comment": "I tried that and I could just resend the config reply, but thought it would be nicer to have a specific event, to which any client could subscribe for. Otherwise, I would need further datastructures for managing the bar clients. With an own event, I can just reuse the event infrastructure. Please let me know, what you would prefer.",
+    "EmailHash": "2b7ea79fd33d4f8c0bb3ef8a9dc97f64"
+  },
+  {
+    "Author": "jj",
+    "Line": 284,
+    "Comment": "okay",
+    "EmailHash": "2b7ea79fd33d4f8c0bb3ef8a9dc97f64"
+  },
+  {
+    "Author": "jj",
+    "Line": 492,
+    "Comment": "thanks for the advice! I will take care of that.",
+    "EmailHash": "2b7ea79fd33d4f8c0bb3ef8a9dc97f64"
+  },
+  {
+    "Author": "jj",
+    "Line": 162,
+    "Comment": "is there some documentation/guidelines on the code style?",
+    "EmailHash": "2b7ea79fd33d4f8c0bb3ef8a9dc97f64"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 116,
+    "Comment": "good point. having the event is fine then.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 116,
+    "Comment": "please update docs/ipc, though :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 162,
+    "Comment": "unfortunately not, you’ll have to look at the existing code (or just react to my comments).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

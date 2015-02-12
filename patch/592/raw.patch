@@ -1,0 +1,136 @@
+From da3ae55b3f40917a358982b10fda0fccde0a6470 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Thu, 19 Jun 2014 04:58:03 -0400
+Subject: [PATCH] Implement the window::move event
+
+The window::move event should be emitted when the window moves position
+in the tree.
+---
+ docs/ipc                          |  1 +
+ src/con.c                         |  2 ++
+ src/move.c                        |  3 ++
+ testcases/t/231-ipc-window-move.t | 61 +++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 67 insertions(+)
+ create mode 100644 testcases/t/231-ipc-window-move.t
+
+diff --git a/docs/ipc b/docs/ipc
+index 4c82d40..a3f4a63 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -720,6 +720,7 @@ This event consists of a single serialized map containing a property
+ * +focus+ - the window has received input focus
+ * +title+ - the window's title has changed
+ * +fullscreen_mode+ - the window has entered or exited fullscreen mode
++* +move+ - the window has changed its position in the tree
+ 
+ Additionally a +container (object)+ field will be present, which consists
+ of the window's parent container. Be aware that for the "new" event, the
+diff --git a/src/con.c b/src/con.c
+index 30321ef..f593688 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -832,6 +832,8 @@ void con_move_to_workspace(Con *con, Con *workspace, bool fix_coordinates, bool
+     }
+ 
+     CALL(parent, on_remove_child);
++
++    ipc_send_window_event("move", con);
+ }
+ 
+ /*
+diff --git a/src/move.c b/src/move.c
+index 42510d5..44045f2 100644
+--- a/src/move.c
++++ b/src/move.c
+@@ -206,6 +206,7 @@ void tree_move(int direction) {
+                 TAILQ_INSERT_HEAD(&(swap->parent->focus_head), con, focused);
+ 
+                 DLOG("Swapped.\n");
++                ipc_send_window_event("move", con);
+                 return;
+             }
+ 
+@@ -213,6 +214,7 @@ void tree_move(int direction) {
+                 /*  If we couldn't find a place to move it on this workspace,
+                  *  try to move it to a workspace on a different output */
+                 move_to_output_directed(con, direction);
++                ipc_send_window_event("move", con);
+                 return;
+             }
+ 
+@@ -264,4 +266,5 @@ end:
+     FREE(con->deco_render_params);
+ 
+     tree_flatten(croot);
++    ipc_send_window_event("move", con);
+ }
+diff --git a/testcases/t/231-ipc-window-move.t b/testcases/t/231-ipc-window-move.t
+new file mode 100644
+index 0000000..117d27f
+--- /dev/null
++++ b/testcases/t/231-ipc-window-move.t
+@@ -0,0 +1,61 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Tests that the ipc window::move event works properly
++#
++# Bug still in: 4.8-7-gf4a8253
++use i3test;
++
++my $i3 = i3(get_socket_path());
++$i3->connect()->recv;
++
++my $cv;
++my $t;
++
++sub reset_test {
++    $cv = AE::cv;
++    $t = AE::timer(0.5, 0, sub { $cv->send(0); });
++}
++
++reset_test;
++
++$i3->subscribe({
++        window => sub {
++            my ($e) = @_;
++            if ($e->{change} eq 'move') {
++                $cv->send($e->{container});
++            }
++        },
++    })->recv;
++
++my $dummy_window = open_window;
++my $window = open_window;
++
++cmd 'move right';
++my $con = $cv->recv;
++
++ok($con, 'moving a window should emit the window::move event');
++is($con->{window}, $window->{id}, 'the event should contain info about the window');
++
++reset_test;
++
++cmd 'move to workspace ws_new';
++$con = $cv->recv;
++
++ok($con, 'moving a window to a different workspace should emit the window::move event');
++is($con->{window}, $window->{id}, 'the event should contain info about the window');
++
++done_testing;
+-- 
+2.0.0
+

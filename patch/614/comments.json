@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 22,
+    "Comment": "flag is set if any containers cannot be moved due to not being floating",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 50,
+    "Comment": "continue instead of return",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 44,
+    "Comment": "changed error message",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 80,
+    "Comment": "we need to make sure to only give one response",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 98,
+    "Comment": "it won't work unless we use the floating con within the parent container (gives the \"not floating\" error)",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

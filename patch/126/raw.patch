@@ -1,0 +1,34 @@
+From 07fd0529c91459b706d52cafa9660c07a6d6c19a Mon Sep 17 00:00:00 2001
+From: jj <haptix@…>
+Date: Sun, 7 Apr 2013 11:48:49 +0200
+Subject: [PATCH] unhide hidden i3bar when mode is active
+
+fixes #961
+---
+ i3bar/src/xcb.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index 69cd810..636aa85 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -1672,7 +1672,6 @@ void draw_bars(bool unhide) {
+         }
+ 
+         if (binding.name) {
+-
+             uint32_t fg_color = colors.urgent_ws_fg;
+             uint32_t bg_color = colors.urgent_ws_bg;
+             uint32_t mask = XCB_GC_FOREGROUND | XCB_GC_BACKGROUND;
+@@ -1703,6 +1702,8 @@ void draw_bars(bool unhide) {
+ 
+             set_font_colors(outputs_walk->bargc, fg_color, bg_color);
+             draw_text(binding.name, outputs_walk->buffer, outputs_walk->bargc, i + 5, 3, binding.width);
++
++            unhide = true;
+         }
+ 
+         i = 0;
+-- 
+1.7.9.5
+

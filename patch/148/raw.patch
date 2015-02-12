@@ -1,0 +1,73 @@
+From e614f308842881a4937b0e12e1770f9052b8c9eb Mon Sep 17 00:00:00 2001
+From: jj <haptix@…>
+Date: Sun, 21 Apr 2013 15:18:46 +0200
+Subject: [PATCH] Fix problem when moving fullscreen window to scratchpad
+
+When moving a fullscreen window to scratchpad with 'move scratchpad',
+the focused window would stay fullscreen.
+
+Also, when having a container in fullscreen mode and then focusing a child of
+this container and moving it to scratchpad, it would enable fullscreen for
+the child window.
+
+This patch fixes both problems, so the scratchpad window is always
+floating.
+
+---
+ src/scratchpad.c |   26 +++++++++++++++++---------
+ 1 file changed, 17 insertions(+), 9 deletions(-)
+
+diff --git a/src/scratchpad.c b/src/scratchpad.c
+index 9997f17..11834a0 100644
+--- a/src/scratchpad.c
++++ b/src/scratchpad.c
+@@ -12,6 +12,20 @@
+ #include "all.h"
+ 
+ /*
++ * If the current con or any of its parents are in fullscreen mode, we
++ * first need to disable it before moving it to scratchpad.
++ *
++ */
++void disable_fullscreen(Con *con) {
++    while (con && con->fullscreen_mode == CF_NONE)
++        con = con->parent;
++
++    if (con->type != CT_WORKSPACE) {
++        con_toggle_fullscreen(con, CF_OUTPUT);
++    }
++}
++
++/*
+  * Moves the specified window to the __i3_scratch workspace, making it floating
+  * and setting the appropriate scratchpad_state.
+  *
+@@ -39,6 +53,8 @@ void scratchpad_move(Con *con) {
+         return;
+     }
+ 
++    disable_fullscreen(focused);
++
+     /* 1: Ensure the window or any parent is floating. From now on, we deal
+      * with the CT_FLOATING_CON. We use automatic == false because the user
+      * made the choice that this window should be a scratchpad (and floating).
+@@ -78,15 +94,7 @@ void scratchpad_show(Con *con) {
+     Con *__i3_scratch = workspace_get("__i3_scratch", NULL);
+     Con *floating;
+ 
+-    /* If the current con or any of its parents are in fullscreen mode, we
+-     * first need to disable it before showing the scratchpad con. */
+-    Con *fs = focused;
+-    while (fs && fs->fullscreen_mode == CF_NONE)
+-        fs = fs->parent;
+-
+-    if (fs->type != CT_WORKSPACE) {
+-        con_toggle_fullscreen(focused, CF_OUTPUT);
+-    }
++    disable_fullscreen(focused);
+ 
+     /* If this was 'scratchpad show' without criteria, we check if the
+      * currently focused window is a scratchpad window and should be hidden
+-- 
+1.7.9.5
+

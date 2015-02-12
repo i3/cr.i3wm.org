@@ -1,0 +1,67 @@
+From 902bd125bf1967e60e683dae73a7c626a187f704 Mon Sep 17 00:00:00 2001
+From: Timo Buhrmester <timo@…>
+Date: Mon, 17 Nov 2014 00:02:41 +0100
+Subject: [PATCH 2/2] Document new maildir support in man page
+
+---
+ man/i3status.man |   44 ++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
+
+diff --git a/man/i3status.man b/man/i3status.man
+index 504cf16..8579208 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -435,6 +435,50 @@ volume master {
+ }
+ -------------------------------------------------------------
+ 
++=== Maildir
++
++Outputs the number of new mails in a local maildir. This is done simply
++by looking at whether or not the 'new' part of the maildir is empty.
++
+++format+ and +format_nomail+ specify the output formatting, depending on whether
++or not there is new mail at all.  In these format strings, the following expansions
++may be used:
++
++%name::
++	Expands to the (arbitrary) name given to this maildir in the config file.
++
++%num::
++	Expands to the amount of new mail, possibly capped by the +max+ option.
++
++%mail::
++	Expands to "mail" or "mails", depending on whether we need singular or plural.
++
+++path+ specifies the path to the maildir, which might be absolute or relative (in
++which case it is relative to the user's home directory)
++
+++name+ assigns an arbitrary name to this maildir, which is the +%name+ format specifier
++expands to.
++
+++max+ limits the number of files to enumerate when checking for new mail, to avoid
++unnecessary resource usage for huge maildirs.
++
++*Example order*: +maildir INBOX+
++
++*Example format*: +%num new %mail in %name+
++
++*Example format_nomail*: +no mail in %name+
++
++*Example configuration*:
++-------------------------------------------------------------
++volume master {
++	format = "%name: %num"
++	format_nomail = "%name: -"
++	path = "path/to/Maildir/"
++	name = "INBOX"
++	max = 9
++}
++-------------------------------------------------------------
++
+ == Universal module options
+ 
+ When using the i3bar output format, there are a few additional options that
+-- 
+1.7.10.4
+

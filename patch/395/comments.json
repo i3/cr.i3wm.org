@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 88,
+    "Comment": "Why do you still have these two lines in the test case? AFAICT, they are not necessary. Your $x-\u003eatom(name =\u003e '_NET_CURRENT_DESKTOP')-\u003eid below will work without them just fine…?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 103,
+    "Comment": "You can directly “return unpack …” and save declaring the $value variable.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 88,
+    "Comment": "If I don't intern the atom explicitly $x-\u003eatom(name =\u003e '_NET_CURRENT_DESKTOP') fails with: No such atom (_NET_CURRENT_DESKTOP)",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 88,
+    "Comment": "Fair point. Please use the intern_atom_reply’s $id then and kill the $x-\u003eatom(name =\u003e '_NET_CURRENT_DESKTOP') calls below. Also, please document that you need to manually call intern_atom() because X11::XCB does not create atoms if they don’t exist. ",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

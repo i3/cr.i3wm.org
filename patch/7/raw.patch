@@ -1,0 +1,25 @@
+From 3bf9491c500d2e77ac02ad9840a9481e27f01e38 Mon Sep 17 00:00:00 2001
+From: Marius Muja <mariusm@…>
+Date: Wed, 2 Jan 2013 01:19:38 -0800
+Subject: [PATCH] Fixing continuous resize bug in floating mode
+
+---
+ src/handlers.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/handlers.c b/src/handlers.c
+index 1bfcce5..4f2d870 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -339,7 +339,7 @@ static void handle_configure_request(xcb_configure_request_event_t *event) {
+ 
+     if (fullscreen != con && con_is_floating(con) && con_is_leaf(con)) {
+         /* find the height for the decorations */
+-        int deco_height = config.font.height + 5;
++        int deco_height = con->deco_rect.height;
+         /* we actually need to apply the size/position changes to the *parent*
+          * container */
+         Rect bsr = con_border_style_rect(con);
+-- 
+1.7.10.4
+

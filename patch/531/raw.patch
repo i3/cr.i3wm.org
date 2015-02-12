@@ -1,0 +1,88 @@
+From ef35492e10f4543cdef7ca8071688d1de973aa69 Mon Sep 17 00:00:00 2001
+From: Ari Edelkind <edelkind+git@…>
+Date: Thu, 1 May 2014 00:37:19 -0400
+Subject: [PATCH 2/2] Key binding to match any key
+
+Use
+    bindsym Any ...
+or
+    bindcode Any ...
+
+to match any key.  Note that keys are matched in the order that they
+appear in the configuration, so this command should be supplied last.
+Options, such as '--release' and modifiers, work with this key binding
+in a more or less intuitive way.
+
+One caveat to note is that modifiers count as keys.  Therefore, you
+might need to explicitly ignore a modifier if you want to be able to use
+it elsewhere in your mode.  For example, if Mod1 is Alt, you might do:
+
+    mode "stage2" {
+        bindsym Mod1+y exec stuff; mode "default"
+        bindsym Alt_L nop "ignore modifier"
+        bindsym Alt_R nop "ignore modifier"
+        bindsym Any mode "default"
+    }
+    bindsym Mod1+x mode "stage2"
+
+or, alternatively:
+
+    mode "stage2" {
+        bindsym Mod1+y exec stuff
+        bindsym --release Mod1+Any mode "default"
+        bindsym --release Any mode "default"
+    }
+    bindsym Mod1+x mode "stage2"
+
+Note that, in the latter case, Mod1+Any is matched upon release even
+when Mod1+y is matched on key press.
+---
+ src/bindings.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/src/bindings.c b/src/bindings.c
+index 5728a24..0557221 100644
+--- a/src/bindings.c
++++ b/src/bindings.c
+@@ -55,7 +55,10 @@ Binding *configure_binding(const char *bindtype, const char *modifiers, const ch
+     Binding *new_binding = scalloc(sizeof(Binding));
+     DLOG("bindtype %s, modifiers %s, input code %s, release %s\n", bindtype, modifiers, input_code, release);
+     new_binding->release = (release != NULL ? B_UPON_KEYRELEASE : B_UPON_KEYPRESS);
+-    if (strcmp(bindtype, "bindsym") == 0) {
++    if (strcasecmp(input_code, "any") == 0) {
++        new_binding->input_type = B_KEYBOARD;
++        new_binding->keycode = XCB_GRAB_ANY;
++    } else if (strcmp(bindtype, "bindsym") == 0) {
+         new_binding->input_type = (strncasecmp(input_code, "button", (sizeof("button") - 1)) == 0
+             ? B_MOUSE
+             : B_KEYBOARD);
+@@ -118,7 +121,7 @@ void grab_all_keys(xcb_connection_t *conn, bool bind_mode_switch) {
+             continue;
+ 
+         /* The easy case: the user specified a keycode directly. */
+-        if (bind->keycode > 0) {
++        if (!bind->symbol || bind->keycode > 0) {
+             grab_keycode_for_binding(conn, bind, bind->keycode);
+             continue;
+         }
+@@ -169,7 +172,7 @@ Binding *get_keyboard_binding(uint16_t modifiers, bool key_release, xcb_keycode_
+                 continue;
+         } else {
+             /* This case is easier: The user specified a keycode */
+-            if (bind->keycode != keycode)
++            if (bind->keycode != keycode && bind->keycode != XCB_GRAB_ANY)
+                 continue;
+         }
+ 
+@@ -230,7 +233,7 @@ void translate_keysyms(void) {
+             continue;
+         }
+ 
+-        if (bind->keycode > 0)
++        if (!bind->symbol)
+             continue;
+ 
+         /* We need to translate the symbol to a keycode */
+-- 
+1.9.2
+

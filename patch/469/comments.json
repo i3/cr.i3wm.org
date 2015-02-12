@@ -1,0 +1,56 @@
+[
+  {
+    "Author": "Bill Kolokithas",
+    "Line": 118,
+    "Comment": "Since we made the variable bool, it should compare against false...",
+    "EmailHash": "2795efa4b6d20900c738e7845e7f2ea2"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 118,
+    "Comment": "I don’t get this comment. Why are you not using “if (!dpms_original_state)”?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 15,
+    "Comment": "I don’t understand the use-case of this patch.\n\nTypically, when you start i3lock, your screen was on.\n\nEven if it wasn’t on, I’d argue you’d want it on after unlocking, just so that you’re sure the unlock worked.\n\nIf you really want to turn off the screen after unlocking regularly, you can use i3lock --nofork \u0026\u0026 xset dpms force off, right?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Bill Kolokithas",
+    "Line": 118,
+    "Comment": "You are right. I use ! exclusively in my code instead of explicitly checking for 0 / NULL but the == was used regularly in the rest of the code and i didn't want to enforce my style.",
+    "EmailHash": "2795efa4b6d20900c738e7845e7f2ea2"
+  },
+  {
+    "Author": "Bill Kolokithas",
+    "Line": 15,
+    "Comment": "I have \"xset -dpms \u0026\u0026 xset s off\" in a file sourced at startup, so that screen blanking \u0026 screen powering off gets completely disabled.\nFor xcb_dpms_force_level to work, dpms first needs to be enabled. It's enabled once again before turning on the screen, to be sure it will work, and it stays enabled even after i3lock exits.\n\nNow with dpms enabled, the default Standby, Suspend and Off timers are active.\nIt would be nicer if i3lock played nice instead of me running \"i3lock \u0026\u0026 xset -dpms\".",
+    "EmailHash": "2795efa4b6d20900c738e7845e7f2ea2"
+  },
+  {
+    "Author": "Bill Kolokithas",
+    "Line": 116,
+    "Comment": "I have \"xset -dpms \u0026\u0026 xset s off\" in a file sourced at startup, so that screen blanking \u0026 screen powering off gets completely disabled.\nFor xcb_dpms_force_level to work, dpms first needs to be enabled. It's enabled once again before turning on the screen, to be sure it will work, and it stays enabled even after i3lock exits.\n\nNow with dpms enabled, the default Standby, Suspend and Off timers are active.\nIt would be nicer if i3lock played nice instead of me running \"i3lock \u0026\u0026 xset -dpms\".",
+    "EmailHash": "2795efa4b6d20900c738e7845e7f2ea2"
+  },
+  {
+    "Author": "Bill Kolokithas",
+    "Line": 116,
+    "Comment": "I have \"xset -dpms \u0026\u0026 xset s off\" in a file sourced at startup, so that screen blanking \u0026 screen powering off gets completely disabled.\nFor xcb_dpms_force_level to work, dpms first needs to be enabled. It's enabled once again before turning on the screen, to be sure it will work, and it stays enabled even after i3lock exits.\n\nNow with dpms enabled, the default Standby, Suspend and Off timers are active.\nIt would be nicer if i3lock played nice instead of me running \"i3lock \u0026\u0026 xset -dpms\".",
+    "EmailHash": "2795efa4b6d20900c738e7845e7f2ea2"
+  },
+  {
+    "Author": "Bill Kolokithas",
+    "Line": 118,
+    "Comment": "I have \"xset -dpms \u0026\u0026 xset s off\" in a file sourced at startup, so that screen blanking \u0026 screen powering off gets completely disabled.\nFor xcb_dpms_force_level to work, dpms first needs to be enabled. It's enabled once again before turning on the screen, to be sure it will work, and it stays enabled even after i3lock exits.\n\nNow with dpms enabled, the default Standby, Suspend and Off timers are active.\nIt would be nicer if i3lock played nice instead of me running \"i3lock \u0026\u0026 xset -dpms\".",
+    "EmailHash": "2795efa4b6d20900c738e7845e7f2ea2"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 15,
+    "Comment": "Instead of i3lock supporting all DPMS use-cases, I think the feature should rather be ripped out entirely, but it’s too late for that.\n\nFor your specific use case (if I understand it correctly), I use this script:\n\n#!/bin/sh\nrevert() {\n  xset dpms 0 0 0\n}\n\ntrap revert SIGHUP SIGINT SIGTERM\nxset +dpms dpms 5 5 5\ni3lock -n\nrevert",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

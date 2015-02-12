@@ -1,0 +1,112 @@
+From ae9b8884d0dd636c3fe65e9b31aabd5d8c9cb235 Mon Sep 17 00:00:00 2001
+From: Raphael Michel <webmaster@…>
+Date: Mon, 31 Dec 2012 18:13:36 +0100
+Subject: [PATCH] Add colorized output for load avg
+
+---
+ i3status.c         |    4 +++-
+ include/i3status.h |    2 +-
+ man/i3status.man   |    6 +++++-
+ src/print_load.c   |    9 ++++++++-
+ 4 files changed, 17 insertions(+), 4 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index 3fe3f47..e8e44d4 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -257,6 +257,8 @@ int main(int argc, char *argv[]) {
+ 
+         cfg_opt_t load_opts[] = {
+                 CFG_STR("format", "%1min %5min %15min", CFGF_NONE),
++                CFG_INT("max_threshold", 5, CFGF_NONE),
++                CFG_CUSTOM_COLOR_OPTS,
+                 CFG_END()
+         };
+ 
+@@ -460,7 +462,7 @@ int main(int argc, char *argv[]) {
+ 
+                         CASE_SEC("load") {
+                                 SEC_OPEN_MAP("load");
+-                                print_load(json_gen, buffer, cfg_getstr(sec, "format"));
++                                print_load(json_gen, buffer, cfg_getstr(sec, "format"), cfg_getint(sec, "max_threshold"));
+                                 SEC_CLOSE_MAP;
+                         }
+ 
+diff --git a/include/i3status.h b/include/i3status.h
+index de8373f..47f3350 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -151,7 +151,7 @@ void print_run_watch(yajl_gen json_gen, char *buffer, const char *title, const c
+ void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const char *path, const char *format, int);
+ void print_cpu_usage(yajl_gen json_gen, char *buffer, const char *format);
+ void print_eth_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
+-void print_load(yajl_gen json_gen, char *buffer, const char *format);
++void print_load(yajl_gen json_gen, char *buffer, const char *format, const int max_threshold);
+ void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *device, const char *mixer, int mixer_idx);
+ bool process_runs(const char *path);
+ 
+diff --git a/man/i3status.man b/man/i3status.man
+index 0f80991..00fdcbc 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -259,12 +259,16 @@ Gets the percentual CPU usage from +/proc/stat+ (Linux) or +sysctl(3)+ (FreeBSD/
+ === Load
+ 
+ Gets the system load (number of processes waiting for CPU time in the last
+-1, 5 and 15 minutes).
++1, 5 and 15 minutes). It is possible to define a max_threshold that will
++color the load value red in case the load average of the last minute is
++getting higher than the configured threshold. Defaults to 5.
+ 
+ *Example order*: +load+
+ 
+ *Example format*: +%1min %5min %15min+
+ 
++*Example max_threshold*: 5
++
+ === Time
+ 
+ Outputs the current time in the local timezone.
+diff --git a/src/print_load.c b/src/print_load.c
+index 5281472..4e026cc 100644
+--- a/src/print_load.c
++++ b/src/print_load.c
+@@ -6,13 +6,14 @@
+ #include <yajl/yajl_gen.h>
+ #include <yajl/yajl_version.h>
+ 
+-void print_load(yajl_gen json_gen, char *buffer, const char *format) {
++void print_load(yajl_gen json_gen, char *buffer, const char *format, const int max_threshold) {
+         char *outwalk = buffer;
+         /* Get load */
+ 
+ #if defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(linux) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__) || defined(sun) || defined(__DragonFly__)
+         double loadavg[3];
+         const char *walk;
++        bool colorful_output = false;
+ 
+         if (getloadavg(loadavg, 3) == -1)
+                 goto error;
+@@ -22,6 +23,10 @@ void print_load(yajl_gen json_gen, char *buffer, const char *format) {
+                         *(outwalk++) = *walk;
+                         continue;
+                 }
++                if (loadavg[0] >= max_threshold) {
++                        START_COLOR("color_bad");
++                        colorful_output = true;
++                }
+ 
+                 if (BEGINS_WITH(walk+1, "1min")) {
+                         outwalk += sprintf(outwalk, "%1.2f", loadavg[0]);
+@@ -37,6 +42,8 @@ void print_load(yajl_gen json_gen, char *buffer, const char *format) {
+                         outwalk += sprintf(outwalk, "%1.2f", loadavg[2]);
+                         walk += strlen("15min");
+                 }
++                if (colorful_output)
++                        END_COLOR;
+         }
+ 
+         *outwalk = '\0';
+-- 
+1.7.10.4
+

@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Vytautas Šaltenis",
+    "Line": 13,
+    "Comment": "This (and the next) commit is a cleanup before the actual fixes, but cr.i3wm refuses to take my further patches before these go in. So to give you an idea where these cleanups lead to and why did I need them, here are the full series of my changes: https://github.com/rtfb/i3lock/commits/cat-proof",
+    "EmailHash": "8980010327a5f99fd2d17261e7002c02"
+  }
+]

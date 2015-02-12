@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "A better way (that works with all packages) is to use sudo apt-get build-dep i3lock :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Vytautas Šaltenis",
+    "Line": 19,
+    "Comment": "Oh, right... I always keep forgetting these rarely used apt-get commands. That would have saved me quite a lot of typing earlier today :-)",
+    "EmailHash": "8980010327a5f99fd2d17261e7002c02"
+  }
+]

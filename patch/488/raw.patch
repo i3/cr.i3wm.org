@@ -1,0 +1,25 @@
+From 67ea1161ddb9acb407f03a0b25024277a963c303 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Vytautas=20=C5=A0altenis?= <vytas@…>
+Date: Thu, 6 Mar 2014 23:16:43 +0200
+Subject: [PATCH 3/5] Fix typo
+
+---
+ i3lock.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/i3lock.c b/i3lock.c
+index 954f79a..84b4c7d 100644
+--- a/i3lock.c
++++ b/i3lock.c
+@@ -217,7 +217,7 @@ ev_timer* stop_timer(ev_timer *timer_obj) {
+ }
+ 
+ /*
+- * Resets pam_state to STATE_PAM_IDLE 2 seconds after an unsuccesful
++ * Resets pam_state to STATE_PAM_IDLE 2 seconds after an unsuccessful
+  * authentication event.
+  *
+  */
+-- 
+1.8.3.2
+

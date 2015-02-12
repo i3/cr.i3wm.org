@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 21,
+    "Comment": "This patch looks good, thanks.\n\nCan you also add a testcase that verifies that windows with the relevant properties actually open as floating windows please?\n\nSee http://build.i3wm.org/docs/testsuite.html; you can look at testcases/t/173-regress-focus-assign.t to see how to open a window with a special window type.\n\nLet me know if you don’t have time to write a test and I’ll see what I can do.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 21,
+    "Comment": "I can do the test if you need me to",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Kernc",
+    "Line": 21,
+    "Comment": "Shit, I was really looking to avoid this. :D I speak zero perl.\nIf it would only take you, like, 15 minutes, I would much much prefer it. It will take me two days at minimum to come up with something completely unacceptable and non-working.\nHow would I check whether they are floating? Does $window have a floating attribute?? Gah, don't make me do this, please. :\u003c",
+    "EmailHash": "28709af063bd0d54484173c7eb13eab4"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 21,
+    "Comment": "I think you’ll find that it doesn’t take you that long, since you can mostly get away by cargo-culting things.\n\nPersonally, I don’t have time the next two or three days to work on this, so probably it’d be best if TonyC does it.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Kernc",
+    "Line": 21,
+    "Comment": "I don't seem to be getting these replies here into my mailbox. :/\nYeah, I could have a stab at it, hacking together code from other files, but as I was investigating it on the surface, I couldn't figure out how to check whether the window is in fact floating or not.\nI haven't tried anything. It might have worked. But it would take me days. (Yeah...)\n\nI too think it's best if TonyC does it. Provided the interface for checking whether the window is floating or not is trivially accessible, it's should be just a couple of lines anyway. :-)",
+    "EmailHash": "28709af063bd0d54484173c7eb13eab4"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 21,
+    "Comment": "I'm starting on this now",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

@@ -1,0 +1,157 @@
+From 8360d03ff35535886b702dd64575f2caa0a7762e Mon Sep 17 00:00:00 2001
+From: Enrico Carlesso <enricocarlesso@…>
+Date: Tue, 25 Nov 2014 11:37:52 +0100
+Subject: [PATCH] Added bitrate_format options to wireless configuration block
+
+---
+ i3status.c                |  3 ++-
+ include/i3status.h        |  7 ++++++-
+ man/i3status.man          | 10 +++++++++-
+ src/print_wireless_info.c | 38 ++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 53 insertions(+), 5 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index fc16c49..4d2f739 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -292,6 +292,7 @@ int main(int argc, char *argv[]) {
+         cfg_opt_t wireless_opts[] = {
+                 CFG_STR("format_up", "W: (%quality at %essid, %bitrate) %ip", CFGF_NONE),
+                 CFG_STR("format_down", "W: down", CFGF_NONE),
++                CFG_STR("bitrate_format", "%g %c/s", CFGF_NONE),
+                 CFG_CUSTOM_ALIGN_OPT,
+                 CFG_CUSTOM_COLOR_OPTS,
+                 CFG_CUSTOM_MIN_WIDTH_OPT,
+@@ -576,7 +577,7 @@ int main(int argc, char *argv[]) {
+ 
+                         CASE_SEC_TITLE("wireless") {
+                                 SEC_OPEN_MAP("wireless");
+-                                print_wireless_info(json_gen, buffer, title, cfg_getstr(sec, "format_up"), cfg_getstr(sec, "format_down"));
++                                print_wireless_info(json_gen, buffer, title, cfg_getstr(sec, "format_up"), cfg_getstr(sec, "format_down"), cfg_getstr(sec, "bitrate_format"));
+                                 SEC_CLOSE_MAP;
+                         }
+ 
+diff --git a/include/i3status.h b/include/i3status.h
+index d816f0a..b6d22b2 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -142,6 +142,11 @@ enum { O_DZEN2, O_XMOBAR, O_I3BAR, O_TERM, O_NONE } output_format;
+ 		} \
+ 	} while (0)
+ 
++#define KILO 1e3
++#define MEGA 1e6
++#define GIGA 1e9
++
++
+ 
+ typedef enum { CS_DISCHARGING, CS_CHARGING, CS_FULL } charging_status_t;
+ 
+@@ -176,7 +181,7 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+ void print_time(yajl_gen json_gen, char *buffer, const char *format, const char *tz, time_t t);
+ void print_ddate(yajl_gen json_gen, char *buffer, const char *format, time_t t);
+ const char *get_ip_addr();
+-void print_wireless_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
++void print_wireless_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down, const char *bitrate_format);
+ void print_run_watch(yajl_gen json_gen, char *buffer, const char *title, const char *pidfile, const char *format);
+ void print_path_exists(yajl_gen json_gen, char *buffer, const char *title, const char *path, const char *format);
+ void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const char *path, const char *format, int);
+diff --git a/man/i3status.man b/man/i3status.man
+index 504cf16..d576263 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -63,6 +63,7 @@ order += "tztime berlin"
+ wireless wlan0 {
+         format_up = "W: (%quality at %essid, %bitrate) %ip"
+         format_down = "W: down"
++        bitrate_format = "%g %cb/s"
+ }
+ 
+ ethernet eth0 {
+@@ -272,12 +273,19 @@ something is active, like for example a VPN tunnel managed by NetworkManager.
+ 
+ Gets the link quality and ESSID of the given wireless network interface. You
+ can specify different format strings for the network being connected or not
+-connected.
++connected. You can also provide a printf-like format string for bitrate. This
++can be especially useful if you have a dual band access point and the default
++format displays values such as 96, 130, 158.6 changing the width of the text.
++Setting bitrate format to "%5.1f %cb/s" will always take the same amount of
++characters. The first argument is a float number indicating the scaled speed,
++the second is a character for the scale, K for Kilo, M for Mega and G for Giga.
+ 
+ *Example order*: +wireless wlan0+
+ 
+ *Example format*: +W: (%quality at %essid, %bitrate) %ip+
+ 
++*Example bitrate format*: +%g %cb/s+
++
+ === Ethernet
+ 
+ Gets the IP address and (if possible) the link speed of the given ethernet
+diff --git a/src/print_wireless_info.c b/src/print_wireless_info.c
+index 18f6580..36091ab 100644
+--- a/src/print_wireless_info.c
++++ b/src/print_wireless_info.c
+@@ -71,6 +71,40 @@ typedef struct {
+         int bitrate;
+ } wireless_info_t;
+ 
++/*
++ * Format bitrate with provided formatter.
++ *
++ * Basically, a clone of iw_print_bitrate, but accepting a format instead of forcing "%g %cb/s"
++ * see http://sourcecodebrowser.com/wireless-tools/28/iwlib_8c.html#ad1674f1115db41e1f3405f915c772783
++ *
++ */
++static void i3_iw_print_bitrate(char *buffer, int buflen, int bitrate, const char *bitrate_format)
++{
++        double      rate = bitrate;
++        char        scale;
++        int         divisor;
++
++        if(rate >= GIGA)
++        {
++                scale = 'G';
++                divisor = GIGA;
++        }
++        else
++        {
++                if(rate >= MEGA)
++                {
++                        scale = 'M';
++                        divisor = MEGA;
++                }
++                else
++                {
++                        scale = 'k';
++                        divisor = KILO;
++                }
++        }
++        snprintf(buffer, buflen, bitrate_format, rate / divisor, scale);
++}
++
+ static int get_wireless_info(const char *interface, wireless_info_t *info) {
+         memset(info, 0, sizeof(wireless_info_t));
+ 
+@@ -320,7 +354,7 @@ static int get_wireless_info(const char *interface, wireless_info_t *info) {
+ 	return 0;
+ }
+ 
+-void print_wireless_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down) {
++void print_wireless_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down, const char *bitrate_format) {
+         const char *walk;
+         char *outwalk = buffer;
+         wireless_info_t info;
+@@ -404,7 +438,7 @@ void print_wireless_info(yajl_gen json_gen, char *buffer, const char *interface,
+                 if (BEGINS_WITH(walk+1, "bitrate")) {
+                         char br_buffer[128];
+ 
+-                        iw_print_bitrate(br_buffer, sizeof(br_buffer), info.bitrate);
++                        i3_iw_print_bitrate(br_buffer, sizeof(br_buffer), info.bitrate, bitrate_format);
+ 
+                         outwalk += sprintf(outwalk, "%s", br_buffer);
+                         walk += strlen("bitrate");
+-- 
+2.1.3
+

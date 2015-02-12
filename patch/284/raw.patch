@@ -1,0 +1,75 @@
+From 139ef1c811e8f5f6479d8f8d1e9c14e3fa1db257 Mon Sep 17 00:00:00 2001
+From: Gereon Kremer <gereon.kremer@…>
+Date: Thu, 24 Oct 2013 20:00:18 +0200
+Subject: [PATCH] Added new configuration option "mutediszero" for volume
+ module.
+
+If mutediszero is set to true (default), i3status behaves as previous.
+If mutediszero is set to false, the volume level is shown although the mixer is muted.
+This is useful in combination with color_degraded where the text is shown in another color if the mixer is muted.
+---
+ i3status.c         | 4 +++-
+ include/i3status.h | 2 +-
+ src/print_volume.c | 4 ++--
+ 3 files changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index e99e627..0f97804 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -289,6 +289,7 @@ int main(int argc, char *argv[]) {
+                 CFG_STR("device", "default", CFGF_NONE),
+                 CFG_STR("mixer", "Master", CFGF_NONE),
+                 CFG_INT("mixer_idx", 0, CFGF_NONE),
++                CFG_BOOL("mutediszero", true, CFGF_NONE),
+                 CFG_CUSTOM_COLOR_OPTS,
+                 CFG_END()
+         };
+@@ -515,7 +516,8 @@ int main(int argc, char *argv[]) {
+                                 print_volume(json_gen, buffer, cfg_getstr(sec, "format"),
+                                              cfg_getstr(sec, "device"),
+                                              cfg_getstr(sec, "mixer"),
+-                                             cfg_getint(sec, "mixer_idx"));
++                                             cfg_getint(sec, "mixer_idx"),
++                                             cfg_getbool(sec, "mutediszero"));
+                                 SEC_CLOSE_MAP;
+                         }
+ 
+diff --git a/include/i3status.h b/include/i3status.h
+index d0361d1..b6f3db8 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -156,7 +156,7 @@ void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const
+ void print_cpu_usage(yajl_gen json_gen, char *buffer, const char *format);
+ void print_eth_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
+ void print_load(yajl_gen json_gen, char *buffer, const char *format, const float max_threshold);
+-void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *device, const char *mixer, int mixer_idx);
++void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *device, const char *mixer, int mixer_idx, bool mutedIsZero);
+ bool process_runs(const char *path);
+ 
+ /* socket file descriptor for general purposes */
+diff --git a/src/print_volume.c b/src/print_volume.c
+index d84b3ec..2ef3ae7 100644
+--- a/src/print_volume.c
++++ b/src/print_volume.c
+@@ -26,7 +26,7 @@
+ #include "i3status.h"
+ #include "queue.h"
+ 
+-void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *device, const char *mixer, int mixer_idx) {
++void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *device, const char *mixer, int mixer_idx, bool mutedIsZero) {
+         char *outwalk = buffer;
+ 	int pbval = 1;
+ 
+@@ -104,7 +104,7 @@ void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *
+ 			fprintf (stderr, "i3status: ALSA: playback_switch: %s\n", snd_strerror(err));
+ 		if (!pbval)  {
+ 			START_COLOR("color_degraded");
+-			avg = 0;
++			if (mutedIsZero) avg = 0;
+ 		}
+ 	}
+ 
+-- 
+1.8.1.2
+

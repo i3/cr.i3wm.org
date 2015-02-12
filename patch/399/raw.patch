@@ -1,0 +1,325 @@
+From 8d5a7bd98b6306643535b861b9d69d2a30b0ce29 Mon Sep 17 00:00:00 2001
+From: Jaroslav Smid <smidjar2@…>
+Date: Sun, 2 Feb 2014 18:52:52 +0100
+Subject: [PATCH] Add configuration options for tray icon size and minimum
+ panel size
+
+---
+ i3bar/include/config.h      |  2 ++
+ i3bar/src/config.c          | 32 +++++++++++++++++++++++
+ i3bar/src/xcb.c             | 62 ++++++++++++++++++++++++++++-----------------
+ include/config.h            |  6 +++++
+ include/config_directives.h |  2 ++
+ parser-specs/config.spec    | 10 ++++++++
+ src/config_directives.c     |  8 ++++++
+ src/ipc.c                   |  6 +++++
+ 8 files changed, 105 insertions(+), 23 deletions(-)
+
+diff --git a/i3bar/include/config.h b/i3bar/include/config.h
+index e0b0efe..2b2305c 100644
+--- a/i3bar/include/config.h
++++ b/i3bar/include/config.h
+@@ -23,6 +23,8 @@ typedef enum { M_DOCK = 0, M_HIDE = 1, M_INVISIBLE = 2 } bar_display_mode_t;
+ typedef struct config_t {
+     int          modifier;
+     position_t   position;
++    int          min_height;
++    int          tray_icon_size;
+     int          verbose;
+     struct xcb_color_strings_t colors;
+     bool         disable_binding_mode_indicator;
+diff --git a/i3bar/src/config.c b/i3bar/src/config.c
+index 0e6ba3f..5dcb447 100644
+--- a/i3bar/src/config.c
++++ b/i3bar/src/config.c
+@@ -210,10 +210,42 @@ static int config_boolean_cb(void *params_, int val) {
+     return 0;
+ }
+ 
++/* Parse an integer value */
++#if YAJL_MAJOR >= 2
++static int config_integer_cb(void *params_, long long val) {
++#else
++static int config_integer_cb(void *params_, long val) {
++#endif
++    /* Minimum panel height, allowed values <0, INT16_MAX> */
++    if (!strcmp(cur_key, "min_height")) {
++        if (val < 0)
++            config.min_height = 0;
++        else if (val > INT16_MAX)
++            config.min_height = INT16_MAX;
++        else
++            config.min_height = (int)val;
++        return 1;
++    }
++
++    /* Tray icon size, allowed values <0, INT16_MAX> */
++    if (!strcmp(cur_key, "tray_icon_size")) {
++        if (val < 0)
++            config.tray_icon_size = 0;
++        else if (val > INT16_MAX)
++            config.tray_icon_size = INT16_MAX;
++        else
++            config.tray_icon_size = (int)val;
++        return 1;
++    }
++
++    return 0;
++}
++
+ /* A datastructure to pass all these callbacks to yajl */
+ static yajl_callbacks outputs_callbacks = {
+     .yajl_null = config_null_cb,
+     .yajl_boolean = config_boolean_cb,
++    .yajl_integer = config_integer_cb,
+     .yajl_string = config_string_cb,
+     .yajl_map_key = config_map_key_cb,
+ };
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index 928771d..7d0f12c 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -59,9 +59,12 @@ xcb_connection_t *conn;
+ /* The font we'll use */
+ static i3Font font;
+ 
+-/* Overall height of the bar (based on font size) */
++/* Overall height of the bar */
+ int bar_height;
+ 
++/* Pixel size of a tray icon */
++int tray_icon_size;
++
+ /* These are only relevant for XKB, which we only need for grabbing modifiers */
+ Display          *xkb_dpy;
+ int              xkb_event_base;
+@@ -372,7 +375,7 @@ void handle_button(xcb_button_press_event_t *event) {
+                 TAILQ_FOREACH_REVERSE(trayclient, walk->trayclients, tc_head, tailq) {
+                     if (!trayclient->mapped)
+                         continue;
+-                    tray_width += (font.height + 2);
++                    tray_width += (tray_icon_size + 2);
+                 }
+ 
+                 int block_x = 0, last_block_x;
+@@ -452,8 +455,8 @@ static void configure_trayclients(void) {
+             clients++;
+ 
+             DLOG("Configuring tray window %08x to x=%d\n",
+-                 trayclient->win, output->rect.w - (clients * (font.height + 2)));
+-            uint32_t x = output->rect.w - (clients * (font.height + 2));
++                 trayclient->win, output->rect.w - (clients * (tray_icon_size + 2)));
++            uint32_t x = output->rect.w - (clients * (tray_icon_size + 2));
+             xcb_configure_window(xcb_connection,
+                                  trayclient->win,
+                                  XCB_CONFIG_WINDOW_X,
+@@ -563,16 +566,16 @@ static void handle_client_message(xcb_client_message_event_t* event) {
+             xcb_reparent_window(xcb_connection,
+                                 client,
+                                 output->bar,
+-                                output->rect.w - font.height - 2,
+-                                2);
++                                output->rect.w - tray_icon_size - 2,
++                                (bar_height - tray_icon_size)/2);
+             /* We reconfigure the window to use a reasonable size. The systray
+              * specification explicitly says:
+              *   Tray icons may be assigned any size by the system tray, and
+              *   should do their best to cope with any size effectively
+              */
+             mask = XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
+-            values[0] = font.height;
+-            values[1] = font.height;
++            values[0] = tray_icon_size;
++            values[1] = tray_icon_size;
+             xcb_configure_window(xcb_connection,
+                                  client,
+                                  mask,
+@@ -802,10 +805,10 @@ static void handle_configure_request(xcb_configure_request_event_t *event) {
+                 continue;
+ 
+             xcb_rectangle_t rect;
+-            rect.x = output->rect.w - (clients * (font.height + 2));
+-            rect.y = 2;
+-            rect.width = font.height;
+-            rect.height = font.height;
++            rect.x = output->rect.w - (clients * (tray_icon_size + 2));
++            rect.y = (bar_height - tray_icon_size)/2;
++            rect.width = tray_icon_size;
++            rect.height = tray_icon_size;
+ 
+             DLOG("This is a tray window. x = %d\n", rect.x);
+             fake_configure_notify(xcb_connection, rect, event->window, 0);
+@@ -1107,7 +1110,19 @@ void init_xcb_late(char *fontname) {
+     font = load_font(fontname, true);
+     set_font(&font);
+     DLOG("Calculated Font-height: %d\n", font.height);
+-    bar_height = font.height + 6;
++
++    bar_height = MAX(font.height + 6,
++                     config.min_height);
++
++    if (config.tray_icon_size != 0) {
++        /* Tray icon size is set. Increase bar's height if it won't fit */
++        tray_icon_size = config.tray_icon_size;
++        bar_height = MAX(tray_icon_size, bar_height);
++    }
++    else {
++        /* Tray icon size is not set. Use the same as font's height */
++        tray_icon_size = font.height;
++    }
+ 
+     xcb_flush(xcb_connection);
+ 
+@@ -1705,10 +1720,8 @@ void draw_bars(bool unhide) {
+             TAILQ_FOREACH(trayclient, outputs_walk->trayclients, tailq) {
+                 if (!trayclient->mapped)
+                     continue;
+-                /* We assume the tray icons are quadratic (we use the font
+-                 * *height* as *width* of the icons) because we configured them
+-                 * like this. */
+-                traypx += font.height + 2;
++                /* We assume the tray icons are quadratic */
++                traypx += tray_icon_size + 2;
+             }
+             /* Add 2px of padding if there are any tray icons */
+             if (traypx > 0)
+@@ -1717,9 +1730,12 @@ void draw_bars(bool unhide) {
+                           statusline_pm,
+                           outputs_walk->buffer,
+                           outputs_walk->bargc,
+-                          MAX(0, (int16_t)(statusline_width - outputs_walk->rect.w + 4)), 0,
+-                          MAX(0, (int16_t)(outputs_walk->rect.w - statusline_width - traypx - 4)), 3,
+-                          MIN(outputs_walk->rect.w - traypx - 4, (int)statusline_width), font.height + 2);
++                          MAX(0, (int16_t)(statusline_width - outputs_walk->rect.w + 4)),
++                          0,
++                          MAX(0, (int16_t)(outputs_walk->rect.w - statusline_width - traypx - 4)),
++                          (bar_height - font.height - 2)/2,
++                          MIN(outputs_walk->rect.w - traypx - 4, (int)statusline_width),
++                          font.height + 2);
+         }
+ 
+         if (!config.disable_ws) {
+@@ -1754,7 +1770,7 @@ void draw_bars(bool unhide) {
+                               outputs_walk->bargc,
+                               mask,
+                               vals_border);
+-                xcb_rectangle_t rect_border = { i, 1, ws_walk->name_width + 10, font.height + 4 };
++                xcb_rectangle_t rect_border = { i, 1, ws_walk->name_width + 10, bar_height - 2 };
+                 xcb_poly_fill_rectangle(xcb_connection,
+                                         outputs_walk->buffer,
+                                         outputs_walk->bargc,
+@@ -1765,7 +1781,7 @@ void draw_bars(bool unhide) {
+                               outputs_walk->bargc,
+                               mask,
+                               vals);
+-                xcb_rectangle_t rect = { i + 1, 2, ws_walk->name_width + 8, font.height + 2 };
++                xcb_rectangle_t rect = { i + 1, 2, ws_walk->name_width + 8, bar_height - 4 };
+                 xcb_poly_fill_rectangle(xcb_connection,
+                                         outputs_walk->buffer,
+                                         outputs_walk->bargc,
+@@ -1773,7 +1789,7 @@ void draw_bars(bool unhide) {
+                                         &rect);
+                 set_font_colors(outputs_walk->bargc, fg_color, bg_color);
+                 draw_text(ws_walk->name, outputs_walk->buffer, outputs_walk->bargc,
+-                          i + 5, 3, ws_walk->name_width);
++                          i + 5, (bar_height - font.height)/2, ws_walk->name_width);
+                 i += 10 + ws_walk->name_width + 1;
+ 
+             }
+diff --git a/include/config.h b/include/config.h
+index b625999..717f70d 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -224,6 +224,12 @@ struct Barconfig {
+      * disables the tray (it’s enabled by default). */
+     char *tray_output;
+ 
++    /** Minimum height of the panel in pixels */
++    int min_height;
++
++    /** Size of tray icons in pixels */
++    int tray_icon_size;
++
+     /** Path to the i3 IPC socket. This option is discouraged since programs
+      * can find out the path by looking for the I3_SOCKET_PATH property on the
+      * root window! */
+diff --git a/include/config_directives.h b/include/config_directives.h
+index a95a647..e0ceea2 100644
+--- a/include/config_directives.h
++++ b/include/config_directives.h
+@@ -77,6 +77,8 @@ CFGFUN(bar_i3bar_command, const char *i3bar_command);
+ CFGFUN(bar_color, const char *colorclass, const char *border, const char *background, const char *text);
+ CFGFUN(bar_socket_path, const char *socket_path);
+ CFGFUN(bar_tray_output, const char *output);
++CFGFUN(bar_tray_icon_size, const long size);
++CFGFUN(bar_min_height, const long size);
+ CFGFUN(bar_color_single, const char *colorclass, const char *color);
+ CFGFUN(bar_status_command, const char *command);
+ CFGFUN(bar_binding_mode_indicator, const char *value);
+diff --git a/parser-specs/config.spec b/parser-specs/config.spec
+index dfd6401..4177877 100644
+--- a/parser-specs/config.spec
++++ b/parser-specs/config.spec
+@@ -355,6 +355,8 @@ state BAR:
+   'position'               -> BAR_POSITION
+   'output'                 -> BAR_OUTPUT
+   'tray_output'            -> BAR_TRAY_OUTPUT
++  'tray_icon_size'         -> BAR_TRAY_ICON_SIZE
++  'min_height'             -> BAR_MIN_HEIGHT
+   'font'                   -> BAR_FONT
+   'binding_mode_indicator' -> BAR_BINDING_MODE_INDICATOR
+   'workspace_buttons'      -> BAR_WORKSPACE_BUTTONS
+@@ -408,6 +410,14 @@ state BAR_TRAY_OUTPUT:
+   output = string
+       -> call cfg_bar_tray_output($output); BAR
+ 
++state BAR_TRAY_ICON_SIZE:
++  tray_icon_size = number
++              -> call cfg_bar_tray_icon_size(&tray_icon_size); BAR
++
++state BAR_MIN_HEIGHT:
++  min_height = number
++          -> call cfg_bar_min_height(&min_height); BAR
++
+ state BAR_FONT:
+   font = string
+       -> call cfg_bar_font($font); BAR
+diff --git a/src/config_directives.c b/src/config_directives.c
+index f5a592f..db152f5 100644
+--- a/src/config_directives.c
++++ b/src/config_directives.c
+@@ -495,6 +495,14 @@ CFGFUN(bar_tray_output, const char *output) {
+     current_bar.tray_output = sstrdup(output);
+ }
+ 
++CFGFUN(bar_tray_icon_size, const long size) {
++    current_bar.tray_icon_size = size;
++}
++
++CFGFUN(bar_min_height, const long size) {
++    current_bar.min_height = size;
++}
++
+ CFGFUN(bar_color_single, const char *colorclass, const char *color) {
+     if (strcmp(colorclass, "background") == 0)
+         current_bar.colors.background = sstrdup(color);
+diff --git a/src/ipc.c b/src/ipc.c
+index f1e9019..05075c9 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -736,6 +736,12 @@ IPC_HANDLER(get_bar_config) {
+                 break;
+         }
+ 
++        ystr("tray_icon_size");
++        y(integer, config->tray_icon_size);
++
++        ystr("min_height");
++        y(integer, config->min_height);
++
+         ystr("position");
+         if (config->position == P_BOTTOM)
+             ystr("bottom");
+-- 
+1.8.5.3
+

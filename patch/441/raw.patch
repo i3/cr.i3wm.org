@@ -1,0 +1,54 @@
+From fba5ca02831af6a9572b9af77ace99ff51a5dbe1 Mon Sep 17 00:00:00 2001
+From: Marco Hunsicker <i3@…>
+Date: Sat, 1 Mar 2014 11:05:03 +0100
+Subject: [PATCH] Typo in function name
+
+Fixes the typo in print_seperator()
+---
+ i3status.c         |    2 +-
+ include/i3status.h |    2 +-
+ src/output.c       |    2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index dd97150..8d8536c 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -476,7 +476,7 @@ int main(int argc, char *argv[]) {
+                         printf("\033[u\033[K");
+                 for (j = 0; j < cfg_size(cfg, "order"); j++) {
+                         if (j > 0)
+-                                print_seperator(separator);
++                                print_separator(separator);
+ 
+                         const char *current = cfg_getnstr(cfg, "order", j);
+ 
+diff --git a/include/i3status.h b/include/i3status.h
+index a6cd535..95da091 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -138,7 +138,7 @@ void die(const char *fmt, ...);
+ bool slurp(const char *filename, char *destination, int size);
+ 
+ /* src/output.c */
+-void print_seperator(const char *separator);
++void print_separator(const char *separator);
+ char *color(const char *colorstr);
+ char *endcolor() __attribute__ ((pure));
+ void reset_cursor(void);
+diff --git a/src/output.c b/src/output.c
+index e56c892..3a43d58 100644
+--- a/src/output.c
++++ b/src/output.c
+@@ -52,7 +52,7 @@ char *endcolor(void) {
+         else return "";
+ }
+ 
+-void print_seperator(const char *separator) {
++void print_separator(const char *separator) {
+         if (output_format == O_I3BAR || strlen(separator) == 0)
+                 return;
+ 
+-- 
+1.7.10.4
+

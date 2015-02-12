@@ -1,0 +1,38 @@
+From eee308c193f2a51d65f4114237075b3b549a6a82 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sat, 4 Jan 2014 16:17:31 -0500
+Subject: [PATCH] Bugfix: moving across outputs sends IPC event
+
+When moving a container across output with `move <direction>`, send the
+IPC workspace focus event with `workspace_show` so that i3bar updates
+correctly.
+---
+ src/move.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/src/move.c b/src/move.c
+index 0b3ab66..548ed7b 100644
+--- a/src/move.c
++++ b/src/move.c
+@@ -71,6 +71,7 @@ static void insert_con_into(Con *con, Con *target, position_t position) {
+  *
+  */
+ static void attach_to_workspace(Con *con, Con *ws, direction_t direction) {
++    Con *old_ws = con_get_workspace(con);
+     con_detach(con);
+     con_fix_percent(con->parent);
+ 
+@@ -91,6 +92,10 @@ static void attach_to_workspace(Con *con, Con *ws, direction_t direction) {
+      * does not make sense anyways. */
+     con->percent = 0.0;
+     con_fix_percent(ws);
++
++    /* We do our best to get the IPC event right */
++    con_focus(old_ws);
++    workspace_show(ws);
+ }
+ 
+ /*
+-- 
+1.8.5.2
+

@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 26,
+    "Comment": "Looking at this now, I don't like how it is done.\n\nBetter would be window::fullscreen_mode, after the property.\n\nBut I think the best way to do this might be to have a window::property event with the name of the property in a separate field, or possibly even a new event for only properties so I can filter on the name of the property.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 26,
+    "Comment": "The appeal of the property event is you could construct an advanced notification system in an elegant way with something like this:\n\nfor any key PROP, on the event 'property::PROP', the new value is container{PROP}",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 26,
+    "Comment": "I like the window::fullscreen_mode suggestion best, because then you can subscribe to specific events in your scripts and don’t need another layer of filtering.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

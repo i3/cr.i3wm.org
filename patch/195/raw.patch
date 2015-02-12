@@ -1,0 +1,72 @@
+From 0aaa9d51c05b991c567b1844b6651bd6f9239a97 Mon Sep 17 00:00:00 2001
+From: Travis Cardwell <travis.cardwell@…>
+Date: Sat, 27 Jul 2013 20:50:29 +0900
+Subject: [PATCH 1/2] add nopass option
+
+It is sometimes convenient to blank the screen without locking it.  For
+example, one might blank the screen when talking to a coworker, without
+leaving the desk.  It would be nice to have the feature in i3lock for
+when DPMS is not available.
+
+Example configuration:
+
+    # blank the screen
+    bindsym $mod+z exec i3lock -d -N -c 111111
+    # lock the screen
+    bindsym $mod+Shift+z exec i3lock -d -c 111111
+
+---
+ i3lock.c |   10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/i3lock.c b/i3lock.c
+index 5a87999..1851c32 100644
+--- a/i3lock.c
++++ b/i3lock.c
+@@ -49,6 +49,7 @@ bool debug_mode = false;
+ static bool dpms = false;
+ bool unlock_indicator = true;
+ static bool dont_fork = false;
++static bool nopass = false;
+ struct ev_loop *main_loop;
+ static struct ev_timer *clear_pam_wrong_timeout;
+ extern unlock_state_t unlock_state;
+@@ -255,6 +256,9 @@ static void handle_key_press(xcb_key_press_event_t *event) {
+     int n;
+     bool ctrl;
+ 
++    if (nopass)
++        exit(0);
++
+     ksym = xkb_state_key_get_one_sym(xkb_state, event->detail);
+     ctrl = xkb_state_mod_name_is_active(xkb_state, "Control", XKB_STATE_MODS_DEPRESSED);
+     xkb_state_update_key(xkb_state, event->detail, XKB_KEY_DOWN);
+@@ -524,6 +528,7 @@ int main(int argc, char *argv[]) {
+     struct option longopts[] = {
+         {"version", no_argument, NULL, 'v'},
+         {"nofork", no_argument, NULL, 'n'},
++        {"nopass", no_argument, NULL, 'N'},
+         {"beep", no_argument, NULL, 'b'},
+         {"dpms", no_argument, NULL, 'd'},
+         {"color", required_argument, NULL, 'c'},
+@@ -539,13 +544,16 @@ int main(int argc, char *argv[]) {
+     if ((username = getenv("USER")) == NULL)
+         errx(1, "USER environment variable not set, please set it.\n");
+ 
+-    while ((o = getopt_long(argc, argv, "hvnbdc:p:ui:t", longopts, &optind)) != -1) {
++    while ((o = getopt_long(argc, argv, "hvnNbdc:p:ui:t", longopts, &optind)) != -1) {
+         switch (o) {
+         case 'v':
+             errx(EXIT_SUCCESS, "version " VERSION " © 2010-2012 Michael Stapelberg");
+         case 'n':
+             dont_fork = true;
+             break;
++        case 'N':
++            nopass = true;
++            break;
+         case 'b':
+             beep = true;
+             break;
+-- 
+1.7.10.4
+

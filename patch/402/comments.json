@@ -1,0 +1,44 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 23,
+    "Comment": "I don't think the spec is clear enough for us to say that the current way of doing things is \"wrong\" and this way is \"right\". But honestly I had a very hard time following the \"models of input handling\" as it should actually be implemented by a window manager.\n\nHere is a dwm implementation:\nlists.suckless.org/dev/1104/7548.html#replies\n\nHere is a second-hand report that compiz and metacity follow this convention (I didn't follow up on this one):\nwww.winehq.org/pipermail/wine-devel/2007-July/058255.html\n\nI believe that a better implementation is possible, but it will likely require substantial changes to the code.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 38,
+    "Comment": "There should be a case here where focus is not updated at all (such as for a notification window), but I don't think that was being handled properly before.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 38,
+    "Comment": "Here is a really good article that considers a possible way to decide whether or not to give focus based on _NET_WM_TYPE:\n\nmail.gnome.org/archives/wm-spec-list/2007-March/msg00001.html\n\nI think this might be the approach needed for issues like #1169.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 21,
+    "Comment": "I’ll merge this and wait for any reports of breakage :o).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 21,
+    "Comment": "Actually, I won’t: this breaks t/158-wm_take_focus.t. Please fix.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 21,
+    "Comment": "Also, while you’re at it, please add the information you provided in the review in the git commit message (i.e. all the URLs, and perhaps a short summary of your other comments, too).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 21,
+    "Comment": "Oh the one time I forget to run the tests I break something.\n\nYes I am looking forward to all the angry mail we get from people who are shocked we don't support their favorite model of input handling.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

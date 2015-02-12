@@ -1,0 +1,80 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 119,
+    "Comment": "Why the “might”? I’d suggest changing it to just “must”.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 148,
+    "Comment": "Please use our smalloc() wrapper here and below. This also holds true for realloc() and calloc()",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 176,
+    "Comment": "Why not just return sstrdup(argv0);?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 192,
+    "Comment": "The indentation is wrong in this line.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 197,
+    "Comment": "Space is missing between while and the opening paren.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 213,
+    "Comment": "Given that tmp_sze is always \u003e 0, checking whether confstr() returns a value bigger than tmp_sze is enough and you can get rid of the extra variable.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 245,
+    "Comment": "Just return sstrdup(\"/usr/bin/i3-nagbar\") here",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 147,
+    "Comment": "here and below, please s/sze/size/",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 256,
+    "Comment": "s/sould/should/, also please use /* */ comments, and don’t add comments at the end of the line.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 270,
+    "Comment": "This is an endless loop if prop_value_sze == 0, which can happen.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 271,
+    "Comment": "The X11 API actually gives you the number of bytes that did not fit into this reply in the prop_reply-\u003ebytes_after member. Please use it.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 369,
+    "Comment": "s/0/NULL/",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 369,
+    "Comment": "Actually, swap the two variables and make it char *cwd = smalloc(cwd_size);",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

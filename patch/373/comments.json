@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 79,
+    "Comment": "Can you use a data type that specifies how many bits the type uses, e.g. uint8_t, instead of “long”? I think a long is different depending on the platform.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 101,
+    "Comment": "What? I disagree. Please remove this. Chromium and steam with their own window decorations should _definitely_ not be floating. For utility windows, the proper window type should be set.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 101,
+    "Comment": "You are technically correct. I was on the fence about this because everything I tested displays much better when set to floating, except Chromium, which displays much better with i3 decorations.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 101,
+    "Comment": "The problem with Motif hints is that they are used as a replacement for the proper types, and I can't find anything in the standard that explicitly mentions the concept of \"floating\" as distinct from \"tiling\".",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

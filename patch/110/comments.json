@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "anonymous",
+    "Line": 29,
+    "Comment": "this two bugs are still present.\n\n1st bug:\n\nIf floating windows are hidden and I open a new floating window then the for_window commands are applied in the focused window. You can reproduce it with this:\n\n1) put this in the config and reload it:\nfor_window [instance=\"^urxvt_floating$\"] floating enable; border pixel 10\n2) i3-msg floating hide\n3) open new terminal and run: urxvt -name urxvt_floating\n\nthe focused window will have border pixel 10.. also, if you unhide the floating windows you will see that the floating window doesn't have border pixel 10.\n\n\n2nd bug:\n\n1) put window A in floating mode\n2) move window B in scratchpad and the do scratchpad show\n3) run: i3-msg floating hide (i.e. only window B is shown)\n4) focus window B\n4) do focus (left|right|up|down)\n\nresult:\nwindow B does not have focus (i.e. focus is on window A)\n\nexpected:\nwindow B must have focus. we prevent focus on window A, because floating windows are hidden.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 246,
+    "Comment": "You are still directly manipulating the “mapped” property. Apparently I have not been clear enough previously :-) The “mapped” property is _internal_ and you should not have to touch it _at all_ in your patch. In case you have any questions, feel free to contact me in #i3 via IRC (wait for some time, I’m not around 24/7, but it for sure is quicker than the patch submission/review back and forth).",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  }
+]

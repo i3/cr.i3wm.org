@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Peter Boström",
+    "Line": 18,
+    "Comment": "If your cursor is in the left window, event-\u003eroot_x and event-\u003eroot_y is outside the current window, so this moves it to the other container, without switching focus.\n\nHow can I either recalculate focus or (in a simple way) make sure that the cursor stays within the current window?",
+    "EmailHash": "ff0062902170ec50bc1baf7ed68a2490"
+  },
+  {
+    "Author": "Peter Boström",
+    "Line": 18,
+    "Comment": "That bug is however present in branches master, next and session-saving, unrelated to this change.",
+    "EmailHash": "ff0062902170ec50bc1baf7ed68a2490"
+  }
+]

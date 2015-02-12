@@ -1,0 +1,193 @@
+From be5cef67087aa540b732dc1a5b3e1972c0f518e6 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Peter=20Bostr=C3=B6m?= <git@…>
+Date: Sat, 4 Jan 2014 13:18:38 +0100
+Subject: [PATCH] Fix 'gcc -Wextra -Wno-unused-parameter'.
+
+---
+ i3-config-wizard/main.c | 2 +-
+ i3-nagbar/main.c        | 3 ++-
+ i3bar/include/config.h  | 6 ++++--
+ i3bar/src/child.c       | 2 +-
+ i3bar/src/ipc.c         | 2 +-
+ i3bar/src/xcb.c         | 4 +++-
+ include/con.h           | 4 ++--
+ include/data.h          | 5 ++++-
+ src/con.c               | 4 ++--
+ src/util.c              | 2 +-
+ 10 files changed, 21 insertions(+), 13 deletions(-)
+
+diff --git a/i3-config-wizard/main.c b/i3-config-wizard/main.c
+index 626aa0b..bdd012f 100644
+--- a/i3-config-wizard/main.c
++++ b/i3-config-wizard/main.c
+@@ -453,7 +453,7 @@ static char *resolve_tilde(const char *path) {
+     char *head, *tail, *result;
+ 
+     tail = strchr(path, '/');
+-    head = strndup(path, tail ? tail - path : strlen(path));
++    head = strndup(path, tail ? (size_t)(tail - path) : strlen(path));
+ 
+     int res = glob(head, GLOB_TILDE, NULL, &globbuf);
+     free(head);
+diff --git a/i3-nagbar/main.c b/i3-nagbar/main.c
+index f0dd407..fea2e68 100644
+--- a/i3-nagbar/main.c
++++ b/i3-nagbar/main.c
+@@ -467,7 +467,8 @@ int main(int argc, char *argv[]) {
+         uint32_t top_end_x;
+         uint32_t bottom_start_x;
+         uint32_t bottom_end_x;
+-    } __attribute__((__packed__)) strut_partial = {};
++    } __attribute__((__packed__)) strut_partial;
++    memset(&strut_partial, 0, sizeof(strut_partial));
+ 
+     strut_partial.top = font.height + 6;
+     strut_partial.top_start_x = 0;
+diff --git a/i3bar/include/config.h b/i3bar/include/config.h
+index 3d2a854..e0b0efe 100644
+--- a/i3bar/include/config.h
++++ b/i3bar/include/config.h
+@@ -17,6 +17,9 @@ typedef enum {
+     POS_BOT
+ } position_t;
+ 
++/* Bar display mode (hide unless modifier is pressed or show in dock mode or always hide in invisible mode) */
++typedef enum { M_DOCK = 0, M_HIDE = 1, M_INVISIBLE = 2 } bar_display_mode_t;
++
+ typedef struct config_t {
+     int          modifier;
+     position_t   position;
+@@ -31,8 +34,7 @@ typedef struct config_t {
+     int          num_outputs;
+     char         **outputs;
+ 
+-    /* Bar display mode (hide unless modifier is pressed or show in dock mode or always hide in invisible mode) */
+-    enum { M_DOCK = 0, M_HIDE = 1, M_INVISIBLE = 2 } hide_on_modifier;
++    bar_display_mode_t hide_on_modifier;
+ 
+     /* The current hidden_state of the bar, which indicates whether it is hidden or shown */
+     enum { S_HIDE = 0, S_SHOW = 1 } hidden_state;
+diff --git a/i3bar/src/child.c b/i3bar/src/child.c
+index 52019b3..63e26f1 100644
+--- a/i3bar/src/child.c
++++ b/i3bar/src/child.c
+@@ -28,7 +28,7 @@
+ #include "common.h"
+ 
+ /* Global variables for child_*() */
+-i3bar_child child = {};
++i3bar_child child;
+ 
+ /* stdin- and sigchild-watchers */
+ ev_io    *stdin_io;
+diff --git a/i3bar/src/ipc.c b/i3bar/src/ipc.c
+index 9ec9100..6a2c0e6 100644
+--- a/i3bar/src/ipc.c
++++ b/i3bar/src/ipc.c
+@@ -161,7 +161,7 @@ void got_bar_config_update(char *event) {
+ 
+     /* update the configuration with the received settings */
+     DLOG("Received bar config update \"%s\"\n", event);
+-    int old_mode = config.hide_on_modifier;
++    bar_display_mode_t old_mode = config.hide_on_modifier;
+     parse_config_json(event);
+     if (old_mode != config.hide_on_modifier) {
+         reconfig_windows(true);
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index faae27d..f3eaa54 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -1524,7 +1524,9 @@ void reconfig_windows(bool redraw_bars) {
+                 uint32_t top_end_x;
+                 uint32_t bottom_start_x;
+                 uint32_t bottom_end_x;
+-            } __attribute__((__packed__)) strut_partial = {};
++            } __attribute__((__packed__)) strut_partial;
++            memset(&strut_partial, 0, sizeof(strut_partial));
++
+             switch (config.position) {
+                 case POS_NONE:
+                     break;
+diff --git a/include/con.h b/include/con.h
+index 49ee97f..0205dfc 100644
+--- a/include/con.h
++++ b/include/con.h
+@@ -80,7 +80,7 @@ Con *con_parent_with_orientation(Con *con, orientation_t orientation);
+  * Returns the first fullscreen node below this node.
+  *
+  */
+-Con *con_get_fullscreen_con(Con *con, int fullscreen_mode);
++Con *con_get_fullscreen_con(Con *con, fullscreen_mode_t fullscreen_mode);
+ 
+ /**
+  * Returns true if the container is internal, such as __i3_scratch
+@@ -192,7 +192,7 @@ void con_move_to_workspace(Con *con, Con *workspace, bool fix_coordinates, bool
+  * container).
+  *
+  */
+-int con_orientation(Con *con);
++orientation_t con_orientation(Con *con);
+ 
+ /**
+  * Returns the container which will be focused next when the given container
+diff --git a/include/data.h b/include/data.h
+index 659a362..8a44fb1 100644
+--- a/include/data.h
++++ b/include/data.h
+@@ -449,6 +449,9 @@ struct Assignment {
+     TAILQ_ENTRY(Assignment) assignments;
+ };
+ 
++/** Fullscreen modes. Used by Con.fullscreen_mode. */
++typedef enum { CF_NONE = 0, CF_OUTPUT = 1, CF_GLOBAL = 2 } fullscreen_mode_t;
++
+ /**
+  * A 'Con' represents everything from the X11 root window down to a single X11 window.
+  *
+@@ -537,7 +540,7 @@ struct Con {
+ 
+     TAILQ_HEAD(swallow_head, Match) swallow_head;
+ 
+-    enum { CF_NONE = 0, CF_OUTPUT = 1, CF_GLOBAL = 2 } fullscreen_mode;
++    fullscreen_mode_t fullscreen_mode;
+     /* layout is the layout of this container: one of split[v|h], stacked or
+      * tabbed. Special containers in the tree (above workspaces) have special
+      * layouts like dockarea or output.
+diff --git a/src/con.c b/src/con.c
+index ba14e06..5a3c88d 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -353,7 +353,7 @@ struct bfs_entry {
+  * Returns the first fullscreen node below this node.
+  *
+  */
+-Con *con_get_fullscreen_con(Con *con, int fullscreen_mode) {
++Con *con_get_fullscreen_con(Con *con, fullscreen_mode_t fullscreen_mode) {
+     Con *current, *child;
+ 
+     /* TODO: is breadth-first-search really appropriate? (check as soon as
+@@ -826,7 +826,7 @@ void con_move_to_workspace(Con *con, Con *workspace, bool fix_coordinates, bool
+  * container).
+  *
+  */
+-int con_orientation(Con *con) {
++orientation_t con_orientation(Con *con) {
+     switch (con->layout) {
+         case L_SPLITV:
+         /* stacking containers behave like they are in vertical orientation */
+diff --git a/src/util.c b/src/util.c
+index 8770175..f672cc2 100644
+--- a/src/util.c
++++ b/src/util.c
+@@ -130,7 +130,7 @@ char *resolve_tilde(const char *path) {
+         char *head, *tail, *result;
+ 
+         tail = strchr(path, '/');
+-        head = strndup(path, tail ? tail - path : strlen(path));
++        head = strndup(path, tail ? (size_t)(tail - path) : strlen(path));
+ 
+         int res = glob(head, GLOB_TILDE, NULL, &globbuf);
+         free(head);
+-- 
+1.8.5.2
+

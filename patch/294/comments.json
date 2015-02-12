@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 50,
+    "Comment": "You did not document DRAGGING in the comment above. Please fix.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 121,
+    "Comment": "I realize the comment was already here, but I don’t think it has much purpose. Please remove it :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 145,
+    "Comment": "This is still missing the check for inside_con != NULL.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 29,
+    "Comment": "Almost there. Thanks for working on this!",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 29,
+    "Comment": "Well at least i3 will be one up on gvim when it is finished. (Try toggling NERDTree or TList while resizing the window)",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

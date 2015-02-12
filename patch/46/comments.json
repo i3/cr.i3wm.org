@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "WAT",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "2 * 2 is actually clearer than 4, because each border is 2 px wide and there are two borders.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

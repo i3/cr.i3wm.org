@@ -1,0 +1,125 @@
+From 9efd3ba5955f4670f506890c792edf378d8dc0fc Mon Sep 17 00:00:00 2001
+From: Raphael Michel <webmaster@…>
+Date: Mon, 31 Dec 2012 18:42:27 +0100
+Subject: [PATCH] Colorized output for disk usage
+
+---
+ i3status.c            |    5 ++++-
+ include/i3status.h    |    2 +-
+ man/i3status.man      |   11 ++++++++++-
+ src/print_disk_info.c |   20 +++++++++++++++++++-
+ 4 files changed, 34 insertions(+), 4 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index 3fe3f47..ea9843f 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -275,6 +275,9 @@ int main(int argc, char *argv[]) {
+ 
+         cfg_opt_t disk_opts[] = {
+                 CFG_STR("format", "%free", CFGF_NONE),
++                CFG_INT("low_threshold", 10737418240, CFGF_NONE), // 10 GB
++                CFG_STR("threshold_type", "bytes", CFGF_NONE),
++                CFG_CUSTOM_COLOR_OPTS,
+                 CFG_END()
+         };
+ 
+@@ -454,7 +457,7 @@ int main(int argc, char *argv[]) {
+ 
+                         CASE_SEC_TITLE("disk") {
+                                 SEC_OPEN_MAP("disk_info");
+-                                print_disk_info(json_gen, buffer, title, cfg_getstr(sec, "format"));
++                                print_disk_info(json_gen, buffer, title, cfg_getstr(sec, "format"), cfg_getint(sec, "low_threshold"), cfg_getstr(sec, "threshold_type"));
+                                 SEC_CLOSE_MAP;
+                         }
+ 
+diff --git a/include/i3status.h b/include/i3status.h
+index de8373f..df79f5d 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -141,7 +141,7 @@ char *auto_detect_format();
+ void set_timezone(const char *tz);
+ 
+ void print_ipv6_info(yajl_gen json_gen, char *buffer, const char *format_up, const char *format_down);
+-void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format);
++void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format, int low_threshold, char *threshold_type);
+ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity);
+ void print_time(yajl_gen json_gen, char *buffer, const char *format, const char *tz, time_t t);
+ void print_ddate(yajl_gen json_gen, char *buffer, const char *format, time_t t);
+diff --git a/man/i3status.man b/man/i3status.man
+index 0f80991..da5f58c 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -170,12 +170,21 @@ Gets used, free, available and total amount of bytes on the given mounted filesy
+ These values can also be expressed in percentages with the percentage_used,
+ percentage_free, percentage_avail and percentage_used_of_avail formats.
+ 
+-*Example order*: +disk /mnt/usbstick+
++It is possible to define a low_threshold that causes the disk text to be
++colored red if the free space is unter a certain amount. The low_threshold 
++type can be of threshold_type "bytes" or "percentage". So, if you configure 
++low_threshold to 10 and threshold_type to "percentage", and your disk is
++91 percent full, it will be colored red.
+ 
+ *Example format*: +%free (%avail)/ %total+
+ 
+ *Example format*: +%percentage_used used, %percentage_free free, %percentage_avail avail+
+ 
++*Example low_threshold*: +10737418240+
++
++*Example threshold_type*: +bytes+
++
++
+ === Run-watch
+ 
+ Expands the given path to a pidfile and checks if the process ID found inside
+diff --git a/src/print_disk_info.c b/src/print_disk_info.c
+index f49fe66..835df30 100644
+--- a/src/print_disk_info.c
++++ b/src/print_disk_info.c
+@@ -43,9 +43,10 @@ static int print_bytes_human(char *outwalk, uint64_t bytes) {
+  * human readable manner.
+  *
+  */
+-void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format) {
++void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format, int low_threshold, char *threshold_type) {
+         const char *walk;
+         char *outwalk = buffer;
++        bool colorful_output;
+ 
+         INSTANCE(path);
+ 
+@@ -67,6 +68,20 @@ void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const ch
+                         continue;
+                 }
+ 
++                int percentage_free = ((uint64_t)buf.f_bsize * (uint64_t)buf.f_bfree / ((uint64_t)buf.f_bsize * (uint64_t)buf.f_blocks))*100;
++
++                if (strncmp(threshold_type, "percentage", strlen(threshold_type))
++                        && percentage_free < low_threshold) {
++                        START_COLOR("color_bad");
++                        colorful_output = true;
++                } else if (strncmp(threshold_type, "bytes", strlen(threshold_type))
++                        && ((uint64_t)buf.f_bsize * (uint64_t)buf.f_bfree) < (uint64_t) low_threshold) {
++                        START_COLOR("color_bad");
++                        colorful_output = true;
++                } else {
++                        colorful_output = false;
++                }
++
+                 if (BEGINS_WITH(walk+1, "free")) {
+                         outwalk += print_bytes_human(outwalk, (uint64_t)buf.f_bsize * (uint64_t)buf.f_bfree);
+                         walk += strlen("free");
+@@ -106,6 +121,9 @@ void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const ch
+                         outwalk += sprintf(outwalk, "%.01f%%", 100.0 * (double)buf.f_bavail / (double)buf.f_blocks);
+                         walk += strlen("percentage_avail");
+                 }
++                
++                if (colorful_output)
++                        END_COLOR;
+         }
+ 
+         *outwalk = '\0';
+-- 
+1.7.10.4
+

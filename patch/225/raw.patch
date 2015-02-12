@@ -1,0 +1,70 @@
+From e7927776343a5bbc9c67f4aa1c32b26fe9d4154e Mon Sep 17 00:00:00 2001
+From: "jj" <haptix@…>
+Date: Thu, 19 Sep 2013 14:14:30 +0200
+Subject: [PATCH] Close all children when closing a workspace
+
+fixes #591
+---
+ src/tree.c                          |   10 +++++++++-
+ testcases/t/129-focus-after-close.t |   24 ++++++++++++++++++++++++
+ 2 files changed, 33 insertions(+), 1 deletion(-)
+
+diff --git a/src/tree.c b/src/tree.c
+index 58af674..79d4bc8 100644
+--- a/src/tree.c
++++ b/src/tree.c
+@@ -360,7 +360,15 @@ bool tree_close(Con *con, kill_window_t kill_window, bool dont_kill_parent, bool
+ void tree_close_con(kill_window_t kill_window) {
+     assert(focused != NULL);
+     if (focused->type == CT_WORKSPACE) {
+-        LOG("Cannot close workspace\n");
++        DLOG("A workspace container is focused, all children will be killed.\n");
++        Con *child, *nextchild;
++        for (child = TAILQ_FIRST(&(focused->nodes_head)); child; ) {
++            nextchild = TAILQ_NEXT(child, nodes);
++            DLOG("killing child=%p\n", child);
++            tree_close(child, kill_window, false, false);
++            child = nextchild;
++        }
++
+         return;
+     }
+ 
+diff --git a/testcases/t/129-focus-after-close.t b/testcases/t/129-focus-after-close.t
+index df226e8..8d9ccbb 100644
+--- a/testcases/t/129-focus-after-close.t
++++ b/testcases/t/129-focus-after-close.t
+@@ -120,6 +120,30 @@ sync_with_i3;
+ is(get_focused($tmp), $middle, 'middle container focused');
+ 
+ ##############################################################
++# check if the workspace container can be closed
++##############################################################
++
++$tmp = fresh_workspace;
++
++my $window = open_window();
++
++# one window opened on the current workspace
++($nodes, $focus) = get_ws_content($tmp);
++is(scalar @$nodes, 1, 'workspace contains one node');
++
++# focus the workspace
++cmd "focus parent";
++cmd "focus parent";
++
++# try to kill the workspace
++cmd "kill";
++sync_with_i3;
++
++# the workspace should now be empty
++($nodes, $focus) = get_ws_content($tmp);
++is(scalar @$nodes, 0, 'workspace is empty');
++
++##############################################################
+ # and now for something completely different:
+ # check if the pointer position is relevant when restoring focus
+ # (it should not be relevant, of course)
+-- 
+1.7.9.5
+

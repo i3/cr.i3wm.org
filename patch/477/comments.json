@@ -1,0 +1,56 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 18,
+    "Comment": "This is a good idea. I'm sure I'll find some use for it in the Mpris plugin for j4status.\n\nJust a few notes.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 67,
+    "Comment": "These numbers are off and I think it has something to do with the mysterious constants.\n\nThere is about a 10px blind spot on the right side of my status line. The problem becomes much worse for smaller/larger fonts. If we are going to enhance this, then more people will use it, so it should be a bit more accurate I think.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 77,
+    "Comment": "Please add a DLOG here with the block name and instance.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 79,
+    "Comment": "This `return` could present a slight usability problem in the case the user has a long status line and a lot of workspaces.\n\nIf the status line overlaps the workspace buttons, the click should ideally go to the workspace button.\n\nMaybe it would suffice to only return in the case of a mouse wheel event?",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 140,
+    "Comment": "The formatting is messed up here. I think it would improve readability a lot if you added some white space here as well.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 77,
+    "Comment": "I am not changing this code at all, so this DLOG addition should be in its own commit if required.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 67,
+    "Comment": "This code was there already, I am not changing the matching code at all. Please consider this change for another commit.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 140,
+    "Comment": "I think it would be better to *remove* an indent level here actually. The original indent was about the fall-through that was removed.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 79,
+    "Comment": "The real fix would be to crop the status line not to overlap the workspace buttons IMO. Should be a follow-up commit in this regard.\n\nBut there is still something wrong here… I forgot to restore the x value…",
+    "EmailHash": ""
+  }
+]

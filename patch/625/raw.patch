@@ -1,0 +1,81 @@
+From 56ae44bd139552ea344af6be0f53fe7c5118341d Mon Sep 17 00:00:00 2001
+From: "Wael M. Nasreddine" <wael.nasreddine@…>
+Date: Fri, 11 Jul 2014 10:57:00 -0700
+Subject: [PATCH] Wait for the child process to surface the exit status.
+
+---
+ i3lock.c | 29 ++++++++++++++++++++++-------
+ 1 file changed, 22 insertions(+), 7 deletions(-)
+
+diff --git a/i3lock.c b/i3lock.c
+index b1be828..0b94845 100644
+--- a/i3lock.c
++++ b/i3lock.c
+@@ -6,6 +6,7 @@
+  * See LICENSE for licensing information
+  *
+  */
++#include <sys/wait.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -514,7 +515,7 @@ static int conv_callback(int num_msg, const struct pam_message **msg,
+  * See also man libev(3): "ev_prepare" and "ev_check" - customise your event loop
+  *
+  */
+-static void xcb_got_event(EV_P_ struct ev_io *w, int revents) {
++static void xcb_got_event(EV_P_ struct ev_io *xcb, int revents) {
+     /* empty, because xcb_prepare_cb and xcb_check_cb are used */
+ }
+ 
+@@ -522,7 +523,7 @@ static void xcb_got_event(EV_P_ struct ev_io *w, int revents) {
+  * Flush before blocking (and waiting for new events)
+  *
+  */
+-static void xcb_prepare_cb(EV_P_ ev_prepare *w, int revents) {
++static void xcb_prepare_cb(EV_P_ ev_prepare *xcb, int revents) {
+     xcb_flush(conn);
+ }
+ 
+@@ -531,7 +532,10 @@ static void xcb_prepare_cb(EV_P_ ev_prepare *w, int revents) {
+  * xcb_poll_for_event() which knows better than we can ever know.
+  *
+  */
+-static void xcb_check_cb(EV_P_ ev_check *w, int revents) {
++static void xcb_check_cb(EV_P_ ev_check *xcb, int revents) {
++    pid_t cpid, w;
++    int status;
++
+     xcb_generic_event_t *event;
+ 
+     while ((event = xcb_poll_for_event(conn)) != NULL) {
+@@ -571,11 +575,22 @@ static void xcb_check_cb(EV_P_ ev_check *w, int revents) {
+                      * expect to get another MapNotify, but better be sure… */
+                     dont_fork = true;
+ 
+-                    /* In the parent process, we exit */
+-                    if (fork() != 0)
+-                        exit(0);
++                     cpid = fork();
++                     if (cpid == -1)
++                         errx(EXIT_FAILURE, "Couldn't fork.");
++
++                     if (cpid == 0) { // Code execured by the child
++                         ev_loop_fork(EV_DEFAULT);
++                     } else {         // Code execured by the parent
++                         do {
++                             w = waitpid(cpid, &status, WUNTRACED | WCONTINUED);
++
++                             if (w == -1)
++                                 errx(EXIT_FAILURE, "Couldn't wait for the child.");
++                         } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+ 
+-                    ev_loop_fork(EV_DEFAULT);
++                         exit(EXIT_SUCCESS);
++                     }
+                 }
+                 break;
+ 
+-- 
+2.0.0.526.g5318336
+

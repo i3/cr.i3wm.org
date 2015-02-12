@@ -1,0 +1,33 @@
+From e8398b8b04d101d5d188205a0f992c72098cbabf Mon Sep 17 00:00:00 2001
+From: Alexander Berntsen <alexander@…>
+Date: Sun, 23 Jun 2013 14:22:04 +0200
+Subject: [PATCH 5/5] Add a few things to .gitignore
+
+---
+ .gitignore | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/.gitignore b/.gitignore
+index efeb489..0160a24 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -2,11 +2,16 @@
+ tags
+ include/GENERATED_*.h
+ include/all.h.pch
++*~
+ *.swp
+ *.gcda
+ *.gcno
+ test.commands_parser
+ test.config_parser
++testcases/MYMETA.json
++testcases/MYMETA.yml
++testcases/blib/
++testcases/pm_to_blib
+ *.output
+ *.tab.*
+ *.yy.c
+-- 
+1.8.1.5
+

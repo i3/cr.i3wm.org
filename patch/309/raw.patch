@@ -1,0 +1,392 @@
+From f31b57b6d710640b7bf22da26452dbc5b3571df3 Mon Sep 17 00:00:00 2001
+From: Lancelot SIX <lancelot@…>
+Date: Sat, 9 Nov 2013 21:43:47 +0100
+Subject: [PATCH] Remove references to PATH_MAX macro
+
+Since the macro PATH_MAX is not defined on every system (GNU/Hurd being
+one of those who do not define it), we remove all references to this
+macro. Instead, we use a buffer of arbitraty size and grow it when
+needed to contain paths.
+---
+ i3-nagbar/main.c           |  4 ++-
+ i3bar/src/xcb.c            | 48 ++++++++++++++++++++++++++-------
+ include/libi3.h            |  3 ++-
+ libi3/get_exe_path.c       | 67 ++++++++++++++++++++++++++++++++++++----------
+ libi3/root_atom_contents.c | 15 +++++++++--
+ src/display_version.c      | 39 ++++++++++++++++++++++-----
+ src/main.c                 | 16 ++++++++---
+ 7 files changed, 154 insertions(+), 38 deletions(-)
+
+diff --git a/i3-nagbar/main.c b/i3-nagbar/main.c
+index 0fa75f8..952270e 100644
+--- a/i3-nagbar/main.c
++++ b/i3-nagbar/main.c
+@@ -159,8 +159,9 @@ static void handle_button_release(xcb_connection_t *conn, xcb_button_release_eve
+     fclose(script);
+ 
+     char *link_path;
++    char *exe_path = get_exe_path(argv0);
+     sasprintf(&link_path, "%s.nagbar_cmd", script_path);
+-    symlink(get_exe_path(argv0), link_path);
++    symlink(exe_path, link_path);
+ 
+     char *terminal_cmd;
+     sasprintf(&terminal_cmd, "i3-sensible-terminal -e %s", link_path);
+@@ -172,6 +173,7 @@ static void handle_button_release(xcb_connection_t *conn, xcb_button_release_eve
+     free(link_path);
+     free(terminal_cmd);
+     free(script_path);
++    free(exe_path);
+ 
+     /* TODO: unset flag, re-render */
+ }
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index cec7ab8..eb320f2 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -901,6 +901,7 @@ void xkb_io_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
+  */
+ char *init_xcb_early() {
+     /* FIXME: xcb_connect leaks Memory */
++    size_t path_size = 1024;
+     xcb_connection = xcb_connect(NULL, &screen);
+     if (xcb_connection_has_error(xcb_connection)) {
+         ELOG("Cannot open display\n");
+@@ -961,18 +962,47 @@ char *init_xcb_early() {
+     get_atoms();
+ 
+     xcb_get_property_cookie_t path_cookie;
++    xcb_get_property_reply_t *path_reply;
++    int len;
++    char *path = NULL;
++
+     path_cookie = xcb_get_property_unchecked(xcb_connection,
+-                                   0,
+-                                   xcb_root,
+-                                   atoms[I3_SOCKET_PATH],
+-                                   XCB_GET_PROPERTY_TYPE_ANY,
+-                                   0, PATH_MAX);
++                                             0,
++                                             xcb_root,
++                                             atoms[I3_SOCKET_PATH],
++                                             XCB_GET_PROPERTY_TYPE_ANY,
++                                             0,
++                                             (path_size / 4));
+ 
+     /* We check, if i3 set its socket-path */
+-    xcb_get_property_reply_t *path_reply = xcb_get_property_reply(xcb_connection,
+-                                                                  path_cookie,
+-                                                                  NULL);
+-    char *path = NULL;
++    path_reply = xcb_get_property_reply(xcb_connection,
++                                        path_cookie,
++                                        NULL);
++    if (path_reply) {
++        len = xcb_get_property_value_length(path_reply);
++    }
++
++    while (path_reply && len > 0 && len == path_size) {
++        // The reply is OK, but we might not have received the end of the path
++        // TODO properly use xcb_get_property_value_end instead of doing a new
++        // query.
++        path_size = path_size * 2;
++        path_cookie = xcb_get_property_unchecked(xcb_connection,
++                                                 0,
++                                                 xcb_root,
++                                                 atoms[I3_SOCKET_PATH],
++                                                 XCB_GET_PROPERTY_TYPE_ANY,
++                                                 0,
++                                                 (path_size / 4));
++
++        path_reply = xcb_get_property_reply(xcb_connection,
++                                            path_cookie,
++                                            NULL);
++        if (path_reply) {
++            len = xcb_get_property_value_length(path_reply);
++        }
++    }
++
+     if (path_reply) {
+         int len = xcb_get_property_value_length(path_reply);
+         if (len != 0) {
+diff --git a/include/libi3.h b/include/libi3.h
+index b0141f1..c4700ea 100644
+--- a/include/libi3.h
++++ b/include/libi3.h
+@@ -369,7 +369,8 @@ char *get_process_filename(const char *prefix);
+  *
+  * The implementation follows http://stackoverflow.com/a/933996/712014
+  *
++ * Returned value might (must) be freed by the caller.
+  */
+-const char *get_exe_path(const char *argv0);
++char *get_exe_path(const char *argv0);
+ 
+ #endif
+diff --git a/libi3/get_exe_path.c b/libi3/get_exe_path.c
+index fca7ba0..e9c6f2d 100644
+--- a/libi3/get_exe_path.c
++++ b/libi3/get_exe_path.c
+@@ -3,6 +3,7 @@
+ #include <stdio.h>
+ #include <limits.h>
+ #include <stdlib.h>
++#include <errno.h>
+ 
+ #include "libi3.h"
+ 
+@@ -11,10 +12,14 @@
+  *
+  * The implementation follows http://stackoverflow.com/a/933996/712014
+  *
++ * Returned value might (must) be freed by the caller.
+  */
+-const char *get_exe_path(const char *argv0) {
+-	static char destpath[PATH_MAX];
+-	char tmp[PATH_MAX];
++char *get_exe_path(const char *argv0) {
++	size_t destpath_sze = 1024;
++	char *destpath = malloc(destpath_sze);
++	size_t tmp_sze = 1024;
++	char *tmp = malloc(tmp_sze);
++
+ 
+ #if defined(__linux__) || defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
+ 	/* Linux and Debian/kFreeBSD provide /proc/self/exe */
+@@ -25,30 +30,57 @@ const char *get_exe_path(const char *argv0) {
+ #endif
+ 	ssize_t linksize;
+ 
+-	if ((linksize = readlink(exepath, destpath, sizeof(destpath) - 1)) != -1) {
++	while ((linksize = readlink(exepath, destpath, destpath_sze)) == destpath_sze) {
++		destpath_sze = destpath_sze * 2;
++		destpath = realloc(destpath, destpath_sze);
++	}
++	if (linksize != -1) {
+ 		/* readlink() does not NULL-terminate strings, so we have to. */
+ 		destpath[linksize] = '\0';
+ 
++		free(tmp);
+ 		return destpath;
+ 	}
+ #endif
+ 
+ 	/* argv[0] is most likely a full path if it starts with a slash. */
+-	if (argv0[0] == '/')
+-		return argv0;
++	if (argv0[0] == '/') {
++		destpath_sze = strlen(argv0) + 1;
++		destpath = realloc(destpath, destpath_sze);
++		strcpy(destpath, argv0);
+ 
+-	/* if argv[0] contains a /, prepend the working directory */
+-	if (strchr(argv0, '/') != NULL &&
+-		getcwd(tmp, sizeof(tmp)) != NULL) {
+-		snprintf(destpath, sizeof(destpath), "%s/%s", tmp, argv0);
++		free(tmp);
+ 		return destpath;
+ 	}
+ 
++	/* if argv[0] contains a /, prepend the working directory */
++	if (strchr(argv0, '/') != NULL) {
++		char *retgcwd;
++                while ((retgcwd = getcwd(tmp, tmp_sze)) == NULL && errno == ERANGE) {
++			tmp_sze = tmp_sze * 2;
++			tmp = realloc(tmp, tmp_sze);
++		}
++		if (retgcwd != NULL) {
++			while(snprintf(destpath, destpath_sze, "%s/%s", tmp, argv0) >= destpath_sze) {
++				destpath_sze = destpath_sze * 2;
++				destpath = realloc(destpath, destpath_sze);
++			}
++
++			free(tmp);
++			return destpath;
++		}
++	}
++
+ 	/* Fall back to searching $PATH (or _CS_PATH in absence of $PATH). */
+ 	char *path = getenv("PATH");
+ 	if (path == NULL) {
+ 		/* _CS_PATH is typically something like "/bin:/usr/bin" */
+-		confstr(_CS_PATH, tmp, sizeof(tmp));
++		int confstrret = confstr(_CS_PATH, tmp, tmp_sze);
++		while (confstrret > 0 && confstrret > tmp_sze) {
++			tmp_sze = tmp_sze * 2;
++			tmp = realloc(tmp, tmp_sze);
++			confstrret = confstr(_CS_PATH, tmp, tmp_sze);
++		}
+ 		sasprintf(&path, ":%s", tmp);
+ 	} else {
+ 		path = strdup(path);
+@@ -59,16 +91,23 @@ const char *get_exe_path(const char *argv0) {
+ 		if ((component = strtok(str, ":")) == NULL)
+ 			break;
+ 		str = NULL;
+-		snprintf(destpath, sizeof(destpath), "%s/%s", component, argv0);
++		while(snprintf(destpath, destpath_sze, "%s/%s", component, argv0) >= destpath_sze) {
++			destpath_sze = destpath_sze * 2;
++			destpath = realloc(destpath, destpath_sze);
++		}
+ 		/* Of course this is not 100% equivalent to actually exec()ing the
+ 		 * binary, but meh. */
+ 		if (access(destpath, X_OK) == 0) {
+ 			free(path);
++			free(tmp);
+ 			return destpath;
+ 		}
+ 	}
+-	free(path);
+ 
+ 	/* Last resort: maybe it’s in /usr/bin? */
+-	return "/usr/bin/i3-nagbar";
++	free(destpath);
++	free(path);
++	free(tmp);
++	destpath = strdup("/usr/bin/i3-nagbar");
++	return destpath;
+ }
+diff --git a/libi3/root_atom_contents.c b/libi3/root_atom_contents.c
+index cabaaf2..9c77a02 100644
+--- a/libi3/root_atom_contents.c
++++ b/libi3/root_atom_contents.c
+@@ -29,6 +29,8 @@ char *root_atom_contents(const char *atomname) {
+     xcb_intern_atom_reply_t *atom_reply;
+     int screen;
+     char *content;
++    int path_max_sze = 1024; // sould be a multiple of 4
++    int prop_value_sze;
+ 
+     if ((conn = xcb_connect(NULL, &screen)) == NULL ||
+         xcb_connection_has_error(conn))
+@@ -46,10 +48,19 @@ char *root_atom_contents(const char *atomname) {
+     xcb_get_property_cookie_t prop_cookie;
+     xcb_get_property_reply_t *prop_reply;
+     prop_cookie = xcb_get_property_unchecked(conn, false, root, atom_reply->atom,
+-                                             XCB_GET_PROPERTY_TYPE_ANY, 0, PATH_MAX);
++                                             XCB_GET_PROPERTY_TYPE_ANY, 0, path_max_sze / 4);
+     prop_reply = xcb_get_property_reply(conn, prop_cookie, NULL);
+-    if (prop_reply == NULL || xcb_get_property_value_length(prop_reply) == 0)
++    prop_value_sze = xcb_get_property_value_length(prop_reply);
++    while (prop_reply != NULL && prop_value_sze < path_max_sze) {
++        path_max_sze = path_max_sze * 2;
++        prop_cookie = xcb_get_property_unchecked(conn, false, root, atom_reply->atom,
++                        XCB_GET_PROPERTY_TYPE_ANY, 0, path_max_sze / 4);
++        prop_reply = xcb_get_property_reply(conn, prop_cookie, NULL);
++        prop_value_sze = xcb_get_property_value_length(prop_reply);
++    }
++    if (prop_reply == NULL || prop_value_sze == 0)
+         return NULL;
++
+     if (prop_reply->type == XCB_ATOM_CARDINAL) {
+         /* We treat a CARDINAL as a >= 32-bit unsigned int. The only CARDINAL
+          * we query is I3_PID, which is 32-bit. */
+diff --git a/src/display_version.c b/src/display_version.c
+index 0901ae0..12764cc 100644
+--- a/src/display_version.c
++++ b/src/display_version.c
+@@ -128,13 +128,25 @@ void display_running_version(void) {
+     printf("\rRunning i3 version: %s (pid %s)\n", human_readable_version, pid_from_atom);
+ 
+ #ifdef __linux__
+-    char exepath[PATH_MAX],
+-         destpath[PATH_MAX];
++    char *exepath,
++         *destpath;
++    size_t exepath_sze = 1024,
++           destpath_sze = 1024;
+     ssize_t linksize;
+ 
+-    snprintf(exepath, sizeof(exepath), "/proc/%d/exe", getpid());
++    exepath = malloc(exepath_sze);
++    destpath = malloc(destpath_sze);
+ 
+-    if ((linksize = readlink(exepath, destpath, sizeof(destpath))) == -1)
++    while (snprintf(exepath, exepath_sze, "/proc/%d/exe", getpid()) >= exepath_sze) {
++            exepath_sze = exepath_sze * 2;
++            exepath = realloc(exepath, exepath_sze);
++    }
++
++    while ((linksize = readlink(exepath, destpath, destpath_sze)) == destpath_sze) {
++            destpath_sze = destpath_sze * 2;
++            destpath = realloc(destpath, destpath_sze);
++    }
++    if (linksize == -1)
+         err(EXIT_FAILURE, "readlink(%s)", exepath);
+ 
+     /* readlink() does not NULL-terminate strings, so we have to. */
+@@ -143,9 +155,16 @@ void display_running_version(void) {
+     printf("\n");
+     printf("The i3 binary you just called: %s\n", destpath);
+ 
+-    snprintf(exepath, sizeof(exepath), "/proc/%s/exe", pid_from_atom);
++    while (snprintf(exepath, exepath_sze, "/proc/%s/exe", pid_from_atom) >= exepath_sze) {
++            exepath_sze = exepath_sze * 2;
++            exepath = realloc(exepath, exepath_sze);
++    }
+ 
+-    if ((linksize = readlink(exepath, destpath, sizeof(destpath))) == -1)
++    while ((linksize = readlink(exepath, destpath, destpath_sze)) == destpath_sze) {
++        destpath_sze = destpath_sze * 2;
++        destpath = realloc(destpath, destpath_sze);
++    }
++    if (linksize == -1)
+         err(EXIT_FAILURE, "readlink(%s)", exepath);
+ 
+     /* readlink() does not NULL-terminate strings, so we have to. */
+@@ -159,7 +178,10 @@ void display_running_version(void) {
+     /* Since readlink() might put a "(deleted)" somewhere in the buffer and
+      * stripping that out seems hackish and ugly, we read the process’s argv[0]
+      * instead. */
+-    snprintf(exepath, sizeof(exepath), "/proc/%s/cmdline", pid_from_atom);
++    while (snprintf(exepath, exepath_sze, "/proc/%s/cmdline", pid_from_atom) >= exepath_sze) {
++        exepath_sze = exepath_sze * 2;
++        exepath = realloc(exepath, exepath_sze);
++    }
+ 
+     int fd;
+     if ((fd = open(exepath, O_RDONLY)) == -1)
+@@ -169,6 +191,9 @@ void display_running_version(void) {
+     close(fd);
+ 
+     printf("The i3 binary you are running: %s\n", destpath);
++
++    free(exepath);
++    free(destpath);
+ #endif
+ 
+     yajl_free(handle);
+diff --git a/src/main.c b/src/main.c
+index aac7388..9b49975 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -488,14 +488,22 @@ int main(int argc, char *argv[]) {
+ 
+         /* The following code is helpful, but not required. We thus don’t pay
+          * much attention to error handling, non-linux or other edge cases. */
+-        char cwd[PATH_MAX];
+         LOG("CORE DUMPS: You are running a development version of i3, so coredumps were automatically enabled (ulimit -c unlimited).\n");
+-        if (getcwd(cwd, sizeof(cwd)) != NULL)
++        char *cwd = 0;
++        size_t cwd_sze = 1024;
++        cwd = malloc(cwd_sze);
++        while (getcwd(cwd, cwd_sze) == NULL && errno == ERANGE) {
++                cwd_sze = cwd_sze * 2;
++                cwd = realloc(cwd, cwd_sze);
++        }
++        if (cwd != NULL)
+             LOG("CORE DUMPS: Your current working directory is \"%s\".\n", cwd);
++        free(cwd);
++
+         int patternfd;
+         if ((patternfd = open("/proc/sys/kernel/core_pattern", O_RDONLY)) >= 0) {
+-            memset(cwd, '\0', sizeof(cwd));
+-            if (read(patternfd, cwd, sizeof(cwd)) > 0)
++            memset(cwd, '\0', sizeof(cwd_sze));
++            if (read(patternfd, cwd, sizeof(cwd_sze)) > 0)
+                 /* a trailing newline is included in cwd */
+                 LOG("CORE DUMPS: Your core_pattern is: %s", cwd);
+             close(patternfd);
+-- 
+1.8.4.2
+

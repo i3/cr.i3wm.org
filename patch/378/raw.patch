@@ -1,0 +1,25 @@
+From ca13322bd199414f134860dff6e43d0307aeff9c Mon Sep 17 00:00:00 2001
+From: Vivien Didelot <vivien.didelot@…>
+Date: Tue, 14 Jan 2014 16:15:56 -0500
+Subject: [PATCH] docs/i3bar-protocol: add missing newline
+
+---
+ docs/i3bar-protocol | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/docs/i3bar-protocol b/docs/i3bar-protocol
+index bd8ea53..9276315 100644
+--- a/docs/i3bar-protocol
++++ b/docs/i3bar-protocol
+@@ -225,7 +225,7 @@ instance::
+ 	Instance of the block, if set
+ x, y::
+ 	X11 root window coordinates where the click occured
+-button:
++button::
+ 	X11 button ID (for example 1 to 3 for left/middle/right mouse button)
+ 
+ *Example*:
+-- 
+1.8.5.2
+

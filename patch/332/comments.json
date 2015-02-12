@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 27,
+    "Comment": "Kind of messy, but if you understood the last two submissions, you should understand this one as well.\n\nOf course, if you have questions let me know.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 77,
+    "Comment": "This pattern is common to several handlers now. I could refactor this into its own function and remove many lines of code.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 103,
+    "Comment": "I spotted a few other redraws that I don't think are necessary now. These are very obviously not needed.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

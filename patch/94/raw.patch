@@ -1,0 +1,52 @@
+From fd6b31a1a344c190905a2eeae58f2604452f93b1 Mon Sep 17 00:00:00 2001
+From: Baptiste Daroussin <bapt@…>
+Date: Tue, 19 Mar 2013 19:08:35 +0100
+Subject: [PATCH 3/3] Support colored output for CPU temperature on FreeBSD
+
+---
+ src/print_cpu_temperature.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/src/print_cpu_temperature.c b/src/print_cpu_temperature.c
+index 8778dad..cbf978d 100644
+--- a/src/print_cpu_temperature.c
++++ b/src/print_cpu_temperature.c
+@@ -14,6 +14,7 @@
+ #include <sys/sysctl.h>
+ #define TZ_ZEROC 2732
+ #define TZ_KELVTOC(x) (((x) - TZ_ZEROC) / 10), abs(((x) - TZ_ZEROC) % 10)
++#define TZ_AVG(x) ((x) - TZ_ZEROC) / 10
+ #endif
+ 
+ #if defined(__OpenBSD__)
+@@ -35,9 +36,9 @@ static char *thermal_zone;
+  *
+  */
+ void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const char *path, const char *format, int max_threshold) {
+-        char *outwalk = buffer;
+ #ifdef THERMAL_ZONE
+         const char *walk;
++        char *outwalk = buffer;
+         bool colorful_output = false;
+ 
+         if (path == NULL)
+@@ -80,7 +81,16 @@ void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const
+                         if (sysctlbyname(path, &sysctl_rslt, &sysctl_size, NULL, 0))
+                                 goto error;
+ 
++                        if (TZ_AVG(sysctl_rslt) >= max_threshold) {
++                                START_COLOR("color_bad");
++                                colorful_output = true;
++                        }
+                         outwalk += sprintf(outwalk, "%d.%d", TZ_KELVTOC(sysctl_rslt));
++                        if (colorful_output) {
++                                END_COLOR;
++                                colorful_output = false;
++                        }
++
+ #elif defined(__OpenBSD__)
+         struct sensordev sensordev;
+         struct sensor sensor;
+-- 
+1.8.1.3
+

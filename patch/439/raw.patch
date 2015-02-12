@@ -1,0 +1,183 @@
+From 89d6883cb780c71fb620e99a53d3be519695456d Mon Sep 17 00:00:00 2001
+From: Marco Hunsicker <i3@…>
+Date: Sat, 1 Mar 2014 09:20:16 +0100
+Subject: [PATCH] i3status: Allow customization of module separator
+
+This patch adds the ability to customize the separator that is placed
+between modules.
+
+Specifically this patch:
+
+* adds the "separator" general directive
+* moves the definition of the default separator for the different
+  output formats (excluding color formatting) to src/i3status.c
+* updates the SEC_CLOSE_MAP macro to disable the separator for the
+  i3bar output format if the separator directive dictates so
+* changes print_seperator() in src/output.c to take a separator
+  parameter in order to disable the output of the separator if
+  the separator is empty and to use the provided separator
+  otherwise
+* updates the manpage to explain the new directive
+---
+ i3status.c         |   21 ++++++++++++++++++++-
+ include/i3status.h |    7 ++++++-
+ man/i3status.man   |   31 +++++++++++++++++++++++++++++--
+ src/output.c       |   13 ++++++++-----
+ 4 files changed, 63 insertions(+), 9 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index 09379e6..dd97150 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -191,12 +191,25 @@ static char *get_config_path(void) {
+         return NULL;
+ }
+ 
++/*
++ * Returns the default separator to use if no custom separator has been specified.
++ */
++static char *get_default_separator() {
++        if (output_format == O_DZEN2)
++                return "^p(5;-2)^ro(2)^p()^p(5)";
++        if (output_format == O_I3BAR)
++                // anything besides the empty string indicates that the default separator should be used
++                return "default";
++        return " | ";
++}
++
+ int main(int argc, char *argv[]) {
+         unsigned int j;
+ 
+         cfg_opt_t general_opts[] = {
+                 CFG_STR("output_format", "auto", CFGF_NONE),
+                 CFG_BOOL("colors", 1, CFGF_NONE),
++                CFG_STR("separator", "default", CFGF_NONE),
+                 CFG_STR("color_separator", "#333333", CFGF_NONE),
+                 CFG_INT("interval", 1, CFGF_NONE),
+                 CFG_COLOR_OPTS("#00FF00", "#FFFF00", "#FF0000"),
+@@ -403,6 +416,12 @@ int main(int argc, char *argv[]) {
+                 output_format = O_NONE;
+         else die("Unknown output format: \"%s\"\n", output_str);
+ 
++        const char *separator = cfg_getstr(cfg_general, "separator");
++
++        // if no custom separator has been provided, use the default one
++        if (strcasecmp(separator, "default") == 0)
++                separator = get_default_separator();
++
+         if (!valid_color(cfg_getstr(cfg_general, "color_good"))
+                         || !valid_color(cfg_getstr(cfg_general, "color_degraded"))
+                         || !valid_color(cfg_getstr(cfg_general, "color_bad"))
+@@ -457,7 +476,7 @@ int main(int argc, char *argv[]) {
+                         printf("\033[u\033[K");
+                 for (j = 0; j < cfg_size(cfg, "order"); j++) {
+                         if (j > 0)
+-                                print_seperator();
++                                print_seperator(separator);
+ 
+                         const char *current = cfg_getnstr(cfg, "order", j);
+ 
+diff --git a/include/i3status.h b/include/i3status.h
+index e1246b9..c1fa052 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -88,6 +88,11 @@ enum { O_DZEN2, O_XMOBAR, O_I3BAR, O_TERM, O_NONE } output_format;
+ #define SEC_CLOSE_MAP \
+ 	do { \
+ 		if (output_format == O_I3BAR) { \
++			const char *_sep = cfg_getstr(cfg_general, "separator"); \
++			if (strlen(_sep) == 0) {\
++				yajl_gen_string(json_gen, (const unsigned char *)"separator", strlen("separator")); \
++				yajl_gen_string(json_gen, (const unsigned char *)"false", strlen("false")); \
++			} \
+ 			yajl_gen_map_close(json_gen); \
+ 		} \
+ 	} while (0)
+@@ -133,7 +138,7 @@ void die(const char *fmt, ...);
+ bool slurp(const char *filename, char *destination, int size);
+ 
+ /* src/output.c */
+-void print_seperator();
++void print_seperator(const char *separator);
+ char *color(const char *colorstr);
+ char *endcolor() __attribute__ ((pure));
+ void reset_cursor(void);
+diff --git a/man/i3status.man b/man/i3status.man
+index 614e22c..7ba4422 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -160,14 +160,41 @@ easier because the terminal-output of i3status becomes much more readable, but
+ should only used for such quick glances, because it will only support very
+ basic output-features (for example you only get 3 bits of color depth).
+ none::
+-Does not use any color codes. Separates values by the pipe symbol. This should
+-be used with i3bar and can be used for custom scripts.
++Does not use any color codes. Separates values by the pipe symbol by default.
++This should be used with i3bar and can be used for custom scripts.
+ 
+ It's also possible to use the color_good, color_degraded, color_bad directives
+ to define specific colors per module. If one of these directives is defined
+ in a module section its value will override the value defined in the general
+ section just for this module.
+ 
++If you don't fancy the vertical separators between modules i3status/i3bar
++uses by default, you can employ the +separator+ directive to configure how
++modules are separated. You can either disable the default separator altogether
++setting it to the empty string. You might then define separation as part of a
++module's format string. This is your only option when using the i3bar output
++format as the separator is drawn by i3bar directly otherwise. For the other
++output formats, the provided non-empty string will be automatically enclosed
++with the necessary coloring bits if color support is enabled.
++
++*Example configuration*:
++-------------------------------------------------------------
++general {
++    output_format = "xmobar"
++    separator = "  "
++}
++
++order += "load"
++order += "disk /"
++
++load {
++    format = "[ load: %1min, %5min, %15min ]"
++}
++disk "/" {
++    format = "%avail"
++}
++-------------------------------------------------------------
++
+ === IPv6
+ 
+ This module gets the IPv6 address used for outgoing connections (that is, the
+diff --git a/src/output.c b/src/output.c
+index 4473ca5..e56c892 100644
+--- a/src/output.c
++++ b/src/output.c
+@@ -52,15 +52,18 @@ char *endcolor(void) {
+         else return "";
+ }
+ 
+-void print_seperator(void) {
++void print_seperator(const char *separator) {
++        if (output_format == O_I3BAR || strlen(separator) == 0)
++                return;
++
+         if (output_format == O_DZEN2)
+-                printf("^fg(%s)^p(5;-2)^ro(2)^p()^fg()^p(5)", cfg_getstr(cfg_general, "color_separator"));
++                printf("^fg(%s)%s^fg()", cfg_getstr(cfg_general, "color_separator"), separator);
+         else if (output_format == O_XMOBAR)
+-                printf("<fc=%s> | </fc>", cfg_getstr(cfg_general, "color_separator"));
++                printf("<fc=%s>%s</fc>", cfg_getstr(cfg_general, "color_separator"), separator);
+         else if (output_format == O_TERM)
+-                printf(" %s|%s ", color("color_separator"), endcolor());
++                printf("%s%s%s", color("color_separator"), separator, endcolor());
+         else if (output_format == O_NONE)
+-                printf(" | ");
++                printf("%s", separator);
+ }
+ 
+ /*
+-- 
+1.7.10.4
+

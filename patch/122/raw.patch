@@ -1,0 +1,26 @@
+From dae104613cae89c16c2149be8452234e02304649 Mon Sep 17 00:00:00 2001
+From: jj <haptix@…>
+Date: Sat, 30 Mar 2013 16:00:39 +0100
+Subject: [PATCH 1/2] workspace-change event now sends the previously focused
+ workspace across all outputs (fixes #990)
+
+---
+ src/workspace.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/workspace.c b/src/workspace.c
+index 5a0913b..17f5ac3 100644
+--- a/src/workspace.c
++++ b/src/workspace.c
+@@ -442,7 +442,7 @@ static void _workspace_show(Con *workspace) {
+     } else
+         con_focus(next);
+ 
+-    ipc_send_workspace_focus_event(workspace, old);
++    ipc_send_workspace_focus_event(workspace, current);
+ 
+     DLOG("old = %p / %s\n", old, (old ? old->name : "(null)"));
+     /* Close old workspace if necessary. This must be done *after* doing
+-- 
+1.7.10.4
+

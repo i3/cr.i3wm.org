@@ -1,0 +1,98 @@
+From 69bfd2892d1c405a7deab2fa78f0f1cd4eb14c0b Mon Sep 17 00:00:00 2001
+From: Baptiste Daroussin <bapt@…>
+Date: Fri, 8 Nov 2013 21:13:35 +0100
+Subject: [PATCH] Use _PATH_BSHELL to ensure using a bourne shell
+
+---
+ i3-nagbar/main.c  | 10 ++--------
+ i3bar/src/child.c |  8 ++------
+ src/startup.c     | 11 ++---------
+ 3 files changed, 6 insertions(+), 23 deletions(-)
+
+diff --git a/i3-nagbar/main.c b/i3-nagbar/main.c
+index a9619f9..a93159b 100644
+--- a/i3-nagbar/main.c
++++ b/i3-nagbar/main.c
+@@ -22,6 +22,7 @@
+ #include <getopt.h>
+ #include <limits.h>
+ #include <fcntl.h>
++#include <paths.h>
+ 
+ #include <xcb/xcb.h>
+ #include <xcb/xcb_aux.h>
+@@ -95,15 +96,8 @@ static void start_application(const char *command) {
+         /* Child process */
+         setsid();
+         if (fork() == 0) {
+-            /* Stores the path of the shell */
+-            static const char *shell = NULL;
+-
+-            if (shell == NULL)
+-                if ((shell = getenv("SHELL")) == NULL)
+-                    shell = "/bin/sh";
+-
+             /* This is the child */
+-            execl(shell, shell, "-c", command, (void*)NULL);
++            execl(_PATH_BSHELL, _PATH_BSHELL, "-c", command, (void*)NULL);
+             /* not reached */
+         }
+         exit(0);
+diff --git a/i3bar/src/child.c b/i3bar/src/child.c
+index 4e5e49c..dce0218 100644
+--- a/i3bar/src/child.c
++++ b/i3bar/src/child.c
+@@ -22,6 +22,7 @@
+ #include <yajl/yajl_parse.h>
+ #include <yajl/yajl_version.h>
+ #include <yajl/yajl_gen.h>
++#include <paths.h>
+ 
+ #include "common.h"
+ 
+@@ -423,12 +424,7 @@ void start_child(char *command) {
+                 dup2(pipe_in[1], STDOUT_FILENO);
+                 dup2(pipe_out[0], STDIN_FILENO);
+ 
+-                static const char *shell = NULL;
+-
+-                if ((shell = getenv("SHELL")) == NULL)
+-                    shell = "/bin/sh";
+-
+-                execl(shell, shell, "-c", command, (char*) NULL);
++                execl(_PATH_BSHELL, _PATH_BSHELL, "-c", command, (char*) NULL);
+                 return;
+             default:
+                 /* Parent-process. Reroute streams */
+diff --git a/src/startup.c b/src/startup.c
+index ee51664..85e5dbc 100644
+--- a/src/startup.c
++++ b/src/startup.c
+@@ -17,6 +17,7 @@
+ 
+ #include <sys/types.h>
+ #include <sys/wait.h>
++#include <paths.h>
+ 
+ #define SN_API_NOT_YET_FROZEN 1
+ #include <libsn/sn-launcher.h>
+@@ -191,15 +192,7 @@ void start_application(const char *command, bool no_startup_id) {
+             if (!no_startup_id)
+                 sn_launcher_context_setup_child_process(context);
+ 
+-            /* Stores the path of the shell */
+-            static const char *shell = NULL;
+-
+-            if (shell == NULL)
+-                if ((shell = getenv("SHELL")) == NULL)
+-                    shell = "/bin/sh";
+-
+-            /* This is the child */
+-            execl(shell, shell, "-c", command, (void*)NULL);
++            execl(_PATH_BSHELL, _PATH_BSHELL, "-c", command, (void*)NULL);
+             /* not reached */
+         }
+         _exit(0);
+-- 
+1.8.2
+

@@ -1,0 +1,113 @@
+From 804b51cd09be5f998bcaeae5918d276d8e182ebd Mon Sep 17 00:00:00 2001
+From: Aleksi Blinnikka <aleksi.blinnikka@…>
+Date: Fri, 9 May 2014 19:33:38 +0300
+Subject: [PATCH] Separate border width for floating windows
+
+Floating windows already had their own border style, but the width was
+the same for all windows.
+
+The configuration directives 'new_window' and 'new_float' can now be
+used simultaneously to have different border widths for floating and
+tiled windows.
+
+fixes #1244
+---
+ include/config.h        | 1 +
+ src/con.c               | 9 +++++++--
+ src/config.c            | 1 +
+ src/config_directives.c | 7 ++-----
+ src/manage.c            | 6 +++++-
+ 5 files changed, 16 insertions(+), 8 deletions(-)
+
+diff --git a/include/config.h b/include/config.h
+index 7598241..367eee6 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -98,6 +98,7 @@ struct Config {
+     int container_stack_limit;
+     int container_stack_limit_value;
+     int default_border_width;
++    int default_floating_border_width;
+ 
+     /** Default orientation for new containers */
+     int default_orientation;
+diff --git a/src/con.c b/src/con.c
+index 66c9db6..bf42fc7 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -1090,8 +1090,13 @@ Rect con_border_style_rect(Con *con) {
+     int border_width = con->current_border_width;
+     DLOG("The border width for con is set to: %d\n", con->current_border_width);
+     Rect result;
+-    if (con->current_border_width < 0)
+-        border_width = config.default_border_width;
++    if (con->current_border_width < 0) {
++        if (con->floating >= FLOATING_AUTO_ON) {
++            border_width = config.default_floating_border_width;
++        } else {
++            border_width = config.default_border_width;
++        }
++    }
+     DLOG("Effective border width is set to: %d\n", border_width);
+     /* Shortcut to avoid calling con_adjacent_borders() on dock containers. */
+     int border_style = con_border_style(con);
+diff --git a/src/config.c b/src/config.c
+index bbfae9d..99901e0 100644
+--- a/src/config.c
++++ b/src/config.c
+@@ -255,6 +255,7 @@ void load_configuration(xcb_connection_t *conn, const char *override_configpath,
+     config.default_border = BS_NORMAL;
+     config.default_floating_border = BS_NORMAL;
+     config.default_border_width = logical_px(2);
++    config.default_floating_border_width = logical_px(2);
+     /* Set default_orientation to NO_ORIENTATION for auto orientation. */
+     config.default_orientation = NO_ORIENTATION;
+ 
+diff --git a/src/config_directives.c b/src/config_directives.c
+index f5a592f..3943947 100644
+--- a/src/config_directives.c
++++ b/src/config_directives.c
+@@ -252,9 +252,6 @@ CFGFUN(workspace_layout, const char *layout) {
+ }
+ 
+ CFGFUN(new_window, const char *windowtype, const char *border, const long width) {
+-    // FIXME: when using new_float *and* new_window with different border
+-    // types, this breaks because default_border_width gets overwritten.
+-
+     int border_style;
+     int border_width;
+ 
+@@ -274,11 +271,11 @@ CFGFUN(new_window, const char *windowtype, const char *border, const long width)
+ 
+     if (strcmp(windowtype, "new_window") == 0) {
+         config.default_border = border_style;
++        config.default_border_width = border_width;
+     } else {
+         config.default_floating_border = border_style;
++        config.default_floating_border_width = border_width;
+     }
+-
+-    config.default_border_width = border_width;
+ }
+ 
+ CFGFUN(hide_edge_borders, const char *borders) {
+diff --git a/src/manage.c b/src/manage.c
+index 773c3df..c8253f4 100644
+--- a/src/manage.c
++++ b/src/manage.c
+@@ -430,7 +430,11 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+ 
+     if (motif_border_style != BS_NORMAL) {
+         DLOG("MOTIF_WM_HINTS specifies decorations (border_style = %d)\n", motif_border_style);
+-        con_set_border_style(nc, motif_border_style, config.default_border_width);
++        if (want_floating) {
++            con_set_border_style(nc, motif_border_style, config.default_floating_border_width);
++        } else {
++            con_set_border_style(nc, motif_border_style, config.default_border_width);
++        }
+     }
+ 
+     /* to avoid getting an UnmapNotify event due to reparenting, we temporarily
+-- 
+1.9.2
+

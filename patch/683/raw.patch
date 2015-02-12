@@ -1,0 +1,60 @@
+From a0a3b82671e61d2c77dce4166055cf6157693b93 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ingo=20B=C3=BCrk?= <ingo.buerk@…>
+Date: Tue, 2 Dec 2014 21:38:30 +0100
+Subject: [PATCH] #1403: ensure align = left is the default and update
+ documentation accordingly
+
+---
+ docs/i3bar-protocol    | 2 +-
+ i3bar/include/common.h | 1 +
+ i3bar/src/child.c      | 6 +++---
+ 3 files changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/docs/i3bar-protocol b/docs/i3bar-protocol
+index 9276315..0ca2fd8 100644
+--- a/docs/i3bar-protocol
++++ b/docs/i3bar-protocol
+@@ -148,7 +148,7 @@ min_width::
+         when you want to set a sensible minimum width regardless of which font you
+         are using, and at what particular size.
+ align::
+-	Align text on the +center+ (default), +right+ or +left+ of the block, when
++	Align text on the +center+, +right+ or +left+ (default) of the block, when
+ 	the minimum width of the latter, specified by the +min_width+ key, is not
+ 	reached.
+ name and instance::
+diff --git a/i3bar/include/common.h b/i3bar/include/common.h
+index 31ac516..e8b6be0 100644
+--- a/i3bar/include/common.h
++++ b/i3bar/include/common.h
+@@ -27,6 +27,7 @@ struct rect_t {
+ };
+ 
+ typedef enum {
++    /* First value to make it the default. */
+     ALIGN_LEFT,
+     ALIGN_CENTER,
+     ALIGN_RIGHT
+diff --git a/i3bar/src/child.c b/i3bar/src/child.c
+index 0bbf2a4..4b09daa 100644
+--- a/i3bar/src/child.c
++++ b/i3bar/src/child.c
+@@ -188,12 +188,12 @@ static int stdin_string(void *context, const unsigned char *val, size_t len) {
+         sasprintf(&(ctx->block.color), "%.*s", len, val);
+     }
+     if (strcasecmp(ctx->last_map_key, "align") == 0) {
+-        if (len == strlen("left") && !strncmp((const char *)val, "left", strlen("left"))) {
+-            ctx->block.align = ALIGN_LEFT;
++        if (len == strlen("center") && !strncmp((const char *)val, "center", strlen("center"))) {
++            ctx->block.align = ALIGN_CENTER;
+         } else if (len == strlen("right") && !strncmp((const char *)val, "right", strlen("right"))) {
+             ctx->block.align = ALIGN_RIGHT;
+         } else {
+-            ctx->block.align = ALIGN_CENTER;
++            ctx->block.align = ALIGN_LEFT;
+         }
+     } else if (strcasecmp(ctx->last_map_key, "min_width") == 0) {
+         i3String *text = i3string_from_utf8_with_length((const char *)val, len);
+-- 
+1.9.1
+

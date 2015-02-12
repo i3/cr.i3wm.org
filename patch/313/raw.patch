@@ -1,0 +1,24 @@
+From 940412a2a1e2bea23d9f768b2d6dc720a9a7b90e Mon Sep 17 00:00:00 2001
+From: Sebastian Ullrich <sebastianu@…>
+Date: Mon, 11 Nov 2013 23:23:00 +0100
+Subject: [PATCH] default config: show %avail disk space instead of %free
+
+The former property is generally more relevant to end users
+---
+ i3status.conf | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/i3status.conf b/i3status.conf
+index 6b1d2d7..01c182c 100644
+--- a/i3status.conf
++++ b/i3status.conf
+@@ -53,5 +53,5 @@ load {
+ }
+ 
+ disk "/" {
+-        format = "%free"
++        format = "%avail"
+ }
+-- 
+1.8.4.2
+

@@ -1,0 +1,195 @@
+From 6d6bf06d7f3d8087c465e55806b53a58dd0c2445 Mon Sep 17 00:00:00 2001
+From: Kinware AB <oss@…>
+Date: Tue, 12 Nov 2013 20:51:23 +0100
+Subject: [PATCH] Add support for file_exists directive.
+
+---
+ i3status.c              |   14 ++++++++++++++
+ include/i3status.h      |    2 ++
+ man/i3status.man        |   17 +++++++++++++++++
+ src/general.c           |   17 +++++++++++++++++
+ src/print_file_exists.c |   33 +++++++++++++++++++++++++++++++++
+ 5 files changed, 83 insertions(+)
+ create mode 100644 src/print_file_exists.c
+
+diff --git a/i3status.c b/i3status.c
+index e99e627..f8f114c 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -210,6 +210,13 @@ int main(int argc, char *argv[]) {
+                 CFG_END()
+         };
+ 
++        cfg_opt_t file_exists_opts[] = {
++                CFG_STR("file", NULL, CFGF_NONE),
++                CFG_STR("format", "%title: %status", CFGF_NONE),
++                CFG_CUSTOM_COLOR_OPTS,
++                CFG_END()
++        };
++
+         cfg_opt_t wireless_opts[] = {
+                 CFG_STR("format_up", "W: (%quality at %essid, %bitrate) %ip", CFGF_NONE),
+                 CFG_STR("format_down", "W: down", CFGF_NONE),
+@@ -297,6 +304,7 @@ int main(int argc, char *argv[]) {
+                 CFG_STR_LIST("order", "{}", CFGF_NONE),
+                 CFG_SEC("general", general_opts, CFGF_NONE),
+                 CFG_SEC("run_watch", run_watch_opts, CFGF_TITLE | CFGF_MULTI),
++                CFG_SEC("file_exists", file_exists_opts, CFGF_TITLE | CFGF_MULTI),
+                 CFG_SEC("wireless", wireless_opts, CFGF_TITLE | CFGF_MULTI),
+                 CFG_SEC("ethernet", ethernet_opts, CFGF_TITLE | CFGF_MULTI),
+                 CFG_SEC("battery", battery_opts, CFGF_TITLE | CFGF_MULTI),
+@@ -480,6 +488,12 @@ int main(int argc, char *argv[]) {
+                                 SEC_CLOSE_MAP;
+                         }
+ 
++                        CASE_SEC_TITLE("file_exists") {
++                                SEC_OPEN_MAP("file_exists");
++                                print_file_exists(json_gen, buffer, title, cfg_getstr(sec, "file"), cfg_getstr(sec, "format"));
++                                SEC_CLOSE_MAP;
++                        }
++
+                         CASE_SEC_TITLE("disk") {
+                                 SEC_OPEN_MAP("disk_info");
+                                 print_disk_info(json_gen, buffer, title, cfg_getstr(sec, "format"));
+diff --git a/include/i3status.h b/include/i3status.h
+index d0361d1..6388579 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -131,6 +131,7 @@ typedef enum { CS_DISCHARGING, CS_CHARGING, CS_FULL } charging_status_t;
+ char *skip_character(char *input, char character, int amount);
+ void die(const char *fmt, ...);
+ bool slurp(const char *filename, char *destination, int size);
++bool file_exists(const char *file);
+ 
+ /* src/output.c */
+ void print_seperator();
+@@ -152,6 +153,7 @@ void print_ddate(yajl_gen json_gen, char *buffer, const char *format, time_t t);
+ const char *get_ip_addr();
+ void print_wireless_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
+ void print_run_watch(yajl_gen json_gen, char *buffer, const char *title, const char *pidfile, const char *format);
++void print_file_exists(yajl_gen json_gen, char *buffer, const char *title, const char *file, const char *format);
+ void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const char *path, const char *format, int);
+ void print_cpu_usage(yajl_gen json_gen, char *buffer, const char *format);
+ void print_eth_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
+diff --git a/man/i3status.man b/man/i3status.man
+index eb23bd1..946a7a7 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -51,6 +51,7 @@ order += "ipv6"
+ order += "disk /"
+ order += "run_watch DHCP"
+ order += "run_watch VPN"
++order += "file_exists VPN"
+ order += "wireless wlan0"
+ order += "ethernet eth0"
+ order += "battery 0"
+@@ -82,9 +83,15 @@ run_watch DHCP {
+ }
+ 
+ run_watch VPN {
++        # status of backgrounded vpnc
+         pidfile = "/var/run/vpnc/pid"
+ }
+ 
++file_exists VPN {
++        # status of 'vpnc --no-detach' when launched by nmcli/nm-applet
++        file = "/proc/sys/net/ipv4/conf/tun0"
++}
++
+ tztime local {
+         format = "%Y-%m-%d %H:%M:%S"
+ }
+@@ -193,6 +200,16 @@ a specific application, such as a VPN client or your DHCP client is running.
+ 
+ *Example format*: +%title: %status+
+ 
++=== File-exists
++
++Expands the given path to a filename and checks if the file exists in the
++filesystem. You can use this to check if something is active, like
++for example a VPN tunnel managed by NetworkManager.
++
++*Example order*: +file_exists VPN+
++
++*Example format*: +%title: %status+
++
+ === Wireless
+ 
+ Gets the link quality and ESSID of the given wireless network interface. You
+diff --git a/src/general.c b/src/general.c
+index 7ec80a8..9580155 100644
+--- a/src/general.c
++++ b/src/general.c
+@@ -6,6 +6,7 @@
+ #include <stdlib.h>
+ #include <unistd.h>
+ #include <sys/fcntl.h>
++#include <sys/stat.h>
+ 
+ #include "i3status.h"
+ 
+@@ -28,6 +29,22 @@ bool slurp(const char *filename, char *destination, int size) {
+         return true;
+ }
+ 
++
++/*
++ * Checks if the specified file exists in the filesystem or not.
++ * Ignores type of file (i.e regular, device, directory, etc).
++ *
++ */
++bool file_exists(const char *file) {
++        struct stat st;
++
++        if (0 != stat(file, &st))
++                return false;
++
++        return true;
++}
++
++
+ /*
+  * Skip the given character for exactly 'amount' times, returns
+  * a pointer to the first non-'character' character in 'input'.
+diff --git a/src/print_file_exists.c b/src/print_file_exists.c
+new file mode 100644
+index 0000000..c13f1c1
+--- /dev/null
++++ b/src/print_file_exists.c
+@@ -0,0 +1,33 @@
++#include <stdio.h>
++#include <string.h>
++#include <yajl/yajl_gen.h>
++#include <yajl/yajl_version.h>
++#include "i3status.h"
++
++void print_file_exists(yajl_gen json_gen, char *buffer, const char *title, const char *file, const char *format) {
++	bool exists = file_exists(file);
++	const char *walk;
++	char *outwalk = buffer;
++
++	INSTANCE(file);
++
++	START_COLOR((exists ? "color_good" : "color_bad"));
++
++        for (walk = format; *walk != '\0'; walk++) {
++                if (*walk != '%') {
++			*(outwalk++) = *walk;
++                        continue;
++                }
++
++                if (strncmp(walk+1, "title", strlen("title")) == 0) {
++			outwalk += sprintf(outwalk, "%s", title);
++                        walk += strlen("title");
++                } else if (strncmp(walk+1, "status", strlen("status")) == 0) {
++			outwalk += sprintf(outwalk, "%s", (exists ? "yes" : "no"));
++                        walk += strlen("status");
++                }
++        }
++
++	END_COLOR;
++	OUTPUT_FULL_TEXT(buffer);
++}
+-- 
+1.7.10.4
+

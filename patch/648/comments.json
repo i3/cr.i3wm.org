@@ -1,0 +1,44 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 31,
+    "Comment": "I tried to rename \"xdummy\" to \"xserver\" where it made sense to make it easier to change to something else besides Xephyr if the need ever arises again.\n\nTODO: rename lib package from StartXDummy to StartXServer\n\nTODO: documentation update\n\nTODO: remove xdummy script from repo\n\n(let me know if you want all that in one commit)",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 57,
+    "Comment": "good?",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 205,
+    "Comment": "good?",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 57,
+    "Comment": "Hm, it’d be better if $PATH was respected, otherwise this will not work on systems where Xephyr is not in /usr/bin (perhaps NixOS? not 100% sure though).\n\nInstead, we could just run Xephyr -help and check if that exited with 0.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 57,
+    "Comment": "Also, this needs to go into a separate check anyway, because the error message suggests running “make” is the fix, but it clearly isn’t :). It should talk about installing the xserver-xephyr package.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 31,
+    "Comment": "The rename I’d do in a follow-up commit. Documentation and removing XDummy can go into the same commit :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 205,
+    "Comment": "Yeah, looks good.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "jj",
+    "Line": 60,
+    "Comment": "no, we do need to check for an existing name here, because otherwise the bar would not hide when releasing the i3bar modifier after switching to \"default\" mode by pressing the i3bar modifier.",
+    "EmailHash": "2b7ea79fd33d4f8c0bb3ef8a9dc97f64"
+  }
+]

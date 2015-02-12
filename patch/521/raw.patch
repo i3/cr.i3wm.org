@@ -1,0 +1,129 @@
+From 21a354710db50f4fe3434a04c8fd3f8dffbf913a Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Mon, 28 Apr 2014 18:38:06 -0400
+Subject: [PATCH] Implement the window::fullscreen_mode event
+
+The fullscreen_mode event is a window with the "change" property set to
+"fullscreen_mode". This event should be emitted whenever a window enters
+or exits fullscreen mode.
+
+This event can be used to turn off dpms off when a window is fullscreen
+or display the fullscreen container name in the status line for
+instance.
+---
+ docs/ipc                                | 10 ++++--
+ src/con.c                               |  3 ++
+ testcases/t/225-ipc-window-fullscreen.t | 59 +++++++++++++++++++++++++++++++++
+ 3 files changed, 69 insertions(+), 3 deletions(-)
+ create mode 100644 testcases/t/225-ipc-window-fullscreen.t
+
+diff --git a/docs/ipc b/docs/ipc
+index 7fb9f1a..c14dfa7 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -634,7 +634,7 @@ mode (2)::
+ window (3)::
+ 	Sent when a client's window is successfully reparented (that is when i3
+ 	has finished fitting it into a container), when a window received input
+-	focus or when a window title has been updated.
++	focus or when certain properties of the window have changed.
+ barconfig_update (4)::
+     Sent when the hidden_state or mode field in the barconfig of any bar
+     instance was updated.
+@@ -714,8 +714,12 @@ mode is simply named default.
+ === window event
+ 
+ This event consists of a single serialized map containing a property
+-+change (string)+ which indicates the type of the change ("focus", "new",
+-"title").
+++change (string)+ which indicates the type of the change
++
++* +new+ - the window has become managed by i3
++* +focus+ - the window has received input focus
++* +title+ - the window's title has changed
++* +fullscreen_mode+ - the window has entered or exited fullscreen mode
+ 
+ Additionally a +container (object)+ field will be present, which consists
+ of the window's parent container. Be aware that for the "new" event, the
+diff --git a/src/con.c b/src/con.c
+index 5a3c88d..6918d64 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -609,6 +609,9 @@ void con_toggle_fullscreen(Con *con, int fullscreen_mode) {
+ 
+     DLOG("mode now: %d\n", con->fullscreen_mode);
+ 
++    /* Send an ipc window "fullscreen_mode" event */
++    ipc_send_window_event("fullscreen_mode", con);
++
+     /* update _NET_WM_STATE if this container has a window */
+     /* TODO: when a window is assigned to a container which is already
+      * fullscreened, this state needs to be pushed to the client, too */
+diff --git a/testcases/t/225-ipc-window-fullscreen.t b/testcases/t/225-ipc-window-fullscreen.t
+new file mode 100644
+index 0000000..480bc73
+--- /dev/null
++++ b/testcases/t/225-ipc-window-fullscreen.t
+@@ -0,0 +1,59 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Tests that the ipc window::fullscreen_mode event works properly
++#
++# Bug still in: 4.7.2-135-g7deb23c
++use i3test;
++
++my $i3 = i3(get_socket_path());
++$i3->connect()->recv;
++
++my $cv;
++my $t;
++
++sub reset_test {
++    $cv = AE::cv;
++    $t = AE::timer(0.5, 0, sub { $cv->send(0); });
++}
++
++reset_test;
++
++$i3->subscribe({
++        window => sub {
++            my ($e) = @_;
++            if ($e->{change} eq 'fullscreen_mode') {
++                $cv->send($e->{container});
++            }
++        },
++    })->recv;
++
++my $window = open_window;
++
++cmd 'fullscreen';
++my $con = $cv->recv;
++
++ok($con, 'got fullscreen window event (on)');
++is($con->{fullscreen_mode}, 1, 'window is fullscreen');
++
++reset_test;
++cmd 'fullscreen';
++$con = $cv->recv;
++
++ok($con, 'got fullscreen window event (off)');
++is($con->{fullscreen_mode}, 0, 'window is not fullscreen');
++
++done_testing;
+-- 
+1.9.2
+

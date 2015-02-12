@@ -1,0 +1,27 @@
+From 0df9a0fb1122b43811d8a5ec87d5fc51781cb29b Mon Sep 17 00:00:00 2001
+From: David Coppa <dcoppa@…>
+Date: Wed, 26 Mar 2014 10:01:50 +0100
+Subject: [PATCH] OpenBSD does not have librt
+
+---
+ common.mk | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/common.mk b/common.mk
+index b946206..aae09be 100644
+--- a/common.mk
++++ b/common.mk
+@@ -171,8 +171,8 @@ endif
+ 
+ ifeq ($(UNAME),Darwin)
+ LIBS += -liconv
+-else
+-# Darwin (Mac OS X) doesn’t have librt
++else ifneq ($(UNAME),OpenBSD)
++# Darwin (Mac OS X) and OpenBSD do not have librt
+ LIBS += -lrt
+ endif
+ 
+-- 
+1.7.12.4
+

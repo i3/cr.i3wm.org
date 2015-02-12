@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 44,
+    "Comment": "For some of these types, I think the containers border style should be changed, or perhaps we should try not to manage the window at all. It's hard to say without some real examples of where these types are used.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "The spec says:\n\n“_NET_WM_WINDOW_TYPE_COMBO should be used on the windows that are popped up by combo boxes. An example is a window that appears below a text field with a list of suggested completions. This property is typically used on override-redirect windows.”\n\nGiven that they set override-redirect, they are not managed by i3 anyway, so we don’t need to support this type, I think.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "Actually, this applies to all the types you introduce in this patch.\n\nCan you clarify what your intention is? Are there actually applications which use these hints and don’t set override-redirect=1? If so, which?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 20,
+    "Comment": "I encountered the bug on some Juce-based applications (for example Loomer plugins, such as http://www.loomer.co.uk/downloads/Aspect/Aspect_x86_64.tar.gz). I contacted the maintainer of these applications to see if the correct hints could be set.",
+    "EmailHash": ""
+  }
+]

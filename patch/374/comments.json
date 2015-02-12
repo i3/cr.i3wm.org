@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 25,
+    "Comment": "It turns out it actually does need a titlebar if it is in a stack or tabs.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 25,
+    "Comment": "Not sure what you want to tell me with that comment.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 26,
+    "Comment": "I am not sure this is the correct way to express what you mean. When the border style is BS_NONE, shouldn’t rect.height end up being 0 in the loop above anyway?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 26,
+    "Comment": "In the case where the container is within a stack or tabs, it shouldn't be, because the extent of the title bar is included in the area of this pixmap.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 25,
+    "Comment": "If the borderless container is moved into a stack or tabs, the title bar won't be rendered.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 25,
+    "Comment": "Ah. Can you amend the comment in the code to reflect this special case? Something like “Note that we check for the border style, since BS_NONE containers in a stack have rect.height \u003e 0, but don’t need their own pixmap.” should be accurate if I understood you correctly.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

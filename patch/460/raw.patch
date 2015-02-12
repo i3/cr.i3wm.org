@@ -1,0 +1,64 @@
+From 808d8a96da92025de47ad81eddedeb26925181b9 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Vytautas=20=C5=A0altenis?= <vytas@…>
+Date: Sun, 2 Mar 2014 23:53:42 +0200
+Subject: [PATCH 1/6] Extract if(dpms) calls to wrapper functions
+
+---
+ i3lock.c | 20 ++++++++++++++------
+ 1 file changed, 14 insertions(+), 6 deletions(-)
+
+diff --git a/i3lock.c b/i3lock.c
+index 8c33ea4..28a93f0 100644
+--- a/i3lock.c
++++ b/i3lock.c
+@@ -73,6 +73,16 @@ void u8_dec(char *s, int *i) {
+     (void)(isutf(s[--(*i)]) || isutf(s[--(*i)]) || isutf(s[--(*i)]) || --(*i));
+ }
+ 
++static void turn_monitors_on(void) {
++    if (dpms)
++        dpms_set_mode(conn, XCB_DPMS_DPMS_MODE_ON);
++}
++
++static void turn_monitors_off(void) {
++    if (dpms)
++        dpms_set_mode(conn, XCB_DPMS_DPMS_MODE_OFF);
++}
++
+ /*
+  * Loads the XKB keymap from the X11 server and feeds it to xkbcommon.
+  * Necessary so that we can properly let xkbcommon track the keyboard state and
+@@ -214,8 +224,7 @@ static void input_done(void) {
+         clear_password_memory();
+         /* Turn the screen on, as it may have been turned off
+          * on release of the 'enter' key. */
+-        if (dpms)
+-            dpms_set_mode(conn, XCB_DPMS_DPMS_MODE_ON);
++        turn_monitors_on();
+         exit(0);
+     }
+ 
+@@ -500,8 +509,8 @@ static void xcb_check_cb(EV_P_ ev_check *w, int revents) {
+ 
+                 /* If this was the backspace or escape key we are back at an
+                  * empty input, so turn off the screen if DPMS is enabled */
+-                if (dpms && input_position == 0)
+-                    dpms_set_mode(conn, XCB_DPMS_DPMS_MODE_OFF);
++                if (input_position == 0)
++                    turn_monitors_off();
+ 
+                 break;
+ 
+@@ -774,8 +783,7 @@ int main(int argc, char *argv[]) {
+      * keyboard. */
+     (void)load_keymap();
+ 
+-    if (dpms)
+-        dpms_set_mode(conn, XCB_DPMS_DPMS_MODE_OFF);
++    turn_monitors_off();
+ 
+     /* Initialize the libev event loop. */
+     main_loop = EV_DEFAULT;
+-- 
+1.8.3.2
+

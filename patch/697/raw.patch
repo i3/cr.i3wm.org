@@ -1,0 +1,26 @@
+From d0872f8980afc0567123d1b3ab769e3bd07f8649 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ingo=20B=C3=BCrk?= <ingo.buerk@…>
+Date: Wed, 24 Dec 2014 15:45:12 -0500
+Subject: [PATCH] Inset the urgent background of a status block for consistency
+ with workspace buttons. fixes #1423
+
+---
+ i3bar/src/xcb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index 30dd837..179f827 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -191,7 +191,7 @@ void refresh_statusline(void) {
+ 
+             /* The urgent background “overshoots” by 2 px so that the text that
+              * is printed onto it will not be look so cut off. */
+-            xcb_rectangle_t bg_rect = { x - logical_px(2), 0, block->width + logical_px(4), bar_height };
++            xcb_rectangle_t bg_rect = { x - logical_px(2), logical_px(1), block->width + logical_px(4), bar_height - logical_px(2) };
+             xcb_poly_fill_rectangle(xcb_connection, statusline_pm, statusline_ctx, 1, &bg_rect);
+         } else {
+             fg_color = (block->color ? get_colorpixel(block->color) : colors.bar_fg);
+-- 
+2.1.0
+

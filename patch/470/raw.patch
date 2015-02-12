@@ -1,0 +1,29 @@
+From 33b77d3901ee192e167f974c8126a36913147471 Mon Sep 17 00:00:00 2001
+From: Marco Hunsicker <i3@…>
+Date: Sat, 15 Mar 2014 14:50:07 +0100
+Subject: [PATCH] Avoid unnecessary string duplication
+
+This patch removes an unnecessary string duplication that was only
+used to avoid a compiler warning.
+---
+ i3status.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index 1811884..7ac4e19 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -104,8 +104,8 @@ static int parse_align(cfg_t *context, cfg_opt_t *option, const char *value, voi
+                 die("Invalid alignment attribute found in section %s, line %d: \"%s\"\n"
+                     "Valid attributes are: left, center, right\n", context->name, context->line, value);
+ 
+-        char **cresult = result;
+-        *cresult = sstrdup(value);
++        const char **cresult = result;
++        *cresult = value;
+ 
+         return 0;
+ }
+-- 
+1.7.10.4
+

@@ -1,0 +1,137 @@
+From 49c421c16b1efd7baf896853bb9092854ad1ff5b Mon Sep 17 00:00:00 2001
+From: "Piotr S. Staszewski" <p.staszewski@…>
+Date: Fri, 11 Jan 2013 19:58:32 +0100
+Subject: [PATCH] Add a new IPC event for changes on windows.
+
+Added new event id (I3_IPC_EVENT_WINDOW) so that a an IPC client can
+subscribe to events on windows. Added a basic window event that gets
+triggered when a window gets successfully reparented. This new event
+also dumps the container data, so that IPC clients can get the initial
+window name. IPC clients wishing to see window events should subscribe
+to 'window'.
+---
+ docs/ipc         | 27 +++++++++++++++++++++++++++
+ include/i3/ipc.h |  3 +++
+ src/manage.c     | 35 +++++++++++++++++++++++++++++++++++
+ 3 files changed, 65 insertions(+)
+
+diff --git a/docs/ipc b/docs/ipc
+index c32c59e..eb1598a 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -621,6 +621,9 @@ output (1)::
+ 	outputs, CRTCs or output properties).
+ mode (2)::
+ 	Sent whenever i3 changes its binding mode.
++window (3)::
++	Sent when a client's window is successfully reparented (that is when i3
++	has finished fitting it into a container).
+ 
+ *Example:*
+ --------------------------------------------------------------------
+@@ -694,6 +697,30 @@ mode is simply named default.
+ { "change": "default" }
+ ---------------------------
+ 
++=== window event
++
++This event consists of a single serialized map containing a property
+++window (string)+ which currently can indicate only that a new window
++has been successfully reparented (the value will be "new").
++
++Additionally a +container (object)+ field will be present, which consists
++of the window's parent container. Be aware that the container will hold
++the initial name of the newly reparented window (e.g. if you run urxvt
++with a shell that changes the title, you will still at this point get the
++window title as "urxvt").
++
++*Example:*
++---------------------------
++{
++ "window": "new",
++ "container": {
++  "id": 35569536,
++  "type": 2,
++  ...
++ }
++}
++---------------------------
++
+ == See also (existing libraries)
+ 
+ [[libraries]]
+diff --git a/include/i3/ipc.h b/include/i3/ipc.h
+index 2380eda..2a3321b 100644
+--- a/include/i3/ipc.h
++++ b/include/i3/ipc.h
+@@ -96,4 +96,7 @@ typedef struct i3_ipc_header {
+ /* The output event will be triggered upon mode changes */
+ #define I3_IPC_EVENT_MODE                       (I3_IPC_EVENT_MASK | 2)
+ 
++/* The window event will be triggered upon window changes */
++#define I3_IPC_EVENT_WINDOW                     (I3_IPC_EVENT_MASK | 3)
++
+ #endif
+diff --git a/src/manage.c b/src/manage.c
+index ff7fdc6..78a351d 100644
+--- a/src/manage.c
++++ b/src/manage.c
+@@ -10,6 +10,9 @@
+  *
+  */
+ #include "all.h"
++#include "yajl_utils.h"
++
++#include <yajl/yajl_gen.h>
+ 
+ /*
+  * Go through all existing windows (if the window manager is restarted) and manage them
+@@ -73,6 +76,35 @@ void restore_geometry(void) {
+ }
+ 
+ /*
++ * The following function sends a new window event, which consists
++ * of fields "window" and "container", the latter containing a dump
++ * of the window's container.
++ *
++ */
++static void ipc_send_window_new_event(Con *con) {
++    setlocale(LC_NUMERIC, "C");
++    yajl_gen gen = ygenalloc();
++
++    y(map_open);
++
++    ystr("window");
++    ystr("new");
++
++    ystr("container");
++    dump_node(gen, con, false);
++
++    y(map_close);
++
++    const unsigned char *payload;
++    ylength length;
++    y(get_buf, &payload, &length);
++ 
++    ipc_send_event("window", I3_IPC_EVENT_WINDOW, (const char *)payload);
++    y(free);
++    setlocale(LC_NUMERIC, "");
++}
++
++/*
+  * Do some sanity checks and then reparent the window.
+  *
+  */
+@@ -428,6 +460,9 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+     }
+     tree_render();
+ 
++    /* Send an event about window creation */
++    ipc_send_window_new_event(nc);
++
+ geom_out:
+     free(geom);
+ out:
+-- 
+1.8.1.3
+

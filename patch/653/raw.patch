@@ -1,0 +1,50 @@
+From 51e4ed3a4e1b4b1327be37ba76410e7f86db870c Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sun, 5 Oct 2014 14:50:30 -0400
+Subject: [PATCH] Bugfix: check symbol for NULL in binding json dump
+
+When dumping a binding, as is done during the binding event, check
+symbol for NULL. If it is, dump json null. This prevents a crash when
+running a binding that was configured with bindcode.
+
+fixes #1379
+---
+ docs/ipc  | 4 ++--
+ src/ipc.c | 5 ++++-
+ 2 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/docs/ipc b/docs/ipc
+index c95bcd5..3cf6636 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -769,9 +769,9 @@ input_code (integer)::
+ 	If the binding was configured with +bindcode+, this will be the key code
+ 	that was given for the binding. If the binding is a mouse binding, it will be
+ 	the number of the mouse button that was pressed. Otherwise it will be 0.
+-symbol (string)::
++symbol (string or null)::
+ 	If this is a keyboard binding that was configured with +bindsym+, this
+-	field will contain the given symbol.
++	field will contain the given symbol. Otherwise it will be +null+.
+ input_type (string)::
+ 	This will be +"keyboard"+ or +"mouse"+ depending on whether or not this was
+ 	a keyboard or a mouse binding.
+diff --git a/src/ipc.c b/src/ipc.c
+index e93fe56..4c39a04 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -160,7 +160,10 @@ static void dump_binding(yajl_gen gen, Binding *bind) {
+     ystr((const char*)(bind->input_type == B_KEYBOARD ? "keyboard" : "mouse"));
+ 
+     ystr("symbol");
+-    ystr(bind->symbol);
++    if (bind->symbol == NULL)
++        y(null);
++    else
++        ystr(bind->symbol);
+ 
+     ystr("command");
+     ystr(bind->command);
+-- 
+2.1.2
+

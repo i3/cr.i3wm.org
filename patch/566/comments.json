@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 26,
+    "Comment": "I don't like the \"reason\" field, and I can't see how it serves much purpose here. It does however add a lot of complexity to events, and events are already kind of a mess.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 134,
+    "Comment": "For these three reasons, I think they should all be replaced by “_NET_WM_STATE_DEMANDS_ATTENTION”.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 179,
+    "Comment": "left-over from coding/debugging, please clean up.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 26,
+    "Comment": "I think the reason field is fine (as discussed on the ML), just the implementation is overly complex. See the next comment.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 57,
+    "Comment": "Why not just add a const char *reason that will be included if non-NULL? The whole “let’s make this fuction accept an array of key/value pairs” is not consistent with the code we currently have and seems overly complex for introducing a new field.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

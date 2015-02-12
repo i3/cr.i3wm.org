@@ -1,0 +1,40 @@
+From 7dedc6635bbf7f6ed510df51d3959ed3bf150b03 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sun, 4 May 2014 07:50:23 -0400
+Subject: [PATCH] Rerender on button press only when focus changes
+
+On button press events, the only change in state that would presently
+require rerendering the tree is when the focused window changes.
+---
+ src/click.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/src/click.c b/src/click.c
+index 91964b9..9b85b71 100644
+--- a/src/click.c
++++ b/src/click.c
+@@ -171,6 +171,9 @@ static int route_click(Con *con, xcb_button_press_event_t *event, const bool mod
+     DLOG("--> OUTCOME = %p\n", con);
+     DLOG("type = %d, name = %s\n", con->type, con->name);
+ 
++    /* if focus changes, we must rerender */
++    Con *initially_focused = focused;
++
+     /* don’t handle dockarea cons, they must not be focused */
+     if (con->parent->type == CT_DOCKAREA)
+         goto done;
+@@ -297,7 +300,10 @@ static int route_click(Con *con, xcb_button_press_event_t *event, const bool mod
+ done:
+     xcb_allow_events(conn, XCB_ALLOW_REPLAY_POINTER, event->time);
+     xcb_flush(conn);
+-    tree_render();
++
++    if (initially_focused != focused)
++        tree_render();
++
+     return 0;
+ }
+ 
+-- 
+1.9.2
+

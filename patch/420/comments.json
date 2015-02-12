@@ -1,0 +1,50 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 273,
+    "Comment": "After con_focus(), you need to call tree_render();, otherwise the focus change is not necessarily pushed to X11.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 288,
+    "Comment": "To answer your question from #413: Intuitively, I think you are right and a not-attached container should not receive focus. If you can figure out why this happens and fix it in a separate patch, that’d be great.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 108,
+    "Comment": "s/is_window_name_changed/window_name_changed/ please",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 309,
+    "Comment": "What about the proposed way to avoid sending out unnecessary focus events by introducing another field to track window focus? Basically duplicating focused_id, but ignoring the click-handling. Would you be fine with that?",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 108,
+    "Comment": "Sorry :o",
+    "EmailHash": "22f8904ca7bfa6dea52dc3cd733b4645"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 288,
+    "Comment": "I've submitted patch #424 that should fix this issue.",
+    "EmailHash": "22f8904ca7bfa6dea52dc3cd733b4645"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 309,
+    "Comment": "If the variable is local to src/x.c (i.e. static) and clearly named, I think it’s okay to use it for properly generating IPC events.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 309,
+    "Comment": "OK. I will try that. Thanks.",
+    "EmailHash": "22f8904ca7bfa6dea52dc3cd733b4645"
+  }
+]

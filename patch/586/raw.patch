@@ -1,0 +1,182 @@
+From dd983701b332b645a8ccc10a1b828f6e85b6a012 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 17 Jun 2014 09:34:13 -0400
+Subject: [PATCH] Feature: implement mouse bindings
+
+A configured mouse binding (for example `bindsym button3 kill`) runs
+its command when the mouse button is pressed over parts of a container.
+
+If the binding has no modifer, it will only run when the button is
+clicked on the window titlebar.
+
+Otherwise if the binding has a modifier, it will run over the titlebar
+or any part of the contained window.
+
+fixes #558
+---
+ docs/userguide     | 34 ++++++++++++++++++++++++++++++++++
+ include/bindings.h |  9 +++++----
+ src/bindings.c     | 21 ++++++++++++++-------
+ src/click.c        | 24 ++++++++++++++++++++++++
+ src/key_press.c    |  2 +-
+ 5 files changed, 78 insertions(+), 12 deletions(-)
+
+diff --git a/docs/userguide b/docs/userguide
+index 681c19f..804877d 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -394,6 +394,40 @@ umlauts or special characters 'and' having some comfortably reachable key
+ bindings. For example, when typing, capslock+1 or capslock+2 for switching
+ workspaces is totally convenient. Try it :-).
+ 
++[[mousebindings]]
++
++=== Mouse bindings
++
++A mouse binding makes i3 execute a command upon pressing a specific mouse
++button in the scope of the clicked container (see <<command_criteria>>). You
++can configure mouse bindings in a similar way to key bindings.
++
++*Syntax*:
++----------------------------------
++bindsym [Modifiers+]button[n] command
++----------------------------------
++
++If the binding has no modifiers, it will only run when you click on the
++titlebar of the window. Otherwise, it will run when any part of the window is
++clicked.
++
++*Examples*:
++--------------------------------
++# The middle button over a titlebar kills the window
++bindsym button2 kill
++
++# The middle button and a modifer over any part of the window kills the window
++bindsym $mod+button2 kill
++
++# The right button toggles floating
++bindsym button3 floating toggle
++bindsym $mod+button3 floating toggle
++
++# The side buttons move the window around
++bindsym button9 move left
++bindsym button8 move right
++--------------------------------
++
+ [[floating_modifier]]
+ 
+ === The floating modifier
+diff --git a/include/bindings.h b/include/bindings.h
+index e51f5e9..04584ee 100644
+--- a/include/bindings.h
++++ b/include/bindings.h
+@@ -61,9 +61,10 @@ void switch_mode(const char *new_mode);
+ void check_for_duplicate_bindings(struct context *context);
+ 
+ /**
+- * Runs the given binding and handles parse errors. Returns a CommandResult for
+- * running the binding's command. Caller should render tree if
+- * needs_tree_render is true. Free with command_result_free().
++ * Runs the given binding and handles parse errors. If con is passed, it will
++ * execute the command binding with that container selected by criteria.
++ * Returns a CommandResult for running the binding's command. Caller should
++ * render tree if needs_tree_render is true. Free with command_result_free().
+  *
+  */
+-CommandResult *run_binding(Binding *bind);
++CommandResult *run_binding(Binding *bind, Con *con);
+diff --git a/src/bindings.c b/src/bindings.c
+index b17ec13..c6fd3bf 100644
+--- a/src/bindings.c
++++ b/src/bindings.c
+@@ -379,18 +379,25 @@ void check_for_duplicate_bindings(struct context *context) {
+ }
+ 
+ /*
+- * Runs the given binding and handles parse errors. Returns a CommandResult for
+- * running the binding's command. Caller should render tree if
+- * needs_tree_render is true. Free with command_result_free().
++ * Runs the given binding and handles parse errors. If con is passed, it will
++ * execute the command binding with that container selected by criteria.
++ * Returns a CommandResult for running the binding's command. Caller should
++ * render tree if needs_tree_render is true. Free with command_result_free().
+  *
+  */
+-CommandResult *run_binding(Binding *bind) {
++CommandResult *run_binding(Binding *bind, Con *con) {
++    char *command;
++
+     /* We need to copy the command since “reload” may be part of the command,
+      * and then the memory that bind->command points to may not contain the
+      * same data anymore. */
+-    char *command_copy = sstrdup(bind->command);
+-    CommandResult *result = parse_command(command_copy, NULL);
+-    free(command_copy);
++    if (con == NULL)
++        command = sstrdup(bind->command);
++    else
++        sasprintf(&command, "[con_id=\"%d\"] %s", con, bind->command);
++
++    CommandResult *result = parse_command(command, NULL);
++    free(command);
+ 
+     if (result->needs_tree_render)
+         tree_render();
+diff --git a/src/click.c b/src/click.c
+index 2cf0217..7a76c15 100644
+--- a/src/click.c
++++ b/src/click.c
+@@ -177,6 +177,29 @@ static int route_click(Con *con, xcb_button_press_event_t *event, const bool mod
+     if (con->parent->type == CT_DOCKAREA)
+         goto done;
+ 
++    /* if the user has bound an action to this click, it should override the
++     * default behavior. */
++    if (dest == CLICK_DECORATION || dest == CLICK_INSIDE) {
++        Binding *bind = get_binding_from_xcb_event((xcb_generic_event_t *)event);
++        /* clicks over a window decoration will always trigger the binding and
++         * clicks on the inside of the window will only trigger a binding if it
++         * has modifiers. */
++        if (bind && (dest == CLICK_DECORATION || (bind->mods && dest == CLICK_INSIDE))) {
++            CommandResult *result = run_binding(bind, con);
++
++            /* ASYNC_POINTER eats the event */
++            xcb_allow_events(conn, XCB_ALLOW_ASYNC_POINTER, event->time);
++            xcb_flush(conn);
++
++            if (result->needs_tree_render)
++                tree_render();
++
++            command_result_free(result);
++
++            return 0;
++        }
++    }
++
+     /* Any click in a workspace should focus that workspace. If the
+      * workspace is on another output we need to do a workspace_show in
+      * order for i3bar (and others) to notice the change in workspace. */
+@@ -300,6 +323,7 @@ done:
+     xcb_allow_events(conn, XCB_ALLOW_REPLAY_POINTER, event->time);
+     xcb_flush(conn);
+     tree_render();
++
+     return 0;
+ }
+ 
+diff --git a/src/key_press.c b/src/key_press.c
+index 56021da..95e5079 100644
+--- a/src/key_press.c
++++ b/src/key_press.c
+@@ -30,7 +30,7 @@ void handle_key_press(xcb_key_press_event_t *event) {
+     if (bind == NULL)
+         return;
+ 
+-    CommandResult *result = run_binding(bind);
++    CommandResult *result = run_binding(bind, NULL);
+ 
+     if (result->needs_tree_render)
+         tree_render();
+-- 
+2.0.0
+

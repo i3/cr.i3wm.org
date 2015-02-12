@@ -1,0 +1,391 @@
+From fdd2193e6f8dc7c7dc5e31949e106bf277e8db52 Mon Sep 17 00:00:00 2001
+From: Mats <d912e3@…>
+Date: Sun, 26 Oct 2014 19:33:09 +0100
+Subject: [PATCH] Extend the fullscreen command
+
+Rather than just toggling the fullscreen modes, allow to set them
+directly with:
+
+    fullscreen enable|toggle [global]
+    fullscreen disable
+
+For compatibility, retain the previous command and its toggling behavior:
+
+    fullscreen [global]
+
+fixes #1120
+---
+ docs/userguide             |  16 +++---
+ i3.config                  |   2 +-
+ i3.config.keycodes         |   2 +-
+ include/commands.h         |   4 +-
+ include/con.h              |  12 +++++
+ man/i3.man                 |   2 +-
+ parser-specs/commands.spec |  22 +++++++--
+ src/commands.c             |  19 ++++---
+ src/con.c                  | 120 ++++++++++++++++++++++++++++++++++++---------
+ testcases/i3-test.config   |   2 +-
+ 10 files changed, 156 insertions(+), 45 deletions(-)
+
+diff --git a/docs/userguide b/docs/userguide
+index e752ec8..5f00fd6 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -91,7 +91,7 @@ To display a window in fullscreen mode or to go out of fullscreen mode again,
+ press +$mod+f+.
+ 
+ There is also a global fullscreen mode in i3 in which the client will span all
+-available outputs (the command is +fullscreen global+).
++available outputs (the command is +fullscreen toggle global+).
+ 
+ === Opening other applications
+ 
+@@ -367,7 +367,7 @@ bindcode [--release] [Modifiers+]keycode command
+ *Examples*:
+ --------------------------------
+ # Fullscreen
+-bindsym $mod+f fullscreen
++bindsym $mod+f fullscreen toggle
+ 
+ # Restart
+ bindsym $mod+Shift+r restart
+@@ -1502,9 +1502,13 @@ Use +layout toggle split+, +layout stacking+, +layout tabbed+, +layout splitv+
+ or +layout splith+ to change the current container layout to splith/splitv,
+ stacking, tabbed layout, splitv or splith, respectively.
+ 
+-To make the current window (!) fullscreen, use +fullscreen+, to make
+-it floating (or tiling again) use +floating enable+ respectively +floating disable+
+-(or +floating toggle+):
++To make the current window (!) fullscreen, use +fullscreen enable+ (or
+++fullscreen enable global+ for the global mode), to leave either fullscreen
++mode use +fullscreen disable+, and to toggle between these two states use
+++fullscreen toggle+ (or +fullscreen toggle global+).
++
++Likewise, to make the current window floating (or tiling again) use +floating
++enable+ respectively +floating disable+ (or +floating toggle+):
+ 
+ *Syntax*:
+ --------------
+@@ -1525,7 +1529,7 @@ bindsym $mod+x layout toggle
+ bindsym $mod+x layout toggle all
+ 
+ # Toggle fullscreen
+-bindsym $mod+f fullscreen
++bindsym $mod+f fullscreen toggle
+ 
+ # Toggle floating/tiling
+ bindsym $mod+t floating toggle
+diff --git a/i3.config b/i3.config
+index 30b3f6a..d7e96fe 100644
+--- a/i3.config
++++ b/i3.config
+@@ -75,7 +75,7 @@ bindsym Mod1+h split h
+ bindsym Mod1+v split v
+ 
+ # enter fullscreen mode for the focused container
+-bindsym Mod1+f fullscreen
++bindsym Mod1+f fullscreen toggle
+ 
+ # change container layout (stacked, tabbed, toggle split)
+ bindsym Mod1+s layout stacking
+diff --git a/i3.config.keycodes b/i3.config.keycodes
+index 2739851..93528a5 100644
+--- a/i3.config.keycodes
++++ b/i3.config.keycodes
+@@ -69,7 +69,7 @@ bindcode $mod+43 split h
+ bindcode $mod+55 split v
+ 
+ # enter fullscreen mode for the focused container
+-bindcode $mod+41 fullscreen
++bindcode $mod+41 fullscreen toggle
+ 
+ # change container layout (stacked, tabbed, toggle split)
+ bindcode $mod+39 layout stacking
+diff --git a/include/commands.h b/include/commands.h
+index cb68789..780a9e8 100644
+--- a/include/commands.h
++++ b/include/commands.h
+@@ -187,10 +187,10 @@ void cmd_focus_level(I3_CMD, char *level);
+ void cmd_focus(I3_CMD);
+ 
+ /**
+- * Implementation of 'fullscreen [global]'.
++ * Implementation of 'fullscreen [enable|disable|toggle] [global]'.
+  *
+  */
+-void cmd_fullscreen(I3_CMD, char *fullscreen_mode);
++void cmd_fullscreen(I3_CMD, char *action, char *fullscreen_mode);
+ 
+ /**
+  * Implementation of 'move <direction> [<pixels> [px]]'.
+diff --git a/include/con.h b/include/con.h
+index 184bc91..5d761f6 100644
+--- a/include/con.h
++++ b/include/con.h
+@@ -173,6 +173,18 @@ void con_fix_percent(Con *con);
+ void con_toggle_fullscreen(Con *con, int fullscreen_mode);
+ 
+ /**
++ * Enables fullscreen mode for the given container, if necessary.
++ *
++ */
++void con_enable_fullscreen(Con *con, fullscreen_mode_t fullscreen_mode);
++
++/**
++ * Disables fullscreen mode for the given container, if necessary.
++ *
++ */
++void con_disable_fullscreen(Con *con);
++
++/**
+  * Moves the given container to the currently focused container on the given
+  * workspace.
+  *
+diff --git a/man/i3.man b/man/i3.man
+index ea232fc..203b42e 100644
+--- a/man/i3.man
++++ b/man/i3.man
+@@ -230,7 +230,7 @@ bindsym Mod1+h split h
+ bindsym Mod1+v split v
+ 
+ # enter fullscreen mode for the focused container
+-bindsym Mod1+f fullscreen
++bindsym Mod1+f fullscreen toggle
+ 
+ # change container layout (stacked, tabbed, default)
+ bindsym Mod1+s layout stacking
+diff --git a/parser-specs/commands.spec b/parser-specs/commands.spec
+index e3da62c..82348df 100644
+--- a/parser-specs/commands.spec
++++ b/parser-specs/commands.spec
+@@ -156,12 +156,28 @@ state KILL:
+   end
+       -> call cmd_kill($kill_mode)
+ 
++# fullscreen enable|toggle [global]
++# fullscreen disable
+ # fullscreen [global]
+ state FULLSCREEN:
+-  fullscreen_mode = 'global'
+-      -> call cmd_fullscreen($fullscreen_mode)
++  action = 'disable'
++      -> call cmd_fullscreen($action, "output")
++  action = 'enable', 'toggle'
++      -> FULLSCREEN_MODE
++  action = ''
++      -> FULLSCREEN_COMPAT
++
++state FULLSCREEN_MODE:
++  mode = 'global'
++      -> call cmd_fullscreen($action, $mode)
+   end
+-      -> call cmd_fullscreen($fullscreen_mode)
++      -> call cmd_fullscreen($action, "output")
++
++state FULLSCREEN_COMPAT:
++  mode = 'global'
++      -> call cmd_fullscreen("toggle", $mode)
++  end
++      -> call cmd_fullscreen("toggle", "output")
+ 
+ # split v|h|vertical|horizontal
+ state SPLIT:
+diff --git a/src/commands.c b/src/commands.c
+index 95dcb7b..aebd419 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -1574,20 +1574,27 @@ void cmd_focus(I3_CMD) {
+ }
+ 
+ /*
+- * Implementation of 'fullscreen [global]'.
++ * Implementation of 'fullscreen (enabled|toggle [global])|disable'
+  *
+  */
+-void cmd_fullscreen(I3_CMD, char *fullscreen_mode) {
+-    if (fullscreen_mode == NULL)
+-        fullscreen_mode = "output";
+-    DLOG("toggling fullscreen, mode = %s\n", fullscreen_mode);
++void cmd_fullscreen(I3_CMD, char *action, char *fullscreen_mode) {
++    if (strcmp(action, "") == 0)
++        action = "toggle";
++    fullscreen_mode_t mode = strcmp(fullscreen_mode, "global") == 0 ? CF_GLOBAL : CF_OUTPUT;
++    DLOG("%s fullscreen, mode = %s\n", action, fullscreen_mode);
+     owindow *current;
+ 
+     HANDLE_EMPTY_MATCH;
+ 
+     TAILQ_FOREACH(current, &owindows, owindows) {
+         DLOG("matching: %p / %s\n", current->con, current->con->name);
+-        con_toggle_fullscreen(current->con, (strcmp(fullscreen_mode, "global") == 0 ? CF_GLOBAL : CF_OUTPUT));
++        if (strcmp(action, "toggle") == 0) {
++            con_toggle_fullscreen(current->con, mode);
++        } else if (strcmp(action, "enable") == 0) {
++            con_enable_fullscreen(current->con, mode);
++        } else if (strcmp(action, "disable") == 0) {
++            con_disable_fullscreen(current->con);
++        }
+     }
+ 
+     cmd_output->needs_tree_render = true;
+diff --git a/src/con.c b/src/con.c
+index 6c7b2d9..4f68539 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -565,37 +565,27 @@ void con_fix_percent(Con *con) {
+  *
+  */
+ void con_toggle_fullscreen(Con *con, int fullscreen_mode) {
+-    Con *workspace, *fullscreen;
+-
+     if (con->type == CT_WORKSPACE) {
+         DLOG("You cannot make a workspace fullscreen.\n");
+         return;
+     }
+ 
+     DLOG("toggling fullscreen for %p / %s\n", con, con->name);
+-    if (con->fullscreen_mode == CF_NONE) {
+-        /* 1: check if there already is a fullscreen con */
+-        if (fullscreen_mode == CF_GLOBAL)
+-            fullscreen = con_get_fullscreen_con(croot, CF_GLOBAL);
+-        else {
+-            workspace = con_get_workspace(con);
+-            fullscreen = con_get_fullscreen_con(workspace, CF_OUTPUT);
+-        }
+-        if (fullscreen != NULL) {
+-            /* Disable fullscreen for the currently fullscreened
+-             * container and enable it for the one the user wants
+-             * to have in fullscreen mode. */
+-            LOG("Disabling fullscreen for (%p/%s) upon user request\n",
+-                fullscreen, fullscreen->name);
+-            fullscreen->fullscreen_mode = CF_NONE;
+-        }
+ 
+-        /* 2: enable fullscreen */
+-        con->fullscreen_mode = fullscreen_mode;
+-    } else {
+-        /* 1: disable fullscreen */
+-        con->fullscreen_mode = CF_NONE;
+-    }
++    if (con->fullscreen_mode == CF_NONE)
++        con_enable_fullscreen(con, fullscreen_mode);
++    else
++        con_disable_fullscreen(con);
++}
++
++/*
++ * Sets the specified fullscreen mode for the given container, sends the
++ * “fullscreen_mode” event and changes the XCB fullscreen property of the
++ * container’s window, if any.
++ *
++ */
++static void con_set_fullscreen_mode(Con *con, fullscreen_mode_t fullscreen_mode) {
++    con->fullscreen_mode = fullscreen_mode;
+ 
+     DLOG("mode now: %d\n", con->fullscreen_mode);
+ 
+@@ -619,6 +609,88 @@ void con_toggle_fullscreen(Con *con, int fullscreen_mode) {
+ }
+ 
+ /*
++ * Enables fullscreen mode for the given container, if necessary.
++ *
++ * If the container’s mode is already CF_OUTPUT or CF_GLOBAL, the container is
++ * kept fullscreen but its mode is set to CF_GLOBAL and CF_OUTPUT,
++ * respectively.
++ *
++ * Other fullscreen containers will be disabled first, if they hide the new
++ * one.
++ *
++ */
++void con_enable_fullscreen(Con *con, fullscreen_mode_t fullscreen_mode) {
++    if (con->type == CT_WORKSPACE) {
++        DLOG("You cannot make a workspace fullscreen.\n");
++        return;
++    }
++
++    assert(fullscreen_mode == CF_GLOBAL || fullscreen_mode == CF_OUTPUT);
++
++    if (fullscreen_mode == CF_GLOBAL)
++        DLOG("enabling global fullscreen for %p / %s\n", con, con->name);
++    else
++        DLOG("enabling fullscreen for %p / %s\n", con, con->name);
++
++    if (con->fullscreen_mode == fullscreen_mode) {
++        DLOG("fullscreen already enabled for %p / %s\n", con, con->name);
++        return;
++    }
++
++    /* For both fullscreen modes, disable global fullscreen, if any. */
++    Con *fullscreen;
++    if (fullscreen_mode == CF_GLOBAL || fullscreen_mode == CF_OUTPUT) {
++        fullscreen = con_get_fullscreen_con(croot, CF_GLOBAL);
++        if (fullscreen != NULL)
++            con_disable_fullscreen(fullscreen);
++    }
++    /* For output fullscreen, disable other output fullscreen, if any. */
++    Con *workspace = con_get_workspace(con);
++    if (fullscreen_mode == CF_OUTPUT) {
++        fullscreen = con_get_fullscreen_con(workspace, CF_OUTPUT);
++        if (fullscreen != NULL)
++            con_disable_fullscreen(fullscreen);
++    }
++
++    /* Set focus to new fullscreen container. If on another workspace restore
++     * focus afterwards. */
++    Con *old_focused = focused;
++    con_focus(con);
++    if (workspace != con_get_workspace(old_focused))
++        con_focus(old_focused);
++
++    con_set_fullscreen_mode(con, fullscreen_mode);
++}
++
++/*
++ * Disables fullscreen mode for the given container regardless of the mode, if
++ * necessary.
++ *
++ */
++void con_disable_fullscreen(Con *con) {
++    if (con->type == CT_WORKSPACE) {
++        DLOG("You cannot make a workspace fullscreen.\n");
++        return;
++    }
++
++    DLOG("disabling fullscreen for %p / %s\n", con, con->name);
++
++    if (con->fullscreen_mode == CF_NONE) {
++        DLOG("fullscreen already disabled for %p / %s\n", con, con->name);
++        return;
++    }
++
++    /* Restore focus to output-fullscreen container on workspace, when leaving
++     * global-fullscreen. */
++    Con *workspace = con_get_workspace(con);
++    Con *fullscreen = con_get_fullscreen_con(workspace, CF_OUTPUT);
++    if (fullscreen != NULL)
++        con_focus(con_descend_focused(fullscreen));
++
++    con_set_fullscreen_mode(con, CF_NONE);
++}
++
++/*
+  * Moves the given container to the currently focused container on the given
+  * workspace.
+  *
+diff --git a/testcases/i3-test.config b/testcases/i3-test.config
+index 513dda3..9d0b7d6 100644
+--- a/testcases/i3-test.config
++++ b/testcases/i3-test.config
+@@ -20,7 +20,7 @@ bindsym Mod1+h split h
+ bindsym Mod1+v split v
+ 
+ # Fullscreen (Mod1+f)
+-bindsym Mod1+f fullscreen
++bindsym Mod1+f fullscreen toggle
+ 
+ # Stacking (Mod1+s)
+ bindsym Mod1+s layout stacking
+-- 
+2.1.2
+

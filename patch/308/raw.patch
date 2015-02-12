@@ -1,0 +1,93 @@
+From 2e4fb5c30d7fbc6a741723e7380bd659413331c0 Mon Sep 17 00:00:00 2001
+From: Philippe Virouleau <philippe.virouleau@…>
+Date: Sun, 10 Nov 2013 23:12:46 +0100
+Subject: [PATCH] Turn on the screen on successful authentication
+
+As described in ticket #1114, the screen may be left turned off on successful
+authentication. This commit fixes this behaviour by turning the screen back on
+after the authentication.
+
+Fixes #1114
+---
+ i3lock.c |    8 ++++++--
+ xcb.c    |    8 ++++++--
+ xcb.h    |    3 ++-
+ 3 files changed, 14 insertions(+), 5 deletions(-)
+
+diff --git a/i3lock.c b/i3lock.c
+index 533a28d..8c33ea4 100644
+--- a/i3lock.c
++++ b/i3lock.c
+@@ -212,6 +212,10 @@ static void input_done(void) {
+     if (pam_authenticate(pam_handle, 0) == PAM_SUCCESS) {
+         DEBUG("successfully authenticated\n");
+         clear_password_memory();
++        /* Turn the screen on, as it may have been turned off
++         * on release of the 'enter' key. */
++        if (dpms)
++            dpms_set_mode(conn, XCB_DPMS_DPMS_MODE_ON);
+         exit(0);
+     }
+ 
+@@ -497,7 +501,7 @@ static void xcb_check_cb(EV_P_ ev_check *w, int revents) {
+                 /* If this was the backspace or escape key we are back at an
+                  * empty input, so turn off the screen if DPMS is enabled */
+                 if (dpms && input_position == 0)
+-                    dpms_turn_off_screen(conn);
++                    dpms_set_mode(conn, XCB_DPMS_DPMS_MODE_OFF);
+ 
+                 break;
+ 
+@@ -771,7 +775,7 @@ int main(int argc, char *argv[]) {
+     (void)load_keymap();
+ 
+     if (dpms)
+-        dpms_turn_off_screen(conn);
++        dpms_set_mode(conn, XCB_DPMS_DPMS_MODE_OFF);
+ 
+     /* Initialize the libev event loop. */
+     main_loop = EV_DEFAULT;
+diff --git a/xcb.c b/xcb.c
+index 5f3d298..fc27d0b 100644
+--- a/xcb.c
++++ b/xcb.c
+@@ -155,9 +155,13 @@ xcb_window_t open_fullscreen_window(xcb_connection_t *conn, xcb_screen_t *scr, c
+     return win;
+ }
+ 
+-void dpms_turn_off_screen(xcb_connection_t *conn) {
++/*
++ * Set the dpms level to 'mode'.
++ *
++ */
++void dpms_set_mode(xcb_connection_t *conn, xcb_dpms_dpms_mode_t mode) {
+     xcb_dpms_enable(conn);
+-    xcb_dpms_force_level(conn, XCB_DPMS_DPMS_MODE_OFF);
++    xcb_dpms_force_level(conn, mode);
+     xcb_flush(conn);
+ }
+ 
+diff --git a/xcb.h b/xcb.h
+index 7941980..1e0cbb1 100644
+--- a/xcb.h
++++ b/xcb.h
+@@ -2,6 +2,7 @@
+ #define _XCB_H
+ 
+ #include <xcb/xcb.h>
++#include <xcb/dpms.h>
+ 
+ extern xcb_connection_t *conn;
+ extern xcb_screen_t *screen;
+@@ -10,7 +11,7 @@ xcb_visualtype_t *get_root_visual_type(xcb_screen_t *s);
+ xcb_pixmap_t create_bg_pixmap(xcb_connection_t *conn, xcb_screen_t *scr, u_int32_t *resolution, char *color);
+ xcb_window_t open_fullscreen_window(xcb_connection_t *conn, xcb_screen_t *scr, char *color, xcb_pixmap_t pixmap);
+ void grab_pointer_and_keyboard(xcb_connection_t *conn, xcb_screen_t *screen, xcb_cursor_t cursor);
+-void dpms_turn_off_screen(xcb_connection_t *conn);
++void dpms_set_mode(xcb_connection_t *conn, xcb_dpms_dpms_mode_t mode);
+ xcb_cursor_t create_cursor(xcb_connection_t *conn, xcb_screen_t *screen, xcb_window_t win, int choice);
+ 
+ #endif
+-- 
+1.7.10.4
+

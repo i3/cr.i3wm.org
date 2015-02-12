@@ -1,0 +1,168 @@
+From 2d786e8f049a16530a7d6f8816f143b8cfcf8409 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 20 Jun 2014 08:33:02 -0400
+Subject: [PATCH] Implement the window::urgent event
+
+The window::urgent event is emitted when a container becomes urgent or
+loses its urgent status.
+---
+ docs/ipc                            |  1 +
+ src/con.c                           |  9 +++--
+ src/workspace.c                     | 14 +++++---
+ testcases/t/232-ipc-window-urgent.t | 68 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 84 insertions(+), 8 deletions(-)
+ create mode 100644 testcases/t/232-ipc-window-urgent.t
+
+diff --git a/docs/ipc b/docs/ipc
+index 0560d4e..4ec1cc4 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -722,6 +722,7 @@ This event consists of a single serialized map containing a property
+ * +title+ - the window's title has changed
+ * +fullscreen_mode+ - the window has entered or exited fullscreen mode
+ * +move+ - the window has changed its position in the tree
++* +urgent+ - the window has become urgent or lost its urgent status
+ 
+ Additionally a +container (object)+ field will be present, which consists
+ of the window's parent container. Be aware that for the "new" event, the
+diff --git a/src/con.c b/src/con.c
+index 7934133..78fe5fe 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -231,6 +231,7 @@ void con_focus(Con *con) {
+         con->urgent = false;
+         con_update_parents_urgency(con);
+         workspace_update_urgent_flag(con_get_workspace(con));
++        ipc_send_window_event("urgent", con);
+     }
+ }
+ 
+@@ -1599,14 +1600,16 @@ void con_set_urgency(Con *con, bool urgent) {
+ 
+     con_update_parents_urgency(con);
+ 
+-    if (con->urgent == urgent)
+-        LOG("Urgency flag changed to %d\n", con->urgent);
+-
+     Con *ws;
+     /* Set the urgency flag on the workspace, if a workspace could be found
+      * (for dock clients, that is not the case). */
+     if ((ws = con_get_workspace(con)) != NULL)
+         workspace_update_urgent_flag(ws);
++
++    if (con->urgent == urgent) {
++        LOG("Urgency flag changed to %d\n", con->urgent);
++        ipc_send_window_event("urgent", con);
++    }
+ }
+ 
+ /*
+diff --git a/src/workspace.c b/src/workspace.c
+index 41c0295..c002678 100644
+--- a/src/workspace.c
++++ b/src/workspace.c
+@@ -326,11 +326,14 @@ static void workspace_reassign_sticky(Con *con) {
+ static void workspace_defer_update_urgent_hint_cb(EV_P_ ev_timer *w, int revents) {
+     Con *con = w->data;
+ 
+-    DLOG("Resetting urgency flag of con %p by timer\n", con);
+-    con->urgent = false;
+-    con_update_parents_urgency(con);
+-    workspace_update_urgent_flag(con_get_workspace(con));
+-    tree_render();
++    if (con->urgent) {
++        DLOG("Resetting urgency flag of con %p by timer\n", con);
++        con->urgent = false;
++        con_update_parents_urgency(con);
++        workspace_update_urgent_flag(con_get_workspace(con));
++        ipc_send_window_event("urgent", con);
++        tree_render();
++    }
+ 
+     ev_timer_stop(main_loop, con->urgency_timer);
+     FREE(con->urgency_timer);
+@@ -386,6 +389,7 @@ static void _workspace_show(Con *workspace) {
+      * focus and thereby immediately destroy it */
+     if (next->urgent && (int)(config.workspace_urgency_timer * 1000) > 0) {
+         /* focus for now… */
++        next->urgent = false;
+         con_focus(next);
+ 
+         /* … but immediately reset urgency flags; they will be set to false by
+diff --git a/testcases/t/232-ipc-window-urgent.t b/testcases/t/232-ipc-window-urgent.t
+new file mode 100644
+index 0000000..2ac9ecb
+--- /dev/null
++++ b/testcases/t/232-ipc-window-urgent.t
+@@ -0,0 +1,68 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Test that the window::urgent event works correctly. The window::urgent event
++# should be emitted when a window becomes urgent or loses its urgent status.
++#
++use i3test;
++
++my $config = <<EOT;
++# i3 config file (v4)
++font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
++
++force_display_urgency_hint 0ms
++EOT
++
++my $i3 = i3(get_socket_path());
++$i3->connect()->recv;
++
++my $cv;
++$i3->subscribe({
++    window => sub {
++        my ($event) = @_;
++        $cv->send($event) if $event->{change} eq 'urgent';
++    }
++})->recv;
++
++my $t;
++$t = AnyEvent->timer(
++    after => 0.5,
++    cb => sub {
++        $cv->send(0);
++    }
++);
++
++$cv = AnyEvent->condvar;
++fresh_workspace;
++my $win = open_window;
++my $dummy_win = open_window;
++
++$win->add_hint('urgency');
++my $event = $cv->recv;
++
++isnt($event, 0, 'an urgent con should emit the window::urgent event');
++is($event->{container}->{window}, $win->{id}, 'the event should contain information about the window');
++is($event->{container}->{urgent}, 1, 'the container should be urgent');
++
++$cv = AnyEvent->condvar;
++$win->delete_hint('urgency');
++my $event = $cv->recv;
++
++isnt($event, 0, 'an urgent con should emit the window::urgent event');
++is($event->{container}->{window}, $win->{id}, 'the event should contain information about the window');
++is($event->{container}->{urgent}, 0, 'the container should not be urgent');
++
++done_testing;
+-- 
+2.0.0
+

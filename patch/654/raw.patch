@@ -1,0 +1,149 @@
+From 2b15cf885ab0321d96c82a991629c256d861eacd Mon Sep 17 00:00:00 2001
+From: Cyril Andreatta <cyril@…>
+Date: Tue, 7 Oct 2014 15:47:58 +0200
+Subject: [PATCH 1/2] Created three individual Strings for each battery status
+ (charging, dicharching, full)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Replaced hard coded status strings (CHR, BAT, FULL) in
+print_battery_info.c with user defined strings. The new strings are
+'status_chr', 'status_bat' and 'status_full' and can be set in i3status.conf.
+e.g.
+status_chr = "⚡ CHR"
+
+If any of the new status strings is omitted the standard strings (CHR,
+BAT, FULL) are used.
+---
+ i3status.c               | 5 ++++-
+ include/i3status.h       | 2 +-
+ src/print_battery_info.c | 9 +++++----
+ 3 files changed, 10 insertions(+), 6 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index befe1d6..fc16c49 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -319,6 +319,9 @@ int main(int argc, char *argv[]) {
+         cfg_opt_t battery_opts[] = {
+                 CFG_STR("format", "%status %percentage %remaining", CFGF_NONE),
+                 CFG_STR("format_down", "No battery", CFGF_NONE),
++                CFG_STR("status_chr", "CHR", CFGF_NONE),
++                CFG_STR("status_bat", "BAT", CFGF_NONE),
++                CFG_STR("status_full", "FULL", CFGF_NONE),
+                 CFG_STR("path", "/sys/class/power_supply/BAT%d/uevent", CFGF_NONE),
+                 CFG_INT("low_threshold", 30, CFGF_NONE),
+                 CFG_STR("threshold_type", "time", CFGF_NONE),
+@@ -585,7 +588,7 @@ int main(int argc, char *argv[]) {
+ 
+                         CASE_SEC_TITLE("battery") {
+                                 SEC_OPEN_MAP("battery");
+-                                print_battery_info(json_gen, buffer, atoi(title), cfg_getstr(sec, "path"), cfg_getstr(sec, "format"), cfg_getstr(sec, "format_down"), cfg_getint(sec, "low_threshold"), cfg_getstr(sec, "threshold_type"), cfg_getbool(sec, "last_full_capacity"), cfg_getbool(sec, "integer_battery_capacity"), cfg_getbool(sec, "hide_seconds"));
++                                print_battery_info(json_gen, buffer, atoi(title), cfg_getstr(sec, "path"), cfg_getstr(sec, "format"), cfg_getstr(sec, "format_down"), cfg_getstr(sec, "status_chr"), cfg_getstr(sec, "status_bat"), cfg_getstr(sec, "status_full"), cfg_getint(sec, "low_threshold"), cfg_getstr(sec, "threshold_type"), cfg_getbool(sec, "last_full_capacity"), cfg_getbool(sec, "integer_battery_capacity"), cfg_getbool(sec, "hide_seconds"));
+                                 SEC_CLOSE_MAP;
+                         }
+ 
+diff --git a/include/i3status.h b/include/i3status.h
+index 4c63305..d816f0a 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -172,7 +172,7 @@ void set_timezone(const char *tz);
+ 
+ void print_ipv6_info(yajl_gen json_gen, char *buffer, const char *format_up, const char *format_down);
+ void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format, const char *prefix_type, const char *threshold_type, const double low_threshold);
+-void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, const char *format_down, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity, bool hide_seconds);
++void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, const char *format_down, const char *status_chr, const char *status_bat, const char *status_full, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity, bool hide_seconds);
+ void print_time(yajl_gen json_gen, char *buffer, const char *format, const char *tz, time_t t);
+ void print_ddate(yajl_gen json_gen, char *buffer, const char *format, time_t t);
+ const char *get_ip_addr();
+diff --git a/src/print_battery_info.c b/src/print_battery_info.c
+index 6b39c12..28b94ec 100644
+--- a/src/print_battery_info.c
++++ b/src/print_battery_info.c
+@@ -27,16 +27,13 @@
+ #include <sys/envsys.h>
+ #endif
+ 
+-#define BATT_STATUS_NAME(status) \
+-    (status == CS_CHARGING ? "CHR" : \
+-        (status == CS_DISCHARGING ? "BAT" : "FULL"))
+ /*
+  * Get battery information from /sys. Note that it uses the design capacity to
+  * calculate the percentage, not the last full capacity, so you can see how
+  * worn off your battery is.
+  *
+  */
+-void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, const char *format_down, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity, bool hide_seconds) {
++void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, const char *format_down, const char *status_chr, const char *status_bat, const char *status_full, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity, bool hide_seconds) {
+         time_t empty_time;
+         struct tm *empty_tm;
+         char buf[1024];
+@@ -65,6 +62,10 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+         sprintf(batpath, path, number);
+         INSTANCE(batpath);
+ 
++#define BATT_STATUS_NAME(status) \
++    (status == CS_CHARGING ? status_chr : \
++        (status == CS_DISCHARGING ? status_bat : status_full))
++
+ #if defined(LINUX)
+         if (!slurp(batpath, buf, sizeof(buf))) {
+                 OUTPUT_FULL_TEXT(format_down);
+-- 
+2.1.2
+
+
+From 843111861ebd6bc29caa09c26aa20dc37a29f05e Mon Sep 17 00:00:00 2001
+From: Cyril Andreatta <cyril@…>
+Date: Tue, 7 Oct 2014 16:14:16 +0200
+Subject: [PATCH 2/2] Updated the man page for i3status with information about
+ the new individual strings that can be used for each battery status.
+
+---
+ man/i3status.man | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/man/i3status.man b/man/i3status.man
+index 27a76ed..504cf16 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -74,6 +74,9 @@ ethernet eth0 {
+ battery 0 {
+         format = "%status %percentage %remaining %emptytime"
+         format_down = "No battery"
++        status_chr = "⚇ CHR""
++        status_bat = "⚡ BAT"
++        status_full = "☻ FULL"
+         path = "/sys/class/power_supply/BAT%d/uevent"
+         low_threshold = 10
+ }
+@@ -309,12 +312,25 @@ colored red. The low_threshold type can be of threshold_type "time" or
+ "percentage". So, if you configure low_threshold to 10 and threshold_type to
+ "time", and your battery lasts another 9 minutes, it will be colored red.
+ 
++Optionally custom strings including any UTF-8 symbols can be used for different
++battery states. This makes it possible to display individual symbols
++for each state (charging, discharging, full)
++Of course it will also work with special iconic fonts, such as FontAwesome.
++If any of this special status strings is omitted, the default (CHR, BAT, FULL)
++is used.
++
+ *Example order*: +battery 0+
+ 
+ *Example format*: +%status %remaining (%emptytime %consumption)+
+ 
+ *Example format_down*: +No battery+
+ 
++*Example status_chr*: +⚇ CHR+
++
++*Example status_bat*: +⚡ BAT+
++
++*Example status_full*: +☻ FULL+
++
+ *Example low_threshold*: +30+
+ 
+ *Example threshold_type*: +time+
+-- 
+2.1.2
+

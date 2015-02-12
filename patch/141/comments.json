@@ -1,0 +1,50 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 337,
+    "Comment": "minor nitpick: $bar_id will be NULL in this case anyways, so you can use cmd_bar($bar_id, $bar_state) in *both* cases to signal that both cases are doing the same thing. This makes the code more consistent with the rest of the file.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 462,
+    "Comment": "memory leak, because you don’t free(event_msg);",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 466,
+    "Comment": "memory leak, see above",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 579,
+    "Comment": "left-over from a previous version of this patch",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 68,
+    "Comment": "So, you can’t know this, but having variable event names interferes with my plan to make the event ids queryable through the IPC interface. Can you please just use a static event and include the bar_id in the event contents itself?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 475,
+    "Comment": "As a consequence of my first comment (about static event names), this becomes obsolete. Just send out updates to all bar instances and filter in the bar itself. The majority of users use just one bar anyways.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 174,
+    "Comment": "memleak, see below. not really relevant since this will be reverted to i3_send_msg with a static event name anyways, though.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 355,
+    "Comment": "please also update docs/userguide accordingly",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

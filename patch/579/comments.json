@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 27,
+    "Comment": "I tried to do this in a way that would affect the code base the least.\n\nThis is not necessarily the \"correct\" way to fix this bug, but I really want to get this release on the way without spending a lot of time testing big changes so I can start working on new features.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 27,
+    "Comment": "Also I might have said this is a regression, but it is not. It will especially affect anyone who disables `focus_follows_mouse` or disables warping, because with pointer warping/focus, this bug is masked by the EnterNotify that will focus the floating container.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 27,
+    "Comment": "While it may not be a very common situation for someone to be in, the bug is rather nasty because X input focus is not set to the workspace, but to the container on the last output. This puts i3 in a strange and confusing state that can lead to crashes.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 27,
+    "Comment": "Can you try to come up with a way that is cleaner? Fixing this in a cmd_ function seems unclean. We have the release out now, so no need to hurry.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "anonymous",
+    "Line": 32,
+    "Comment": "I just tried this patch and I found a bug. If floating windows are hidden and I opened a new floating window then the for_window commands are applied in the focused window. You can reproduce it with this:\n\n1) put this in the config and reload it:\nfor_window [instance=\"^urxvt_floating$\"] floating enable; border pixel 10\n2) run urxvt -name urxvt_floating\n\nthe focused window will have border pixel 10.. also, if you unhide the floating windows you will see that the floating window doesn't have border pixel 10.\n",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 32,
+    "Comment": "for the above bug, looks like this works:\nfor_window [instance=\"^urxvt_floating$\"] border pixel 10; floating enable\n\nbecause it chage the border pixel first and then the floating.\n\n\nanother bug:\n\n1) put window A in floating mode\n2) move window B in scratchpad and the do scratchpad show\n3) hide floating windows so only window B will be shown\n4) focus window B\n4) do focus (left|right|up|down)\n\nresult:\nwindow B does not have focus (i.e. focus is on window A)\n\nexpected:\nwindow B must have focus. we can not focus to window A, because floating windows are hidden.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 245,
+    "Comment": "coding style: please use /*, because /** is for doxygen comments.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 103,
+    "Comment": "I still don’t think exporting this is a good idea. This is supposed to be an internal function. Why do you need to modify this at all?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 103,
+    "Comment": "I need this because in floating_visibility:800, setting con-\u003emapped = !floating_hidden; doesn't do the trick. I need to mark all the children as unmapped so x_push_changes(con) is enough for hiding the current con.\n\nI'm eager to solve this in another way, but I don't see how, the only thing that comes to my mind is to just call tree_render at the end of the function.",
+    "EmailHash": ""
+  }
+]

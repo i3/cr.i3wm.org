@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Ingo Bürk",
+    "Line": 17,
+    "Comment": "For http://bugs.i3wm.org/report/ticket/1403. I chose this way because it should be the \"least breaking\" change as it only changes documentation and the way unknown values are handled. If the align field is simply not set, it will behave the same way it did until now.",
+    "EmailHash": "b6308596489b8c826a3d5212abd7518d"
+  }
+]

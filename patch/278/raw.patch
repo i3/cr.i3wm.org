@@ -1,0 +1,33 @@
+From 3b9ac389a7b44388f78133f91b405f05704b57e1 Mon Sep 17 00:00:00 2001
+From: "jj" <haptix@…>
+Date: Mon, 21 Oct 2013 14:14:40 +0200
+Subject: [PATCH] Fix focus issue when client requests focus in fs mode
+
+When in fullscreen mode and another window sends a client request
+'_NET_ACTIVE_WINDOW', i3 would stay in fullscreen mode but give focus to
+the other window. This patch enforces the fullscreen constraints for
+focusing.
+
+---
+ src/handlers.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/src/handlers.c b/src/handlers.c
+index 72ef291..97ba975 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -676,6 +676,11 @@ static void handle_client_message(xcb_client_message_event_t *event) {
+             return;
+         }
+ 
++        if (!con_fullscreen_permits_focusing(con)) {
++            DLOG("Fullscreen constraints do not permit focusing of the client, ignoring _NET_ACTIVE_WINDOW\n");
++            return;
++        }
++
+         Con *ws = con_get_workspace(con);
+         if (!workspace_is_visible(ws)) {
+             DLOG("Workspace not visible, ignoring _NET_ACTIVE_WINDOW\n");
+-- 
+1.8.4.rc3
+

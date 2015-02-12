@@ -1,0 +1,128 @@
+[
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 245,
+    "Comment": "I don't know whether sending the new event before tree_render() could have any ill effect, but IMHO the \"new\" event should be send before the \"focus\" event",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 245,
+    "Comment": "It is technically a bug because some of the event data will not be correct, but not a very serious one in practice because people do not tend to use that information.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 395,
+    "Comment": "This is kind of ugly. You can use one condvar and reset it after each command and test. Look at test 517 for an example of how to do this.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 478,
+    "Comment": "You should be setting the title by passing `name` to open_window instead of testing the window has the (currently) default title.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 409,
+    "Comment": "I think you'll find it is a lot cleaner to send the whole event instead of performing the test within the handler itself.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 295,
+    "Comment": "This won't work if we send WM_TAKE_FOCUS and the client sets focus itself as some Java clients do. Patch 412 will break this further.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 248,
+    "Comment": "I don't like how the \"new\" and \"focus\" event are sending essentially the same data. For instance, the `focused` field in the \"new\" event container is set to true, even though the \"focus\" event has not yet happened.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 295,
+    "Comment": "It's not overly important and could be removed entirely (clients can deal with on their end).\n\nAs I pointed out in the commit message, it's not even 100% reliable as it is. It's an attempt to save some overhead, as I find it useless to sent out notification if the window is already focused. I've tried a different approach by comparing the window title directly, which should be more reliable, but ran into problems and gave up.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 245,
+    "Comment": "It feels wrong to me to send the \"focus\" before the \"new\" event, but if there are implications that dictate otherwise, so be it.\n\nAll unit tests passed though, maybe there should be a test to enforce the protocol expectations?",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 248,
+    "Comment": "It would be cleaner this way, but is it important for clients and does warrant additional coding? \n\nIf new windows always receive focus (is this true?), one could argue that the focus event must not be send at all in this case. Might pose slightly more work to clients (as they would have to subscribe to two events), but this should not be a big deal.\n\nI can certainly live with either solution, I just need more than \"new\" notification ;)",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 395,
+    "Comment": "I see. I will try that. Thanks much for your help.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 127,
+    "Comment": "s/current_name/old_name/\n\nAlso, char *old_name (i.e. no space between the asterisk and the name).\n\nAnd parens around the ternary if please.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 110,
+    "Comment": "s/is_windowname_changed/window_name_changed/",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 112,
+    "Comment": "Not that I expect it to be an issue in practice, but I don’t like how this code just uses the empty string instead of a window title if the new window does not have a title.\n\nInstead, I suggest:\n\nif ((old_name == NULL) \u0026\u0026 (window-\u003ename == NULL))\nreturn false;\n\n/* Either the old or the new one is NULL, but not both. */\nif ((old_name == NULL) ^ (window-\u003ename == NULL))\nreturn true;\n\nreturn (strcmp(old_name, i3string_as_utf8(window-\u003ename)) != 0);\n",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 245,
+    "Comment": "I agree that intuitively it feels wrong to send “focus” before “new”. A way to fix that is to render the tree before focus is actually set, I think. Can you give that a go?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 295,
+    "Comment": "Please don’t do this. Getting the current input focus is pretty hacky and will most likely break in edge cases.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 248,
+    "Comment": "With the code as it is now, new windows do indeed always receive focus according to i3's internal model. The protocol allows a client to not accept input focus. When that happens, i3 will show the wrong container as being focused.\n\nYou should not assume that new windows will always be focused so that bug is not any harder to fix after this change.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 110,
+    "Comment": "That's actually were I've started, until I realized the other functions omit this one slash. Maybe they should get renamed too for consistency (albeit not with this commit of course)?",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 245,
+    "Comment": "I can try and let you know how it goes. Thanks.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 295,
+    "Comment": "As already pointed out, it's not working reliably, but as a way to minimize obsolete events, it was serving its purpose to a certain degree. I will remove it.\n\nWould a new field to track the focus be acceptable? Basically duplicating focused_id, but not affected by the click handling? ",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 274,
+    "Comment": "I forgot to ask: What about the need for checking whether a window is attached? I was quite puzzled that i3 is trying to change the focus to such a window.\n\nDoes this serve a purpose or is this fishy behavior?",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  }
+]

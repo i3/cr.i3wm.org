@@ -1,0 +1,32 @@
+From 566bd64aee36f14c04159d7c9ab7d56b09ead18d Mon Sep 17 00:00:00 2001
+From: Baptiste Daroussin <bapt@…>
+Date: Tue, 19 Mar 2013 19:23:01 +0100
+Subject: [PATCH 4/4] Enable colored output for battery on FreeBSD
+
+---
+ src/print_battery_info.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/src/print_battery_info.c b/src/print_battery_info.c
+index c9eee23..3fc31e0 100644
+--- a/src/print_battery_info.c
++++ b/src/print_battery_info.c
+@@ -234,6 +234,15 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+                 minutes -= (hours * 60);
+                 (void)snprintf(remainingbuf, sizeof(remainingbuf), "%02dh%02d",
+                                max(hours, 0), max(minutes, 0));
++		if (strncmp(threshold_type, "percentage", strlen(threshold_type)) == 0
++		    && present_rate < low_threshold) {
++			START_COLOR("color_bad");
++			colorful_output = true;
++		} else if (strncmp(threshold_type, "time", strlen(threshold_type)) == 0
++			   && remaining < (u_int) low_threshold) {
++			START_COLOR("color_bad");
++			colorful_output = true;
++		}
+         }
+ #elif defined(__OpenBSD__)
+ 	/*
+-- 
+1.8.1.3
+

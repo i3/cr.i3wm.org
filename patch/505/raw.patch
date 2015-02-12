@@ -1,0 +1,72 @@
+From ea96bbc83a1dc879f7dfe11ef111411ba3e39a3d Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 18 Apr 2014 14:14:22 -0400
+Subject: [PATCH] Bugfix: resize window check should check for null
+
+When checking the window type for a resize command, first check to see
+if the window property is null before checking whether or not it is a
+dock window. The window may be null in the case it is a branch
+container.
+
+fixes #1220
+---
+ src/commands.c                          |  2 +-
+ testcases/t/224-regress-resize-branch.t | 33 +++++++++++++++++++++++++++++++++
+ 2 files changed, 34 insertions(+), 1 deletion(-)
+ create mode 100644 testcases/t/224-regress-resize-branch.t
+
+diff --git a/src/commands.c b/src/commands.c
+index 0f4315c..09d8a51 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -782,7 +782,7 @@ void cmd_resize(I3_CMD, char *way, char *direction, char *resize_px, char *resiz
+     owindow *current;
+     TAILQ_FOREACH(current, &owindows, owindows) {
+         /* Don't handle dock windows (issue #1201) */
+-        if (current->con->window->dock) {
++        if (current->con->window && current->con->window->dock) {
+             DLOG("This is a dock window. Not resizing (con = %p)\n)", current->con);
+             continue;
+         }
+diff --git a/testcases/t/224-regress-resize-branch.t b/testcases/t/224-regress-resize-branch.t
+new file mode 100644
+index 0000000..a4a1b31
+--- /dev/null
++++ b/testcases/t/224-regress-resize-branch.t
+@@ -0,0 +1,33 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Test that i3 does not crash when resizing a split container
++# Ticket: #1220
++# Bug still in: 4.7.2-128-g702906d
++use i3test;
++
++open_window;
++open_window;
++
++cmd 'split h';
++
++open_window;
++
++cmd 'focus parent, resize grow left';
++
++does_i3_live;
++
++done_testing;
+-- 
+1.9.2
+

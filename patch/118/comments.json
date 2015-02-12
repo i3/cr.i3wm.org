@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 17,
+    "Comment": "After applying the patch and restarting into the new i3bar, I got this 1px line of graphic corruption at the bottom of the screen: http://t.zekjur.net/2013-03-29-095752_1279x97_scrot.png\n\nCan you fix that?",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  }
+]

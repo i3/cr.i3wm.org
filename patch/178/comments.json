@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "anonymous",
+    "Line": 19,
+    "Comment": "I'm not sure if this is the correct place for this procedure. Do we have any other similar cases? Should I also do it in con_detach()?",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "Looks fine to me.",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  }
+]

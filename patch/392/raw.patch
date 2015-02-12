@@ -1,0 +1,121 @@
+From 59bbcb0e44eb748739a183c6916c5430c07f30d6 Mon Sep 17 00:00:00 2001
+From: EscapedNull <escapednull@…>
+Date: Sat, 1 Feb 2014 14:18:35 +0000
+Subject: [PATCH] Added support for i3status to display file contents
+
+---
+ i3status.c         | 16 ++++++++++++++++
+ include/i3status.h |  1 +
+ man/i3status.man   | 43 +++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 60 insertions(+)
+
+diff --git a/i3status.c b/i3status.c
+index b359370..8b0e0dc 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -302,6 +302,15 @@ int main(int argc, char *argv[]) {
+                 CFG_END()
+         };
+ 
++        cfg_opt_t file_opts[] = {
++                CFG_STR("format", "%contents (%mtime_diff)", CFGF_NONE),
++                CFG_INT("line", 1, CFGF_NONE),
++                CFG_INT("skip", 0, CFGF_NONE),
++                CFG_INT("limit", 4096, CFGF_NONE),
++                CFG_STR("mtime_format", "%H:%M:%S", CFGF_NONE),
++                CFG_END()
++        };
++
+         cfg_opt_t opts[] = {
+                 CFG_STR_LIST("order", "{}", CFGF_NONE),
+                 CFG_SEC("general", general_opts, CFGF_NONE),
+@@ -319,6 +328,7 @@ int main(int argc, char *argv[]) {
+                 CFG_SEC("ddate", ddate_opts, CFGF_NONE),
+                 CFG_SEC("load", load_opts, CFGF_NONE),
+                 CFG_SEC("cpu_usage", usage_opts, CFGF_NONE),
++                CFG_SEC("file", file_opts, CFGF_TITLE | CFGF_MULTI),
+                 CFG_CUSTOM_COLOR_OPTS,
+                 CFG_END()
+         };
+@@ -547,6 +557,12 @@ int main(int argc, char *argv[]) {
+                                 print_cpu_usage(json_gen, buffer, cfg_getstr(sec, "format"));
+                                 SEC_CLOSE_MAP;
+                         }
++
++                        CASE_SEC_TITLE("file") {
++                                SEC_OPEN_MAP("file");
++                                print_file(json_gen, buffer, title, cfg_getstr(sec, "format"), cfg_getint(sec, "line"), cfg_getint(sec, "skip"), cfg_getint(sec, "limit"), cfg_getstr(sec, "mtime_format"));
++                                SEC_CLOSE_MAP;
++                        }
+                 }
+                 if (output_format == O_I3BAR) {
+                         yajl_gen_array_close(json_gen);
+diff --git a/include/i3status.h b/include/i3status.h
+index 5ab310b..46342f4 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -158,6 +158,7 @@ void print_cpu_usage(yajl_gen json_gen, char *buffer, const char *format);
+ void print_eth_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
+ void print_load(yajl_gen json_gen, char *buffer, const char *format, const float max_threshold);
+ void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *fmt_muted, const char *device, const char *mixer, int mixer_idx);
++void print_file(yajl_gen json_gen, char *buffer, const char *title, const char *format, const int line, const int skip, const int limit, const char *mtime_format);
+ bool process_runs(const char *path);
+ 
+ /* socket file descriptor for general purposes */
+diff --git a/man/i3status.man b/man/i3status.man
+index c36694a..4ac87c5 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -376,6 +376,49 @@ volume master {
+ }
+ -------------------------------------------------------------
+ 
++=== File
++
++Prints a file's contents at the specified line, and/or its modification time.
++
+++format+ specifies how the file should be displayed. It has the following variables:
++
+++%contents+ displays the file's contents according to +line+, +skip+, and +limit+.
++
+++%mtime+ shows the file's modification time according to +mtime_format+. By default,
++"%H:%M:%S" is used.
++
+++%mtime_diff+ expands to the file's age in a coarse, concise, human-readable format.
++For example, "1y" or "28m". Only the largest unit of time is displayed.
++
+++mtime_format+ defines which units of time should be displayed as specified by
++strftime(3).
++
+++line+ specifies which line (delimited by "\r", "\n", or "\r\n") should be displayed.
++Negative values for +line+ will be counted from the bottom. For example, +line = -1+
++behaves similarly to tail(1). If the line does not exist, +%contents+ will be blank.
++Note that many plain text files contain a trailing newline, in which case you should
++subtract one from the desired +line+ when using a negative value.
++
++i3status removes +skip+ bytes from the beginning of the specified line before
++displaying it. Similarly, i3status will not display more than +limit+ bytes
++after +skip+.
++
++*Example order*: +file /var/log/Xorg.0.log+
++
++*Example format*: +(%mtime_diff) %contents+
++*Example format_mtime*: +%a %Y/%m/%d %H:%M:%S+
++
++*Example configuration*:
++-------------------------------------------------------------
++file /var/log/Xorg.0.log {
++	format = "[%mtime] %contents (%mtime_diff ago)"
++	mtime_format = "%a %H:%M:%S"
++	line = -2
++	skip = 10
++	limit = 20
++}
++-------------------------------------------------------------
++
+ == Using i3status with dzen2
+ 
+ After installing dzen2, you can directly use it with i3status. Just ensure that
+-- 
+1.8.5.3
+

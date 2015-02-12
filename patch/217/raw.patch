@@ -1,0 +1,30 @@
+From f71b9b9264c1a4a760669e064369b71085dde4ec Mon Sep 17 00:00:00 2001
+From: Deiz <silverwraithii@…>
+Date: Sat, 14 Sep 2013 11:40:59 -0400
+Subject: [PATCH] Add scratchpad bindings to the default config.
+
+---
+ i3.config | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/i3.config b/i3.config
+index ff6c9db..fedaf42 100644
+--- a/i3.config
++++ b/i3.config
+@@ -84,6 +84,13 @@ bindsym Mod1+a focus parent
+ # focus the child container
+ #bindsym Mod1+d focus child
+ 
++# move the currently focused window to the scratchpad
++bindsym Mod1+Shift+minus move scratchpad
++
++# Shows the first scratchpad window if no scratchpad window is focused.
++# If called on a scratchpad window, puts it on the bottom of the scratchpad.
++bindsym Mod1+minus scratchpad show
++
+ # switch to workspace
+ bindsym Mod1+1 workspace 1
+ bindsym Mod1+2 workspace 2
+-- 
+1.8.4
+

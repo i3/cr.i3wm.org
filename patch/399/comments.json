@@ -1,0 +1,56 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 26,
+    "Comment": "I can see how this might be useful to add some top/bottom padding to the bar for easier clicking or reading. But I might be a little wary of adding two config directives that do nearly identical things.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 26,
+    "Comment": "Yup, exactly for that, to customize the padding. e.g. on hi-dpi displays, one might want more than 1 or 2 pixels on top/bottom. But I guess I could hardcode, lets say 1px top/bottom padding if having 2 config directives is too much. On the other hand, user doesn't have to set that option at all and it will default to MAX(font.height+6, tray_icon_size) where font.height+6 is the value hardcoded in the code right now.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 164,
+    "Comment": "Coding style: please use “} else {”",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 277,
+    "Comment": "Here and below in this file, the indentation seems wrong",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 157,
+    "Comment": "Why the linebreak? Seems like this statement can easily fit in one line. If you are worried about the readability, how about MAX((font.height + 6), config.min_height);?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 21,
+    "Comment": "You are missing a documentation update, see docs/userguide :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 26,
+    "Comment": "So what’s the intention here? Can you clarify the use case? Why would I want tray icons to not be roughly similar in size to my font?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 26,
+    "Comment": "Intention here was mainly not to have blury icons, when \"non-standard\" icon size is calculated. I know the spec says that clients must deal with any size, but problem is they usualy do so by scaling the icon, making it blury. With small font sizes (I use 8pt/96dpi, which makes ~11px), the icon ends up blury, hard to recognize and hard to click. There is also few applications (such as Akregator), which write few letters or a number onto the icon (unread feeds count in case of Akregator) and it becomes unreadable. When I set tray icon size to 22px, the text on the icon becomes readable and it ends up same size as the bar's text.\nIf there is a chance to have this merged into i3, I would fix problems you pointed out and make a new patch (and maybe hardcode that 1px padding instead of adding min_height option, as Tony Crisci didn't quite like 2 options) ... I wouldn't like spending my time on a thing that no one wants :-)",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 26,
+    "Comment": "Hm, I don’t quite get how an 11px font can line up with 22px icons. Can you maybe upload a screenshot illustrating the difference? Thanks.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

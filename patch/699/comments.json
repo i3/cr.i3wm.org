@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 17,
+    "Comment": "This doesn't work for me. You have to add the _NET_WM_MOVERESIZE atom to _NET_SUPPORTED (see ewmh.c:ewmh_setup_hints()) for gtk to actually use the client request.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

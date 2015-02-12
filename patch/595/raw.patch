@@ -1,0 +1,159 @@
+From cb19ce87d4fd0d8a7ed93056936499739d1b132f Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Thu, 19 Jun 2014 12:00:21 -0400
+Subject: [PATCH] Implement EWMH desktop names
+
+Maintain the _NET_DESKTOP_NAMES property on the root window.
+
+http://standards.freedesktop.org/wm-spec/latest/ar01s03.html#idm140251368131760
+
+> _NET_DESKTOP_NAMES
+>
+> _NET_DESKTOP_NAMES, UTF8_STRING[]
+>
+> The names of all virtual desktops. This is a list of NULL-terminated
+> strings in UTF-8 encoding [UTF8]. This property MAY be changed by a
+> Pager or the Window Manager at any time.
+---
+ include/atoms.xmacro |  1 +
+ include/ewmh.h       |  6 ++++++
+ src/commands.c       |  2 ++
+ src/ewmh.c           | 41 ++++++++++++++++++++++++++++++++++++++++-
+ src/main.c           |  1 +
+ src/workspace.c      |  2 ++
+ 6 files changed, 52 insertions(+), 1 deletion(-)
+
+diff --git a/include/atoms.xmacro b/include/atoms.xmacro
+index 12e9ee2..c33fbab 100644
+--- a/include/atoms.xmacro
++++ b/include/atoms.xmacro
+@@ -17,6 +17,7 @@ xmacro(_NET_CLIENT_LIST)
+ xmacro(_NET_CLIENT_LIST_STACKING)
+ xmacro(_NET_CURRENT_DESKTOP)
+ xmacro(_NET_NUMBER_OF_DESKTOPS)
++xmacro(_NET_DESKTOP_NAMES)
+ xmacro(_NET_ACTIVE_WINDOW)
+ xmacro(_NET_STARTUP_ID)
+ xmacro(_NET_WORKAREA)
+diff --git a/include/ewmh.h b/include/ewmh.h
+index 38d612d..d2e344f 100644
+--- a/include/ewmh.h
++++ b/include/ewmh.h
+@@ -25,6 +25,12 @@ void ewmh_update_current_desktop(void);
+ void ewmh_update_number_of_desktops(void);
+ 
+ /**
++ * Updates _NET_DESKTOP_NAMES: "The names of all virtual desktops. This is a
++ * list of NULL-terminated strings in UTF-8 encoding"
++ */
++void ewmh_update_desktop_names(void);
++
++/**
+  * Updates _NET_ACTIVE_WINDOW with the currently focused window.
+  *
+  * EWMH: The window ID of the currently active window or None if no window has
+diff --git a/src/commands.c b/src/commands.c
+index b9c130d..a3d3c19 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -1948,6 +1948,8 @@ void cmd_rename_workspace(I3_CMD, char *old_name, char *new_name) {
+     ysuccess(true);
+ 
+     ipc_send_event("workspace", I3_IPC_EVENT_WORKSPACE, "{\"change\":\"rename\"}");
++    ewmh_update_desktop_names();
++    ewmh_update_current_desktop();
+ }
+ 
+ /*
+diff --git a/src/ewmh.c b/src/ewmh.c
+index 3ef7993..fe086ab 100644
+--- a/src/ewmh.c
++++ b/src/ewmh.c
+@@ -62,6 +62,45 @@ void ewmh_update_number_of_desktops(void) {
+ }
+ 
+ /*
++ * Updates _NET_DESKTOP_NAMES: "The names of all virtual desktops. This is a
++ * list of NULL-terminated strings in UTF-8 encoding"
++ */
++void ewmh_update_desktop_names(void) {
++    Con *output;
++    int msg_length = 0;
++
++    /* count the size of the property message to set */
++    TAILQ_FOREACH(output, &(croot->nodes_head), nodes) {
++        Con *ws;
++        TAILQ_FOREACH(ws, &(output_get_content(output)->nodes_head), nodes) {
++            if (STARTS_WITH(ws->name, "__"))
++                continue;
++            msg_length += strlen(ws->name) + 1;
++        }
++    }
++
++    char desktop_names[msg_length];
++    int current_position = 0;
++
++    /* fill the buffer with the names of the i3 workspaces */
++    TAILQ_FOREACH(output, &(croot->nodes_head), nodes) {
++        Con *ws;
++        TAILQ_FOREACH(ws, &(output_get_content(output)->nodes_head), nodes) {
++            if (STARTS_WITH(ws->name, "__"))
++                continue;
++
++            for (int i = 0; i < strlen(ws->name) + 1; i++) {
++                desktop_names[current_position] = ws->name[i];
++                current_position += 1;
++            }
++        }
++    }
++
++    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root,
++                        A__NET_DESKTOP_NAMES, A_UTF8_STRING, 8, msg_length, desktop_names);
++}
++
++/*
+  * Updates _NET_ACTIVE_WINDOW with the currently focused window.
+  *
+  * EWMH: The window ID of the currently active window or None if no window has
+@@ -159,5 +198,5 @@ void ewmh_setup_hints(void) {
+     /* I’m not entirely sure if we need to keep _NET_WM_NAME on root. */
+     xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_WM_NAME, A_UTF8_STRING, 8, strlen("i3"), "i3");
+ 
+-    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_SUPPORTED, XCB_ATOM_ATOM, 32, 19, supported_atoms);
++    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_SUPPORTED, XCB_ATOM_ATOM, 32, 20, supported_atoms);
+ }
+diff --git a/src/main.c b/src/main.c
+index 917ae1c..fa6c8af 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -768,6 +768,7 @@ int main(int argc, char *argv[]) {
+     /* Set the ewmh desktop properties. */
+     ewmh_update_current_desktop();
+     ewmh_update_number_of_desktops();
++    ewmh_update_desktop_names();
+ 
+     struct ev_io *xcb_watcher = scalloc(sizeof(struct ev_io));
+     struct ev_io *xkb = scalloc(sizeof(struct ev_io));
+diff --git a/src/workspace.c b/src/workspace.c
+index 41c0295..1808160 100644
+--- a/src/workspace.c
++++ b/src/workspace.c
+@@ -93,6 +93,7 @@ Con *workspace_get(const char *num, bool *created) {
+ 
+         ipc_send_event("workspace", I3_IPC_EVENT_WORKSPACE, "{\"change\":\"init\"}");
+         ewmh_update_number_of_desktops();
++        ewmh_update_desktop_names();
+         if (created != NULL)
+             *created = true;
+     } else if (created != NULL) {
+@@ -426,6 +427,7 @@ static void _workspace_show(Con *workspace) {
+             tree_close(old, DONT_KILL_WINDOW, false, false);
+             ipc_send_event("workspace", I3_IPC_EVENT_WORKSPACE, "{\"change\":\"empty\"}");
+             ewmh_update_number_of_desktops();
++            ewmh_update_desktop_names();
+         }
+     }
+ 
+-- 
+2.0.0
+

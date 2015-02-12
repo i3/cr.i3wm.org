@@ -1,0 +1,38 @@
+From 09f2c34ddbd734db01b8afefe889e6942b17610c Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 24 Sep 2013 20:57:39 -0400
+Subject: [PATCH 3/4] Implement drag cancel for resizing floating windows
+
+Hi, I am a new developer and this is my first code submission to a
+project. If I do anything wrong, please let me know.
+
+The patches I've submitted implement #1074 "Add ability to escape
+out of a mouse-resize operation".
+---
+ src/floating.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/src/floating.c b/src/floating.c
+index c5ea3a7..aa66042 100644
+--- a/src/floating.c
++++ b/src/floating.c
+@@ -554,7 +554,15 @@ void floating_resize_window(Con *con, const bool proportional,
+ 
+     struct resize_window_callback_params params = { corner, proportional, event };
+ 
+-    drag_pointer(con, event, XCB_NONE, BORDER_TOP /* irrelevant */, cursor, resize_window_callback, &params);
++    /* get the initial rect in case of cancel */
++    struct Rect initial_rect = con->rect;
++
++    int drag_result = drag_pointer(con, event, XCB_NONE, BORDER_TOP /* irrelevant */, cursor, resize_window_callback, &params);
++
++    /* If the user cancels, undo the resize */
++    if (drag_result == 1) {
++        floating_reposition(con, initial_rect);
++    }
+ 
+     /* If this is a scratchpad window, don't auto center it from now on. */
+     if (con->scratchpad_state == SCRATCHPAD_FRESH)
+-- 
+1.8.4
+

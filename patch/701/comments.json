@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 55,
+    "Comment": "Thanks for adding the comment. I think the code as-is is not enough. Consider the case where you have two bars and use the “fullscreen global” feature. You’ll have a transition from 0 visible bars to 2 visible bars, but the child will not be continued.\n\nI suggest adding a new static variable which tracks whether the child is stopped. Then, use e.g.:\n\n    bool should_be_stopped = (num_visible == 0);\n    if (should_be_stopped == is_stopped)\n        return;\n    if (should_be_stopped)\n        stop_child();\n    else cont_child();\n    is_stopped = should_be_stopped;",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 44,
+    "Comment": "If you follow my suggestion below, you could delete these 3 lines of code and just always update output-\u003evisible.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

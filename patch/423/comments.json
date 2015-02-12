@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 26,
+    "Comment": "I thought we would get the termination signal after `cleanup` runs. I don't know if I was wrong about that or if there was a recent change in libev that changed that.\n\nAnyway just showing the last message received is the safest way I know to avoid the race condition. If you don't like that, I can probably think of something else though.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "Here you compare cmd_output against NULL, but below you check cmd_output-\u003ejson_gen.\n\nIs that intentional? If so, why?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 19,
+    "Comment": "no that was a mistake caused by working blind.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

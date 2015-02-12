@@ -1,0 +1,344 @@
+From 877df170f4673b80057a8c93f1298389866d6bff Mon Sep 17 00:00:00 2001
+From: Alexander Kedrik <alexander.kedrik@…>
+Date: Wed, 1 Jan 2014 20:19:55 +0400
+Subject: [PATCH] use designated initializers for yajl_callbacks struct
+
+---
+ i3-msg/main.c                 | 18 ++++++------------
+ i3bar/src/child.c             | 20 ++++++++++----------
+ i3bar/src/config.c            | 15 ++++-----------
+ i3bar/src/mode.c              | 15 +++------------
+ i3bar/src/outputs.c           | 20 ++++++++------------
+ i3bar/src/parse_json_header.c | 20 ++++++--------------
+ i3bar/src/workspaces.c        | 18 ++++++------------
+ src/display_version.c         | 13 ++-----------
+ src/ipc.c                     |  6 +++---
+ src/key_press.c               | 15 ++++-----------
+ src/load_layout.c             | 20 ++++++++++----------
+ 11 files changed, 62 insertions(+), 118 deletions(-)
+
+diff --git a/i3-msg/main.c b/i3-msg/main.c
+index 11a3197..513f289 100644
+--- a/i3-msg/main.c
++++ b/i3-msg/main.c
+@@ -118,18 +118,12 @@ static int reply_map_key_cb(void *params, const unsigned char *keyVal, unsigned
+     return 1;
+ }
+ 
+-yajl_callbacks reply_callbacks = {
+-    NULL,
+-    &reply_boolean_cb,
+-    NULL,
+-    NULL,
+-    NULL,
+-    &reply_string_cb,
+-    &reply_start_map_cb,
+-    &reply_map_key_cb,
+-    &reply_end_map_cb,
+-    NULL,
+-    NULL
++static yajl_callbacks reply_callbacks = {
++    .yajl_boolean = reply_boolean_cb,
++    .yajl_string = reply_string_cb,
++    .yajl_start_map = reply_start_map_cb,
++    .yajl_map_key = reply_map_key_cb,
++    .yajl_end_map = reply_end_map_cb,
+ };
+ 
+ int main(int argc, char *argv[]) {
+diff --git a/i3bar/src/child.c b/i3bar/src/child.c
+index 3621234..6c1c17f 100644
+--- a/i3bar/src/child.c
++++ b/i3bar/src/child.c
+@@ -35,7 +35,6 @@ ev_io    *stdin_io;
+ ev_child *child_sig;
+ 
+ /* JSON parser for stdin */
+-yajl_callbacks callbacks;
+ yajl_handle parser;
+ 
+ /* JSON generator for stdout */
+@@ -458,15 +457,16 @@ void start_child(char *command) {
+         return;
+ 
+     /* Allocate a yajl parser which will be used to parse stdin. */
+-    memset(&callbacks, '\0', sizeof(yajl_callbacks));
+-    callbacks.yajl_map_key = stdin_map_key;
+-    callbacks.yajl_boolean = stdin_boolean;
+-    callbacks.yajl_string = stdin_string;
+-    callbacks.yajl_integer = stdin_integer;
+-    callbacks.yajl_start_array = stdin_start_array;
+-    callbacks.yajl_end_array = stdin_end_array;
+-    callbacks.yajl_start_map = stdin_start_map;
+-    callbacks.yajl_end_map = stdin_end_map;
++    static yajl_callbacks callbacks = {
++        .yajl_boolean = stdin_boolean,
++        .yajl_integer = stdin_integer,
++        .yajl_string = stdin_string,
++        .yajl_start_map = stdin_start_map,
++        .yajl_map_key = stdin_map_key,
++        .yajl_end_map = stdin_end_map,
++        .yajl_start_array = stdin_start_array,
++        .yajl_end_array = stdin_end_array,
++    };
+ #if YAJL_MAJOR < 2
+     yajl_parser_config parse_conf = { 0, 0 };
+ 
+diff --git a/i3bar/src/config.c b/i3bar/src/config.c
+index dea47b9..0e6ba3f 100644
+--- a/i3bar/src/config.c
++++ b/i3bar/src/config.c
+@@ -212,17 +212,10 @@ static int config_boolean_cb(void *params_, int val) {
+ 
+ /* A datastructure to pass all these callbacks to yajl */
+ static yajl_callbacks outputs_callbacks = {
+-    &config_null_cb,
+-    &config_boolean_cb,
+-    NULL,
+-    NULL,
+-    NULL,
+-    &config_string_cb,
+-    NULL,
+-    &config_map_key_cb,
+-    NULL,
+-    NULL,
+-    NULL
++    .yajl_null = config_null_cb,
++    .yajl_boolean = config_boolean_cb,
++    .yajl_string = config_string_cb,
++    .yajl_map_key = config_map_key_cb,
+ };
+ 
+ /*
+diff --git a/i3bar/src/mode.c b/i3bar/src/mode.c
+index 7363971..a34f206 100644
+--- a/i3bar/src/mode.c
++++ b/i3bar/src/mode.c
+@@ -72,18 +72,9 @@ static int mode_map_key_cb(void *params_, const unsigned char *keyVal, unsigned
+ }
+ 
+ /* A datastructure to pass all these callbacks to yajl */
+-yajl_callbacks mode_callbacks = {
+-    NULL,
+-    NULL,
+-    NULL,
+-    NULL,
+-    NULL,
+-    &mode_string_cb,
+-    NULL,
+-    &mode_map_key_cb,
+-    NULL,
+-    NULL,
+-    NULL
++static yajl_callbacks mode_callbacks = {
++    .yajl_string = mode_string_cb,
++    .yajl_map_key = mode_map_key_cb,
+ };
+ 
+ /*
+diff --git a/i3bar/src/outputs.c b/i3bar/src/outputs.c
+index db98670..b407df5 100644
+--- a/i3bar/src/outputs.c
++++ b/i3bar/src/outputs.c
+@@ -248,18 +248,14 @@ static int outputs_map_key_cb(void *params_, const unsigned char *keyVal, unsign
+ }
+ 
+ /* A datastructure to pass all these callbacks to yajl */
+-yajl_callbacks outputs_callbacks = {
+-    &outputs_null_cb,
+-    &outputs_boolean_cb,
+-    &outputs_integer_cb,
+-    NULL,
+-    NULL,
+-    &outputs_string_cb,
+-    &outputs_start_map_cb,
+-    &outputs_map_key_cb,
+-    &outputs_end_map_cb,
+-    NULL,
+-    NULL
++static yajl_callbacks outputs_callbacks = {
++    .yajl_null = outputs_null_cb,
++    .yajl_boolean = outputs_boolean_cb,
++    .yajl_integer = outputs_integer_cb,
++    .yajl_string = outputs_string_cb,
++    .yajl_start_map = outputs_start_map_cb,
++    .yajl_map_key = outputs_map_key_cb,
++    .yajl_end_map = outputs_end_map_cb,
+ };
+ 
+ /*
+diff --git a/i3bar/src/parse_json_header.c b/i3bar/src/parse_json_header.c
+index c09e0f4..86afab3 100644
+--- a/i3bar/src/parse_json_header.c
++++ b/i3bar/src/parse_json_header.c
+@@ -93,20 +93,6 @@ static int header_map_key(void *ctx, const unsigned char *stringval, unsigned in
+     return 1;
+ }
+ 
+-static yajl_callbacks version_callbacks = {
+-    NULL, /* null */
+-    &header_boolean, /* boolean */
+-    &header_integer,
+-    NULL, /* double */
+-    NULL, /* number */
+-    NULL, /* string */
+-    NULL, /* start_map */
+-    &header_map_key,
+-    NULL, /* end_map */
+-    NULL, /* start_array */
+-    NULL /* end_array */
+-};
+-
+ static void child_init(i3bar_child *child) {
+     child->version = 0;
+     child->stop_signal = SIGSTOP;
+@@ -122,6 +108,12 @@ static void child_init(i3bar_child *child) {
+  *
+  */
+ void parse_json_header(i3bar_child *child, const unsigned char *buffer, int length, unsigned int *consumed) {
++    static yajl_callbacks version_callbacks = {
++        .yajl_boolean = header_boolean,
++        .yajl_integer = header_integer,
++        .yajl_map_key = &header_map_key,
++    };
++
+     child_init(child);
+ 
+     current_key = NO_KEY;
+diff --git a/i3bar/src/workspaces.c b/i3bar/src/workspaces.c
+index 5e01b98..e07a430 100644
+--- a/i3bar/src/workspaces.c
++++ b/i3bar/src/workspaces.c
+@@ -198,18 +198,12 @@ static int workspaces_map_key_cb(void *params_, const unsigned char *keyVal, uns
+ }
+ 
+ /* A datastructure to pass all these callbacks to yajl */
+-yajl_callbacks workspaces_callbacks = {
+-    NULL,
+-    &workspaces_boolean_cb,
+-    &workspaces_integer_cb,
+-    NULL,
+-    NULL,
+-    &workspaces_string_cb,
+-    &workspaces_start_map_cb,
+-    &workspaces_map_key_cb,
+-    NULL,
+-    NULL,
+-    NULL
++static yajl_callbacks workspaces_callbacks = {
++    .yajl_boolean = workspaces_boolean_cb,
++    .yajl_integer = workspaces_integer_cb,
++    .yajl_string = workspaces_string_cb,
++    .yajl_start_map = workspaces_start_map_cb,
++    .yajl_map_key = workspaces_map_key_cb,
+ };
+ 
+ /*
+diff --git a/src/display_version.c b/src/display_version.c
+index 73bc54d..da667ff 100644
+--- a/src/display_version.c
++++ b/src/display_version.c
+@@ -42,17 +42,8 @@ static int version_map_key(void *ctx, const unsigned char *stringval, unsigned i
+ }
+ 
+ static yajl_callbacks version_callbacks = {
+-    NULL, /* null */
+-    NULL, /* boolean */
+-    NULL, /* integer */
+-    NULL, /* double */
+-    NULL, /* number */
+-    &version_string,
+-    NULL, /* start_map */
+-    &version_map_key,
+-    NULL, /* end_map */
+-    NULL, /* start_array */
+-    NULL /* end_array */
++    .yajl_string = version_string,
++    .yajl_map_key = version_map_key,
+ };
+ 
+ /*
+diff --git a/src/ipc.c b/src/ipc.c
+index ab12dcb..e0f5e84 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -815,7 +815,6 @@ static int add_subscription(void *extra, const unsigned char *s,
+  */
+ IPC_HANDLER(subscribe) {
+     yajl_handle p;
+-    yajl_callbacks callbacks;
+     yajl_status stat;
+     ipc_client *current, *client = NULL;
+ 
+@@ -834,8 +833,9 @@ IPC_HANDLER(subscribe) {
+     }
+ 
+     /* Setup the JSON parser */
+-    memset(&callbacks, 0, sizeof(yajl_callbacks));
+-    callbacks.yajl_string = add_subscription;
++    static yajl_callbacks callbacks = {
++        .yajl_string = add_subscription,
++    };
+ 
+     p = yalloc(&callbacks, (void*)client);
+     stat = yajl_parse(p, (const unsigned char*)message, message_size);
+diff --git a/src/key_press.c b/src/key_press.c
+index 2f77a2a..b8c8cd2 100644
+--- a/src/key_press.c
++++ b/src/key_press.c
+@@ -51,17 +51,10 @@ static int json_end_map(void *ctx) {
+ }
+ 
+ static yajl_callbacks command_error_callbacks = {
+-    NULL,
+-    &json_boolean,
+-    NULL,
+-    NULL,
+-    NULL,
+-    NULL,
+-    &json_start_map,
+-    &json_map_key,
+-    &json_end_map,
+-    NULL,
+-    NULL
++    .yajl_boolean = json_boolean,
++    .yajl_start_map = json_start_map,
++    .yajl_map_key = json_map_key,
++    .yajl_end_map = json_end_map,
+ };
+ 
+ /*
+diff --git a/src/load_layout.c b/src/load_layout.c
+index 7457d51..eafe508 100644
+--- a/src/load_layout.c
++++ b/src/load_layout.c
+@@ -406,16 +406,16 @@ void tree_append_json(const char *filename, char **errormsg) {
+     LOG("read %d bytes\n", n);
+     yajl_gen g;
+     yajl_handle hand;
+-    yajl_callbacks callbacks;
+-    memset(&callbacks, '\0', sizeof(yajl_callbacks));
+-    callbacks.yajl_start_map = json_start_map;
+-    callbacks.yajl_end_map = json_end_map;
+-    callbacks.yajl_end_array = json_end_array;
+-    callbacks.yajl_string = json_string;
+-    callbacks.yajl_map_key = json_key;
+-    callbacks.yajl_integer = json_int;
+-    callbacks.yajl_double = json_double;
+-    callbacks.yajl_boolean = json_bool;
++    static yajl_callbacks callbacks = {
++        .yajl_boolean = json_bool,
++        .yajl_integer = json_int,
++        .yajl_double = json_double,
++        .yajl_string = json_string,
++        .yajl_start_map = json_start_map,
++        .yajl_map_key = json_key,
++        .yajl_end_map = json_end_map,
++        .yajl_end_array = json_end_array,
++    };
+ #if YAJL_MAJOR >= 2
+     g = yajl_gen_alloc(NULL);
+     hand = yajl_alloc(&callbacks, NULL, (void*)g);
+-- 
+1.8.5.2
+

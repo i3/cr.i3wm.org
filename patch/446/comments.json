@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 53,
+    "Comment": "This actually changes the meaning of the code in cases where both POWER_SUPPLY_ENERGY_NOW and POWER_SUPPLY_CHARGE_NOW are specified. I’m not sure whether that is happening in practice, but it’s worth mentioning it, I think. Can you exclude that this ever happens?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 63,
+    "Comment": "superfluous space in from of “present_rate”.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 63,
+    "Comment": "Also superfluous space after \u0026\u0026. Please fix the space issues here and below.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 82,
+    "Comment": "indentation wrong, “else if” needs to go on the previous line, add a space after “if”",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 96,
+    "Comment": "Please don’t make whitespace changes.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 39,
+    "Comment": "As a general comment: I’m not yet convinced that exchanging strncmp for another comparison is actually a win. Modern compilers are supposed to optimize the strcmp function family into highly optimized assembler code. Did you check the resulting assembler code and verified that your changes actually make it faster? (Sounds tedious, but with optimizations at this level, I’d rather have some data to justify such a commit.)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

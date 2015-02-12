@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 56,
+    "Comment": "small nitpick: use “int render_deco_height(void)”, see http://c.i3wm.org/206b96202c",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

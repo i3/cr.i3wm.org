@@ -1,0 +1,41 @@
+From ad36b684dc52f70a4d62d570aa83c6c3e5505cab Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 13 Jun 2014 20:06:22 -0400
+Subject: [PATCH] docs: fix ipc library list formatting
+
+---
+ docs/ipc | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/docs/ipc b/docs/ipc
+index c976870..4c82d40 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -754,15 +754,14 @@ all this on your own). This list names some (if you wrote one, please let me
+ know):
+ 
+ C::
+-	i3 includes a headerfile +i3/ipc.h+ which provides you all constants.
+-
+-	https://github.com/acrisci/i3ipc-glib
++	* i3 includes a headerfile +i3/ipc.h+ which provides you all constants.
++	* https://github.com/acrisci/i3ipc-glib
+ Go::
+ 	* https://github.com/proxypoke/i3ipc
+ JavaScript::
+ 	* https://github.com/acrisci/i3ipc-gjs
+ Lua::
+-	* https:/github.com/acrisci/i3ipc-lua
++	* https://github.com/acrisci/i3ipc-lua
+ Perl::
+ 	* https://metacpan.org/module/AnyEvent::I3
+ Python::
+@@ -770,4 +769,4 @@ Python::
+ 	* https://github.com/whitelynx/i3ipc (not maintained)
+ 	* https://github.com/ziberna/i3-py (not maintained)
+ Ruby::
+-	http://github.com/badboy/i3-ipc
++	* http://github.com/badboy/i3-ipc
+-- 
+2.0.0
+

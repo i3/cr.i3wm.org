@@ -1,0 +1,121 @@
+From 96862e53d538ffeea24331989bccded136bc7a4e Mon Sep 17 00:00:00 2001
+From: Alexander Vasarab <alexander@…>
+Date: Tue, 29 Apr 2014 15:30:11 -0700
+Subject: [PATCH] Fix NetBSD CPU temp gauge bug
+
+This patch fixes a bug in which multiple (conflicting) CPU temps may be
+included in the output for the "cpu temperature" module.
+
+The bug is due to the way that the code parsed the envsys(4)-returned data,
+and would manifest itself on x86-based NetBSD machines, since those use
+cputemp(4) as well as acpitz(4), thereby creating multiple envsys(4) entries
+with identical descriptions but which refer to different physical sensors.
+
+Instead of matching the description attribute of each device returned by
+envsys(4) against the target format, this patch throws away non-matching keys
+in the first instruction inside the dict walk. This has the benefit of sparing
+unnecessary CPU cycles, and preventing other sensors from being included
+erroneously.
+
+Additionally, the THERMAL_ZONE format is now joined with OpenBSD in that it
+uses acpitz(4) explicitly. This is prefered since it is much older (dating
+back to NetBSD 2.0), and does not exclude x86-based users (as with cputemp(4)).
+---
+ include/i3status.h          |  5 +----
+ src/print_cpu_temperature.c | 39 +++++++++++++++++++++------------------
+ 2 files changed, 22 insertions(+), 22 deletions(-)
+
+diff --git a/include/i3status.h b/include/i3status.h
+index 829fc4e..4c63305 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -30,12 +30,9 @@ enum { O_DZEN2, O_XMOBAR, O_I3BAR, O_TERM, O_NONE } output_format;
+ #define BATT_TIME "hw.acpi.battery.time"
+ #define BATT_STATE "hw.acpi.battery.state"
+ 
+-#elif defined(__OpenBSD__)
++#elif defined(__OpenBSD__) || defined(__NetBSD__)
+ /* Default to acpitz(4) if no path is set. */
+ #define THERMAL_ZONE "acpitz%d"
+-#elif defined(__NetBSD__)
+-/* Rely on envsys(4). The key of the sensor is generally cpu%d temperature */
+-#define THERMAL_ZONE "cpu%d temperature"
+ #endif
+ 
+ #if defined(__FreeBSD_kernel__) && defined(__GLIBC__)
+diff --git a/src/print_cpu_temperature.c b/src/print_cpu_temperature.c
+index 48bbf91..51df790 100644
+--- a/src/print_cpu_temperature.c
++++ b/src/print_cpu_temperature.c
+@@ -167,7 +167,6 @@ void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const
+             goto error_netbsd2;
+         }
+ 
+-        /* print sensors for all devices registered */
+         iter = prop_dictionary_iterator(dict);
+         if (iter == NULL) {
+             err = true;
+@@ -176,39 +175,43 @@ void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const
+ 
+         /* iterate over the dictionary returned by the kernel */
+         while ((obj = prop_object_iterator_next(iter)) != NULL) {
++                /* skip this dict if it's not what we're looking for */
++                if ((strlen(prop_dictionary_keysym_cstring_nocopy(obj)) != strlen(thermal_zone)) ||
++                    (strncmp(thermal_zone,
++                             prop_dictionary_keysym_cstring_nocopy(obj),
++                             strlen(thermal_zone)) != 0))
++                        continue;
++
+                 array = prop_dictionary_get_keysym(dict, obj);
+                 if (prop_object_type(array) != PROP_TYPE_ARRAY) {
+                     err = true;
+                     goto error_netbsd3;
+                 }
++
+                 iter2 = prop_array_iterator(array);
+                 if (!iter2) {
+                     err = true;
+                     goto error_netbsd3;
+                 }
+ 
+-                /* iterate over the array of dictionaries */
++                /* iterate over array of dicts specific to target sensor */
+                 while ((obj2 = prop_object_iterator_next(iter2)) != NULL) {
+-                        obj3 = prop_dictionary_get(obj2, "description");
+-                        if (obj3 &&
+-                            strcmp(thermal_zone, prop_string_cstring_nocopy(obj3)) == 0)
+-                        {
+-                                obj3 = prop_dictionary_get(obj2, "cur-value");
+-                                float temp = MUKTOC(prop_number_integer_value(obj3));
+-                                if ((int)temp >= max_threshold) {
+-                                        START_COLOR("color_bad");
+-                                        colorful_output = true;
+-                                }
++                        obj3 = prop_dictionary_get(obj2, "cur-value");
++
++                        float temp = MUKTOC(prop_number_integer_value(obj3));
++                        if ((int)temp >= max_threshold) {
++                                START_COLOR("color_bad");
++                                colorful_output = true;
++                        }
+ 
+-                                outwalk += sprintf(outwalk, "%.2f", temp);
++                        outwalk += sprintf(outwalk, "%.2f", temp);
+ 
+-                                if (colorful_output) {
+-                                        END_COLOR;
+-                                        colorful_output = false;
+-                                }
+-                                break;
++                        if (colorful_output) {
++                                END_COLOR;
++                                colorful_output = false;
+                         }
+ 
++                        break;
+                 }
+                 prop_object_iterator_release(iter2);
+         }
+-- 
+1.9.0
+

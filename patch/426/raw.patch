@@ -1,0 +1,26 @@
+From 71ca626cea476b3c3289eb9d89a9442f07e97200 Mon Sep 17 00:00:00 2001
+From: Alexander Berntsen <alexander@…>
+Date: Sat, 15 Feb 2014 13:00:14 +0100
+Subject: [PATCH] man/i3.man: Update font doc to reflect i3.config
+
+---
+ man/i3.man | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/man/i3.man b/man/i3.man
+index 4358463..de8b60c 100644
+--- a/man/i3.man
++++ b/man/i3.man
+@@ -175,7 +175,8 @@ You can specify a custom path using the -c option.
+ -------------------------------------------------------------
+ # i3 config file (v4)
+ 
+-# font for window titles. ISO 10646 = Unicode
++# font for window titles. also used by the bar (unless a different font is
++# used in the bar {} block. ISO 10646 = Unicode
+ font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
+ 
+ # use Mouse+Mod1 to drag floating windows to their wanted position
+-- 
+1.8.3.2
+

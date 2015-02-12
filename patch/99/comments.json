@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 205,
+    "Comment": "coding style: space between if and parens. Please check this everywhere.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 55,
+    "Comment": "As discussed in the previous review (#80), please change the generic bidirectional to the more specific click_events throughout. One more thing: Please strip the revision history of your patch from the long description.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

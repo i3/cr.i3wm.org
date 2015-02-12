@@ -1,0 +1,159 @@
+From dd3bbf537b5a38da9ce16e8abef03d96b2b19555 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sat, 9 Nov 2013 13:40:23 -0500
+Subject: [PATCH] i3bar: Reduce noise to tray clients
+
+Try not to send messages to tray clients which could raise errors on the
+client side, causing some clients to die.
+
+BadWindow errors can be caused by sending tray clients messages pointing
+to false manager selections and by race conditions related to setting
+the tray manager selection multiple times per loading of i3.
+
+Expands support for running multiple bar instances.
+
+Fixes an issue which may cause tray clients to appear on a bar which
+does not have the tray manager selection.
+---
+ i3bar/src/xcb.c | 67 +++++++++++++++++++++++++++++++++++++++++----------------
+ 1 file changed, 49 insertions(+), 18 deletions(-)
+
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index cec7ab8..d9e88db 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -53,6 +53,9 @@ xcb_window_t     xcb_root;
+ static xcb_window_t selwin = XCB_NONE;
+ static xcb_intern_atom_reply_t *tray_reply = NULL;
+ 
++/* set to true when selwin has the tray manager selection */
++static bool has_tray_selection= false;
++
+ /* This is needed for integration with libi3 */
+ xcb_connection_t *conn;
+ 
+@@ -1078,6 +1081,9 @@ void init_xcb_late(char *fontname) {
+  *
+  */
+ static void send_tray_clientmessage(void) {
++    if (!has_tray_selection)
++        return;
++
+     uint8_t buffer[32] = { 0 };
+     xcb_client_message_event_t *ev = (xcb_client_message_event_t*)buffer;
+ 
+@@ -1104,13 +1110,41 @@ static void send_tray_clientmessage(void) {
+  *
+  */
+ void init_tray(void) {
+-    DLOG("Initializing system tray functionality\n");
++    DLOG("Starting tray initialization.\n");
+     /* request the tray manager atom for the X11 display we are running on */
+     char atomname[strlen("_NET_SYSTEM_TRAY_S") + 11];
+     snprintf(atomname, strlen("_NET_SYSTEM_TRAY_S") + 11, "_NET_SYSTEM_TRAY_S%d", screen);
+     xcb_intern_atom_cookie_t tray_cookie;
+-    if (tray_reply == NULL)
++
++    if (tray_reply == NULL) {
+         tray_cookie = xcb_intern_atom(xcb_connection, 0, strlen(atomname), atomname);
++        tray_reply = xcb_intern_atom_reply(xcb_connection, tray_cookie, NULL);
++
++        if (!tray_reply) {
++            ELOG("Could not get atom %s\n", atomname);
++            exit(EXIT_FAILURE);
++        }
++    }
++
++    /* be nice and back off if anybody owns the tray already */
++    xcb_get_selection_owner_cookie_t current_sel_cookie;
++    xcb_get_selection_owner_reply_t *current_sel_reply;
++
++    current_sel_cookie = xcb_get_selection_owner(xcb_connection, tray_reply->atom);
++    current_sel_reply = xcb_get_selection_owner_reply(xcb_connection, current_sel_cookie, NULL);
++
++    if (current_sel_reply == NULL) {
++        DLOG("Could not get selection owner for %s\n", atomname);
++        exit(EXIT_FAILURE);
++    }
++
++    if (current_sel_reply->owner) {
++        DLOG("Tray owned by 0x%08x, not configuring tray.\n", current_sel_reply->owner);
++        free(current_sel_reply);
++        return;
++    }
++
++    free(current_sel_reply);
+ 
+     /* tray support: we need a window to own the selection */
+     selwin = xcb_generate_id(xcb_connection);
+@@ -1141,13 +1175,6 @@ void init_tray(void) {
+ 
+     init_tray_colors();
+ 
+-    if (tray_reply == NULL) {
+-        if (!(tray_reply = xcb_intern_atom_reply(xcb_connection, tray_cookie, NULL))) {
+-            ELOG("Could not get atom %s\n", atomname);
+-            exit(EXIT_FAILURE);
+-        }
+-    }
+-
+     xcb_set_selection_owner(xcb_connection,
+                             selwin,
+                             tray_reply->atom,
+@@ -1163,16 +1190,17 @@ void init_tray(void) {
+         exit(EXIT_FAILURE);
+     }
+ 
+-    if (selreply->owner != selwin) {
+-        ELOG("Could not set the %s selection. " \
+-             "Maybe another tray is already running?\n", atomname);
++    if (selreply->owner == selwin) {
++        DLOG("Tray initialized. Tray selection owned by 0x%08x.\n", selwin);
++        has_tray_selection = true;
++        send_tray_clientmessage();
++    } else {
++        ELOG("Could not set the %s selection. Cannot initialize tray.\n", atomname);
+         /* NOTE that this error is not fatal. We just can’t provide tray
+          * functionality */
+-        free(selreply);
+-        return;
+     }
+ 
+-    send_tray_clientmessage();
++    free(selreply);
+ }
+ 
+ /*
+@@ -1273,7 +1301,7 @@ void get_atoms(void) {
+  *
+  */
+ void kick_tray_clients(i3_output *output) {
+-    if (TAILQ_EMPTY(output->trayclients))
++    if (!has_tray_selection || TAILQ_EMPTY(output->trayclients))
+         return;
+ 
+     trayclient *trayclient;
+@@ -1304,7 +1332,8 @@ void kick_tray_clients(i3_output *output) {
+ 
+     xcb_send_event(conn, false, selwin, XCB_EVENT_MASK_STRUCTURE_NOTIFY, (char*)event);
+ 
+-    send_tray_clientmessage();
++    if (has_tray_selection)
++        send_tray_clientmessage();
+ }
+ 
+ /*
+@@ -1319,7 +1348,9 @@ void destroy_window(i3_output *output) {
+         return;
+     }
+ 
+-    kick_tray_clients(output);
++    if (has_tray_selection)
++        kick_tray_clients(output);
++
+     xcb_destroy_window(xcb_connection, output->bar);
+     output->bar = XCB_NONE;
+ }
+-- 
+1.8.4.2
+

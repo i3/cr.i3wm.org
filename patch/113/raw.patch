@@ -1,0 +1,30 @@
+From d58d0e27f7e9b5e1b4db52776c20331956c1c275 Mon Sep 17 00:00:00 2001
+From: Marcos Moyano <marcos@…>
+Date: Tue, 26 Mar 2013 12:25:18 -0300
+Subject: [PATCH] Philippe Virouleau introduced a bug about the scratchpad
+ behaviour on the i3-discuss mailing list. I was able to reproduce it. This
+ patch solves that problem.
+
+---
+ src/commands.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/src/commands.c b/src/commands.c
+index 2404a81..9540065 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -1812,7 +1812,10 @@ void cmd_scratchpad_show(I3_CMD) {
+     } else {
+         TAILQ_FOREACH(current, &owindows, owindows) {
+             DLOG("matching: %p / %s\n", current->con, current->con->name);
+-            scratchpad_show(current->con);
++            /*The matched window should at least be floating.*/
++            if (current->con->floating >= FLOATING_AUTO_ON) {
++              scratchpad_show(current->con);
++            }
+         }
+     }
+ 
+-- 
+1.8.2
+

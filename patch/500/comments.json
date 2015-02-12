@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 80,
+    "Comment": "You can test this by adding the protocol in the call to open_window in the old/new test.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "Superseded by commit http://c.i3wm.org/e84fa22",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

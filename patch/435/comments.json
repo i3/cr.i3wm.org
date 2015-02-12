@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Mats",
+    "Line": 16,
+    "Comment": "Saw http://cr.i3wm.org/patch/414, wanted to comment on it, but found it easier to write this patch instead...",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  },
+  {
+    "Author": "Mats",
+    "Line": 97,
+    "Comment": "Here, no distinction between megabytes and mebibytes -- depends on prefix_type.",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  },
+  {
+    "Author": "Mats",
+    "Line": 16,
+    "Comment": "Forgot to add ‘Fixes #912’. Will update if the author of the other patch is ok with this patch...",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 16,
+    "Comment": "Did you actually email the author of the other patch? (when downloading the patch you can see the author’s email address)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Mats",
+    "Line": 16,
+    "Comment": "Yes, I did send him a link to this patch.",
+    "EmailHash": "905a7b2908504397b5b9d20cc653da44"
+  }
+]

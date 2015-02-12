@@ -1,0 +1,36 @@
+From cd228d70e71d67484bb6f8793651420b50e60076 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 14 Jan 2014 21:28:56 -0500
+Subject: [PATCH] Do not create container pixmap when not needed
+
+A pixmap for a floating container without a border is not necessary
+because nothing meaningful will be drawn to it. It could possibly
+obscure areas meant to be transparent by the client.
+
+fixes #1013
+---
+ src/x.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/src/x.c b/src/x.c
+index 366cbe1..b4df589 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -667,9 +667,11 @@ void x_push_node(Con *con) {
+         /* As the pixmap only depends on the size and not on the position, it
+          * is enough to check if width/height have changed. Also, we don’t
+          * create a pixmap at all when the window is actually not visible
+-         * (height == 0). */
+-        if ((state->rect.width != rect.width ||
+-            state->rect.height != rect.height)) {
++         * (height == 0) or when it is not needed (floating and border_style ==
++         * BS_NONE). */
++        bool has_rect_changed = !(state->rect.width == rect.width && state->rect.height == rect.height);
++        bool is_pixmap_needed = !(con->border_style == BS_NONE && con_is_floating(con));
++        if (has_rect_changed && is_pixmap_needed) {
+             if (con->pixmap == 0) {
+                 con->pixmap = xcb_generate_id(conn);
+                 con->pm_gc = xcb_generate_id(conn);
+-- 
+1.8.5.2
+

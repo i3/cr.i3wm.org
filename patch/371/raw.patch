@@ -1,0 +1,28 @@
+From ef3db1f113b1da97d92d558e7c544e4896e6c85e Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Wed, 8 Jan 2014 02:51:27 -0500
+Subject: [PATCH] i3bar: Amend status line error 127 message
+
+Exit 127 can be returned by the shell when the command is not found or
+when the `status_command` process returns 127 because of a missing C
+library dependency.
+---
+ i3bar/src/child.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/i3bar/src/child.c b/i3bar/src/child.c
+index 6c1c17f..79971a3 100644
+--- a/i3bar/src/child.c
++++ b/i3bar/src/child.c
+@@ -420,7 +420,7 @@ void child_sig_cb(struct ev_loop *loop, ev_child *watcher, int revents) {
+     if (exit_status == 126)
+         set_statusline_error("status_command is not executable (exit %d)", exit_status);
+     else if (exit_status == 127)
+-        set_statusline_error("status_command not found (exit %d)", exit_status);
++        set_statusline_error("status_command not found or is missing a library dependency (exit %d)", exit_status);
+     else
+         set_statusline_error("status_command process exited unexpectedly (exit %d)", exit_status);
+ 
+-- 
+1.8.5.2
+

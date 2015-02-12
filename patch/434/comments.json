@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 17,
+    "Comment": "A config like:\n\norder += \"cpu_temperature 1\"\norder += \"cpu_temperature 2\"\norder += \"cpu_temperature 3\"\norder += \"cpu_temperature 4\"\n\ncpu_temperature 1 {\n    format = \"%degrees°\"\n    path = \"/sys/devices/platform/coretemp.0/temp2_input\"\n    max_threshold = 70\n}\ncpu_temperature 2 {\n    format = \"%degrees°\"\n    path = \"/sys/devices/platform/coretemp.0/temp3_input\"\n    max_threshold = 70\n}\ncpu_temperature 3 {\n    format = \"%degrees°\"\n    path = \"/sys/devices/platform/coretemp.0/temp4_input\"\n    max_threshold = 70\n}\ncpu_temperature 4 {\n    format = \"%degrees°\"\n    path = \"/sys/devices/platform/coretemp.0/temp5_input\"\n    max_threshold = 70\n} \n\ncurrently displays 4x the temperature from the first sensor.\n\nWith this patch, the temperatures are correctly read from each sensor.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  }
+]

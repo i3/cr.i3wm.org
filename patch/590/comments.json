@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 101,
+    "Comment": "I think the modifier names should start with an uppercase letter to be consistent with all the other places in X11.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 107,
+    "Comment": "Instead of ctrl, use “Control” for consistency with X11.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 41,
+    "Comment": "the update to docs/ipc seems to be missing",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 68,
+    "Comment": "Remove the TODO?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

@@ -1,0 +1,27 @@
+From 0eda8d9e87f801ad3a5c13705196f5ad8e0a5de9 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Mon, 10 Mar 2014 01:47:28 -0400
+Subject: [PATCH 2/2] Initialize size hints struct on manage
+
+Since the declaration of wm_size_hints in manage_window is local, it may
+initially contain garbage values. Since this variable is later used in a
+conditional, it must be zeroed to be reliable.
+---
+ src/manage.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/manage.c b/src/manage.c
+index 25d3879..def5c23 100644
+--- a/src/manage.c
++++ b/src/manage.c
+@@ -198,6 +198,7 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+     border_style_t motif_border_style = BS_NORMAL;
+     window_update_motif_hints(cwindow, xcb_get_property_reply(conn, motif_wm_hints_cookie, NULL), &motif_border_style);
+     xcb_size_hints_t wm_size_hints;
++    memset(&wm_size_hints, 0, sizeof(xcb_size_hints_t));
+     xcb_icccm_get_wm_size_hints_reply(conn, wm_normal_hints_cookie, &wm_size_hints, NULL);
+     xcb_get_property_reply_t *type_reply = xcb_get_property_reply(conn, wm_type_cookie, NULL);
+     xcb_get_property_reply_t *state_reply = xcb_get_property_reply(conn, state_cookie, NULL);
+-- 
+1.9.0
+

@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 31,
+    "Comment": "It's a bit cleaner than passing around json strings and fixes some edge cases where _NET_ACTIVE_WINDOW would not be set correctly.\n\nCould also be extended into a queue system which would improve rendering latency.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 31,
+    "Comment": "To be honest, I’m not sure I want to merge that. Sure, one can argue that having clean data types until the very last moment is cleaner than hard-coded JSON strings.\n\nThen again, this adds a substantial amount of code and I don’t think changes like this one benefit the reader of the code:\n\n-    ipc_send_event(\"workspace\", I3_IPC_EVENT_WORKSPACE, \"{\\\"change\\\":\\\"rename\\\"}\");\n+    send_workspace_event(E_CHANGE_RENAME, NULL, NULL);\n\nI am still interested in the fixes for the edge cases you mention, though. Can you submit a new patch to fix those without refactoring the event sending?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

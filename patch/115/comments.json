@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Philippe Virouleau",
+    "Line": 16,
+    "Comment": "I must miss something with the title since the commit message is *not* on a single line.",
+    "EmailHash": "73e4ef48030de3c30ccb5a5c05b20e66"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 16,
+    "Comment": "See http://cr.i3wm.org/patch/115/raw for what you submitted. It sure looks like the commit message is a single line. Note that you need to leave an empty line when using “git commit”. vim has proper highlighting for that, if you use vim.",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 16,
+    "Comment": "Ok, that's why I had a red overlined text...\nThen it's fixed, is there any way of editing the current patch or do I need to re-submit it again ?",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 16,
+    "Comment": "Please re-submit",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  }
+]

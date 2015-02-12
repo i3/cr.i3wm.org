@@ -1,0 +1,50 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 97,
+    "Comment": "It’d be better to use “if (!con || !con_is_floating(con)) { DLOG(…); return; }” above in order to save one level of indentation.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 88,
+    "Comment": "style: we use spaces between if and the parens. Please use clang-format to format your code consistently with the rest of the project.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 22,
+    "Comment": "Your demo (https://github.com/carrotIndustries/moveresize-test) already works fine for me without your patch.\n\nI’m not entirely convinced that merging your patch is a good idea, given i3’s outspoken dislike of floating windows (they should only ever be used for password popups and the like).\n\nCan you better demonstrate why i3 needs this? Perhaps with a video of before/after, in case the effect is drastic on your machine.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Lukas K",
+    "Line": 22,
+    "Comment": "Before (i3 4.8): https://transfer.sh/9J942/original.ogg\nWith this patch: https://transfer.sh/heGQP/patch.ogg\n\nIn Xephyr, where I tested this patch, the effect is even more extreme.",
+    "EmailHash": "3dde9a8f51edebb27b8cf2308e41b7fd"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 22,
+    "Comment": "Without the client request, it uses configure requests for the size/position it wants.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 22,
+    "Comment": "What exactly is the effect we’re talking about here? I don’t see a difference in terms of speed, and you’re moving the window faster than any actual user would :).\n\nIf you refer to the graphics corruption in original.ogg at the end of the video, that seems like an orthogonal issue that should be fixed.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Lukas K",
+    "Line": 22,
+    "Comment": "The fast movement is partially to laggy screen recording. The issue isn't exactly reproducible. Sometimes it works just fine, sometimes the window follows the pointer with considerable lag and the window content immediately gets corrupted. As TonyC figured out, when _NET_WM_MOVERESIZE is unavailable Gtk spams i3 with configure requests, which is certainly not optimal behaviour.",
+    "EmailHash": "3dde9a8f51edebb27b8cf2308e41b7fd"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 22,
+    "Comment": "That’s unsatisfying, but I think I’ll accept the patch (once you submit a newer revision, addressing the style nits I pointed out). If it breaks something, we can just revert it :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

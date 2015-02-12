@@ -1,0 +1,74 @@
+From b697a3d4c2633d614e0d924224c220b4c214d211 Mon Sep 17 00:00:00 2001
+From: "jj" <haptix@…>
+Date: Tue, 9 Jul 2013 00:52:40 +0200
+Subject: [PATCH] Fix problem with floating container when switching outputs
+
+When the top left corner of a floating container is outside of the screen and
+the command 'focus output <direction>' is used, i3 fails to find the currently
+focused output and crashes. With this patch, the 'focus output' command checks
+for both, the top left and down right corner of the focused container, to
+detect the current output.
+---
+ src/commands.c                 |   11 +++++++----
+ testcases/t/502-focus-output.t |   16 ++++++++++++++++
+ 2 files changed, 23 insertions(+), 4 deletions(-)
+
+diff --git a/src/commands.c b/src/commands.c
+index 07af140..c30bf07 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -1677,8 +1677,6 @@ void cmd_open(I3_CMD) {
+  *
+  */
+ void cmd_focus_output(I3_CMD, char *name) {
+-    owindow *current;
+-
+     DLOG("name = %s\n", name);
+ 
+     HANDLE_EMPTY_MATCH;
+@@ -1687,8 +1685,13 @@ void cmd_focus_output(I3_CMD, char *name) {
+     Output *current_output = NULL;
+     Output *output;
+ 
+-    TAILQ_FOREACH(current, &owindows, owindows)
+-        current_output = get_output_containing(current->con->rect.x, current->con->rect.y);
++    current_output = get_output_containing(focused->rect.x, focused->rect.y);
++    /* Check whether the current_output is null, i.e. the top left corner of the focused window
++     * is placed outside of the visible output screen. In this case, the bottom right corner
++     * must be contained in some output. */
++    if (!current_output)
++        current_output = get_output_containing(focused->rect.x + focused->rect.width, focused->rect.y + focused->rect.height);
++
+     assert(current_output != NULL);
+ 
+     output = get_output_from_string(current_output, name);
+diff --git a/testcases/t/502-focus-output.t b/testcases/t/502-focus-output.t
+index a6c5583..9f82073 100644
+--- a/testcases/t/502-focus-output.t
++++ b/testcases/t/502-focus-output.t
+@@ -71,6 +71,22 @@ is(focused_output, 'fake-1', 'focus on second output');
+ cmd 'focus output fake-0';
+ is(focused_output, 'fake-0', 'focus on first output');
+ 
++################################################################################
++# assure 'focus output' works correctly when a floating window has (partially) moved
++# out of screen
++################################################################################
++
++# open floating window
++open_window;
++cmd 'floating toggle';
++
++# move the top left corner over the left border of the current screen
++cmd 'move left 500';
++
++# focus right output
++cmd 'focus output right';
++is(focused_output, 'fake-1', 'focus on second output');
++
+ exit_gracefully($pid);
+ 
+ done_testing;
+-- 
+1.7.9.5
+

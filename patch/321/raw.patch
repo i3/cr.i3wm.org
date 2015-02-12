@@ -1,0 +1,177 @@
+From 3c88b61b893a50aad9f30d7a436683bb96dc4447 Mon Sep 17 00:00:00 2001
+From: Mats <d912e3@…>
+Date: Thu, 21 Nov 2013 18:28:53 +0100
+Subject: [PATCH] disk: Distinguish between metric and binary prefixes
+
+---
+ i3status.c            |  3 ++-
+ include/i3status.h    |  2 +-
+ man/i3status.man      |  3 +++
+ src/print_disk_info.c | 67 +++++++++++++++++++++++++++++++++++++++------------
+ 4 files changed, 57 insertions(+), 18 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index 1b9c595..4e130dc 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -281,6 +281,7 @@ int main(int argc, char *argv[]) {
+ 
+         cfg_opt_t disk_opts[] = {
+                 CFG_STR("format", "%free", CFGF_NONE),
++                CFG_BOOL("si_units", false, CFGF_NONE),
+                 CFG_END()
+         };
+ 
+@@ -483,7 +484,7 @@ int main(int argc, char *argv[]) {
+ 
+                         CASE_SEC_TITLE("disk") {
+                                 SEC_OPEN_MAP("disk_info");
+-                                print_disk_info(json_gen, buffer, title, cfg_getstr(sec, "format"));
++                                print_disk_info(json_gen, buffer, title, cfg_getstr(sec, "format"), cfg_getbool(sec, "si_units"));
+                                 SEC_CLOSE_MAP;
+                         }
+ 
+diff --git a/include/i3status.h b/include/i3status.h
+index 64cd660..e71ccc6 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -145,7 +145,7 @@ char *auto_detect_format();
+ void set_timezone(const char *tz);
+ 
+ void print_ipv6_info(yajl_gen json_gen, char *buffer, const char *format_up, const char *format_down);
+-void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format);
++void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format, const bool si_units);
+ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, const char *format_down, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity);
+ void print_time(yajl_gen json_gen, char *buffer, const char *format, const char *tz, time_t t);
+ void print_ddate(yajl_gen json_gen, char *buffer, const char *format, time_t t);
+diff --git a/man/i3status.man b/man/i3status.man
+index 8c6f616..cc67b1d 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -177,6 +177,9 @@ Gets used, free, available and total amount of bytes on the given mounted filesy
+ These values can also be expressed in percentages with the percentage_used,
+ percentage_free, percentage_avail and percentage_used_of_avail formats.
+ 
++By default, byte sizes are displayed using binary prefixes, e.g. 8.8 GiB. To
++use SI prefixes (e.g., 9.5 GB) set +si_units = true+.
++
+ *Example order*: +disk /mnt/usbstick+
+ 
+ *Example format*: +%free (%avail)/ %total+
+diff --git a/src/print_disk_info.c b/src/print_disk_info.c
+index f49fe66..1927e6d 100644
+--- a/src/print_disk_info.c
++++ b/src/print_disk_info.c
+@@ -15,35 +15,70 @@
+ 
+ #include "i3status.h"
+ 
+-#define TERABYTE (1024ULL * 1024 * 1024 * 1024)
+-#define GIGABYTE (1024ULL * 1024 * 1024)
+-#define MEGABYTE (1024ULL * 1024)
+-#define KILOBYTE (1024ULL)
++#define TERABYTE (1000ULL * 1000 * 1000 * 1000)
++#define GIGABYTE (1000ULL * 1000 * 1000)
++#define MEGABYTE (1000ULL * 1000)
++#define KILOBYTE (1000ULL)
++
++#define TEBIBYTE (1024ULL * 1024 * 1024 * 1024)
++#define GIBIBYTE (1024ULL * 1024 * 1024)
++#define MEBIBYTE (1024ULL * 1024)
++#define KIBIBYTE (1024ULL)
+ 
+ /*
+- * Prints the given amount of bytes in a human readable manner.
++ * Prints bytes in a human readable format using metric (SI) prefixes.
+  *
+  */
+-static int print_bytes_human(char *outwalk, uint64_t bytes) {
+-        if (bytes > TERABYTE)
++static int print_bytes_human_metric(char *outwalk, uint64_t bytes) {
++        if (bytes >= TERABYTE)
+                 return sprintf(outwalk, "%.02f TB", (double)bytes / TERABYTE);
+-        else if (bytes > GIGABYTE)
++        else if (bytes >= GIGABYTE)
+                 return sprintf(outwalk, "%.01f GB", (double)bytes / GIGABYTE);
+-        else if (bytes > MEGABYTE)
++        else if (bytes >= MEGABYTE)
+                 return sprintf(outwalk, "%.01f MB", (double)bytes / MEGABYTE);
+-        else if (bytes > KILOBYTE)
+-                return sprintf(outwalk, "%.01f KB", (double)bytes / KILOBYTE);
++        else if (bytes >= KILOBYTE)
++                return sprintf(outwalk, "%.01f kB", (double)bytes / KILOBYTE);
+         else {
+                 return sprintf(outwalk, "%.01f B", (double)bytes);
+         }
+ }
+ 
+ /*
++ * Prints bytes in a human readable format using binary prefixes.
++ *
++ */
++static int print_bytes_human_binary(char *outwalk, uint64_t bytes) {
++        if (bytes >= TEBIBYTE)
++                return sprintf(outwalk, "%.02f TiB", (double)bytes / TEBIBYTE);
++        else if (bytes >= GIGABYTE)
++                return sprintf(outwalk, "%.01f GiB", (double)bytes / GIBIBYTE);
++        else if (bytes >= MEGABYTE)
++                return sprintf(outwalk, "%.01f MiB", (double)bytes / MEBIBYTE);
++        else if (bytes >= KILOBYTE)
++                return sprintf(outwalk, "%.01f KiB", (double)bytes / KIBIBYTE);
++        else {
++                return sprintf(outwalk, "%.01f B", (double)bytes);
++        }
++}
++
++/*
++ * Prints the given amount of bytes in a human readable manner.
++ *
++ */
++static int print_bytes_human(char *outwalk, uint64_t bytes, bool si_units) {
++        if (si_units) {
++                return print_bytes_human_metric(outwalk, bytes);
++        } else {
++                return print_bytes_human_binary(outwalk, bytes);
++        }
++}
++
++/*
+  * Does a statvfs and prints either free, used or total amounts of bytes in a
+  * human readable manner.
+  *
+  */
+-void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format) {
++void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format, const bool si_units) {
+         const char *walk;
+         char *outwalk = buffer;
+ 
+@@ -68,22 +103,22 @@ void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const ch
+                 }
+ 
+                 if (BEGINS_WITH(walk+1, "free")) {
+-                        outwalk += print_bytes_human(outwalk, (uint64_t)buf.f_bsize * (uint64_t)buf.f_bfree);
++                        outwalk += print_bytes_human(outwalk, (uint64_t)buf.f_bsize * (uint64_t)buf.f_bfree, si_units);
+                         walk += strlen("free");
+                 }
+ 
+                 if (BEGINS_WITH(walk+1, "used")) {
+-                        outwalk += print_bytes_human(outwalk, (uint64_t)buf.f_bsize * ((uint64_t)buf.f_blocks - (uint64_t)buf.f_bfree));
++                        outwalk += print_bytes_human(outwalk, (uint64_t)buf.f_bsize * ((uint64_t)buf.f_blocks - (uint64_t)buf.f_bfree), si_units);
+                         walk += strlen("used");
+                 }
+ 
+                 if (BEGINS_WITH(walk+1, "total")) {
+-                        outwalk += print_bytes_human(outwalk, (uint64_t)buf.f_bsize * (uint64_t)buf.f_blocks);
++                        outwalk += print_bytes_human(outwalk, (uint64_t)buf.f_bsize * (uint64_t)buf.f_blocks, si_units);
+                         walk += strlen("total");
+                 }
+ 
+                 if (BEGINS_WITH(walk+1, "avail")) {
+-                        outwalk += print_bytes_human(outwalk, (uint64_t)buf.f_bsize * (uint64_t)buf.f_bavail);
++                        outwalk += print_bytes_human(outwalk, (uint64_t)buf.f_bsize * (uint64_t)buf.f_bavail, si_units);
+                         walk += strlen("avail");
+                 }
+ 
+-- 
+1.8.4.2
+

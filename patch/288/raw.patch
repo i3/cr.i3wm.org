@@ -1,0 +1,29 @@
+From a63c6340c2d60ae20022839f4e86645ca2e050dd Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Wed, 30 Oct 2013 05:15:50 -0400
+Subject: [PATCH] Abort drag when involved window(s) vanish
+
+When in a dragging state induced by `drag_pointer`, abort (rather than
+send `DRAG_CANCEL` result) on UnmapNotify.
+
+Fixes an issue that caused i3 to crash when a user is dragging or
+resizing a floating window that becomes destroyed.
+---
+ src/floating.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/src/floating.c b/src/floating.c
+index ae1a919..37513d2 100644
+--- a/src/floating.c
++++ b/src/floating.c
+@@ -659,7 +659,6 @@ drag_result_t drag_pointer(Con *con, const xcb_button_press_event_t *event, xcb_
+                     DLOG("Unmap-notify, aborting\n");
+                     handle_event(type, inside_event);
+                     loop_done = true;
+-                    drag_result = DRAG_CANCEL;
+                     break;
+ 
+                 case XCB_KEY_PRESS:
+-- 
+1.8.4.1
+

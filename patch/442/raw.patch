@@ -1,0 +1,279 @@
+From ef7bda9a4fcc6d46164839c0916e49dda267061d Mon Sep 17 00:00:00 2001
+From: Marco Hunsicker <i3@…>
+Date: Sat, 1 Mar 2014 15:56:25 +0100
+Subject: [PATCH] Support align and min_width module options
+
+This patch enables users to define "align" and "min_width" options
+right in the i3status module config sections.
+
+Specifically this patch:
+* adds macros for the two new options. As the min_width option can
+  take either a string or a number, a custom type has been added along
+  with a corresponding callback function that parses the provided value
+* expands all module config option definitions to include the new
+  options
+* the SEC_CLOSE_MAP() macro has been extended to generate the JSON for
+  the new options as necessary
+* updates the manpage to explain the new options
+---
+ i3status.c         |   46 ++++++++++++++++++++++++++++++++++++++++++++++
+ include/i3status.h |   23 +++++++++++++++++++++++
+ man/i3status.man   |   28 ++++++++++++++++++++++++++++
+ 3 files changed, 97 insertions(+)
+
+diff --git a/i3status.c b/i3status.c
+index dd97150..7848230 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -35,6 +35,8 @@
+ 
+ #define exit_if_null(pointer, ...) { if (pointer == NULL) die(__VA_ARGS__); }
+ 
++#define CFG_CUSTOM_ALIGN_OPT CFG_STR("align", NULL, CFGF_NONE)
++
+ #define CFG_COLOR_OPTS(good, degraded, bad) \
+     CFG_STR("color_good", good, CFGF_NONE), \
+     CFG_STR("color_degraded", degraded, CFGF_NONE), \
+@@ -42,6 +44,9 @@
+ 
+ #define CFG_CUSTOM_COLOR_OPTS CFG_COLOR_OPTS(NULL, NULL, NULL)
+ 
++#define CFG_CUSTOM_MIN_WIDTH_OPT \
++    CFG_PTR_CB("min_width", "default", CFGF_NONE, parse_min_width, free)
++
+ /* socket file descriptor for general purposes */
+ int general_socket;
+ 
+@@ -89,6 +94,17 @@ static char *sstrdup(const char *str) {
+         return result;
+ }
+ 
++/*
++ * Parses the min_width option whose value can either be a string or an integer.
++ */
++static int parse_min_width(cfg_t *context, cfg_opt_t *option, const char *value, void *result) {
++    struct min_width width = { atoi(value), sstrdup(value) };
++
++    *(void **)result = scalloc(sizeof(struct min_width));
++    memcpy(*(void **)result, &width, sizeof(struct min_width));
++
++    return 0;
++}
+ 
+ /*
+  * Validates a color in "#RRGGBB" format
+@@ -219,35 +235,45 @@ int main(int argc, char *argv[]) {
+         cfg_opt_t run_watch_opts[] = {
+                 CFG_STR("pidfile", NULL, CFGF_NONE),
+                 CFG_STR("format", "%title: %status", CFGF_NONE),
++                CFG_CUSTOM_ALIGN_OPT,
+                 CFG_CUSTOM_COLOR_OPTS,
++                CFG_CUSTOM_MIN_WIDTH_OPT,
+                 CFG_END()
+         };
+ 
+         cfg_opt_t path_exists_opts[] = {
+                 CFG_STR("path", NULL, CFGF_NONE),
+                 CFG_STR("format", "%title: %status", CFGF_NONE),
++                CFG_CUSTOM_ALIGN_OPT,
+                 CFG_CUSTOM_COLOR_OPTS,
++                CFG_CUSTOM_MIN_WIDTH_OPT,
+                 CFG_END()
+         };
+ 
+         cfg_opt_t wireless_opts[] = {
+                 CFG_STR("format_up", "W: (%quality at %essid, %bitrate) %ip", CFGF_NONE),
+                 CFG_STR("format_down", "W: down", CFGF_NONE),
++                CFG_CUSTOM_ALIGN_OPT,
+                 CFG_CUSTOM_COLOR_OPTS,
++                CFG_CUSTOM_MIN_WIDTH_OPT,
+                 CFG_END()
+         };
+ 
+         cfg_opt_t ethernet_opts[] = {
+                 CFG_STR("format_up", "E: %ip (%speed)", CFGF_NONE),
+                 CFG_STR("format_down", "E: down", CFGF_NONE),
++                CFG_CUSTOM_ALIGN_OPT,
+                 CFG_CUSTOM_COLOR_OPTS,
++                CFG_CUSTOM_MIN_WIDTH_OPT,
+                 CFG_END()
+         };
+ 
+         cfg_opt_t ipv6_opts[] = {
+                 CFG_STR("format_up", "%ip", CFGF_NONE),
+                 CFG_STR("format_down", "no IPv6", CFGF_NONE),
++                CFG_CUSTOM_ALIGN_OPT,
+                 CFG_CUSTOM_COLOR_OPTS,
++                CFG_CUSTOM_MIN_WIDTH_OPT,
+                 CFG_END()
+         };
+ 
+@@ -260,35 +286,47 @@ int main(int argc, char *argv[]) {
+                 CFG_BOOL("last_full_capacity", false, CFGF_NONE),
+                 CFG_BOOL("integer_battery_capacity", false, CFGF_NONE),
+                 CFG_BOOL("hide_seconds", false, CFGF_NONE),
++                CFG_CUSTOM_ALIGN_OPT,
+                 CFG_CUSTOM_COLOR_OPTS,
++                CFG_CUSTOM_MIN_WIDTH_OPT,
+                 CFG_END()
+         };
+ 
+         cfg_opt_t time_opts[] = {
+                 CFG_STR("format", "%Y-%m-%d %H:%M:%S", CFGF_NONE),
++                CFG_CUSTOM_ALIGN_OPT,
++                CFG_CUSTOM_MIN_WIDTH_OPT,
+                 CFG_END()
+         };
+ 
+         cfg_opt_t tztime_opts[] = {
+                 CFG_STR("format", "%Y-%m-%d %H:%M:%S %Z", CFGF_NONE),
+                 CFG_STR("timezone", "", CFGF_NONE),
++                CFG_CUSTOM_ALIGN_OPT,
++                CFG_CUSTOM_MIN_WIDTH_OPT,
+                 CFG_END()
+         };
+ 
+         cfg_opt_t ddate_opts[] = {
+                 CFG_STR("format", "%{%a, %b %d%}, %Y%N - %H", CFGF_NONE),
++                CFG_CUSTOM_ALIGN_OPT,
++                CFG_CUSTOM_MIN_WIDTH_OPT,
+                 CFG_END()
+         };
+ 
+         cfg_opt_t load_opts[] = {
+                 CFG_STR("format", "%1min %5min %15min", CFGF_NONE),
+                 CFG_FLOAT("max_threshold", 5, CFGF_NONE),
++                CFG_CUSTOM_ALIGN_OPT,
+                 CFG_CUSTOM_COLOR_OPTS,
++                CFG_CUSTOM_MIN_WIDTH_OPT,
+                 CFG_END()
+         };
+ 
+         cfg_opt_t usage_opts[] = {
+                 CFG_STR("format", "%usage", CFGF_NONE),
++                CFG_CUSTOM_ALIGN_OPT,
++                CFG_CUSTOM_MIN_WIDTH_OPT,
+                 CFG_END()
+         };
+ 
+@@ -296,13 +334,17 @@ int main(int argc, char *argv[]) {
+                 CFG_STR("format", "%degrees C", CFGF_NONE),
+                 CFG_STR("path", NULL, CFGF_NONE),
+                 CFG_INT("max_threshold", 75, CFGF_NONE),
++                CFG_CUSTOM_ALIGN_OPT,
+                 CFG_CUSTOM_COLOR_OPTS,
++                CFG_CUSTOM_MIN_WIDTH_OPT,
+                 CFG_END()
+         };
+ 
+         cfg_opt_t disk_opts[] = {
+                 CFG_STR("format", "%free", CFGF_NONE),
+                 CFG_STR("prefix_type", "binary", CFGF_NONE),
++                CFG_CUSTOM_ALIGN_OPT,
++                CFG_CUSTOM_MIN_WIDTH_OPT,
+                 CFG_END()
+         };
+ 
+@@ -312,7 +354,9 @@ int main(int argc, char *argv[]) {
+                 CFG_STR("device", "default", CFGF_NONE),
+                 CFG_STR("mixer", "Master", CFGF_NONE),
+                 CFG_INT("mixer_idx", 0, CFGF_NONE),
++                CFG_CUSTOM_ALIGN_OPT,
+                 CFG_CUSTOM_COLOR_OPTS,
++                CFG_CUSTOM_MIN_WIDTH_OPT,
+                 CFG_END()
+         };
+ 
+@@ -333,7 +377,9 @@ int main(int argc, char *argv[]) {
+                 CFG_SEC("ddate", ddate_opts, CFGF_NONE),
+                 CFG_SEC("load", load_opts, CFGF_NONE),
+                 CFG_SEC("cpu_usage", usage_opts, CFGF_NONE),
++                CFG_CUSTOM_ALIGN_OPT,
+                 CFG_CUSTOM_COLOR_OPTS,
++                CFG_CUSTOM_MIN_WIDTH_OPT,
+                 CFG_END()
+         };
+ 
+diff --git a/include/i3status.h b/include/i3status.h
+index a6cd535..f0c516e 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -88,6 +88,24 @@ enum { O_DZEN2, O_XMOBAR, O_I3BAR, O_TERM, O_NONE } output_format;
+ #define SEC_CLOSE_MAP \
+ 	do { \
+ 		if (output_format == O_I3BAR) { \
++			char *_align = cfg_getstr(sec, "align"); \
++			if (_align) { \
++				yajl_gen_string(json_gen, (const unsigned char *)"align", strlen("align")); \
++				yajl_gen_string(json_gen, (const unsigned char *)_align, strlen(_align)); \
++			} \
++			struct min_width *_width = cfg_getptr(sec, "min_width"); \
++			if (strlen(_width->str) > 0 && strcmp(_width->str, "default") != 0) { \
++				/* if the value can be parsed as a number we use the numerical value */ \
++				if (_width->num != 0) { \
++					if (_width->num > 0) { \
++						yajl_gen_string(json_gen, (const unsigned char *)"min_width", strlen("min_width")); \
++						yajl_gen_integer(json_gen, _width->num); \
++					} \
++				} else if (strcmp(_width->str, "0") != 0) { \
++					yajl_gen_string(json_gen, (const unsigned char *)"min_width", strlen("min_width")); \
++					yajl_gen_string(json_gen, (const unsigned char *)_width->str, strlen(_width->str)); \
++				} \
++			} \
+ 			const char *_sep = cfg_getstr(cfg_general, "separator"); \
+ 			if (strlen(_sep) == 0) {\
+ 				yajl_gen_string(json_gen, (const unsigned char *)"separator", strlen("separator")); \
+@@ -132,6 +150,11 @@ enum { O_DZEN2, O_XMOBAR, O_I3BAR, O_TERM, O_NONE } output_format;
+ 
+ typedef enum { CS_DISCHARGING, CS_CHARGING, CS_FULL } charging_status_t;
+ 
++struct min_width {
++    int num;
++    const char *str;
++};
++
+ /* src/general.c */
+ char *skip_character(char *input, char character, int amount);
+ void die(const char *fmt, ...);
+diff --git a/man/i3status.man b/man/i3status.man
+index 7ba4422..1111c17 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -404,6 +404,34 @@ volume master {
+ }
+ -------------------------------------------------------------
+ 
++== Universal module options
++
++When using the i3bar output format, there are a few additional options that
++can be used with all modules to customize their appearance:
++
++min_width::
++	The minimum width (in pixels) the module should occupy. If the module
++	takes less space than the specified size, the block will be padded to the
++	left and/or the right side, according to the defined alignment policy.
++	This is useful when you want to prevent the whole status line from shifting
++	when values take more or less space between each iteration.
++	The option can also be a string. In this case, the width of the given text
++	determines the minimum width of the block. This is useful when you want to
++	set a sensible minimum width regardless of which font you are using, and at
++	what particular size.
++align::
++	The alignment policy to use when the minimum width is not reached. Either
++	+center+ (default), +right+ or +left+.
++
++*Example configuration*:
++-------------------------------------------------------------
++disk "/" {
++    format = "%avail"
++    align = "left"
++    min_width = 100
++}
++-------------------------------------------------------------
++
+ == Using i3status with dzen2
+ 
+ After installing dzen2, you can directly use it with i3status. Just ensure that
+-- 
+1.7.10.4
+

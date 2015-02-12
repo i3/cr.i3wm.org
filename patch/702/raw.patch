@@ -1,0 +1,26 @@
+From 09ba818843951cc572c54e7a9b114c45380c4733 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sat, 24 Jan 2015 21:53:10 -0500
+Subject: [PATCH] Add lxterminal to i3-sensible-terminal
+
+fixes #1436
+---
+ i3-sensible-terminal | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/i3-sensible-terminal b/i3-sensible-terminal
+index 06c9635..747a928 100755
+--- a/i3-sensible-terminal
++++ b/i3-sensible-terminal
+@@ -8,7 +8,7 @@
+ # We welcome patches that add distribution-specific mechanisms to find the
+ # preferred terminal emulator. On Debian, there is the x-terminal-emulator
+ # symlink for example.
+-for terminal in $TERMINAL x-terminal-emulator urxvt rxvt terminator Eterm aterm xterm gnome-terminal roxterm xfce4-terminal termite; do
++for terminal in $TERMINAL x-terminal-emulator urxvt rxvt terminator Eterm aterm xterm gnome-terminal roxterm xfce4-terminal termite lxterminal; do
+     if command -v $terminal > /dev/null 2>&1; then
+         exec $terminal "$@"
+     fi
+-- 
+2.2.2
+

@@ -1,0 +1,515 @@
+From 4dc9ba6ceccb99c60d1a6bbb8e28944bcee57681 Mon Sep 17 00:00:00 2001
+From: Artem Shinkarov <artyom.shinkaroff@…>
+Date: Sun, 27 Jan 2013 20:27:21 +0000
+Subject: [PATCH] Separator color and width via config; separator off via ipc
+
+This patch adds the following features:
+1) Configure a color of the separator via config.  It is done like
+   bar {
+      colors {
+         separator #000000
+      }
+   }
+2) Configure a width of the gap between the items.  In the middle of that
+   gap separating line is being drawn.  The syntax is the following:
+   bar {
+      separator_block_width 11
+   }
+   which would set the width of the gap to 11 pixels.  If not specified
+   the default is 9 pixels.
+
+3) A block can have a boolean entry "separator" and if it is set
+   to false, then the drawing of the separating line would be disabled.
+---
+ docs/i3bar-protocol             |  5 +++++
+ docs/ipc                        |  5 +++++
+ docs/userguide                  | 24 ++++++++++++++++++++++++
+ i3bar/include/common.h          |  1 +
+ i3bar/include/config.h          |  1 +
+ i3bar/include/xcb.h             |  8 ++++++++
+ i3bar/src/child.c               |  3 +++
+ i3bar/src/config.c              | 25 ++++++++++++++++++++++++-
+ i3bar/src/ipc.c                 |  3 +++
+ i3bar/src/xcb.c                 | 21 +++++++++++++++++----
+ include/config.h                |  4 ++++
+ include/config_directives.h     |  1 +
+ parser-specs/config.spec        | 32 +++++++++++++++++++-------------
+ src/config_directives.c         | 19 +++++++++++++++++--
+ src/ipc.c                       |  4 ++++
+ testcases/t/201-config-parser.t |  2 +-
+ 16 files changed, 137 insertions(+), 21 deletions(-)
+
+diff --git a/docs/i3bar-protocol b/docs/i3bar-protocol
+index 2cf6dd0..4ce2ef2 100644
+--- a/docs/i3bar-protocol
++++ b/docs/i3bar-protocol
+@@ -154,6 +154,11 @@ urgent::
+ 	A boolean which specifies whether the current value is urgent. Examples
+ 	are battery charge values below 1 percent or no more available disk
+ 	space (for non-root users). The presentation of urgency is up to i3bar.
++separator::
++	The boolean value false disables drawing of a separating line after the
++	block.  If the field is not present then the separator will be still
++	drawn.  Keep in mind that absence of a separator is only responsible for
++        the line itself, the gap between the items would be still present.
+ 
+ If you want to put in your own entries into a block, prefix the key with an
+ underscore (_). i3bar will ignore all keys it doesn’t understand, and prefixing
+diff --git a/docs/ipc b/docs/ipc
+index c32c59e..98ea8e4 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -497,6 +497,9 @@ workspace_buttons (boolean)::
+ 	Display workspace buttons or not? Defaults to true.
+ verbose (boolean)::
+ 	Should the bar enable verbose output for debugging? Defaults to false.
++separator_block_width (integer)::
++	The width of the gap between items.  In the middle of the gap, a separating
++	line is going to be drawn.
+ colors (map)::
+ 	Contains key/value pairs of colors. Each value is a color code in hex,
+ 	formatted #rrggbb (like in HTML).
+@@ -507,6 +510,8 @@ background::
+ 	Background color of the bar.
+ statusline::
+ 	Text color to be used for the statusline.
++separator::
++	Text color to be used for the separator.
+ focused_workspace_text/focused_workspace_bg::
+ 	Text color/background color for a workspace button when the workspace
+ 	has focus.
+diff --git a/docs/userguide b/docs/userguide
+index 4eadccb..2a20011 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -1145,6 +1145,26 @@ bar {
+ }
+ --------------------
+ 
++=== Width of the gap between items
++
++Specifies the width of the gap between the items in the statusline.  The number
++represents the width in pixels, value 0 means no gap.  Please keep in mind that
++the separating line is drawn in the middle of the gap, so it is recommended to
++keep the value odd.  If not specified, the default gap width is 9 pixels.
++
++*Syntax*:
++--------------------------
++separator_block_width <number>
++--------------------------
++
++*Example*:
++--------------------
++bar {
++    separator_block_width 5
++}
++--------------------
++
++
+ === Colors
+ 
+ As with i3, colors are in HTML hex format (#rrggbb). The following colors can
+@@ -1154,6 +1174,8 @@ background::
+ 	Background color of the bar.
+ statusline::
+ 	Text color to be used for the statusline.
++separator::	
++	Text color to be used for the separator.
+ focused_workspace::
+ 	Border, background and text color for a workspace button when the workspace
+ 	has focus.
+@@ -1175,6 +1197,7 @@ urgent_workspace::
+ colors {
+     background <color>
+     statusline <color>
++    separator <color>
+ 
+     colorclass <border> <background> <text>
+ }
+@@ -1186,6 +1209,7 @@ bar {
+     colors {
+         background #000000
+         statusline #ffffff
++        separator #666666
+ 
+         focused_workspace  #4c7899 #285577 #ffffff
+         active_workspace   #333333 #5f676a #ffffff
+diff --git a/i3bar/include/common.h b/i3bar/include/common.h
+index 05fb5aa..64d41ca 100644
+--- a/i3bar/include/common.h
++++ b/i3bar/include/common.h
+@@ -43,6 +43,7 @@ struct status_block {
+     blockalign_t align;
+ 
+     bool urgent;
++    bool no_separator;
+ 
+     /* The amount of pixels necessary to render this block. These variables are
+      * only temporarily used in refresh_statusline(). */
+diff --git a/i3bar/include/config.h b/i3bar/include/config.h
+index 4f6e885..ca47c80 100644
+--- a/i3bar/include/config.h
++++ b/i3bar/include/config.h
+@@ -30,6 +30,7 @@ typedef struct config_t {
+     char         *fontname;
+     char         *tray_output;
+     int          num_outputs;
++    uint32_t     sep_block_width;
+     char         **outputs;
+ } config_t;
+ 
+diff --git a/i3bar/include/xcb.h b/i3bar/include/xcb.h
+index 6944053..a469ad3 100644
+--- a/i3bar/include/xcb.h
++++ b/i3bar/include/xcb.h
+@@ -28,6 +28,7 @@
+ struct xcb_color_strings_t {
+     char *bar_fg;
+     char *bar_bg;
++    char *sep_fg;
+     char *active_ws_fg;
+     char *active_ws_bg;
+     char *active_ws_border;
+@@ -65,6 +66,13 @@ void init_xcb_late(char *fontname);
+ void init_colors(const struct xcb_color_strings_t *colors);
+ 
+ /*
++ * Initialize the sizes
++ *
++ */
++void init_sizes(const uint32_t _sep_block_width);
++
++
++/*
+  * Cleanup the xcb-stuff.
+  * Called once, before the program terminates.
+  *
+diff --git a/i3bar/src/child.c b/i3bar/src/child.c
+index bea1d58..8e3ebad 100644
+--- a/i3bar/src/child.c
++++ b/i3bar/src/child.c
+@@ -117,6 +117,9 @@ static int stdin_boolean(void *context, int val) {
+     if (strcasecmp(ctx->last_map_key, "urgent") == 0) {
+         ctx->block.urgent = val;
+     }
++    if (strcasecmp(ctx->last_map_key, "separator") == 0) {
++        ctx->block.no_separator = !val;
++    }
+     return 1;
+ }
+ 
+diff --git a/i3bar/src/config.c b/i3bar/src/config.c
+index 69355b6..ab038f2 100644
+--- a/i3bar/src/config.c
++++ b/i3bar/src/config.c
+@@ -161,6 +161,7 @@ static int config_string_cb(void *params_, const unsigned char *val, unsigned in
+ 
+     COLOR(statusline, bar_fg);
+     COLOR(background, bar_bg);
++    COLOR(separator, sep_fg);
+     COLOR(focused_workspace_border, focus_ws_border);
+     COLOR(focused_workspace_bg, focus_ws_bg);
+     COLOR(focused_workspace_text, focus_ws_fg);
+@@ -199,11 +200,32 @@ static int config_boolean_cb(void *params_, int val) {
+     return 0;
+ }
+ 
++/*
++ * Parse an integer value
++ *
++ */
++#if YAJL_MAJOR >= 2
++static int config_integer_cb(void *params_, long long val) {
++#else
++static int config_integer_cb(void *params_, long val) {
++#endif
++    if (!strcmp(cur_key, "separator_block_width")) {
++        uint32_t uval = val < 0 ? 0 : (uint32_t)val;
++
++        DLOG("separator_block_width = %u\n", uval);
++        config.sep_block_width = uval;
++        return 1;
++    }
++
++    return 0;
++}
++
++
+ /* A datastructure to pass all these callbacks to yajl */
+ static yajl_callbacks outputs_callbacks = {
+     &config_null_cb,
+     &config_boolean_cb,
+-    NULL,
++    &config_integer_cb,
+     NULL,
+     NULL,
+     &config_string_cb,
+@@ -260,6 +282,7 @@ void free_colors(struct xcb_color_strings_t *colors) {
+     } while (0)
+     FREE_COLOR(bar_fg);
+     FREE_COLOR(bar_bg);
++    FREE_COLOR(sep_fg);
+     FREE_COLOR(active_ws_fg);
+     FREE_COLOR(active_ws_bg);
+     FREE_COLOR(active_ws_border);
+diff --git a/i3bar/src/ipc.c b/i3bar/src/ipc.c
+index faab8e1..311f725 100644
+--- a/i3bar/src/ipc.c
++++ b/i3bar/src/ipc.c
+@@ -100,6 +100,9 @@ void got_bar_config(char *reply) {
+     /* Resolve color strings to colorpixels and save them, then free the strings. */
+     init_colors(&(config.colors));
+ 
++    /* Initialize sizes from config */
++    init_sizes(config.sep_block_width);
++
+     /* The name of this function is actually misleading. Even if no command is
+      * specified, this function initiates the watchers to listen on stdin and
+      * react accordingly */
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index 7133117..34f51ec 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -71,6 +71,10 @@ xcb_gcontext_t   statusline_clear;
+ xcb_pixmap_t     statusline_pm;
+ uint32_t         statusline_width;
+ 
++/* Sizes obtained through config */
++/* 'sep_block_width' -- width of the gap between items (in px) */
++static uint32_t sep_block_width;
++
+ /* Event-Watchers, to interact with the user */
+ ev_prepare *xcb_prep;
+ ev_check   *xcb_chk;
+@@ -84,6 +88,7 @@ static mode binding;
+ struct xcb_colors_t {
+     uint32_t bar_fg;
+     uint32_t bar_bg;
++    uint32_t sep_fg;
+     uint32_t active_ws_fg;
+     uint32_t active_ws_bg;
+     uint32_t active_ws_border;
+@@ -149,7 +154,8 @@ void refresh_statusline(void) {
+ 
+         /* If this is not the last block, add some pixels for a separator. */
+         if (TAILQ_NEXT(block, blocks) != NULL)
+-            block->width += 9;
++            block->width += sep_block_width;
++
+         statusline_width += block->width + block->x_offset + block->x_append;
+     }
+ 
+@@ -174,12 +180,14 @@ void refresh_statusline(void) {
+         draw_text(block->full_text, statusline_pm, statusline_ctx, x + block->x_offset, 1, block->width);
+         x += block->width + block->x_offset + block->x_append;
+ 
+-        if (TAILQ_NEXT(block, blocks) != NULL) {
++        if (TAILQ_NEXT(block, blocks) != NULL && !block->no_separator && sep_block_width > 0) {
+             /* This is not the last block, draw a separator. */
+-            set_font_colors(statusline_ctx, get_colorpixel("#666666"), colors.bar_bg);
++            uint32_t sep_offset = sep_block_width/2 + sep_block_width % 2;
++            set_font_colors(statusline_ctx, colors.sep_fg, colors.bar_bg);
+             xcb_poly_line(xcb_connection, XCB_COORD_MODE_ORIGIN, statusline_pm,
+                           statusline_ctx, 2,
+-                          (xcb_point_t[]){ { x - 5, 2 }, { x - 5, font.height - 2 } });
++                          (xcb_point_t[]){ { x - sep_offset, 2 },
++                                           { x - sep_offset, font.height - 2 } });
+         }
+     }
+ }
+@@ -259,6 +267,7 @@ void init_colors(const struct xcb_color_strings_t *new_colors) {
+     } while  (0)
+     PARSE_COLOR(bar_fg, "#FFFFFF");
+     PARSE_COLOR(bar_bg, "#000000");
++    PARSE_COLOR(sep_fg, "#666666");
+     PARSE_COLOR(active_ws_fg, "#FFFFFF");
+     PARSE_COLOR(active_ws_bg, "#333333");
+     PARSE_COLOR(active_ws_border, "#333333");
+@@ -277,6 +286,10 @@ void init_colors(const struct xcb_color_strings_t *new_colors) {
+     xcb_flush(xcb_connection);
+ }
+ 
++void init_sizes(const uint32_t _sep_block_width) {
++    sep_block_width = _sep_block_width;
++}
++
+ /*
+  * Handle a button-press-event (i.e. a mouse click on one of our bars).
+  * We determine, whether the click occured on a ws-button or if the scroll-
+diff --git a/include/config.h b/include/config.h
+index 4a95d43..c88fbd4 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -256,6 +256,9 @@ struct Barconfig {
+     /** Font specification for all text rendered on the bar. */
+     char *font;
+ 
++    /** Width of the gap between the items (in px). */
++    int32_t separator_block_width;
++
+     /** Hide workspace buttons? Configuration option is 'workspace_buttons no'
+      * but we invert the bool to get the correct default when initializing with
+      * zero. */
+@@ -267,6 +270,7 @@ struct Barconfig {
+     struct bar_colors {
+         char *background;
+         char *statusline;
++        char *separator;
+ 
+         char *focused_workspace_border;
+         char *focused_workspace_bg;
+diff --git a/include/config_directives.h b/include/config_directives.h
+index 1faaa97..b4750bb 100644
+--- a/include/config_directives.h
++++ b/include/config_directives.h
+@@ -61,6 +61,7 @@ CFGFUN(enter_mode, const char *mode);
+ CFGFUN(mode_binding, const char *bindtype, const char *modifiers, const char *key, const char *release, const char *command);
+ 
+ CFGFUN(bar_font, const char *font);
++CFGFUN(bar_sep_block_width, const long width);
+ CFGFUN(bar_mode, const char *mode);
+ CFGFUN(bar_output, const char *output);
+ CFGFUN(bar_verbose, const char *verbose);
+diff --git a/parser-specs/config.spec b/parser-specs/config.spec
+index 7538bf3..95151a7 100644
+--- a/parser-specs/config.spec
++++ b/parser-specs/config.spec
+@@ -345,18 +345,19 @@ state BAR:
+   error ->
+   '#' -> BAR_IGNORE_LINE
+   'set' -> BAR_IGNORE_LINE
+-  'i3bar_command'     -> BAR_BAR_COMMAND
+-  'status_command'    -> BAR_STATUS_COMMAND
+-  'socket_path'       -> BAR_SOCKET_PATH
+-  'mode'              -> BAR_MODE
+-  'modifier'          -> BAR_MODIFIER
+-  'position'          -> BAR_POSITION
+-  'output'            -> BAR_OUTPUT
+-  'tray_output'       -> BAR_TRAY_OUTPUT
+-  'font'              -> BAR_FONT
+-  'workspace_buttons' -> BAR_WORKSPACE_BUTTONS
+-  'verbose'           -> BAR_VERBOSE
+-  'colors'            -> BAR_COLORS_BRACE
++  'i3bar_command'           -> BAR_BAR_COMMAND
++  'status_command'          -> BAR_STATUS_COMMAND
++  'socket_path'             -> BAR_SOCKET_PATH
++  'mode'                    -> BAR_MODE
++  'modifier'                -> BAR_MODIFIER
++  'position'                -> BAR_POSITION
++  'output'                  -> BAR_OUTPUT
++  'tray_output'             -> BAR_TRAY_OUTPUT
++  'font'                    -> BAR_FONT
++  'separator_block_width'   -> BAR_SEP_BLOCK_WIDTH
++  'workspace_buttons'       -> BAR_WORKSPACE_BUTTONS
++  'verbose'                 -> BAR_VERBOSE
++  'colors'                  -> BAR_COLORS_BRACE
+   '}'
+       -> call cfg_bar_finish(); INITIAL
+ 
+@@ -401,6 +402,11 @@ state BAR_FONT:
+   font = string
+       -> call cfg_bar_font($font); BAR
+ 
++state BAR_SEP_BLOCK_WIDTH:
++  width = number
++      -> call cfg_bar_sep_block_width(&width); BAR
++
++
+ state BAR_WORKSPACE_BUTTONS:
+   value = word
+       -> call cfg_bar_workspace_buttons($value); BAR
+@@ -419,7 +425,7 @@ state BAR_COLORS:
+   end ->
+   '#' -> BAR_COLORS_IGNORE_LINE
+   'set' -> BAR_COLORS_IGNORE_LINE
+-  colorclass = 'background', 'statusline'
++  colorclass = 'background', 'statusline', 'separator'
+       -> BAR_COLORS_SINGLE
+   colorclass = 'focused_workspace', 'active_workspace', 'inactive_workspace', 'urgent_workspace'
+       -> BAR_COLORS_BORDER
+diff --git a/src/config_directives.c b/src/config_directives.c
+index 8b636c0..236c906 100644
+--- a/src/config_directives.c
++++ b/src/config_directives.c
+@@ -439,13 +439,24 @@ CFGFUN(assign, const char *workspace) {
+  * Bar configuration (i3bar)
+  ******************************************************************************/
+ 
+-static Barconfig current_bar;
++/* Initialize members that might not be set via config,
++   but which need default values. */
++#define default_bar_config \
++{ \
++	.separator_block_width = 9 \
++}
++
++static Barconfig current_bar = default_bar_config;
+ 
+ CFGFUN(bar_font, const char *font) {
+     FREE(current_bar.font);
+     current_bar.font = sstrdup(font);
+ }
+ 
++CFGFUN(bar_sep_block_width, const long width) {
++    current_bar.separator_block_width = width;
++}
++
+ CFGFUN(bar_mode, const char *mode) {
+     current_bar.mode = (strcmp(mode, "hide") == 0 ? M_HIDE : M_DOCK);
+ }
+@@ -526,7 +537,10 @@ CFGFUN(bar_tray_output, const char *output) {
+ CFGFUN(bar_color_single, const char *colorclass, const char *color) {
+     if (strcmp(colorclass, "background") == 0)
+         current_bar.colors.background = sstrdup(color);
+-    else current_bar.colors.statusline = sstrdup(color);
++    else if (strcmp(colorclass, "separator") == 0)
++        current_bar.colors.separator = sstrdup(color);
++    else
++        current_bar.colors.statusline = sstrdup(color);
+ }
+ 
+ CFGFUN(bar_status_command, const char *command) {
+@@ -561,4 +575,5 @@ CFGFUN(bar_finish) {
+     TAILQ_INSERT_TAIL(&barconfigs, bar_config, configs);
+ 
+     memset(&current_bar, '\0', sizeof(Barconfig));
++    current_bar = (Barconfig) default_bar_config;
+ }
+diff --git a/src/ipc.c b/src/ipc.c
+index 2379ba5..4bdda6e 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -658,6 +658,9 @@ IPC_HANDLER(get_bar_config) {
+         YSTR_IF_SET(status_command);
+         YSTR_IF_SET(font);
+ 
++        ystr("separator_block_width");
++        y(integer, config->separator_block_width);
++
+         ystr("workspace_buttons");
+         y(bool, !config->hide_workspace_buttons);
+ 
+@@ -677,6 +680,7 @@ IPC_HANDLER(get_bar_config) {
+         y(map_open);
+         YSTR_IF_SET(background);
+         YSTR_IF_SET(statusline);
++        YSTR_IF_SET(separator);
+         YSTR_IF_SET(focused_workspace_border);
+         YSTR_IF_SET(focused_workspace_bg);
+         YSTR_IF_SET(focused_workspace_text);
+diff --git a/testcases/t/201-config-parser.t b/testcases/t/201-config-parser.t
+index e36c13f..c886b55 100644
+--- a/testcases/t/201-config-parser.t
++++ b/testcases/t/201-config-parser.t
+@@ -591,7 +591,7 @@ EOT
+ 
+ $expected = <<'EOT';
+ cfg_bar_output(LVDS-1)
+-ERROR: CONFIG: Expected one of these tokens: <end>, '#', 'set', 'i3bar_command', 'status_command', 'socket_path', 'mode', 'modifier', 'position', 'output', 'tray_output', 'font', 'workspace_buttons', 'verbose', 'colors', '}'
++ERROR: CONFIG: Expected one of these tokens: <end>, '#', 'set', 'i3bar_command', 'status_command', 'socket_path', 'mode', 'modifier', 'position', 'output', 'tray_output', 'font', 'separator_block_width', 'workspace_buttons', 'verbose', 'colors', '}'
+ ERROR: CONFIG: (in file <stdin>)
+ ERROR: CONFIG: Line   1: bar {
+ ERROR: CONFIG: Line   2:     output LVDS-1
+-- 
+1.8.1.2
+

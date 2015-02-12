@@ -1,0 +1,57 @@
+From eb45995c3ad87f579fc8602df6e48544e8c31ffa Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 4 Oct 2013 10:36:37 -0400
+Subject: [PATCH] Reply to _NET_REQUEST_FRAME_EXTENTS correctly
+
+Reply to _NET_REQUEST_FRAME_EXTENTS by setting _NET_FRAME_EXTENTS property of the window to widths of the respective borders added by the Window Manager.
+
+Fixes #1093
+---
+ src/handlers.c | 28 +++++-----------------------
+ 1 file changed, 5 insertions(+), 23 deletions(-)
+
+diff --git a/src/handlers.c b/src/handlers.c
+index 084a728..9345114 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -709,32 +709,14 @@ static void handle_client_message(xcb_client_message_event_t *event) {
+         // A client can request an estimate for the frame size which the window
+         // manager will put around it before actually mapping its window. Java
+         // does this (as of openjdk-7).
+-        //
+-        // Note that the calculation below is not entirely accurate — once you
+-        // set a different border type, it’s off. We _could_ request all the
+-        // window properties (which have to be set up at this point according
+-        // to EWMH), but that seems rather elaborate. The standard explicitly
+-        // says the application must cope with an estimate that is not entirely
+-        // accurate.
+         DLOG("_NET_REQUEST_FRAME_EXTENTS for window 0x%08x\n", event->window);
+-        xcb_get_geometry_reply_t *geometry;
+-        xcb_get_geometry_cookie_t cookie = xcb_get_geometry(conn, event->window);
+-
+-        if (!(geometry = xcb_get_geometry_reply(conn, cookie, NULL))) {
+-            ELOG("Could not get geometry of X11 window 0x%08x while handling "
+-                 "the _NET_REQUEST_FRAME_EXTENTS ClientMessage\n",
+-                 event->window);
+-            return;
+-        }
+-
+-        DLOG("Current geometry = x=%d, y=%d, width=%d, height=%d\n",
+-             geometry->x, geometry->y, geometry->width, geometry->height);
+ 
++        /* Approximate widths of the respective borders added by the Window Manager. */
+         Rect r = {
+-            0, // left
+-            geometry->width + 4, // right
+-            0, // top
+-            geometry->height + config.font.height + 5, // bottom
++            1, // left
++            1, // right
++            config.font.height + 5, // top
++            1 // bottom
+         };
+         xcb_change_property(
+                 conn,
+-- 
+1.8.4
+

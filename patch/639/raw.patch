@@ -1,0 +1,117 @@
+From 9bbd98f84274ca9ea523d304a91f276a77878bef Mon Sep 17 00:00:00 2001
+From: Matthias Fulz <mfulz@…>
+Date: Fri, 29 Aug 2014 09:07:34 +0200
+Subject: [PATCH] Implemented configurable scratchpad size.
+
+---
+ include/config.h         |  4 ++++
+ parser-specs/config.spec | 12 ++++++++++++
+ src/config.c             |  4 ++++
+ src/config_directives.c  | 18 ++++++++++++++++++
+ src/scratchpad.c         |  4 ++--
+ 5 files changed, 40 insertions(+), 2 deletions(-)
+
+diff --git a/include/config.h b/include/config.h
+index 71b37a8..63b5727 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -183,6 +183,10 @@ struct Config {
+     int32_t floating_minimum_width;
+     int32_t floating_minimum_height;
+ 
++    /** Scratchpad size in percent of the size of the output screen */
++    float scratchpad_width_percent;
++    float scratchpad_height_percent;
++
+     /* Color codes are stored here */
+     struct config_client {
+         uint32_t background;
+diff --git a/parser-specs/config.spec b/parser-specs/config.spec
+index f1021b2..545abdb 100644
+--- a/parser-specs/config.spec
++++ b/parser-specs/config.spec
+@@ -47,6 +47,8 @@ state INITIAL:
+       -> COLOR_SINGLE
+   colorclass = 'client.focused_inactive', 'client.focused', 'client.unfocused', 'client.urgent'
+       -> COLOR_BORDER
++  'scratchpad_width_percent'               -> SCRATCHPAD_WIDTH_PERCENT
++  'scratchpad_height_percent'              -> SCRATCHPAD_HEIGHT_PERCENT
+ 
+ # We ignore comments and 'set' lines (variables).
+ state IGNORE_LINE:
+@@ -474,3 +476,13 @@ state BAR_COLORS_TEXT:
+       -> call cfg_bar_color($colorclass, $border, $background, NULL); BAR_COLORS
+   text = word
+       -> call cfg_bar_color($colorclass, $border, $background, $text); BAR_COLORS
++
++# scratchpad width in percent of output screen
++state SCRATCHPAD_WIDTH_PERCENT:
++  width = number
++      -> call cfg_scratchpad_width_percent(&width)
++
++state SCRATCHPAD_HEIGHT_PERCENT:
++  height = number
++      -> call cfg_scratchpad_height_percent(&height)
++
+diff --git a/src/config.c b/src/config.c
+index 7e88a9e..938875d 100644
+--- a/src/config.c
++++ b/src/config.c
+@@ -258,6 +258,10 @@ void load_configuration(xcb_connection_t *conn, const char *override_configpath,
+     /* Set default_orientation to NO_ORIENTATION for auto orientation. */
+     config.default_orientation = NO_ORIENTATION;
+ 
++    /* Set defualt scratchpad size */
++    config.scratchpad_width_percent = 0.5;
++    config.scratchpad_height_percent = 0.75;
++
+     /* Set default urgency reset delay to 500ms */
+     if (config.workspace_urgency_timer == 0)
+         config.workspace_urgency_timer = 0.5;
+diff --git a/src/config_directives.c b/src/config_directives.c
+index e45db0e..85485e2 100644
+--- a/src/config_directives.c
++++ b/src/config_directives.c
+@@ -394,6 +394,24 @@ CFGFUN(color, const char *colorclass, const char *border, const char *background
+ #undef APPLY_COLORS
+ }
+ 
++CFGFUN(scratchpad_width_percent, const long width) {
++    config.scratchpad_width_percent = width * 0.01;
++    // not sure, shall we check the size?
++    if(config.scratchpad_width_percent > 1.0)
++        config.scratchpad_width_percent = 1.0;
++    else if(config.scratchpad_width_percent < 0.05)
++        config.scratchpad_width_percent = 0.05;
++}
++
++CFGFUN(scratchpad_height_percent, const long height) {
++    config.scratchpad_height_percent = height * 0.01;
++    // not sure, shall we check the size?
++    if(config.scratchpad_height_percent > 1.0)
++        config.scratchpad_height_percent = 1.0;
++    else if(config.scratchpad_height_percent < 0.05)
++        config.scratchpad_height_percent = 0.05;
++}
++
+ CFGFUN(assign, const char *workspace) {
+     if (match_is_empty(current_match)) {
+         ELOG("Match is empty, ignoring this assignment\n");
+diff --git a/src/scratchpad.c b/src/scratchpad.c
+index 8ca81ea..e00d794 100644
+--- a/src/scratchpad.c
++++ b/src/scratchpad.c
+@@ -195,8 +195,8 @@ void scratchpad_show(Con *con) {
+     if (con->scratchpad_state == SCRATCHPAD_FRESH) {
+         DLOG("Adjusting size of this window.\n");
+         Con *output = con_get_output(con);
+-        con->rect.width = output->rect.width * 0.5;
+-        con->rect.height = output->rect.height * 0.75;
++        con->rect.width = output->rect.width * config.scratchpad_width_percent;
++        con->rect.height = output->rect.height * config.scratchpad_height_percent;
+         floating_check_size(con);
+         con->rect.x = output->rect.x +
+                       ((output->rect.width / 2.0) - (con->rect.width / 2.0));
+-- 
+2.1.0
+

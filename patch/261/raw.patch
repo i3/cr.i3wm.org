@@ -1,0 +1,60 @@
+From 826175ed2c5c2000b47755f00e2c55b2946db645 Mon Sep 17 00:00:00 2001
+From: "jj" <haptix@…>
+Date: Wed, 9 Oct 2013 22:30:41 +0200
+Subject: [PATCH] Fix command parser: resizing tiling windows
+
+i3 would accept an invalid resize command like 'resize shrink width 10
+px or' without specifying the ppt value, and then crash. This patch
+fixes the parser specification.
+---
+ parser-specs/commands.spec        |  8 ++++----
+ testcases/t/187-commands-parser.t | 15 +++++++++++++++
+ 2 files changed, 19 insertions(+), 4 deletions(-)
+
+diff --git a/parser-specs/commands.spec b/parser-specs/commands.spec
+index 2c640c6..e3da62c 100644
+--- a/parser-specs/commands.spec
++++ b/parser-specs/commands.spec
+@@ -209,11 +209,11 @@ state RESIZE_TILING:
+       -> call cmd_resize($way, $direction, $resize_px, "10")
+ 
+ state RESIZE_TILING_OR:
+-  'ppt'
+-      ->
+   resize_ppt = word
+-      ->
+-  end
++      -> RESIZE_TILING_FINAL
++
++state RESIZE_TILING_FINAL:
++  'ppt', end
+       -> call cmd_resize($way, $direction, $resize_px, $resize_ppt)
+ 
+ # rename workspace <name> to <name>
+diff --git a/testcases/t/187-commands-parser.t b/testcases/t/187-commands-parser.t
+index bbb89d9..5ee94f8 100644
+--- a/testcases/t/187-commands-parser.t
++++ b/testcases/t/187-commands-parser.t
+@@ -171,4 +171,19 @@ is(parser_calls('workspace "foo \"bar"'),
+    'cmd_workspace_name(foo "bar)',
+    'Command with escaped double quotes ok');
+ 
++################################################################################
++# 4: Verify that resize commands with a "px or ppt"-construction are parsed
++# correctly
++################################################################################
++
++is(parser_calls("resize shrink width 10 px or"),
++   "ERROR: Expected one of these tokens: <word>\n" .
++   "ERROR: Your command: resize shrink width 10 px or\n" .
++   "ERROR:                                           ",
++   "error for resize command with incomplete 'or'-construction ok");
++
++is(parser_calls("resize grow left 10 px or 20 ppt"),
++   "cmd_resize(grow, left, 10, 20)",
++   "resize command with 'or'-construction ok");
++
+ done_testing;
+-- 
+1.8.4.rc3
+

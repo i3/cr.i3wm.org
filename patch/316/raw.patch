@@ -1,0 +1,97 @@
+From 56e4493244ce9f009869970218a618fa06b36f6e Mon Sep 17 00:00:00 2001
+From: Gereon Kremer <gereon.kremer@…>
+Date: Fri, 15 Nov 2013 00:41:33 +0100
+Subject: [PATCH] Added different format string for volume in case it is muted.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+If the volume is muted, the volume level would simply be displayed as zero and the color changed to color_degraded.
+This patch lets the user define a custom format string for when the volume is muted.
+The default value is "♪: 0%" ("♪: %volume" being the usual format).
+---
+ i3status.c         |  2 ++
+ include/i3status.h |  2 +-
+ src/print_volume.c | 12 ++++++++++--
+ 3 files changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index e99e627..1b9c595 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -286,6 +286,7 @@ int main(int argc, char *argv[]) {
+ 
+         cfg_opt_t volume_opts[] = {
+                 CFG_STR("format", "♪: %volume", CFGF_NONE),
++                CFG_STR("format_muted", "♪: 0%%", CFGF_NONE),
+                 CFG_STR("device", "default", CFGF_NONE),
+                 CFG_STR("mixer", "Master", CFGF_NONE),
+                 CFG_INT("mixer_idx", 0, CFGF_NONE),
+@@ -513,6 +514,7 @@ int main(int argc, char *argv[]) {
+                         CASE_SEC_TITLE("volume") {
+                                 SEC_OPEN_MAP("volume");
+                                 print_volume(json_gen, buffer, cfg_getstr(sec, "format"),
++                                             cfg_getstr(sec, "format_muted"),
+                                              cfg_getstr(sec, "device"),
+                                              cfg_getstr(sec, "mixer"),
+                                              cfg_getint(sec, "mixer_idx"));
+diff --git a/include/i3status.h b/include/i3status.h
+index d0361d1..64cd660 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -156,7 +156,7 @@ void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const
+ void print_cpu_usage(yajl_gen json_gen, char *buffer, const char *format);
+ void print_eth_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
+ void print_load(yajl_gen json_gen, char *buffer, const char *format, const float max_threshold);
+-void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *device, const char *mixer, int mixer_idx);
++void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *fmt_muted, const char *device, const char *mixer, int mixer_idx);
+ bool process_runs(const char *path);
+ 
+ /* socket file descriptor for general purposes */
+diff --git a/src/print_volume.c b/src/print_volume.c
+index d84b3ec..f7a1f6c 100644
+--- a/src/print_volume.c
++++ b/src/print_volume.c
+@@ -26,7 +26,7 @@
+ #include "i3status.h"
+ #include "queue.h"
+ 
+-void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *device, const char *mixer, int mixer_idx) {
++void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *fmt_muted, const char *device, const char *mixer, int mixer_idx) {
+         char *outwalk = buffer;
+ 	int pbval = 1;
+ 
+@@ -104,7 +104,7 @@ void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *
+ 			fprintf (stderr, "i3status: ALSA: playback_switch: %s\n", snd_strerror(err));
+ 		if (!pbval)  {
+ 			START_COLOR("color_degraded");
+-			avg = 0;
++			fmt = fmt_muted;
+ 		}
+ 	}
+ 
+@@ -117,6 +117,10 @@ void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *
+                         *(outwalk++) = *walk;
+ 			continue;
+ 		}
++		if (BEGINS_WITH(walk+1, "%")) {
++			outwalk += sprintf(outwalk, "%%");
++			walk += strlen("%");
++		}
+ 		if (BEGINS_WITH(walk+1, "volume")) {
+ 			outwalk += sprintf(outwalk, "%d%%", avg);
+ 			walk += strlen("volume");
+@@ -156,6 +160,10 @@ void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *
+                         *(outwalk++) = *walk;
+                         continue;
+                 }
++                if (BEGINS_WITH(walk+1, "%")) {
++                    outwalk += sprintf(outwalk, "%%");
++                    walk += strlen("%");
++                }
+                 if (BEGINS_WITH(walk+1, "volume")) {
+                         outwalk += sprintf(outwalk, "%d%%", vol & 0x7f);
+                         walk += strlen("volume");
+-- 
+1.8.3.2
+

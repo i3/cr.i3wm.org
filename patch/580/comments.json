@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 31,
+    "Comment": "#example configuration\nbindsym $mod+button2 kill\nbindsym button2 kill\nbindsym button3 floating toggle\nbindsym $mod+button3 floating toggle\nbindsym button9 move left\nbindsym button8 move right\n# these don't work - we don't get the event\nbindsym $mod+button4 focus up\nbindsym $mod+button5 focus down",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 28,
+    "Comment": "I don't want to implement the bar bindsyms because it is too complicated and not very useful.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 92,
+    "Comment": "The above comment is important in describing how this works now. I think this is a sane default for now. I doubt anyone will need any extra configuration than this, but implementing a switch for which part of the window triggers the binding would not be difficult.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 31,
+    "Comment": "Can you update docs/userguide with this please?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 26,
+    "Comment": "The patch looks good apart from the missing documentation update.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

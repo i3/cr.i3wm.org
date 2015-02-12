@@ -1,0 +1,28 @@
+From 59ee78da5928bf94d710f41780ff4796cee12bbb Mon Sep 17 00:00:00 2001
+From: Marcus Carlsson <mc@…>
+Date: Fri, 4 Jan 2013 11:31:15 +0100
+Subject: [PATCH] Set scratchpad_state to changed if floating.
+
+If the window is floating when moved to scratchpad, set the state to
+changed so that it isn't resized and centered when it is shown.
+---
+ src/scratchpad.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/scratchpad.c b/src/scratchpad.c
+index c38e63b..b5c9019 100644
+--- a/src/scratchpad.c
++++ b/src/scratchpad.c
+@@ -49,6 +49,9 @@ void scratchpad_move(Con *con) {
+         con = con->parent;
+     } else {
+         con = maybe_floating_con;
++        if (con->scratchpad_state == SCRATCHPAD_NONE) {
++            con->scratchpad_state = SCRATCHPAD_CHANGED;
++        }
+     }
+ 
+     /* 2: Send the window to the __i3_scratch workspace, mainting its
+-- 
+1.8.0.3
+

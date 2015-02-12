@@ -1,0 +1,44 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 40,
+    "Comment": "The commit message is a bit muted, so I will emphasize here that this function works with button press events.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 91,
+    "Comment": "static because it is not used anywhere else",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 91,
+    "Comment": "most of the changes here are updating the comments and changing the variable names to show that it works with mouse and keyboard bindings",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 179,
+    "Comment": "from here on it is pretty much just moved out of the key press handler",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 168,
+    "Comment": "add some logic to determine the event info from the event struct",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 125,
+    "Comment": "if it is a mouse binding, the symbol doesn't tell us anything that the mods and input_code do not",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 262,
+    "Comment": "now, getting the mouse binding will be just as easy as this. I've already tested that it works.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

@@ -1,0 +1,25 @@
+From 520f3a6f1825586233d686be3be24c2414820b0d Mon Sep 17 00:00:00 2001
+From: Mats <d912e3@…>
+Date: Wed, 22 Oct 2014 14:13:08 +0200
+Subject: [PATCH 2/2] Makefile.PL: Add Inline::C dependency
+
+Inline::C is no longer shipped with Inline.
+---
+ testcases/Makefile.PL | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/testcases/Makefile.PL b/testcases/Makefile.PL
+index 6bc80d8..f2c1501 100755
+--- a/testcases/Makefile.PL
++++ b/testcases/Makefile.PL
+@@ -11,6 +11,7 @@ WriteMakefile(
+         'AnyEvent::I3' => '0.15',
+         'X11::XCB'     => '0.09',
+         'Inline'       => 0,
++        'Inline::C'    => 0,
+         'ExtUtils::PkgConfig' => 0,
+         'Test::More'   => '0.94',
+         'IPC::Run' => 0,
+-- 
+2.1.2
+

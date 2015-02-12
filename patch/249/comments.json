@@ -1,0 +1,44 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 26,
+    "Comment": "Why are you removing this comment? It is still accurate.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 47,
+    "Comment": "Actually, a better estimate (since it matches the default behavior) is left = 2, right = 2, top = config.font.height + 5, bottom = 2",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 16,
+    "Comment": "Can you please linewrap the description of your patch at 80 characters? also s/Fixes #1093/fixes #1093\\nfixes #1069/ please :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 47,
+    "Comment": "An even better estimate is left = right = bottom = config.default_border_width",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 26,
+    "Comment": "I thought my comment above the frame extents `r`, \"Approximate widths of the respective borders added by the Window Manager\", replaced this comment but I can leave it in if you think its important.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 26,
+    "Comment": "The reason I rewrote the comment is because none of the window's properties will significantly affect the size of the border we draw around the window.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 26,
+    "Comment": "But that’s not true. Depending on the properties, the window will be floating, and possibly borderless because of that.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

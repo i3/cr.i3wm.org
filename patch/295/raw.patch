@@ -1,0 +1,257 @@
+From 9503bce9ccced77a13adc2075e59872484bb1efa Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 5 Nov 2013 22:01:56 -0500
+Subject: [PATCH] i3bar: Repair tray client handling
+
+Show/hide tray clients asynchronously on MapNotify and UnmapNotify respectively.
+
+Remove tray clients on DestroyNotify as per the EXembed protocol
+specification (see:
+http://standards.freedesktop.org/xembed-spec/xembed-spec-latest.html)
+
+Add sanity checks and safety measures to guard against sending messages
+to tray clients that could result in BadWindow errors by tray clients
+(but that issue is not entirely resolved here).
+
+Adds support for QSystemTrayIcon class, qt-base version 5.3 (qt-base
+version 5.1 is still unsupported)
+
+fixes #1110.
+---
+ i3bar/src/xcb.c | 126 ++++++++++++++++++++++++++++++++++++++++++--------------
+ 1 file changed, 95 insertions(+), 31 deletions(-)
+
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index 4564863..65012dc 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -53,6 +53,9 @@ xcb_window_t     xcb_root;
+ static xcb_window_t selwin = XCB_NONE;
+ static xcb_intern_atom_reply_t *tray_reply = NULL;
+ 
++/* set to true when the tray is initialized */
++static bool has_tray_initialized = false;
++
+ /* This is needed for integration with libi3 */
+ xcb_connection_t *conn;
+ 
+@@ -448,6 +451,7 @@ static void configure_trayclients(void) {
+         TAILQ_FOREACH_REVERSE(trayclient, output->trayclients, tc_head, tailq) {
+             if (!trayclient->mapped)
+                 continue;
++
+             clients++;
+ 
+             DLOG("Configuring tray window %08x to x=%d\n",
+@@ -577,6 +581,26 @@ static void handle_client_message(xcb_client_message_event_t* event) {
+                                  mask,
+                                  values);
+ 
++            trayclient *tc = smalloc(sizeof(trayclient));
++            tc->win = client;
++            tc->mapped = map_it;
++            tc->xe_version = xe_version;
++            TAILQ_INSERT_TAIL(output->trayclients, tc, tailq);
++
++            /* Put the client inside the save set. Upon termination (whether
++             * killed or normal exit does not matter) of i3bar, these clients
++             * will be correctly reparented to their most closest living
++             * ancestor. Without this, tray icons might die when i3bar
++             * exits/crashes. */
++            xcb_change_save_set(xcb_connection, XCB_SET_MODE_INSERT, client);
++
++            if (map_it) {
++                DLOG("Mapping dock client\n");
++                xcb_map_window(xcb_connection, client);
++            } else {
++                DLOG("Not mapping dock client yet\n");
++            }
++
+             /* send the XEMBED_EMBEDDED_NOTIFY message */
+             void *event = scalloc(32);
+             xcb_client_message_event_t *ev = event;
+@@ -595,38 +619,42 @@ static void handle_client_message(xcb_client_message_event_t* event) {
+                            (char*)ev);
+             free(event);
+ 
+-            /* Put the client inside the save set. Upon termination (whether
+-             * killed or normal exit does not matter) of i3bar, these clients
+-             * will be correctly reparented to their most closest living
+-             * ancestor. Without this, tray icons might die when i3bar
+-             * exits/crashes. */
+-            xcb_change_save_set(xcb_connection, XCB_SET_MODE_INSERT, client);
++        }
++    }
++}
+ 
+-            if (map_it) {
+-                DLOG("Mapping dock client\n");
+-                xcb_map_window(xcb_connection, client);
+-            } else {
+-                DLOG("Not mapping dock client yet\n");
+-            }
+-            trayclient *tc = smalloc(sizeof(trayclient));
+-            tc->win = client;
+-            tc->mapped = map_it;
+-            tc->xe_version = xe_version;
+-            TAILQ_INSERT_TAIL(output->trayclients, tc, tailq);
++/*
++ * Handles MapNotify events for tray clients by reconfiguring the clients and
++ * redrawing the bar.
++ */
+ 
+-            /* Trigger an update to copy the statusline text to the appropriate
+-             * position */
++static void handle_map_notify(xcb_map_notify_event_t* event) {
++    DLOG("MapNotify for window = %08x, event = %08x\n", event->window, event->event);
++
++    i3_output *walk;
++    SLIST_FOREACH(walk, outputs, slist) {
++        if (!walk->active)
++            continue;
++        DLOG("checking output %s\n", walk->name);
++        trayclient *trayclient;
++        TAILQ_FOREACH(trayclient, walk->trayclients, tailq) {
++            if (trayclient->win != event->window)
++                continue;
++
++            DLOG("Tray client mapped (window ID %08x) reconfiguring.\n", event->window);
++            trayclient->mapped = true;
+             configure_trayclients();
+             draw_bars(false);
++            return;
+         }
+     }
+ }
+ 
+ /*
+- * Handles UnmapNotify events. These events happen when a tray window unmaps
+- * itself. We then update our data structure
+- *
++ * Handles UnmapNotify events for tray clients by reconfiguring the clients and
++ * redrawing the bar.
+  */
++
+ static void handle_unmap_notify(xcb_unmap_notify_event_t* event) {
+     DLOG("UnmapNotify for window = %08x, event = %08x\n", event->window, event->event);
+ 
+@@ -640,6 +668,35 @@ static void handle_unmap_notify(xcb_unmap_notify_event_t* event) {
+             if (trayclient->win != event->window)
+                 continue;
+ 
++            DLOG("Tray client unmapped (window ID %08x) reconfiguring.\n", event->window);
++            trayclient->mapped = false;
++
++            /* Trigger an update, we now have more space for the statusline */
++            configure_trayclients();
++            draw_bars(false);
++            return;
++        }
++    }
++}
++
++/*
++ * Handles DestroyNotify events by removing the tray client. This signifies the
++ * end of the EXembed protocol.
++ *
++ */
++static void handle_destroy_notify(xcb_destroy_notify_event_t* event) {
++    DLOG("DestroyNotify for window = %08x, event = %08x\n", event->window, event->event);
++
++    i3_output *walk;
++    SLIST_FOREACH(walk, outputs, slist) {
++        if (!walk->active)
++            continue;
++        DLOG("checking output %s\n", walk->name);
++        trayclient *trayclient;
++        TAILQ_FOREACH(trayclient, walk->trayclients, tailq) {
++            if (trayclient->win != event->window)
++                continue;
++
+             DLOG("Removing tray client with window ID %08x\n", event->window);
+             TAILQ_REMOVE(walk->trayclients, trayclient, tailq);
+ 
+@@ -707,16 +764,12 @@ static void handle_property_notify(xcb_property_notify_event_t *event) {
+         DLOG("map-state now %d\n", map_it);
+         if (trayclient->mapped && !map_it) {
+             /* need to unmap the window */
++            trayclient->mapped = false;
+             xcb_unmap_window(xcb_connection, trayclient->win);
+-            trayclient->mapped = map_it;
+-            configure_trayclients();
+-            draw_bars(false);
+         } else if (!trayclient->mapped && map_it) {
+             /* need to map the window */
++            trayclient->mapped = true;
+             xcb_map_window(xcb_connection, trayclient->win);
+-            trayclient->mapped = map_it;
+-            configure_trayclients();
+-            draw_bars(false);
+         }
+         free(xembedr);
+     }
+@@ -798,11 +851,16 @@ void xcb_chk_cb(struct ev_loop *loop, ev_check *watcher, int revents) {
+                  * example system tray widgets talk to us directly via client messages. */
+                 handle_client_message((xcb_client_message_event_t*) event);
+                 break;
++            case XCB_MAP_NOTIFY:
++                handle_map_notify((xcb_map_notify_event_t*) event);
++                break;
+             case XCB_UNMAP_NOTIFY:
+-            case XCB_DESTROY_NOTIFY:
+-                /* UnmapNotifies are received when a tray window unmaps itself */
+                 handle_unmap_notify((xcb_unmap_notify_event_t*) event);
+                 break;
++            case XCB_DESTROY_NOTIFY:
++                /* DestroyNotify signifies the end of the EXembed protocol */
++                handle_destroy_notify((xcb_destroy_notify_event_t*) event);
++                break;
+             case XCB_PROPERTY_NOTIFY:
+                 /* PropertyNotify */
+                 handle_property_notify((xcb_property_notify_event_t*) event);
+@@ -1078,6 +1136,9 @@ void init_xcb_late(char *fontname) {
+  *
+  */
+ static void send_tray_clientmessage(void) {
++    if (!has_tray_initialized)
++        return;
++
+     uint8_t buffer[32] = { 0 };
+     xcb_client_message_event_t *ev = (xcb_client_message_event_t*)buffer;
+ 
+@@ -1172,6 +1233,7 @@ void init_tray(void) {
+         return;
+     }
+ 
++    has_tray_initialized = true;
+     send_tray_clientmessage();
+ }
+ 
+@@ -1273,7 +1335,7 @@ void get_atoms(void) {
+  *
+  */
+ void kick_tray_clients(i3_output *output) {
+-    if (TAILQ_EMPTY(output->trayclients))
++    if (!has_tray_initialized || TAILQ_EMPTY(output->trayclients))
+         return;
+ 
+     trayclient *trayclient;
+@@ -1292,6 +1354,7 @@ void kick_tray_clients(i3_output *output) {
+         TAILQ_REMOVE(output->trayclients, trayclient, tailq);
+     }
+ 
++#if 0
+     /* Fake a DestroyNotify so that Qt re-adds tray icons.
+      * We cannot actually destroy the window because then Qt will not restore
+      * its event mask on the new window. */
+@@ -1305,6 +1368,7 @@ void kick_tray_clients(i3_output *output) {
+     xcb_send_event(conn, false, selwin, XCB_EVENT_MASK_STRUCTURE_NOTIFY, (char*)event);
+ 
+     send_tray_clientmessage();
++#endif
+ }
+ 
+ /*
+-- 
+1.8.4.2
+

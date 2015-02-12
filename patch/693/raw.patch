@@ -1,0 +1,32 @@
+From cccc90159e278ded81566c232c5de1cf85ea4f45 Mon Sep 17 00:00:00 2001
+From: Alexander Monakov <amonakov@…>
+Date: Thu, 18 Dec 2014 18:23:25 +0300
+Subject: [PATCH] Avoid use of uninitialized variable in print_battery_info
+
+The boolean flag 'watt_as_unit' may be used without being initialized if the
+configured battery path does not contain expected statistics (for example if
+it is misconfigured and points to AC adapter info or simply an unrelated file).
+
+Even though it does not cause ill effects, it causes a warning (true positive)
+when running i3status under Valgrind.  Initialize the variable to make code
+well-defined.
+---
+ src/print_battery_info.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/print_battery_info.c b/src/print_battery_info.c
+index 28b94ec..0df9b72 100644
+--- a/src/print_battery_info.c
++++ b/src/print_battery_info.c
+@@ -44,7 +44,7 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+         char consumptionbuf[256];
+         const char *walk, *last;
+         char *outwalk = buffer;
+-        bool watt_as_unit;
++        bool watt_as_unit = false;
+         bool colorful_output = false;
+         int full_design = -1,
+             remaining = -1,
+-- 
+2.1.3
+

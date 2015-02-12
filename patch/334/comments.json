@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 26,
+    "Comment": "Instead of adding -lm to every makefile, I chose to modify common.mk (I did that change for you to avoid another round-trip on this review for small details).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 58,
+    "Comment": "Given that this line (and the following) is run in both of the branches, just move it before the if :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 116,
+    "Comment": "code style: unnecessary blank after the function call and before the opening paren",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 27,
+    "Comment": "code style: the indentation of this entire function body seems off",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 109,
+    "Comment": "I think we need to keep track of whether there already is a child before fork()ing. Consider this: an evil attacker presses a\u003cENTER\u003ea\u003cENTER\u003ea\u003cENTER\u003e… to generate a lot of processes due to fork()ing. PAM blocks a specific amount of time when validating a wrong password to prevent brute-force attacks. In this case, the attacker might be quick enough to make the machine run out of resources due to too many processes.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

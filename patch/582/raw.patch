@@ -1,0 +1,26 @@
+From 95f75f4161165ad35eddbbcc806467cff95a8d04 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Mon, 16 Jun 2014 02:34:22 -0400
+Subject: [PATCH] bugfix: unneeded render on map request
+
+manage_window() will call tree_render() when appropriate, so pushing
+changes to X here is not needed.
+---
+ src/handlers.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/src/handlers.c b/src/handlers.c
+index c217cbb..d6486a1 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -282,7 +282,6 @@ static void handle_map_request(xcb_map_request_event_t *event) {
+     add_ignore_event(event->sequence, -1);
+ 
+     manage_window(event->window, cookie, false);
+-    x_push_changes(croot);
+     return;
+ }
+ 
+-- 
+2.0.0
+

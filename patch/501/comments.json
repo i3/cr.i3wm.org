@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 16,
+    "Comment": "When I've adjusted the empty event semantics with patch #491, the testsuite completed without any errors!",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 16,
+    "Comment": "FYI: I’m not reviewing this yet since #491 is not merged and there is no replacement for it yet.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 16,
+    "Comment": "Sorry if my description hasn't been clear. This patch adds testcases for the *existing* \"empty\" workspace event. It's totally independent from #491. Its purpose is to verify the semantics as outlined in the current spec.",
+    "EmailHash": ""
+  }
+]

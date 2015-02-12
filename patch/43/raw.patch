@@ -1,0 +1,89 @@
+From 19ce87f41ae48a894c43a3336f8bcd631ccfa7dc Mon Sep 17 00:00:00 2001
+From: Julien Lequertier <git@…>
+Date: Sun, 10 Feb 2013 17:59:37 +0100
+Subject: [PATCH] Added option to show battery capacity without decimals
+
+---
+ i3status.c               | 3 ++-
+ include/i3status.h       | 2 +-
+ man/i3status.man         | 3 +++
+ src/print_battery_info.c | 8 ++++++--
+ 4 files changed, 12 insertions(+), 4 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index c1f6039..3fe3f47 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -234,6 +234,7 @@ int main(int argc, char *argv[]) {
+                 CFG_INT("low_threshold", 30, CFGF_NONE),
+                 CFG_STR("threshold_type", "time", CFGF_NONE),
+                 CFG_BOOL("last_full_capacity", false, CFGF_NONE),
++                CFG_BOOL("integer_battery_capacity", false, CFGF_NONE),
+                 CFG_CUSTOM_COLOR_OPTS,
+                 CFG_END()
+         };
+@@ -441,7 +442,7 @@ int main(int argc, char *argv[]) {
+ 
+                         CASE_SEC_TITLE("battery") {
+                                 SEC_OPEN_MAP("battery");
+-                                print_battery_info(json_gen, buffer, atoi(title), cfg_getstr(sec, "path"), cfg_getstr(sec, "format"), cfg_getint(sec, "low_threshold"), cfg_getstr(sec, "threshold_type"), cfg_getbool(sec, "last_full_capacity"));
++                                print_battery_info(json_gen, buffer, atoi(title), cfg_getstr(sec, "path"), cfg_getstr(sec, "format"), cfg_getint(sec, "low_threshold"), cfg_getstr(sec, "threshold_type"), cfg_getbool(sec, "last_full_capacity"), cfg_getbool(sec, "integer_battery_capacity"));
+                                 SEC_CLOSE_MAP;
+                         }
+ 
+diff --git a/include/i3status.h b/include/i3status.h
+index f24fec5..de8373f 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -142,7 +142,7 @@ void set_timezone(const char *tz);
+ 
+ void print_ipv6_info(yajl_gen json_gen, char *buffer, const char *format_up, const char *format_down);
+ void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format);
+-void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, int low_threshold, char *threshold_type, bool last_full_capacity);
++void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity);
+ void print_time(yajl_gen json_gen, char *buffer, const char *format, const char *tz, time_t t);
+ void print_ddate(yajl_gen json_gen, char *buffer, const char *format, time_t t);
+ const char *get_ip_addr();
+diff --git a/man/i3status.man b/man/i3status.man
+index d780363..0f80991 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -216,6 +216,9 @@ battery is at 23% when fully charged because it’s old. In general, I want to
+ see it this way, because it tells me how worn off my battery is.), just specify
+ +last_full_capacity = true+.
+ 
++If you want the battery percentage to be shown without decimals, add
+++integer_battery_capacity = true+.
++
+ If your battery is represented in a non-standard path in /sys, be sure to
+ modify the "path" property accordingly. The first occurence of %d gets replaced
+ with the battery number, but you can just hard-code a path as well.
+diff --git a/src/print_battery_info.c b/src/print_battery_info.c
+index 1545609..d4b091b 100644
+--- a/src/print_battery_info.c
++++ b/src/print_battery_info.c
+@@ -30,7 +30,7 @@
+  * worn off your battery is.
+  *
+  */
+-void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, int low_threshold, char *threshold_type, bool last_full_capacity) {
++void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity) {
+         time_t empty_time;
+         struct tm *empty_tm;
+         char buf[1024];
+@@ -130,7 +130,11 @@ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char
+         (void)snprintf(statusbuf, sizeof(statusbuf), "%s", BATT_STATUS_NAME(status));
+ 
+         float percentage_remaining = (((float)remaining / (float)full_design) * 100);
+-        (void)snprintf(percentagebuf, sizeof(percentagebuf), "%.02f%%", percentage_remaining);
++        if (integer_battery_capacity) {
++                (void)snprintf(percentagebuf, sizeof(percentagebuf), "%.00f%%", percentage_remaining);
++        } else {
++                (void)snprintf(percentagebuf, sizeof(percentagebuf), "%.02f%%", percentage_remaining);
++        }
+ 
+         if (present_rate > 0) {
+                 float remaining_time;
+-- 
+1.8.1.3
+

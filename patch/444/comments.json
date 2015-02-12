@@ -1,0 +1,56 @@
+[
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 56,
+    "Comment": "If I assign the string directly, I receive a warning:\nassignment discards ‘const’ qualifier from pointer target type\n\nBut gets the newly created string actually freed if I do this instead? Or is there a way to omit the warning?",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 79,
+    "Comment": "If the specified value is '10G', atoi() will return 10, which will make the section 10 pixel wide…\n\nIf the specified value is '\"10G\"' (with quotes), it will use the full string, adding two extra chars to the value.\n\n(The actually matching case depends on both user input and how i3status/libconfuse will pass it to this function.)\n\nHere is the JSON in both cases:\nCase 1: {\"min_width\":10}\nCase 2: {\"min_width\":\"\\\"10G\\\"\"}\nExpected case: {\"min_width\":\"10G\"}\n\nOr am I understanding something wrong?",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 79,
+    "Comment": "Forgot to add that…\n\nIn j4status, I use an integer (\u003cn\u003e) only. If the value is positive, I use it directly, if it is negative, I generate a string of abs(\u003cn\u003e) \"m\"’s to use (\"m\" should be wide enough to match most chars in most fonts).\n\nQuentin \"Sardem FF7\" Glidic",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 79,
+    "Comment": "You're right. atoi() is not ideal here. Having no working experience with C, I was not aware that atoi() does not really enforce a valid number. I will add a custom check here.\n\nlibconfuse automatically strips the outermost quotes. '\"10G\"' becomes \"10G\" which I think is ok?\n\nBut TTBOMK there's no way to differ between '10' and 10, so that's the one case that cannot be dealt with 100% correctly.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 213,
+    "Comment": "Do the custom options really need to be added here as well?",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 79,
+    "Comment": "To allow one to differ between numbers and strings we could support a hint to indicate the desired type:\n\nmin_width = \"(str)10\" or min_width = \"(s)10\"\n\nIMHO, the current way should be sufficient (if its a number, we treat it as a number). It just must be outlined in the documentation. ",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 79,
+    "Comment": "The correct way to do this is strtol(), see src/commands.c:348 for example.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 213,
+    "Comment": "I don’t think so.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 56,
+    "Comment": "The clearest way to express what we want is:\n\nchar **cresult = result;\n*cresult = sstrdup(value);\n\nThis string will not get freed, but since it is in use for the entire runtime of the program, that’s fine. It’ll be cleaned up by the operating system.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

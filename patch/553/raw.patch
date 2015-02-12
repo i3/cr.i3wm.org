@@ -1,0 +1,232 @@
+From b204a088f125d798798c5c008d16494b3a1b178e Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sun, 18 May 2014 00:44:19 -0400
+Subject: [PATCH] Change the names of parser result structs
+
+Change the name of structs CommandResult and ConfigResult to
+CommandResultIR and ConfigResultIR to show they are an intermediate
+representation used during parsing.
+---
+ generate-command-parser.pl  |  2 +-
+ include/commands.h          |  2 +-
+ include/commands_parser.h   | 14 +++++---------
+ include/config_directives.h |  2 +-
+ include/config_parser.h     |  9 +++++----
+ src/assignments.c           |  2 +-
+ src/commands.c              |  2 +-
+ src/commands_parser.c       |  6 +++---
+ src/config_parser.c         |  8 ++++----
+ src/ipc.c                   |  2 +-
+ src/key_press.c             |  2 +-
+ 11 files changed, 24 insertions(+), 27 deletions(-)
+
+diff --git a/generate-command-parser.pl b/generate-command-parser.pl
+index b76d5e5..9b5ef56 100755
+--- a/generate-command-parser.pl
++++ b/generate-command-parser.pl
+@@ -131,7 +131,7 @@ close($enumfh);
+ 
+ # Third step: Generate the call function.
+ open(my $callfh, '>', "GENERATED_${prefix}_call.h");
+-my $resultname = uc(substr($prefix, 0, 1)) . substr($prefix, 1) . 'Result';
++my $resultname = uc(substr($prefix, 0, 1)) . substr($prefix, 1) . 'ResultIR';
+ say $callfh "static void GENERATED_call(const int call_identifier, struct $resultname *result) {";
+ say $callfh '    switch (call_identifier) {';
+ my $call_id = 0;
+diff --git a/include/commands.h b/include/commands.h
+index e7d2781..cb68789 100644
+--- a/include/commands.h
++++ b/include/commands.h
+@@ -12,7 +12,7 @@
+ #include "commands_parser.h"
+ 
+ /** The beginning of the prototype for every cmd_ function. */
+-#define I3_CMD Match *current_match, struct CommandResult *cmd_output
++#define I3_CMD Match *current_match, struct CommandResultIR *cmd_output
+ 
+ /**
+  * Initializes the specified 'Match' data structure and the initial state of
+diff --git a/include/commands_parser.h b/include/commands_parser.h
+index 059237f..8c733db 100644
+--- a/include/commands_parser.h
++++ b/include/commands_parser.h
+@@ -12,15 +12,11 @@
+ #include <yajl/yajl_gen.h>
+ 
+ /*
+- * Holds the result of a call to any command. When calling
+- * parse_command("floating enable, border none"), the parser will internally
+- * use a struct CommandResult when calling cmd_floating and cmd_border.
+- * parse_command will also return another struct CommandResult, whose
+- * json_output is set to a map of individual json_outputs and whose
+- * needs_tree_trender is true if any individual needs_tree_render was true.
+- *
++ * Holds an intermediate represenation of the result of a call to any command.
++ * When calling parse_command("floating enable, border none"), the parser will
++ * internally use this struct when calling cmd_floating and cmd_border.
+  */
+-struct CommandResult {
++struct CommandResultIR {
+     /* The JSON generator to append a reply to. */
+     yajl_gen json_gen;
+ 
+@@ -33,4 +29,4 @@ struct CommandResult {
+     bool needs_tree_render;
+ };
+ 
+-struct CommandResult *parse_command(const char *input);
++struct CommandResultIR *parse_command(const char *input);
+diff --git a/include/config_directives.h b/include/config_directives.h
+index 5979a31..92c06c3 100644
+--- a/include/config_directives.h
++++ b/include/config_directives.h
+@@ -18,7 +18,7 @@
+ uint32_t modifiers_from_str(const char *str);
+ 
+ /** The beginning of the prototype for every cfg_ function. */
+-#define I3_CFG Match *current_match, struct ConfigResult *result
++#define I3_CFG Match *current_match, struct ConfigResultIR *result
+ 
+ /* Defines a configuration function, that is, anything that can be called by
+  * using 'call cfg_foo()' in parser-specs/.*.spec. Useful so that we don’t need
+diff --git a/include/config_parser.h b/include/config_parser.h
+index 6f1b531..e18e5cf 100644
+--- a/include/config_parser.h
++++ b/include/config_parser.h
+@@ -14,11 +14,12 @@
+ extern pid_t config_error_nagbar_pid;
+ 
+ /*
+- * The result of a parse_config call. Currently unused, but the JSON output
+- * will be useful in the future when we implement a config parsing IPC command.
++ * An intermediate reprsentation of the result of a parse_config call.
++ * Currently unused, but the JSON output will be useful in the future when we
++ * implement a config parsing IPC command.
+  *
+  */
+-struct ConfigResult {
++struct ConfigResultIR {
+     /* The JSON generator to append a reply to. */
+     yajl_gen json_gen;
+ 
+@@ -28,7 +29,7 @@ struct ConfigResult {
+     int next_state;
+ };
+ 
+-struct ConfigResult *parse_config(const char *input, struct context *context);
++struct ConfigResultIR *parse_config(const char *input, struct context *context);
+ 
+ /**
+  * Parses the given file by first replacing the variables, then calling
+diff --git a/src/assignments.c b/src/assignments.c
+index ea39eaf..dbd4dfc 100644
+--- a/src/assignments.c
++++ b/src/assignments.c
+@@ -45,7 +45,7 @@ void run_assignments(i3Window *window) {
+             DLOG("execute command %s\n", current->dest.command);
+             char *full_command;
+             sasprintf(&full_command, "[id=\"%d\"] %s", window->id, current->dest.command);
+-            struct CommandResult *command_output = parse_command(full_command);
++            struct CommandResultIR *command_output = parse_command(full_command);
+             free(full_command);
+ 
+             if (command_output->needs_tree_render)
+diff --git a/src/commands.c b/src/commands.c
+index 201c76e..6d8db6f 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -95,7 +95,7 @@ static Output *get_output_of_con(Con *con) {
+  * and return true, signaling that no further workspace switching should occur in the calling function.
+  *
+  */
+-static bool maybe_back_and_forth(struct CommandResult *cmd_output, char *name) {
++static bool maybe_back_and_forth(struct CommandResultIR *cmd_output, char *name) {
+     Con *ws = con_get_workspace(focused);
+ 
+     /* If we switched to a different workspace, do nothing */
+diff --git a/src/commands_parser.c b/src/commands_parser.c
+index 8702604..0723c27 100644
+--- a/src/commands_parser.c
++++ b/src/commands_parser.c
+@@ -179,8 +179,8 @@ static cmdp_state state;
+ #ifndef TEST_PARSER
+ static Match current_match;
+ #endif
+-static struct CommandResult subcommand_output;
+-static struct CommandResult command_output;
++static struct CommandResultIR subcommand_output;
++static struct CommandResultIR command_output;
+ 
+ #include "GENERATED_command_call.h"
+ 
+@@ -205,7 +205,7 @@ static void next_state(const cmdp_token *token) {
+     }
+ }
+ 
+-struct CommandResult *parse_command(const char *input) {
++struct CommandResultIR *parse_command(const char *input) {
+     DLOG("COMMAND: *%s*\n", input);
+     state = INITIAL;
+ 
+diff --git a/src/config_parser.c b/src/config_parser.c
+index 72ba676..ede2759 100644
+--- a/src/config_parser.c
++++ b/src/config_parser.c
+@@ -232,8 +232,8 @@ static void clear_criteria(void *unused_criteria) {
+ 
+ static cmdp_state state;
+ static Match current_match;
+-static struct ConfigResult subcommand_output;
+-static struct ConfigResult command_output;
++static struct ConfigResultIR subcommand_output;
++static struct ConfigResultIR command_output;
+ 
+ /* A list which contains the states that lead to the current state, e.g.
+  * INITIAL, WORKSPACE_LAYOUT.
+@@ -304,7 +304,7 @@ static char *single_line(const char *start) {
+     return result;
+ }
+ 
+-struct ConfigResult *parse_config(const char *input, struct context *context) {
++struct ConfigResultIR *parse_config(const char *input, struct context *context) {
+     /* Dump the entire config file into the debug log. We cannot just use
+      * DLOG("%s", input); because one log message must not exceed 4 KiB. */
+     const char *dumpwalk = input;
+@@ -1000,7 +1000,7 @@ void parse_file(const char *f) {
+     context = scalloc(sizeof(struct context));
+     context->filename = f;
+ 
+-    struct ConfigResult *config_output = parse_config(new, context);
++    struct ConfigResultIR *config_output = parse_config(new, context);
+     yajl_gen_free(config_output->json_gen);
+ 
+     check_for_duplicate_bindings(context);
+diff --git a/src/ipc.c b/src/ipc.c
+index 2391518..c3b82b5 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -117,7 +117,7 @@ IPC_HANDLER(command) {
+     char *command = scalloc(message_size + 1);
+     strncpy(command, (const char*)message, message_size);
+     LOG("IPC: received: *%s*\n", command);
+-    struct CommandResult *command_output = parse_command((const char*)command);
++    struct CommandResultIR *command_output = parse_command((const char*)command);
+     free(command);
+ 
+     if (command_output->needs_tree_render)
+diff --git a/src/key_press.c b/src/key_press.c
+index dbd5302..2dd676d 100644
+--- a/src/key_press.c
++++ b/src/key_press.c
+@@ -73,7 +73,7 @@ void handle_key_press(xcb_key_press_event_t *event) {
+         return;
+ 
+     char *command_copy = sstrdup(bind->command);
+-    struct CommandResult *command_output = parse_command(command_copy);
++    struct CommandResultIR *command_output = parse_command(command_copy);
+     free(command_copy);
+ 
+     if (command_output->needs_tree_render)
+-- 
+1.9.2
+

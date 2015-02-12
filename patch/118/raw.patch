@@ -1,0 +1,29 @@
+From 10c351bd94d02e01a398c836ee1004a26998d9cb Mon Sep 17 00:00:00 2001
+From: Simon Elsbrock <simon@…>
+Date: Thu, 28 Mar 2013 20:11:26 +0100
+Subject: [PATCH 3/3] i3bar: fix font displaying
+
+Previously, fonts could be cut off in some cases. Increase the drawing
+area by 2px so this does not happen anymore.
+
+fixes #992
+---
+ i3bar/src/xcb.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index 69cd810..37e2ab1 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -1604,7 +1604,7 @@ void draw_bars(bool unhide) {
+                           outputs_walk->bargc,
+                           MAX(0, (int16_t)(statusline_width - outputs_walk->rect.w + 4)), 0,
+                           MAX(0, (int16_t)(outputs_walk->rect.w - statusline_width - traypx - 4)), 3,
+-                          MIN(outputs_walk->rect.w - traypx - 4, statusline_width), font.height);
++                          MIN(outputs_walk->rect.w - traypx - 4, statusline_width), font.height + 2);
+         }
+ 
+         if (config.disable_ws) {
+-- 
+1.7.10.4
+

@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 23,
+    "Comment": "You've said it's fine that the string leaks until the end of the session, but I think this is cleaner.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  }
+]

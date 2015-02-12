@@ -1,0 +1,32 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 16,
+    "Comment": "The feature #969 talks about is highlighting the relevant text block when the “urgent” property is set.\n\nThis patch however adds support for arbitrary background colors, which I don’t think is a worthwhile feature (and have rejected before).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 16,
+    "Comment": "Yes, but I think it is reasonable to have background color support if there already is foreground color support. it opens up a lot new possibilities for styling the bar (see powerline).",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 16,
+    "Comment": "I’m not convinced. Intentionally, i3bar is not very customizable, but comes in a reasonable default configuration. I think background color is too obnoxious, i.e. it makes the bar too prominent. The bar is supposed to be something at which you only look on occasion, e.g. to check the current time or free disk space before starting a download.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "S0lll0s",
+    "Line": 16,
+    "Comment": "I have mine set up like this, and I use it just like that. It doesn't distract me at all. Of course you shouldn't use random colors, but in a well-chosen colorscheme it doesn't look bad: http://imgur.com/a/TFLd5",
+    "EmailHash": "ef53c93c26539d42ee6d6b21c78bfcfe"
+  },
+  {
+    "Author": "S0lll0s",
+    "Line": 16,
+    "Comment": "I have mine set up like this, and I use it just like that. It doesn't distract me at all. Of course you shouldn't use random colors, but in a well-chosen colorscheme it doesn't look bad: http://imgur.com/a/TFLd5",
+    "EmailHash": "ef53c93c26539d42ee6d6b21c78bfcfe"
+  }
+]

@@ -1,0 +1,44 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 145,
+    "Comment": "We don’t follow this convention in i3. Also, please just make this:\n\n    const bool exists = (stat(path, \u0026st) == 0);",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 100,
+    "Comment": "This still says file-exists, but the directive is called path_exists by now. I am not entirely happy with Path-exists, but I think it’s the most consistent choice.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 100,
+    "Comment": "To clarify, I was talking about the manpage section being called Path-exists",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 88,
+    "Comment": "I suggest using a different title, just for clarity. E.g. make the above one VPNC instead of VPN.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Kinware AB",
+    "Line": 88,
+    "Comment": "Ok. ",
+    "EmailHash": "19ec62ff64922540d49fc700ef20e12f"
+  },
+  {
+    "Author": "Kinware AB",
+    "Line": 100,
+    "Comment": "Ok. ",
+    "EmailHash": "19ec62ff64922540d49fc700ef20e12f"
+  },
+  {
+    "Author": "Kinware AB",
+    "Line": 145,
+    "Comment": "Ok. ",
+    "EmailHash": "19ec62ff64922540d49fc700ef20e12f"
+  }
+]

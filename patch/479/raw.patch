@@ -1,0 +1,25 @@
+From 15ff639dc577e3fe3697a6b90f3bde5b075e9bc3 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 18 Mar 2014 22:38:01 -0400
+Subject: [PATCH] Test 222: call exit_gracefully
+
+Not calling exit_gracefully causes some other test to fail during a
+complete_run sometimes.
+---
+ testcases/t/222-regress-dock-resize.t | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/testcases/t/222-regress-dock-resize.t b/testcases/t/222-regress-dock-resize.t
+index 0e80a6a..b9f9a79 100644
+--- a/testcases/t/222-regress-dock-resize.t
++++ b/testcases/t/222-regress-dock-resize.t
+@@ -39,4 +39,6 @@ cmd('[class="special"] resize grow height 160 px or 16 ppt');
+ 
+ does_i3_live;
+ 
++exit_gracefully($pid);
++
+ done_testing;
+-- 
+1.9.0
+

@@ -1,0 +1,29 @@
+From 911cccde87b9a3e0ad001b9b98ce4a7df44eae59 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 7 Jan 2014 13:32:21 -0500
+Subject: [PATCH] i3bar Bugfix: don't show "EOF" status line error
+
+When the `status_command` sends EOF, it is terminated. Terminating this
+process prints an error message to the status line (hence, a race
+condition). This error message is always more useful than the former
+"EOF" status line error because it shows the exit code.
+---
+ i3bar/src/child.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/i3bar/src/child.c b/i3bar/src/child.c
+index 6c1c17f..e20365f 100644
+--- a/i3bar/src/child.c
++++ b/i3bar/src/child.c
+@@ -288,8 +288,6 @@ static unsigned char *get_buffer(ev_io *watcher, int *ret_buffer_len) {
+             /* end of file, kill the watcher */
+             ELOG("stdin: received EOF\n");
+             cleanup();
+-            set_statusline_error("Received EOF from statusline process");
+-            draw_bars(false);
+             *ret_buffer_len = -1;
+             return NULL;
+         }
+-- 
+1.8.5.2
+

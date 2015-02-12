@@ -1,0 +1,25 @@
+From 495397b916fa7166cdf98352e2f6b4a5fb0d35c1 Mon Sep 17 00:00:00 2001
+From: Jan-Erik Rediger <badboy@…>
+Date: Wed, 17 Jul 2013 23:43:45 +0200
+Subject: [PATCH] Add exmple path for CPU temperature
+
+---
+ man/i3status.man | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/man/i3status.man b/man/i3status.man
+index 296b9a9..eb23bd1 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -258,6 +258,8 @@ specified thermal zone is getting too hot. Defaults to 75 degrees C.
+ 
+ *Example max_threshold*: +42+
+ 
++*Example path*: +/sys/devices/platform/coretemp.0/temp1_input+
++
+ === CPU Usage
+ 
+ Gets the percentual CPU usage from +/proc/stat+ (Linux) or +sysctl(3)+ (FreeBSD/OpenBSD).
+-- 
+1.8.3.3
+

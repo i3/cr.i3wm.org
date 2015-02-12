@@ -1,0 +1,44 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 37,
+    "Comment": "_shared memory_ logging does not log to stdout.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 51,
+    "Comment": "s/debug/debuglog/. i am not convinced we need this example here. in the shmlog section i added an example to clarify how to provide a megabyte number in an easy way.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 49,
+    "Comment": "The syntax uses +, not -",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 49,
+    "Comment": "The canonical example binding we use is $mod+x",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 39,
+    "Comment": "The description is weird. The only thing debug logging does is changing the log level. Try it! You’ll see log messages without debug logging, but you’ll see lots more with debug logging.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 148,
+    "Comment": "s/()/(void)/",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 127,
+    "Comment": "This log message does not reflect the truth. It is only true if you run debuglog toggle.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

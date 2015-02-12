@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "My apologies for taking so long to address this patch.\n\nI am declining it, because in i3status, color is supposed to be helpful in parsing the information that i3status shows. However, color should not be the single conveyor of information. With your patch, one would see the (non-effective) volume level even though audio is muted, and the color would be the only hint about what’s really going on.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 19,
+    "Comment": "I share your general opinion that color should not be the only information carrier. However, I see things a bit different in this case.\n\nCurrently, i3status shows a volume of zero, if the mixer is muted. While this might be considered technically correct, it does not reflect the actual handling of the muted state, as a mixer still has a meaningful volume level when muted that is \"restored\" when it is unmuted. Hence, showing \"what's really going on\" somewhat requires showing the volume level even if the mixer is muted.\n\nBesides, the default behavior of i3status would be as before. Only users that deliberately enable this option would have the color as independent information carrier. ",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "I agree that in order to avoid bad surprises when unmuting, the volume level might be useful. I still maintain the position that i3status is showing “what’s really going on”, and what you’re trying to show is new information, but those are semantic details not worth arguing about.\n\nAnyway, please submit a new version of that patch, but:\n\nMake color not the single conveyor of information. As a concrete example, introduce a new format (format_muted?) which could be something like “%volume (%volume_after_unmute)” by default.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Gereon Kremer",
+    "Line": 19,
+    "Comment": "I submitted a new patch (http://cr.i3wm.org/patch/314) implementing what you suggested, this seems a reasonable compromise. :-)\nHowever, I chose the default value to be more like the current behaviour...",
+    "EmailHash": "1aea85683c755df0f9d600a09d498b8e"
+  }
+]

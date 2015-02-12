@@ -1,0 +1,28 @@
+From 78e31c71ddc455bd5a8447ff44af8be067c4be06 Mon Sep 17 00:00:00 2001
+From: Alexander Berntsen <alexander@…>
+Date: Mon, 28 Apr 2014 00:56:31 +0200
+Subject: [PATCH 2/3] Disallow renaming workspaces to reserved namespace
+
+---
+ src/commands.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/src/commands.c b/src/commands.c
+index e8a52e2..2ff3ee1 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -1867,6 +1867,11 @@ void cmd_scratchpad_show(I3_CMD) {
+  *
+  */
+ void cmd_rename_workspace(I3_CMD, char *old_name, char *new_name) {
++    if (strncasecmp(new_name, "__", strlen("__")) == 0) {
++        LOG("You cannot switch to the i3 internal workspaces.\n");
++        ysuccess(false);
++        return;
++    }
+     if (old_name) {
+         LOG("Renaming workspace \"%s\" to \"%s\"\n", old_name, new_name);
+     } else {
+-- 
+1.8.3.2
+

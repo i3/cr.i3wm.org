@@ -1,0 +1,264 @@
+From 3168b939a0d4f5373ead74d103711386d30c66be Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Thu, 2 Oct 2014 17:40:03 -0400
+Subject: [PATCH] Implement the ipc 'binding' event
+
+The binding event will be triggered when a binding is run as a result of
+some a user action. The binding event has the following properties:
+
+change: (str) Currently this will only be "run" but may be expanded in
+the future. Included for consistency with other events.
+
+binding: (map) the serialized binding
+
+The "binding" member will have these properties:
+
+input_type: (str) either "keyboard" or "mouse"
+
+input_code: (int) the xcb keycode of the keyboard binding if it was
+provided or the mouse button if it is a mouse binding.
+
+symbol: (str) the string representation of the input code
+
+command: (str) the bound command
+
+mods: (list of str) a list of the modifiers that were pressed as string
+symbols
+
+fixes #1210
+---
+ include/i3/ipc.h                    |  3 ++
+ include/ipc.h                       |  5 +++
+ src/bindings.c                      |  1 +
+ src/ipc.c                           | 81 ++++++++++++++++++++++++++++++++++
+ testcases/t/238-ipc-binding-event.t | 86 +++++++++++++++++++++++++++++++++++++
+ 5 files changed, 176 insertions(+)
+ create mode 100644 testcases/t/238-ipc-binding-event.t
+
+diff --git a/include/i3/ipc.h b/include/i3/ipc.h
+index 9562a20..f1b50de 100644
+--- a/include/i3/ipc.h
++++ b/include/i3/ipc.h
+@@ -100,3 +100,6 @@ typedef struct i3_ipc_header {
+ 
+ /** Bar config update will be triggered to update the bar config */
+ #define I3_IPC_EVENT_BARCONFIG_UPDATE (I3_IPC_EVENT_MASK | 4)
++
++/** The binding event will be triggered when bindings run */
++#define I3_IPC_EVENT_BINDING (I3_IPC_EVENT_MASK | 5)
+diff --git a/include/ipc.h b/include/ipc.h
+index e9358ee..77dcad2 100644
+--- a/include/ipc.h
++++ b/include/ipc.h
+@@ -105,3 +105,8 @@ void ipc_send_window_event(const char *property, Con *con);
+  * For the barconfig update events, we send the serialized barconfig.
+  */
+ void ipc_send_barconfig_update_event(Barconfig *barconfig);
++
++/**
++ * For the binding events, we send the serialized binding struct.
++ */
++void ipc_send_binding_event(const char *event_type, Binding *bind);
+diff --git a/src/bindings.c b/src/bindings.c
+index cd91a39..3deaf7f 100644
+--- a/src/bindings.c
++++ b/src/bindings.c
+@@ -424,6 +424,7 @@ CommandResult *run_binding(Binding *bind, Con *con) {
+     }
+ 
+     /* TODO: emit event for running a binding */
++    ipc_send_binding_event("run", bind);
+ 
+     return result;
+ }
+diff --git a/src/ipc.c b/src/ipc.c
+index 6dab654..e93fe56 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -151,6 +151,57 @@ static void dump_rect(yajl_gen gen, const char *name, Rect r) {
+     y(map_close);
+ }
+ 
++static void dump_binding(yajl_gen gen, Binding *bind) {
++    y(map_open);
++    ystr("input_code");
++    y(integer, bind->keycode);
++
++    ystr("input_type");
++    ystr((const char*)(bind->input_type == B_KEYBOARD ? "keyboard" : "mouse"));
++
++    ystr("symbol");
++    ystr(bind->symbol);
++
++    ystr("command");
++    ystr(bind->command);
++
++    ystr("mods");
++    y(array_open);
++    for (int i = 0; i < 8; i++) {
++        if (bind->mods & (1 << i)) {
++            switch (1 << i) {
++                case XCB_MOD_MASK_SHIFT:
++                    ystr("shift");
++                    break;
++                case XCB_MOD_MASK_LOCK:
++                    ystr("lock");
++                    break;
++                case XCB_MOD_MASK_CONTROL:
++                    ystr("ctrl");
++                    break;
++                case XCB_MOD_MASK_1:
++                    ystr("Mod1");
++                    break;
++                case XCB_MOD_MASK_2:
++                    ystr("Mod2");
++                    break;
++                case XCB_MOD_MASK_3:
++                    ystr("Mod3");
++                    break;
++                case XCB_MOD_MASK_4:
++                    ystr("Mod4");
++                    break;
++                case XCB_MOD_MASK_5:
++                    ystr("Mod5");
++                    break;
++            }
++        }
++    }
++    y(array_close);
++
++    y(map_close);
++}
++
+ void dump_node(yajl_gen gen, struct Con *con, bool inplace_restart) {
+     y(map_open);
+     ystr("id");
+@@ -1146,3 +1197,33 @@ void ipc_send_barconfig_update_event(Barconfig *barconfig) {
+     y(free);
+     setlocale(LC_NUMERIC, "");
+ }
++
++/*
++ * For the binding events, we send the serialized binding struct.
++ */
++void ipc_send_binding_event(const char *event_type, Binding *bind) {
++    DLOG("Issue IPC binding %s event (sym = %s, code = %d)\n", event_type, bind->symbol, bind->keycode);
++
++    setlocale(LC_NUMERIC, "C");
++
++    yajl_gen gen = ygenalloc();
++
++    y(map_open);
++
++    ystr("change");
++    ystr(event_type);
++
++    ystr("binding");
++    dump_binding(gen, bind);
++
++    y(map_close);
++
++    const unsigned char *payload;
++    ylength length;
++    y(get_buf, &payload, &length);
++
++    ipc_send_event("binding", I3_IPC_EVENT_BINDING, (const char *)payload);
++
++    y(free);
++    setlocale(LC_NUMERIC, "");
++}
+diff --git a/testcases/t/238-ipc-binding-event.t b/testcases/t/238-ipc-binding-event.t
+new file mode 100644
+index 0000000..77281fe
+--- /dev/null
++++ b/testcases/t/238-ipc-binding-event.t
+@@ -0,0 +1,86 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Test that the binding event works properly
++# Ticket: #1210
++# Bug still in: 4.7.2-148-g54a6404
++use i3test i3_autostart => 0;
++
++my $keysym = 't';
++my $command = 'exec nop';
++my @mods = ('Shift', 'Ctrl');
++my $binding_symbol = "$mods[0]+$mods[1]+$keysym";
++
++my $config = <<EOT;
++# i3 config file (v4)
++font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
++
++bindsym $binding_symbol $command
++EOT
++
++SKIP: {
++    qx(which xdotool 2> /dev/null);
++
++    skip 'xdotool is required to test the binding event. `[apt-get install|pacman -S] xdotool`', 1 if $?;
++
++    my $pid = launch_with_config($config);
++
++    my $i3 = i3(get_socket_path());
++    $i3->connect->recv;
++
++    my $cv = AE::cv;
++    my $timer = AE::timer 0.5, 0, sub { $cv->send(0); };
++
++    $i3->subscribe({
++            binding => sub {
++                $cv->send(shift);
++            }
++        })->recv;
++
++    qx(xdotool key $binding_symbol);
++
++    my $e = $cv->recv;
++
++    does_i3_live;
++
++    diag "Event:\n", Dumper($e);
++
++    ok($e,
++        'the binding event should emit when user input triggers an i3 binding event');
++
++    is($e->{change}, 'run',
++        'the `change` field should indicate this binding has run');
++
++    ok($e->{binding},
++        'the `binding` field should be a hash that contains information about the binding');
++
++    is($e->{binding}->{input_type}, 'keyboard',
++        'the input_type field should be the input type of the binding (keyboard or mouse)');
++
++    note 'the `mods` field should contain the symbols for the modifiers of the binding';
++    ok(grep(/$mods[0]/i, @{$e->{binding}->{mods}}), '`mods` contains first mod');
++    ok(grep(/$mods[1]/i, @{$e->{binding}->{mods}}), '`mods` contains second mod');
++
++    is($e->{binding}->{command}, $command,
++        'the `command` field should contain the command the binding ran');
++
++    is($e->{binding}->{input_code}, 0,
++        'the input_code should be the specified code if the key was bound with bindcode, and otherwise zero');
++
++    exit_gracefully($pid);
++
++}
++done_testing;
+-- 
+2.1.2
+

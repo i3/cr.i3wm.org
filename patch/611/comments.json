@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 40,
+    "Comment": "If it was that easy, I would’ve done it a long time ago. Adding random atoms to this property breaks things AFAIR. Please just fix the number, and perhaps come up with a separate xmacro file that only contains _NET_SUPPORTED atoms in a separate commit as a long-term fix.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

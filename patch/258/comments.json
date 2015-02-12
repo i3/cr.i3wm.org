@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 17,
+    "Comment": "Copying this reply I sent a couple of days ago to a similar patch:\n\n Thanks for your patch. Unfortunately, I cannot merge it, because it\n violates one of my rules with regards to i3lock: any kind of image\n processing (cropping, resizing, converting, …, blurring!) will not be\n accepted and needs to be done outside of i3lock, e.g. in a custom\n script.\n\n This rule is in place so that the i3lock source code stays small and\n does not duplicate functionality that is already present in countless\n graphical tools.\n\n Thanks for understanding.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

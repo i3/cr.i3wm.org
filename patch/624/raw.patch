@@ -1,0 +1,115 @@
+From 532ecd6b27eeb47a6b9b5c988aa39efa00540b4c Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Mon, 7 Jul 2014 21:01:14 -0400
+Subject: [PATCH] Always explicitly set border widths on manage
+
+When a window becomes managed, explicitly set the current border width
+to the default instead of relying on the default value of -1 to apply
+the correct value.
+
+Now that there are two different kinds of default borders, a border
+width value of -1 is ambiguous. This can lead to different border widths
+effectively being applied when the container changes from tiling to
+floating, which is surprising behavior.
+
+This commit extends behavior introduced in this commit to normal
+borders:
+
+7afe9cc78b4d22dfd5a0c5866382a0e001ea38b6
+
+Explicitly set current border width when BS_PIXEL
+
+fixes #1304
+---
+ src/manage.c                    |  7 ++-----
+ testcases/t/228-border-widths.t | 39 +++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 41 insertions(+), 5 deletions(-)
+
+diff --git a/src/manage.c b/src/manage.c
+index d86eb06..c04047d 100644
+--- a/src/manage.c
++++ b/src/manage.c
+@@ -455,11 +455,8 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
+         floating_enable(nc, automatic_border);
+     }
+ 
+-    if (nc->border_style == BS_PIXEL) {
+-        /* if the border style is BS_PIXEL, explicitly set the border width of
+-         * the new container */
+-        nc->current_border_width = (want_floating ? config.default_floating_border_width : config.default_border_width);
+-    }
++    /* explicitly set the border width to the default */
++    nc->current_border_width = (want_floating ? config.default_floating_border_width : config.default_border_width);
+ 
+     /* to avoid getting an UnmapNotify event due to reparenting, we temporarily
+      * declare no interest in any state change event of this window */
+diff --git a/testcases/t/228-border-widths.t b/testcases/t/228-border-widths.t
+index e236fe6..be1e7f8 100644
+--- a/testcases/t/228-border-widths.t
++++ b/testcases/t/228-border-widths.t
+@@ -47,10 +47,12 @@ my $wscontent = get_ws($tmp);
+ 
+ my @tiled = @{$wscontent->{nodes}};
+ ok(@tiled == 1, 'one tiled container opened');
++is($tiled[0]->{current_border_width}, 5, 'tiled current border width set to 5');
+ is($tilewindow->rect->width, $tiled[0]->{rect}->{width} - 2*5, 'tiled border width 5');
+ 
+ my @floating = @{$wscontent->{floating_nodes}};
+ ok(@floating == 1, 'one floating container opened');
++is($floating[0]->{nodes}[0]->{current_border_width}, 10, 'floating current border width set to 10');
+ is($floatwindow->rect->width, $floating[0]->{rect}->{width} - 2*10, 'floating border width 10');
+ 
+ exit_gracefully($pid);
+@@ -80,12 +82,49 @@ $wscontent = get_ws($tmp);
+ 
+ @tiled = @{$wscontent->{nodes}};
+ ok(@tiled == 1, 'one tiled container opened');
++is($tiled[0]->{current_border_width}, 3, 'tiled current border width set to 3');
+ is($tilewindow->rect->width, $tiled[0]->{rect}->{width} - 2*3, 'tiled border width 3');
+ 
+ @floating = @{$wscontent->{floating_nodes}};
+ ok(@floating == 1, 'one floating container opened');
++is($floating[0]->{nodes}[0]->{current_border_width}, 7, 'floating current border width set to 7');
+ is($floatwindow->rect->width, $floating[0]->{rect}->{width} - 2*7, 'floating border width 7');
+ 
+ exit_gracefully($pid);
+ 
++#####################################################################
++# 3: make sure normal border widths work as well
++#####################################################################
++
++$config = <<EOT;
++# i3 config file (v4)
++font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
++
++new_float normal 6
++new_window normal 4
++EOT
++
++$pid = launch_with_config($config);
++
++$tmp = fresh_workspace;
++
++ok(@{get_ws_content($tmp)} == 0, 'no containers yet');
++
++$tilewindow = open_window;
++$floatwindow = open_floating_window;
++
++$wscontent = get_ws($tmp);
++
++@tiled = @{$wscontent->{nodes}};
++ok(@tiled == 1, 'one tiled container opened');
++is($tiled[0]->{current_border_width}, 4, 'tiled current border width set to 4');
++is($tilewindow->rect->width, $tiled[0]->{rect}->{width} - 2*4, 'tiled border width 4');
++
++@floating = @{$wscontent->{floating_nodes}};
++ok(@floating == 1, 'one floating container opened');
++is($floating[0]->{nodes}[0]->{current_border_width}, 6, 'floating current border width set to 6');
++is($floatwindow->rect->width, $floating[0]->{rect}->{width} - 2*6, 'floating border width 6');
++
++exit_gracefully($pid);
++
+ done_testing;
+-- 
+2.0.1
+

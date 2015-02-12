@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 33,
+    "Comment": "Without the check for stacked/tabs, containers that start out borderless will not have their titlebar rendered in a stack/tabs.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 40,
+    "Comment": "This is not actually required to fix the particular issues addressed in #1013, but it is consistent (these containers never have a pixmap) and hardening against future issues.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

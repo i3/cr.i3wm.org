@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 27,
+    "Comment": "Wouldn’t it make more sense to use two different loops? Otherwise the behavior depends on which workspace is encountered first (by chance!) in all_cons.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Sascha Kruse",
+    "Line": 27,
+    "Comment": "Is there a case where there can be multiple scratchpads visible at any time? (Visible includes a scratchpad on an unfocused workspace). If not, only one case can be true anyway.\nBut I can put this in two separate loops to make it more robust against future behaviour changes.",
+    "EmailHash": "2d22c759f31071600e0bed82342529bb"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 27,
+    "Comment": "No, only one scratchpad window may be visible at any time.",
+    "EmailHash": ""
+  }
+]

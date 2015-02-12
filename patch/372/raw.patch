@@ -1,0 +1,41 @@
+From 79238f8adab51da3a02d3a115a2a31034098155b Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Thu, 9 Jan 2014 11:59:21 -0500
+Subject: [PATCH] Add `input_type` enum to `Binding` typedef
+
+An input type of B_KEYBOARD will indicated this binding was created with
+"bindsym", "bindcode", or "bind" and should only run on key press
+events.
+
+An input type of B_MOUSE will indicate this binding was created with
+"bindmouse" and should only run on button press events (not yet
+implemented).
+
+For more information see #558.
+---
+ include/data.h | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/include/data.h b/include/data.h
+index 8a44fb1..6fc7b40 100644
+--- a/include/data.h
++++ b/include/data.h
+@@ -213,6 +213,15 @@ struct regex {
+  *
+  */
+ struct Binding {
++    /* The type of input this binding is for. (Mouse bindings are not yet
++     * implemented. All bindings are currently assumed to be keyboard bindings.) */
++    enum {
++        /* Created with "bindsym", "bindcode", and "bind" */
++        B_KEYBOARD = 0,
++        /* Created with "bindmouse" (not yet implemented). */
++        B_MOUSE = 1,
++    } input_type;
++
+     /** If true, the binding should be executed upon a KeyRelease event, not a
+      * KeyPress (the default). */
+     enum {
+-- 
+1.8.5.2
+

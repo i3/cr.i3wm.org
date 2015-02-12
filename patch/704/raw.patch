@@ -1,0 +1,281 @@
+From c40133aebffd10025a272faf17f07811bd92dff6 Mon Sep 17 00:00:00 2001
+From: Lukas K <lu@…>
+Date: Sun, 18 Jan 2015 15:07:42 +0100
+Subject: [PATCH 3/3] Suppport _NET_WM_MOVERESIZE completely
+
+fixes #1432
+This patch supersedes the previous one regarding _NET_WM_MOVERESIZE.
+It adds support for resizing windows using _NET_WM_MOVERESIZE_SIZE and
+fixes the number of supported atoms added to the root window.
+---
+ include/atoms.xmacro |  1 +
+ include/floating.h   |  2 +-
+ include/xcursor.h    |  4 ++++
+ src/click.c          |  6 +++---
+ src/ewmh.c           |  3 ++-
+ src/floating.c       | 45 +++++++++++++++++++++++++-------------
+ src/handlers.c       | 61 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ src/xcursor.c        |  4 ++++
+ 8 files changed, 106 insertions(+), 20 deletions(-)
+
+diff --git a/include/atoms.xmacro b/include/atoms.xmacro
+index 2755d6c..1f28c01 100644
+--- a/include/atoms.xmacro
++++ b/include/atoms.xmacro
+@@ -1,6 +1,7 @@
+ xmacro(_NET_SUPPORTED)
+ xmacro(_NET_SUPPORTING_WM_CHECK)
+ xmacro(_NET_WM_NAME)
++xmacro(_NET_WM_MOVERESIZE)
+ xmacro(_NET_WM_STATE_FULLSCREEN)
+ xmacro(_NET_WM_STATE_DEMANDS_ATTENTION)
+ xmacro(_NET_WM_STATE_MODAL)
+diff --git a/include/floating.h b/include/floating.h
+index bea5f7a..62fbbed 100644
+--- a/include/floating.h
++++ b/include/floating.h
+@@ -96,7 +96,7 @@ void floating_drag_window(Con *con, const xcb_button_press_event_t *event);
+  * Calls the drag_pointer function with the resize_window callback
+  *
+  */
+-void floating_resize_window(Con *con, const bool proportional, const xcb_button_press_event_t *event);
++void floating_resize_window(Con *con, const bool proportional, const xcb_button_press_event_t *event, border_t force_corner);
+ 
+ /**
+  * Called when a floating window is created or resized.
+diff --git a/include/xcursor.h b/include/xcursor.h
+index bb329e4..5875d6e 100644
+--- a/include/xcursor.h
++++ b/include/xcursor.h
+@@ -19,6 +19,10 @@ enum xcursor_cursor_t {
+     XCURSOR_CURSOR_TOP_RIGHT_CORNER,
+     XCURSOR_CURSOR_BOTTOM_LEFT_CORNER,
+     XCURSOR_CURSOR_BOTTOM_RIGHT_CORNER,
++    XCURSOR_CURSOR_TOP_SIDE,
++    XCURSOR_CURSOR_RIGHT_SIDE,
++    XCURSOR_CURSOR_BOTTOM_SIDE,
++    XCURSOR_CURSOR_LEFT_SIDE,
+     XCURSOR_CURSOR_WATCH,
+     XCURSOR_CURSOR_MOVE,
+     XCURSOR_CURSOR_MAX
+diff --git a/src/click.c b/src/click.c
+index 5c36aeb..2227eb7 100644
+--- a/src/click.c
++++ b/src/click.c
+@@ -266,7 +266,7 @@ static int route_click(Con *con, xcb_button_press_event_t *event, const bool mod
+          * also try resizing (tiling) if it was a click on the top */
+         if (mod_pressed && event->detail == XCB_BUTTON_INDEX_3) {
+             DLOG("floating resize due to floatingmodifier\n");
+-            floating_resize_window(floatingcon, proportional, event);
++            floating_resize_window(floatingcon, proportional, event, 0);
+             return 1;
+         }
+ 
+@@ -279,13 +279,13 @@ static int route_click(Con *con, xcb_button_press_event_t *event, const bool mod
+ 
+         if (dest == CLICK_DECORATION && event->detail == XCB_BUTTON_INDEX_3) {
+             DLOG("floating resize due to decoration right click\n");
+-            floating_resize_window(floatingcon, proportional, event);
++            floating_resize_window(floatingcon, proportional, event, 0);
+             return 1;
+         }
+ 
+         if (dest == CLICK_BORDER) {
+             DLOG("floating resize due to border click\n");
+-            floating_resize_window(floatingcon, proportional, event);
++            floating_resize_window(floatingcon, proportional, event, 0);
+             return 1;
+         }
+ 
+diff --git a/src/ewmh.c b/src/ewmh.c
+index 0746a5e..844a0db 100644
+--- a/src/ewmh.c
++++ b/src/ewmh.c
+@@ -234,5 +234,6 @@ void ewmh_setup_hints(void) {
+     /* I’m not entirely sure if we need to keep _NET_WM_NAME on root. */
+     xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_WM_NAME, A_UTF8_STRING, 8, strlen("i3"), "i3");
+ 
+-    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_SUPPORTED, XCB_ATOM_ATOM, 32, 23, supported_atoms);
++    /* only send the first 24 atoms (last one is _NET_CLOSE_WINDOW) increment that number when adding supported atoms */
++    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A__NET_SUPPORTED, XCB_ATOM_ATOM, 32, 24, supported_atoms);
+ }
+diff --git a/src/floating.c b/src/floating.c
+index 8a2fde2..bc4a570 100644
+--- a/src/floating.c
++++ b/src/floating.c
+@@ -488,8 +488,8 @@ DRAGGING_CB(resize_window_callback) {
+ 
+     int32_t dest_x = con->rect.x;
+     int32_t dest_y = con->rect.y;
+-    uint32_t dest_width;
+-    uint32_t dest_height;
++    uint32_t dest_width = old_rect->width;
++    uint32_t dest_height = old_rect->height;
+ 
+     double ratio = (double)old_rect->width / old_rect->height;
+ 
+@@ -497,12 +497,12 @@ DRAGGING_CB(resize_window_callback) {
+      * taking into account in which corner the client was grabbed */
+     if (corner & BORDER_LEFT)
+         dest_width = old_rect->width - (new_x - event->root_x);
+-    else
++    else if (corner & BORDER_RIGHT)
+         dest_width = old_rect->width + (new_x - event->root_x);
+ 
+     if (corner & BORDER_TOP)
+         dest_height = old_rect->height - (new_y - event->root_y);
+-    else
++    else if (corner & BORDER_BOTTOM)
+         dest_height = old_rect->height + (new_y - event->root_y);
+ 
+     /* User wants to keep proportions, so we may have to adjust our values */
+@@ -540,26 +540,41 @@ DRAGGING_CB(resize_window_callback) {
+  *
+  */
+ void floating_resize_window(Con *con, const bool proportional,
+-                            const xcb_button_press_event_t *event) {
++                            const xcb_button_press_event_t *event,
++                            border_t force_corner) {
+     DLOG("floating_resize_window\n");
+ 
+     /* corner saves the nearest corner to the original click. It contains
+      * a bitmask of the nearest borders (BORDER_LEFT, BORDER_RIGHT, …) */
+     border_t corner = 0;
++    int cursor = 0;
++    if(force_corner == 0) {
++        if (event->event_x <= (int16_t)(con->rect.width / 2))
++            corner |= BORDER_LEFT;
++        else
++            corner |= BORDER_RIGHT;
+ 
+-    if (event->event_x <= (int16_t)(con->rect.width / 2))
+-        corner |= BORDER_LEFT;
+-    else
+-        corner |= BORDER_RIGHT;
++        if (event->event_y <= (int16_t)(con->rect.height / 2))
++            corner |= BORDER_TOP;
++        else
++            corner |= BORDER_BOTTOM;
++    }
++    else {
++        corner = force_corner;
++    }
+ 
+-    int cursor = 0;
+-    if (event->event_y <= (int16_t)(con->rect.height / 2)) {
+-        corner |= BORDER_TOP;
++    if(corner == BORDER_TOP)
++        cursor = XCURSOR_CURSOR_TOP_SIDE;
++    else if(corner == BORDER_RIGHT)
++        cursor = XCURSOR_CURSOR_RIGHT_SIDE;
++    else if(corner == BORDER_BOTTOM)
++        cursor = XCURSOR_CURSOR_BOTTOM_SIDE;
++    else if(corner == BORDER_LEFT)
++        cursor = XCURSOR_CURSOR_LEFT_SIDE;
++    else if(corner & BORDER_TOP)
+         cursor = (corner & BORDER_LEFT) ? XCURSOR_CURSOR_TOP_LEFT_CORNER : XCURSOR_CURSOR_TOP_RIGHT_CORNER;
+-    } else {
+-        corner |= BORDER_BOTTOM;
++    else if(corner & BORDER_BOTTOM)
+         cursor = (corner & BORDER_LEFT) ? XCURSOR_CURSOR_BOTTOM_LEFT_CORNER : XCURSOR_CURSOR_BOTTOM_RIGHT_CORNER;
+-    }
+ 
+     struct resize_window_callback_params params = {corner, proportional, event};
+ 
+diff --git a/src/handlers.c b/src/handlers.c
+index 569a8ec..33bea83 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -651,6 +651,20 @@ static void handle_expose_event(xcb_expose_event_t *event) {
+     return;
+ }
+ 
++
++#define _NET_WM_MOVERESIZE_SIZE_TOPLEFT      0
++#define _NET_WM_MOVERESIZE_SIZE_TOP          1
++#define _NET_WM_MOVERESIZE_SIZE_TOPRIGHT     2
++#define _NET_WM_MOVERESIZE_SIZE_RIGHT        3
++#define _NET_WM_MOVERESIZE_SIZE_BOTTOMRIGHT  4
++#define _NET_WM_MOVERESIZE_SIZE_BOTTOM       5
++#define _NET_WM_MOVERESIZE_SIZE_BOTTOMLEFT   6
++#define _NET_WM_MOVERESIZE_SIZE_LEFT         7
++#define _NET_WM_MOVERESIZE_MOVE              8   /* movement only */
++#define _NET_WM_MOVERESIZE_SIZE_KEYBOARD     9   /* size via keyboard */
++#define _NET_WM_MOVERESIZE_MOVE_KEYBOARD    10   /* move via keyboard */
++#define _NET_WM_MOVERESIZE_CANCEL           11   /* cancel operation */
++
+ /*
+  * Handle client messages (EWMH)
+  *
+@@ -856,6 +870,53 @@ static void handle_client_message(xcb_client_message_event_t *event) {
+         } else {
+             DLOG("Couldn't find con for _NET_CLOSE_WINDOW request. (window = %d)\n", event->window);
+         }
++    }
++    else if (event->type == A__NET_WM_MOVERESIZE) {
++        /*
++         * Client-side decorated Gtk3 windows emit this signal when being
++         * dragged by their GtkHeaderBar
++         */
++         Con *con = con_by_window_id(event->window);
++         if (con && con_is_floating(con)) {
++             DLOG("Handling _NET_WM_MOVERESIZE request (con = %p)\n", con);
++             uint32_t direction = event->data.data32[2];
++             uint32_t x_root = event->data.data32[0];
++             uint32_t y_root = event->data.data32[1];
++             /* construct fake xcb_button_press_event_t */
++             xcb_button_press_event_t fake = {
++                 .root_x = x_root,
++                 .root_y = y_root
++             };
++             if(direction == _NET_WM_MOVERESIZE_MOVE) {
++                 floating_drag_window(con->parent, &fake);
++
++             } else if(direction >= _NET_WM_MOVERESIZE_SIZE_TOPLEFT && direction <= _NET_WM_MOVERESIZE_SIZE_LEFT) {
++                 border_t border=0;
++                 if(direction == _NET_WM_MOVERESIZE_SIZE_TOP ||
++                    direction == _NET_WM_MOVERESIZE_SIZE_TOPLEFT ||
++                    direction == _NET_WM_MOVERESIZE_SIZE_TOPRIGHT)
++                        border |= BORDER_TOP;
++                 if(direction == _NET_WM_MOVERESIZE_SIZE_RIGHT ||
++                         direction == _NET_WM_MOVERESIZE_SIZE_TOPRIGHT ||
++                         direction == _NET_WM_MOVERESIZE_SIZE_BOTTOMRIGHT)
++                        border |= BORDER_RIGHT;
++                 if(direction == _NET_WM_MOVERESIZE_SIZE_BOTTOM ||
++                         direction == _NET_WM_MOVERESIZE_SIZE_BOTTOMLEFT ||
++                         direction == _NET_WM_MOVERESIZE_SIZE_BOTTOMRIGHT)
++                        border |= BORDER_BOTTOM;
++                 if(direction == _NET_WM_MOVERESIZE_SIZE_LEFT ||
++                         direction == _NET_WM_MOVERESIZE_SIZE_TOPLEFT ||
++                         direction == _NET_WM_MOVERESIZE_SIZE_TOPRIGHT)
++                        border |= BORDER_RIGHT;
++
++                 floating_resize_window(con->parent, FALSE, &fake, border);
++             } else {
++                DLOG("_NET_WM_MOVERESIZE direction %d not implemented\n", direction);
++             }
++
++         } else {
++             DLOG("Couldn't find con for _NET_WM_MOVERESIZE request. or con not floating (window = %d)\n", event->window);
++         }
+     } else {
+         DLOG("unhandled clientmessage\n");
+         return;
+diff --git a/src/xcursor.c b/src/xcursor.c
+index 6daeedb..aa4d497 100644
+--- a/src/xcursor.c
++++ b/src/xcursor.c
+@@ -44,6 +44,10 @@ void xcursor_load_cursors(void) {
+     LOAD_CURSOR(XCURSOR_CURSOR_TOP_RIGHT_CORNER, "top_right_corner");
+     LOAD_CURSOR(XCURSOR_CURSOR_BOTTOM_LEFT_CORNER, "bottom_left_corner");
+     LOAD_CURSOR(XCURSOR_CURSOR_BOTTOM_RIGHT_CORNER, "bottom_right_corner");
++    LOAD_CURSOR(XCURSOR_CURSOR_TOP_SIDE, "top_side");
++    LOAD_CURSOR(XCURSOR_CURSOR_RIGHT_SIDE, "right_side");
++    LOAD_CURSOR(XCURSOR_CURSOR_BOTTOM_SIDE, "bottom_side");
++    LOAD_CURSOR(XCURSOR_CURSOR_LEFT_SIDE, "left_side");
+ #undef LOAD_CURSOR
+ }
+ 
+-- 
+2.2.2
+

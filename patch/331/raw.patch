@@ -1,0 +1,66 @@
+From 5966be441da79af0bb412e3e400e210b0f362c7e Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sat, 23 Nov 2013 23:09:01 -0500
+Subject: [PATCH 2/2] i3bar: Realign tray clients on UnmapNotify
+
+UnmapNotify events are interpreted by i3bar as an action taken by an
+application to hide its tray window. We respond by adjusting the size of
+the tray window and realigning any tray clients that remain. This will
+close the gap left by the unmapping window.
+
+Breaking change! The tray will not be properly readjusted if the
+application remaps its tray window.
+---
+ i3bar/src/xcb.c | 15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
+
+diff --git a/i3bar/src/xcb.c b/i3bar/src/xcb.c
+index f25888b..1ed4fde 100644
+--- a/i3bar/src/xcb.c
++++ b/i3bar/src/xcb.c
+@@ -433,8 +433,9 @@ void handle_button(xcb_button_press_event_t *event) {
+ }
+ 
+ /*
+- * Configures the x coordinate of all trayclients. To be called after adding a
+- * new tray client or removing an old one.
++ * Adjusts the size of the tray window and alignment of the tray clients by
++ * configuring their respective x coordinates. To be called when mapping or
++ * unmapping a tray client window.
+  *
+  */
+ static void configure_trayclients(void) {
+@@ -656,8 +657,8 @@ static void handle_destroy_notify(xcb_destroy_notify_event_t* event) {
+ }
+ 
+ /*
+- * Handles UnmapNotify events. These events happen when a tray window unmaps
+- * itself. We then update our data structure
++ * Handles UnmapNotify events. These events happen when a tray client hides its
++ * window. We respond by realigning the tray clients.
+  *
+  */
+ static void handle_unmap_notify(xcb_unmap_notify_event_t* event) {
+@@ -673,8 +674,8 @@ static void handle_unmap_notify(xcb_unmap_notify_event_t* event) {
+             if (trayclient->win != event->window)
+                 continue;
+ 
+-            DLOG("Removing tray client with window ID %08x\n", event->window);
+-            TAILQ_REMOVE(walk->trayclients, trayclient, tailq);
++            DLOG("Tray client unmapped (window ID %08x). Adjusting tray.\n", event->window);
++            trayclient->mapped = false;
+ 
+             /* Trigger an update, we now have more space for the statusline */
+             configure_trayclients();
+@@ -836,7 +837,7 @@ void xcb_chk_cb(struct ev_loop *loop, ev_check *watcher, int revents) {
+                 handle_destroy_notify((xcb_destroy_notify_event_t*) event);
+                 break;
+             case XCB_UNMAP_NOTIFY:
+-                /* UnmapNotifies are received when a tray window unmaps itself */
++                /* UnmapNotify is received when a tray client hides its window. */
+                 handle_unmap_notify((xcb_unmap_notify_event_t*) event);
+                 break;
+             case XCB_PROPERTY_NOTIFY:
+-- 
+1.8.4.2
+

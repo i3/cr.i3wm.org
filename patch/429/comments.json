@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 63,
+    "Comment": "I'm getting a warning that you are masking an earlier declaration of these variables.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 37,
+    "Comment": "Please use con_set_urgency for this task.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 29,
+    "Comment": "I think that the reason for all this focus switching is that this function assumes the container in the parameter is currently focused (right?) which could possibly be improved.\n\nAnother possible clean approach would be to reset the urgency hint of the focused container at render time instead, given that con_focus is allowed to be used in this way.\n\nBut given this approach, I might suggest that it would be cleaner to check urgency at the beginning and update as appropriate at the very end with the other urgency update.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "Thanks for coming up with a test for this :).\n\nI think it’d be better to fix the urgency state in on_remove_child and con_attach. That way, you’ll catch all the corner cases, too (e.g. moving a floating window to another monitor and making it tiling again — not sure if that’s actually broken, but just as an example…)\n\nAlso, please change the “Fixes bug #1187” to “closes #1187”, since we have hooks in place that look for these special messages.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

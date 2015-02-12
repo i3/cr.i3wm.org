@@ -1,0 +1,123 @@
+From 1ce4b0eabc5e1e9ef66aaa9cecd237c9fb3ebb8f Mon Sep 17 00:00:00 2001
+From: Diego Ongaro <ongardie@…>
+Date: Tue, 21 May 2013 21:28:13 -0700
+Subject: [PATCH 1/2] Give layout enum a name: layout_t
+
+---
+ include/con.h    |    2 +-
+ include/config.h |    2 +-
+ include/data.h   |   23 ++++++++++++++---------
+ src/commands.c   |    2 +-
+ src/con.c        |    2 +-
+ src/handlers.c   |    2 +-
+ 6 files changed, 19 insertions(+), 14 deletions(-)
+
+diff --git a/include/con.h b/include/con.h
+index 7c60211..ec4ae35 100644
+--- a/include/con.h
++++ b/include/con.h
+@@ -275,7 +275,7 @@ void con_set_border_style(Con *con, int border_style, int border_width);
+  * new split container before).
+  *
+  */
+-void con_set_layout(Con *con, int layout);
++void con_set_layout(Con *con, layout_t layout);
+ 
+ /**
+  * This function toggles the layout of a given container. toggle_mode can be
+diff --git a/include/config.h b/include/config.h
+index 7056af8..4bdcdba 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -95,7 +95,7 @@ struct Config {
+     char *ipc_socket_path;
+     const char *restart_state_path;
+ 
+-    int default_layout;
++    layout_t default_layout;
+     int container_stack_limit;
+     int container_stack_limit_value;
+     int default_border_width;
+diff --git a/include/data.h b/include/data.h
+index 13acc06..83f9d80 100644
+--- a/include/data.h
++++ b/include/data.h
+@@ -80,6 +80,19 @@ enum {
+ };
+ 
+ /**
++ * Container layouts. See Con::layout.
++ */
++typedef enum {
++    L_DEFAULT = 0,
++    L_STACKED = 1,
++    L_TABBED = 2,
++    L_DOCKAREA = 3,
++    L_OUTPUT = 4,
++    L_SPLITV = 5,
++    L_SPLITH = 6
++} layout_t;
++
++/**
+  * Stores a rectangle, for example the size of a window, the child window etc.
+  * It needs to be packed so that the compiler will not add any padding bytes.
+  * (it is used in src/ewmh.c for example)
+@@ -531,15 +544,7 @@ struct Con {
+      * parent and opening new containers). Instead, it stores the requested
+      * layout in workspace_layout and creates a new split container with that
+      * layout whenever a new container is attached to the workspace. */
+-    enum {
+-        L_DEFAULT = 0,
+-        L_STACKED = 1,
+-        L_TABBED = 2,
+-        L_DOCKAREA = 3,
+-        L_OUTPUT = 4,
+-        L_SPLITV = 5,
+-        L_SPLITH = 6
+-    } layout, last_split_layout, workspace_layout;
++    layout_t layout, last_split_layout, workspace_layout;
+     border_style_t border_style;
+     /** floating? (= not in tiling layout) This cannot be simply a bool
+      * because we want to keep track of whether the status was set by the
+diff --git a/src/commands.c b/src/commands.c
+index 538e2db..d817d63 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -1547,7 +1547,7 @@ void cmd_layout(I3_CMD, char *layout_str) {
+     if (strcmp(layout_str, "stacking") == 0)
+         layout_str = "stacked";
+     owindow *current;
+-    int layout;
++    layout_t layout;
+     /* default is a special case which will be handled in con_set_layout(). */
+     if (strcmp(layout_str, "default") == 0)
+         layout = L_DEFAULT;
+diff --git a/src/con.c b/src/con.c
+index 79872f9..fe26d69 100644
+--- a/src/con.c
++++ b/src/con.c
+@@ -1209,7 +1209,7 @@ void con_set_border_style(Con *con, int border_style, int border_width) {
+  * new split container before).
+  *
+  */
+-void con_set_layout(Con *con, int layout) {
++void con_set_layout(Con *con, layout_t layout) {
+     DLOG("con_set_layout(%p, %d), con->type = %d\n",
+          con, layout, con->type);
+ 
+diff --git a/src/handlers.c b/src/handlers.c
+index f4782ca..fdc75ab 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -158,7 +158,7 @@ static void handle_enter_notify(xcb_enter_notify_event_t *event) {
+     }
+ 
+     /* see if the user entered the window on a certain window decoration */
+-    int layout = (enter_child ? con->parent->layout : con->layout);
++    layout_t layout = (enter_child ? con->parent->layout : con->layout);
+     if (layout == L_DEFAULT) {
+         Con *child;
+         TAILQ_FOREACH(child, &(con->nodes_head), nodes)
+-- 
+1.7.10.4
+

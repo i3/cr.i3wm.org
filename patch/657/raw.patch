@@ -1,0 +1,27 @@
+From 29db1ac677ff501ccb9676798c02946a7ff3f980 Mon Sep 17 00:00:00 2001
+From: Romuald Brunet <romuald@…>
+Date: Tue, 21 Oct 2014 19:45:35 +0200
+Subject: [PATCH 4/4] Add man page for center image
+
+---
+ i3lock.1 | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/i3lock.1 b/i3lock.1
+index 8b07229..819cff9 100644
+--- a/i3lock.1
++++ b/i3lock.1
+@@ -99,6 +99,10 @@ If an image is specified (via \-i) it will display the image tiled all over the
+ (if it is a multi-monitor setup, the image is visible on all screens).
+ 
+ .TP
++.B \-x, \-\-center
++If an image is specified (via \-i) it will display the image centered inside each screen
++
++.TP
+ .BI \-p\  win|default \fR,\ \fB\-\-pointer= win|default
+ If you specify "default",
+ .B i3lock
+-- 
+2.1.1
+

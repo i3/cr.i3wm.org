@@ -1,0 +1,25 @@
+From bfaa4134f8c3f01c03a65f8b3df5f0b853cbc593 Mon Sep 17 00:00:00 2001
+From: Marcus Crestani <crestani@…>
+Date: Thu, 14 Mar 2013 10:10:38 +0100
+Subject: [PATCH] Add YAJL_CFLAGS to i3-msg.mk.
+
+---
+ i3-msg/i3-msg.mk |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/i3-msg/i3-msg.mk b/i3-msg/i3-msg.mk
+index b1ba7b4..fda56da 100644
+--- a/i3-msg/i3-msg.mk
++++ b/i3-msg/i3-msg.mk
+@@ -4,7 +4,7 @@ CLEAN_TARGETS += clean-i3-msg
+ 
+ i3_msg_SOURCES := $(wildcard i3-msg/*.c)
+ i3_msg_HEADERS := $(wildcard i3-msg/*.h)
+-i3_msg_CFLAGS   = $(XCB_CFLAGS) $(PANGO_CFLAGS)
++i3_msg_CFLAGS   = $(XCB_CFLAGS) $(PANGO_CFLAGS) $(YAJL_CFLAGS)
+ i3_msg_LIBS     = $(XCB_LIBS) $(YAJL_LIBS)
+ 
+ i3_msg_OBJECTS := $(i3_msg_SOURCES:.c=.o)
+-- 
+1.6.4.2
+

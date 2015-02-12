@@ -1,0 +1,62 @@
+From bdf0de760ea49bac2cb12f30457bd3709f4ecbae Mon Sep 17 00:00:00 2001
+From: Jean-Philippe Ouellet <jpo@…>
+Date: Tue, 26 Nov 2013 05:41:56 -0500
+Subject: fix the build on OS X
+
+OS X doesn't have posix_fallocate() yet, so put
+bf760d0241f0f078735e230b4bf6da4fc83368fe in
+    #if defined(__APPLE__)
+
+the cd fails with:
+    /bin/sh: line 0: cd: include: No such file or directory
+so give it a path relative to the top directory
+
+---
+ src/i3.mk | 4 ++--
+ src/log.c | 7 ++++++-
+ 2 files changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/src/i3.mk b/src/i3.mk
+index 36a24c8..395b4cf 100644
+--- a/src/i3.mk
++++ b/src/i3.mk
+@@ -54,12 +54,12 @@ src/config_parser.o: src/config_parser.c $(i3_HEADERS_DEP) i3-config-parser.stam
+ 
+ i3-command-parser.stamp: generate-command-parser.pl parser-specs/commands.spec
+ 	echo "[i3] Generating command parser"
+-	(cd include; ../generate-command-parser.pl --input=../parser-specs/commands.spec --prefix=command)
++	(cd $(TOPDIR)/include; ../generate-command-parser.pl --input=../parser-specs/commands.spec --prefix=command)
+ 	touch $@
+ 
+ i3-config-parser.stamp: generate-command-parser.pl parser-specs/config.spec
+ 	echo "[i3] Generating config parser"
+-	(cd include; ../generate-command-parser.pl --input=../parser-specs/config.spec --prefix=config)
++	(cd $(TOPDIR)/include; ../generate-command-parser.pl --input=../parser-specs/config.spec --prefix=config)
+ 	touch $@
+ 
+ i3: libi3.a $(i3_OBJECTS)
+diff --git a/src/log.c b/src/log.c
+index 34e3453..86f47b9 100644
+--- a/src/log.c
++++ b/src/log.c
+@@ -129,11 +129,16 @@ void open_logbuffer(void) {
+             return;
+         }
+ 
++#if defined(__APPLE__)
++        if (ftruncate(logbuffer_shm, logbuffer_size) == -1) {
++            fprintf(stderr, "Could not ftruncate SHM segment for the i3 log: %s\n", strerror(errno));
++#else
+         int ret;
+         if ((ret = posix_fallocate(logbuffer_shm, 0, logbuffer_size)) != 0) {
++            fprintf(stderr, "Could not ftruncate SHM segment for the i3 log: %s\n", strerror(ret));
++#endif
+             close(logbuffer_shm);
+             shm_unlink(shmlogname);
+-            fprintf(stderr, "Could not ftruncate SHM segment for the i3 log: %s\n", strerror(ret));
+             return;
+         }
+ 
+-- 
+1.7.12.1
+

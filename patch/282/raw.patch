@@ -1,0 +1,37 @@
+From df8ef01c36224771de85e67c86f58ae61461bb8b Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Wed, 23 Oct 2013 12:57:32 -0400
+Subject: [PATCH] Add `.clang_complete` and `Xdummy.so` to gitignore
+
+Adds two files to gitignore.
+
+`.clang_complete` is created by the clang_complete vim plugin
+[https://github.com/Rip-Rip/clang_complete]
+
+`Xdummy.so` is created by compiling the Xdummy module.
+---
+ .gitignore           | 1 +
+ testcases/.gitignore | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/.gitignore b/.gitignore
+index 0160a24..600b4fb 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -31,3 +31,4 @@ docs/*.html
+ !/docs/refcard.html
+ i3-command-parser.stamp
+ i3-config-parser.stamp
++.clang_complete
+diff --git a/testcases/.gitignore b/testcases/.gitignore
+index c11c556..294f0da 100644
+--- a/testcases/.gitignore
++++ b/testcases/.gitignore
+@@ -8,3 +8,4 @@ inc
+ META.yml
+ i3-cfg-for-*
+ -
++Xdummy.so
+-- 
+1.8.4.1
+

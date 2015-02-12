@@ -1,0 +1,163 @@
+From a10b17ab2c376e3dd79b00bc9813f1407db31198 Mon Sep 17 00:00:00 2001
+From: Blaz Balon <blaz.balon@…>
+Date: Wed, 20 Mar 2013 00:55:59 +0100
+Subject: [PATCH] Colored clock for work hours
+
+If enabled it color clock green during working hours (default 7am to
+5pm) and week (Mon to Fri). Days and hours can be manualy configured.
+---
+ i3status.c         | 14 ++++++++++++--
+ include/i3status.h |  2 +-
+ man/i3status.man   | 22 ++++++++++++++++++++++
+ src/print_time.c   | 20 +++++++++++++++++++-
+ 4 files changed, 54 insertions(+), 4 deletions(-)
+
+diff --git a/i3status.c b/i3status.c
+index df233f7..fa5c788 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -242,12 +242,22 @@ int main(int argc, char *argv[]) {
+ 
+         cfg_opt_t time_opts[] = {
+                 CFG_STR("format", "%Y-%m-%d %H:%M:%S", CFGF_NONE),
++                CFG_BOOL("workday_color", false, CFGF_NONE),
++                CFG_INT("work_start", 7, CFGF_NONE),
++                CFG_INT("work_end", 17, CFGF_NONE),
++                CFG_STR("workdays", "1,2,3,4,5", CFGF_NONE),
++                CFG_CUSTOM_COLOR_OPTS,
+                 CFG_END()
+         };
+ 
+         cfg_opt_t tztime_opts[] = {
+                 CFG_STR("format", "%Y-%m-%d %H:%M:%S %Z", CFGF_NONE),
++                CFG_BOOL("workday_color", false, CFGF_NONE),
++                CFG_INT("work_start", 7, CFGF_NONE),
++                CFG_INT("work_end", 17, CFGF_NONE),
+                 CFG_STR("timezone", "", CFGF_NONE),
++                CFG_STR("workdays", "1,2,3,4,5", CFGF_NONE),
++                CFG_CUSTOM_COLOR_OPTS,
+                 CFG_END()
+         };
+ 
+@@ -469,13 +479,13 @@ int main(int argc, char *argv[]) {
+ 
+                         CASE_SEC("time") {
+                                 SEC_OPEN_MAP("time");
+-                                print_time(json_gen, buffer, cfg_getstr(sec, "format"), NULL, tv.tv_sec);
++                                print_time(json_gen, buffer, cfg_getstr(sec, "format"), cfg_getbool(sec, "workday_color"), cfg_getint(sec, "work_start"), cfg_getint(sec, "work_end"), cfg_getstr(sec, "workdays"), NULL, tv.tv_sec);
+                                 SEC_CLOSE_MAP;
+                         }
+ 
+                         CASE_SEC_TITLE("tztime") {
+                                 SEC_OPEN_MAP("tztime");
+-                                print_time(json_gen, buffer, cfg_getstr(sec, "format"), cfg_getstr(sec, "timezone"), tv.tv_sec);
++                                print_time(json_gen, buffer, cfg_getstr(sec, "format"), cfg_getbool(sec, "workday_color"), cfg_getint(sec, "work_start"), cfg_getint(sec, "work_end"), cfg_getstr(sec, "workdays"), cfg_getstr(sec, "timezone"), tv.tv_sec);
+                                 SEC_CLOSE_MAP;
+                         }
+ 
+diff --git a/include/i3status.h b/include/i3status.h
+index 6b2a688..739719c 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -143,7 +143,7 @@ void set_timezone(const char *tz);
+ void print_ipv6_info(yajl_gen json_gen, char *buffer, const char *format_up, const char *format_down);
+ void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format);
+ void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, const char *format_down, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity);
+-void print_time(yajl_gen json_gen, char *buffer, const char *format, const char *tz, time_t t);
++void print_time(yajl_gen json_gen, char *buffer, const char *format, bool wcolor, int wstart, int wend, const char *workdays, const char *tz, time_t t);
+ void print_ddate(yajl_gen json_gen, char *buffer, const char *format, time_t t);
+ const char *get_ip_addr();
+ void print_wireless_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
+diff --git a/man/i3status.man b/man/i3status.man
+index 0fccb7e..764ab19 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -276,16 +276,30 @@ Outputs the current time in the local timezone.
+ To use a different timezone, you can set the TZ environment variable,
+ or use the +tztime+ module.
+ See +strftime(3)+ for details on the format string.
++Workdays colors can be turn on, resulting into showing date in green for
++inside wirking hours, and red for outside working hours. Workdays can be
++specified with numbers from 0 to 7, 0 and 7 being Sunday, 1 Monday,...
+ 
+ *Example order*: +time+
+ 
+ *Example format*: +%Y-%m-%d %H:%M:%S+
+ 
++*Example workday_color*: +false+
++
++*Example work_start*: +7+
++
++*Example work_end*: +17+
++
++*Example workdays*: +"1,2,3,4,5"+
++
+ === TzTime
+ 
+ Outputs the current time in the given timezone.
+ If no timezone is given, local time will be used.
+ See +strftime(3)+ for details on the format string.
++Workdays colors can be turn on, resulting into showing date in green for
++inside wirking hours, and red for outside working hours. Workdays can be
++specified with numbers from 0 to 7, 0 and 7 being Sunday, 1 Monday,...
+ The system's timezone database is usually installed in +/usr/share/zoneinfo+.
+ Files below that path make for valid timezone strings, e.g. for
+ +/usr/share/zoneinfo/Europe/Berlin+ you can set timezone to +Europe/Berlin+
+@@ -295,8 +309,16 @@ in the +tztime+ module.
+ 
+ *Example format*: +%Y-%m-%d %H:%M:%S %Z+
+ 
++*Example workday_color*: +false+
++
++*Example work_start*: +7+
++
++*Example work_end*: +17+
++
+ *Example timezone*: +Europe/Berlin+
+ 
++*Example workdays*: +"1,2,3,4,5"+
++
+ === DDate
+ 
+ Outputs the current discordian date in user-specified format. See +ddate(1)+ for
+diff --git a/src/print_time.c b/src/print_time.c
+index d19d08b..10356c0 100644
+--- a/src/print_time.c
++++ b/src/print_time.c
+@@ -33,14 +33,32 @@ void set_timezone(const char *tz) {
+         }
+ }
+ 
+-void print_time(yajl_gen json_gen, char *buffer, const char *format, const char *tz, time_t t) {
++void print_time(yajl_gen json_gen, char *buffer, const char *format, bool wcolor, int wstart, int wend, const char *wdays, const char *tz, time_t t) {
+         char *outwalk = buffer;
++        char *dayday;
+         struct tm tm;
++        char tt[24];
++        char dd[10];
+ 
+         /* Convert time and format output. */
+         set_timezone(tz);
+         localtime_r(&t, &tm);
+         outwalk += strftime(outwalk, 4095, format, &tm);
+         *outwalk = '\0';
++
++        /* Colors for working hours */
++        if (wcolor) {
++          strftime(tt, 24, "%H", &tm);
++          strftime(dd, 10, "%w", &tm);
++          dayday = strstr(wdays, dd);
++          int hours = atoi(tt);
++          if (hours >= wstart && hours <= wend && dayday != NULL) {
++            START_COLOR("color_good");
++          } else {
++            START_COLOR("color_bad");
++          }
++        }
++
++        END_COLOR;
+         OUTPUT_FULL_TEXT(buffer);
+ }
+-- 
+1.8.1.5
+

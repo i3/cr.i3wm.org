@@ -1,0 +1,43 @@
+From 402e51f19b85339ccb8ec12c19fa80b652ae949e Mon Sep 17 00:00:00 2001
+From: Trung Ngo <ndtrung4419@…>
+Date: Sun, 10 Nov 2013 16:10:17 +0700
+Subject: [PATCH] Update userguide on multiple criteria
+
+Change wording, add an example for multiple criteria and move
+the sentence explaining the Firefox example into the code listing
+block.
+---
+ docs/userguide | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/docs/userguide b/docs/userguide
+index a0862e6..db256cc 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -1285,16 +1285,20 @@ bindsym $mod+x move container to workspace 3; workspace 3
+ [[command_criteria]]
+ 
+ Furthermore, you can change the scope of a command - that is, which containers
+-should be affected by that command, by using various criteria. These are
+-prefixed in square brackets to every command. If you want to kill all windows
+-which have the class Firefox, use:
++should be affected by that command, by using various criteria. The criteria
++are specified before any command in a pair of square brackets and are separated
++by space.
+ 
+ *Example*:
+ ------------------------------------
++# if you want to kill all windows which have the class Firefox, use:
+ bindsym $mod+x [class="Firefox"] kill
+ 
+ # same thing, but case-insensitive
+ bindsym $mod+x [class="(?i)firefox"] kill
++
++# kill only the About dialog from Firefox
++bindsym $mod+x [class="Firefox" window_role="About"] kill
+ ------------------------------------
+ 
+ The criteria which are currently implemented are:
+-- 
+1.8.4.2
+

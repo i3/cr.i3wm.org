@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 79,
+    "Comment": "I’d prefer a non-inverted conditional here, i.e. if (hide_seconds).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 82,
+    "Comment": "indentation looks wrong",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 82,
+    "Comment": "Please fix this also elsewhere in your patch if necessary.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 16,
+    "Comment": "please also add “fixes: #1134” to the git long description of your patch.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

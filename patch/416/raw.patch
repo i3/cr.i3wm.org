@@ -1,0 +1,27 @@
+From 133ae9a64389fc8e251ca8610b84e9fa1ce0754e Mon Sep 17 00:00:00 2001
+From: Kevin Pulo <kev@…>
+Date: Mon, 10 Feb 2014 15:52:42 +1100
+Subject: [PATCH] If setcap fails during install, try again with sudo.
+
+This lets "make install PREFIX=$HOME" work, going to root only for the setcap
+command, without adversely affecting "sudo make install".
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index bef469a..381c805 100644
+--- a/Makefile
++++ b/Makefile
+@@ -96,7 +96,7 @@ install:
+ 	install -m 755 -d $(DESTDIR)$(PREFIX)/share/man/man1
+ 	install -m 755 i3status $(DESTDIR)$(PREFIX)/bin/i3status
+ 	# Allow network configuration for getting the link speed
+-	(which setcap && setcap cap_net_admin=ep $(DESTDIR)$(PREFIX)/bin/i3status) || true
++	( which setcap && ( setcap cap_net_admin=ep $(DESTDIR)$(PREFIX)/bin/i3status || sudo setcap cap_net_admin=ep $(DESTDIR)$(PREFIX)/bin/i3status ) ) || true
+ 	install -m 644 i3status.conf $(DESTDIR)$(SYSCONFDIR)/i3status.conf
+ 	install -m 644 man/i3status.1 $(DESTDIR)$(PREFIX)/share/man/man1
+ 
+-- 
+1.8.1.2
+

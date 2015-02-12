@@ -1,0 +1,30 @@
+From c156888c1173bf7a3115323184bf4b54ab108bb5 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 6 Jun 2014 22:11:44 -0400
+Subject: [PATCH] Don't ELOG ipc EOF
+
+Receiving EOF from a client is not an error, but rather a standard way a
+client may disconnect from the IPC. This should rather be logged from
+a consumer of the libi3 ipc_recv_message() function as a normal client
+disconnect event.
+
+fixes #1252
+---
+ libi3/ipc_recv_message.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/libi3/ipc_recv_message.c b/libi3/ipc_recv_message.c
+index 8d36700..cb4edd6 100644
+--- a/libi3/ipc_recv_message.c
++++ b/libi3/ipc_recv_message.c
+@@ -41,7 +41,6 @@ int ipc_recv_message(int sockfd, uint32_t *message_type,
+         if (n == -1)
+             return -1;
+         if (n == 0) {
+-            ELOG("IPC: received EOF instead of reply\n");
+             return -2;
+         }
+ 
+-- 
+2.0.0
+

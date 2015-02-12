@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 118,
+    "Comment": "Not sure what the best way to test the absence of an event would be. And there does not seem to be an explicit function to fail a test. This would express my intent here better.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  },
+  {
+    "Author": "Marco Hunsicker",
+    "Line": 17,
+    "Comment": "There is currently no IPC notification when a workspace becomes empty. This exposes a slight glitch with my app title use case as the title of the window that was last visible is still being displayed after it has been closed.",
+    "EmailHash": "46e0576f0e437f73c0d5784a14e2cacb"
+  }
+]

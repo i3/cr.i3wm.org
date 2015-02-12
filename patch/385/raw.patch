@@ -1,0 +1,26 @@
+From aed1eaf1edd03e06dc47d3a87e1be18871733983 Mon Sep 17 00:00:00 2001
+From: Wieland Hoffmann <themineo@…>
+Date: Wed, 22 Jan 2014 22:46:37 +0100
+Subject: [PATCH] docs/userguide: change 'reseted' to 'reset'
+
+It's an irregular verb.
+---
+ docs/userguide | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/docs/userguide b/docs/userguide
+index 666b962..acf8192 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -900,7 +900,7 @@ workspace_auto_back_and_forth yes
+ 
+ If an application on another workspace sets an urgency hint, switching to this
+ workspace may lead to immediate focus of the application, which also means the
+-window decoration color would be immediately reseted to +client.focused+. This
++window decoration color would be immediately reset to +client.focused+. This
+ may make it unnecessarily hard to tell which window originally raised the
+ event.
+ 
+-- 
+1.8.5.3
+

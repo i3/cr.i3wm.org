@@ -1,0 +1,29 @@
+From 550a46e735ccbd083a0b6be16d910c9b99d55bd5 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 15 Oct 2013 03:36:12 -0400
+Subject: [PATCH] Testcases: remove "latest" if it is a symbolic link
+
+Test for the existence of the symlink to "latest" with the -l flag,
+which tests if the target is a symbolic link. Testing with the -e flag
+will fail in case the link points to a file that does not exist, which
+will occur if the test result directories are deleted by hand.
+---
+ testcases/complete-run.pl | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/testcases/complete-run.pl b/testcases/complete-run.pl
+index c6e7436..7ca8901 100755
+--- a/testcases/complete-run.pl
++++ b/testcases/complete-run.pl
+@@ -108,7 +108,7 @@ $outdir .= POSIX::strftime("%Y-%m-%d-%H-%M-%S-", localtime());
+ $outdir .= `git describe --tags`;
+ chomp($outdir);
+ mkdir($outdir) or die "Could not create $outdir";
+-unlink("latest") if -e "latest";
++unlink("latest") if -l "latest";
+ symlink("$outdir", "latest") or die "Could not symlink latest to $outdir";
+ 
+ 
+-- 
+1.8.4
+

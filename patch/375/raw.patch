@@ -1,0 +1,35 @@
+From 2db54ca67197e03683b01a8926b75e5294ed9556 Mon Sep 17 00:00:00 2001
+From: Leo Gaspard <ekleog@…>
+Date: Sun, 12 Jan 2014 02:35:43 +0100
+Subject: [PATCH] Log DPI change only if noticeable in logged output
+
+As "%f" specifier shows only 6 digits, log DPI change only if change is greater
+than 1e-6.
+---
+ libi3/font.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/libi3/font.c b/libi3/font.c
+index e1e5b82..41e5bf6 100644
+--- a/libi3/font.c
++++ b/libi3/font.c
+@@ -6,6 +6,7 @@
+  *
+  */
+ #include <assert.h>
++#include <math.h>
+ #include <stdint.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -41,7 +42,7 @@ static PangoLayout *create_layout_with_dpi(cairo_t *cr) {
+     context = pango_cairo_create_context(cr);
+     const double dpi = (double)root_screen->height_in_pixels * 25.4 /
+                        (double)root_screen->height_in_millimeters;
+-    if (logged_dpi != dpi) {
++    if (fabs(logged_dpi - dpi) > 1e-6) {
+         logged_dpi = dpi;
+         LOG("X11 root window dictates %f DPI\n", dpi);
+     } else {
+-- 
+1.8.5.2
+

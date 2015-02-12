@@ -1,0 +1,50 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 53,
+    "Comment": "This change seems unrelated :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 25,
+    "Comment": "What’s the rationale for this change?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 64,
+    "Comment": "It actually seems like the entire i3status.conf is your personal one and should not be contained in this patch.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 25,
+    "Comment": "Basically I wanted to have different icons for the battery states. Right now I am displaying a power plug when charging and a bolt when discharging. Removing the text alltogether.",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 53,
+    "Comment": "Yes totally",
+    "EmailHash": ""
+  },
+  {
+    "Author": "anonymous",
+    "Line": 64,
+    "Comment": "Yes sorry, my bad. There are somu unrelevant changes. Should I revert them?",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Cyril Andreatta",
+    "Line": 25,
+    "Comment": "Do you need more info?\nShould I create a new patch without the unnecessary changes to i3status.conf?",
+    "EmailHash": "656fbe6ab9fa0ef6cd778ec6af08c89b"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 25,
+    "Comment": "Yes, and also update the manpage.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

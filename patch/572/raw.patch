@@ -1,0 +1,25 @@
+From c4202612475ed21c31acfaa64c87c8552a32d219 Mon Sep 17 00:00:00 2001
+From: Holger Langenau <holger.langenau@…>
+Date: Wed, 11 Jun 2014 12:28:53 +0200
+Subject: [PATCH] Bugfix: Typo in i3.xsession.desktop TryExec rule.
+
+Typo in executable for TryExec prevents LightDM from starting i3.
+---
+ i3.xsession.desktop | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/i3.xsession.desktop b/i3.xsession.desktop
+index d370352..d1e3dc2 100644
+--- a/i3.xsession.desktop
++++ b/i3.xsession.desktop
+@@ -2,6 +2,6 @@
+ Name=i3
+ Comment=improved dynamic tiling window manager
+ Exec=i3
+-TryExec=13
++TryExec=i3
+ Type=Application
+ X-LightDM-DesktopName=i3
+-- 
+2.0.0
+

@@ -1,0 +1,120 @@
+From da7eb990e2dd9e99a85a431ed82f93d6f71c9b5e Mon Sep 17 00:00:00 2001
+From: Francesco Mazzoli <f@…>
+Date: Sat, 22 Dec 2012 17:24:27 +0100
+Subject: [PATCH 1/2] wrap when moving things to outputs with direction
+
+---
+ include/randr.h |    6 ++++++
+ src/commands.c  |   34 +++++++++++++---------------------
+ src/randr.c     |   21 ++++++++++++++++-----
+ 3 files changed, 35 insertions(+), 26 deletions(-)
+
+diff --git a/include/randr.h b/include/randr.h
+index b5c0214..93bf1a0 100644
+--- a/include/randr.h
++++ b/include/randr.h
+@@ -103,4 +103,10 @@ Output *get_output_most(direction_t direction, Output *current);
+  */
+ Output *get_output_next(direction_t direction, Output *current, output_close_far_t close_far);
+ 
++/**
++ * Like get_output_next with close_far == CLOSEST_OUTPUT, but wraps.
++ *
++ */
++Output *get_output_next_wrap(direction_t direction, Output *current);
++
+ #endif
+diff --git a/src/commands.c b/src/commands.c
+index 2ca8387..39304a3 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -55,23 +55,15 @@ static bool definitelyGreaterThan(float a, float b, float epsilon) {
+ static Output *get_output_from_string(Output *current_output, const char *output_str) {
+     Output *output;
+ 
+-    if (strcasecmp(output_str, "left") == 0) {
+-        output = get_output_next(D_LEFT, current_output, CLOSEST_OUTPUT);
+-        if (!output)
+-            output = get_output_most(D_RIGHT, current_output);
+-    } else if (strcasecmp(output_str, "right") == 0) {
+-        output = get_output_next(D_RIGHT, current_output, CLOSEST_OUTPUT);
+-        if (!output)
+-            output = get_output_most(D_LEFT, current_output);
+-    } else if (strcasecmp(output_str, "up") == 0) {
+-        output = get_output_next(D_UP, current_output, CLOSEST_OUTPUT);
+-        if (!output)
+-            output = get_output_most(D_DOWN, current_output);
+-    } else if (strcasecmp(output_str, "down") == 0) {
+-        output = get_output_next(D_DOWN, current_output, CLOSEST_OUTPUT);
+-        if (!output)
+-            output = get_output_most(D_UP, current_output);
+-    } else output = get_output_by_name(output_str);
++    if (strcasecmp(output_str, "left") == 0)
++        output = get_output_next_wrap(D_LEFT, current_output);
++    else if (strcasecmp(output_str, "right") == 0)
++        output = get_output_next_wrap(D_RIGHT, current_output);
++    else if (strcasecmp(output_str, "up") == 0)
++        output = get_output_next_wrap(D_UP, current_output);
++    else if (strcasecmp(output_str, "down") == 0)
++        output = get_output_next_wrap(D_DOWN, current_output);
++    else output = get_output_by_name(output_str);
+ 
+     return output;
+ }
+@@ -1052,13 +1044,13 @@ void cmd_move_con_to_output(I3_CMD, char *name) {
+ 
+     // TODO: clean this up with commands.spec as soon as we switched away from the lex/yacc command parser
+     if (strcasecmp(name, "up") == 0)
+-        output = get_output_next(D_UP, current_output, CLOSEST_OUTPUT);
++        output = get_output_next_wrap(D_UP, current_output);
+     else if (strcasecmp(name, "down") == 0)
+-        output = get_output_next(D_DOWN, current_output, CLOSEST_OUTPUT);
++        output = get_output_next_wrap(D_DOWN, current_output);
+     else if (strcasecmp(name, "left") == 0)
+-        output = get_output_next(D_LEFT, current_output, CLOSEST_OUTPUT);
++        output = get_output_next_wrap(D_LEFT, current_output);
+     else if (strcasecmp(name, "right") == 0)
+-        output = get_output_next(D_RIGHT, current_output, CLOSEST_OUTPUT);
++        output = get_output_next_wrap(D_RIGHT, current_output);
+     else
+         output = get_output_by_name(name);
+ 
+diff --git a/src/randr.c b/src/randr.c
+index 267d6e4..e2f899d 100644
+--- a/src/randr.c
++++ b/src/randr.c
+@@ -93,15 +93,26 @@ Output *get_output_containing(int x, int y) {
+ }
+ 
+ /*
+- * Gets the output which is the last one in the given direction, for example
+- * the output on the most bottom when direction == D_DOWN, the output most
+- * right when direction == D_RIGHT and so on.
++ * Like get_output_next with close_far == CLOSEST_OUTPUT, but wraps.
+  *
+  * This function always returns a output.
+  *
+  */
+-Output *get_output_most(direction_t direction, Output *current) {
+-    Output *best = get_output_next(direction, current, FARTHEST_OUTPUT);
++Output *get_output_next_wrap(direction_t direction, Output *current) {
++    Output *best = get_output_next(direction, current, CLOSEST_OUTPUT);
++    /* If no output can be found, wrap */
++    if (!best) {
++        direction_t opposite;
++        if (direction == D_RIGHT)
++            opposite = D_LEFT;
++        else if (direction == D_LEFT)
++            opposite = D_RIGHT;
++        else if (direction == D_DOWN)
++            opposite = D_UP;
++        else
++            opposite = D_DOWN;
++        best = get_output_next(opposite, current, FARTHEST_OUTPUT);
++    }
+     if (!best)
+         best = current;
+     DLOG("current = %s, best = %s\n", current->name, best->name);
+-- 
+1.7.10.4
+

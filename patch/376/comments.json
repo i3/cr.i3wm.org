@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 20,
+    "Comment": "I think this line also needs an update, given that it only talks about vertical borders.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 13,
+    "Comment": "Note that renaming a section will break links to that specific part of the userguide. I couldn’t figure out within a couple of minutes if there is a way in asciidoc to add an HTML anchor so that the link stays working. Bonus points if you figure it out :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 13,
+    "Comment": "This seems to do the trick: \n\n[[_hiding_vertical_borders]]\n== Hiding edge borders\n\nShould I make a new change request, or is there some way I can update this patch? ",
+    "EmailHash": ""
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 13,
+    "Comment": "Just submit a new patch, yeah.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

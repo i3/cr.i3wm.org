@@ -1,0 +1,79 @@
+From b5ab7019cfc1df2b73e698ded508bd17a7e8406c Mon Sep 17 00:00:00 2001
+From: Philippe Virouleau <philippe.virouleau@…>
+Date: Thu, 24 Oct 2013 17:02:33 +0200
+Subject: [PATCH] Authentication in multiple processes
+
+Add the possibility to fork multiple times when submitting passwords.
+Fix #1090.
+---
+ i3lock.c |   16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/i3lock.c b/i3lock.c
+index 2d8a580..2f0ecfc 100644
+--- a/i3lock.c
++++ b/i3lock.c
+@@ -45,6 +45,8 @@ static pam_handle_t *pam_handle;
+ int input_position = 0;
+ /* Holds the password you enter (in UTF-8). */
+ static char password[512];
++static int forked = 0;
++static int max_forked = 4;
+ static bool beep = false;
+ bool debug_mode = false;
+ static bool dpms = false;
+@@ -187,10 +189,14 @@ static void clear_pam_wrong(EV_P_ ev_timer *w, int revents) {
+     clear_pam_wrong_timeout = NULL;
+ }
+ 
+-static void clear_input(void) {
++static void reset_input(void) {
+     input_position = 0;
+     clear_password_memory();
+     password[input_position] = '\0';
++}
++
++static void clear_input(void) {
++    reset_input();
+ 
+     /* Hide the unlock indicator after a bit if the password buffer is
+      * empty. */
+@@ -205,7 +211,6 @@ static void auth_failed(void) {
+         fprintf(stderr, "Authentication failure\n");
+ 
+     pam_state = STATE_PAM_WRONG;
+-    clear_input();
+     redraw_screen();
+ 
+     /* Clear this state after 2 seconds (unless the user enters another
+@@ -228,6 +233,7 @@ static void auth_failed(void) {
+ }
+ 
+ static void child_cb(EV_P_ ev_child *child_watcher, int revents) {
++    forked--;
+     if (child_watcher->rstatus != 0) {
+         DEBUG("Authentication successfull\n");
+         clear_password_memory();
+@@ -241,7 +247,9 @@ static void child_cb(EV_P_ ev_child *child_watcher, int revents) {
+ }
+ 
+ static void input_done(void) {
+-    if (pam_state == STATE_PAM_VERIFY) {
++    DEBUG("Forked : %i\n", forked);
++    /*If there is too many fork then force the user to hit enter again*/
++    if (forked >= max_forked) {
+         return;
+     }
+ 
+@@ -259,6 +267,8 @@ static void input_done(void) {
+     if (cpid == 0) {
+         exit(pam_authenticate(pam_handle, 0) == PAM_SUCCESS);
+     } else if (cpid > 0) {
++        forked++;
++        reset_input();
+         struct ev_child *child_watcher = calloc(sizeof(struct ev_io), 1);
+         ev_child_init(child_watcher, child_cb, cpid, 0);
+         ev_child_set(child_watcher, cpid, 0);
+-- 
+1.7.10.4
+

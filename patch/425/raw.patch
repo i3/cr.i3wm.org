@@ -1,0 +1,165 @@
+From b2b5b0af63f6dc1b0b24bee4d443964f38c8f043 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Fri, 14 Feb 2014 18:38:01 -0500
+Subject: [PATCH] Move grab_all_keys to bindings.[ch]
+
+Also add checks for binding input_type to filter bindings that are not
+keyboard bindings.
+---
+ include/bindings.h |  6 ++++++
+ include/config.h   |  6 ------
+ src/bindings.c     | 48 ++++++++++++++++++++++++++++++++++++++++++++++++
+ src/config.c       | 43 -------------------------------------------
+ 4 files changed, 54 insertions(+), 49 deletions(-)
+
+diff --git a/include/bindings.h b/include/bindings.h
+index 49711a9..3e7f34b 100644
+--- a/include/bindings.h
++++ b/include/bindings.h
+@@ -23,3 +23,9 @@ const char *DEFAULT_BINDING_MODE;
+  */
+ Binding *configure_binding(const char *bindtype, const char *modifiers, const char *input_code,
+         const char *release, const char *command, const char *mode);
++
++/**
++ * Grab the bound keys (tell X to send us keypress events for those keycodes)
++ *
++ */
++void grab_all_keys(xcb_connection_t *conn, bool bind_mode_switch);
+diff --git a/include/config.h b/include/config.h
+index b625999..65eecd8 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -322,12 +322,6 @@ void translate_keysyms(void);
+ void ungrab_all_keys(xcb_connection_t *conn);
+ 
+ /**
+- * Grab the bound keys (tell X to send us keypress events for those keycodes)
+- *
+- */
+-void grab_all_keys(xcb_connection_t *conn, bool bind_mode_switch);
+-
+-/**
+  * Switches the key bindings to the given mode, if the mode exists
+  *
+  */
+diff --git a/src/bindings.c b/src/bindings.c
+index 511e899..c88a677 100644
+--- a/src/bindings.c
++++ b/src/bindings.c
+@@ -69,3 +69,51 @@ Binding *configure_binding(const char *bindtype, const char *modifiers, const ch
+ 
+     return new_binding;
+ }
++
++static void grab_keycode_for_binding(xcb_connection_t *conn, Binding *bind, uint32_t keycode) {
++    if (bind->input_type != B_KEYBOARD)
++        return;
++
++    DLOG("Grabbing %d with modifiers %d (with mod_mask_lock %d)\n", keycode, bind->mods, bind->mods | XCB_MOD_MASK_LOCK);
++    /* Grab the key in all combinations */
++    #define GRAB_KEY(modifier) \
++        do { \
++            xcb_grab_key(conn, 0, root, modifier, keycode, \
++                         XCB_GRAB_MODE_SYNC, XCB_GRAB_MODE_ASYNC); \
++        } while (0)
++    int mods = bind->mods;
++    if ((bind->mods & BIND_MODE_SWITCH) != 0) {
++        mods &= ~BIND_MODE_SWITCH;
++        if (mods == 0)
++            mods = XCB_MOD_MASK_ANY;
++    }
++    GRAB_KEY(mods);
++    GRAB_KEY(mods | xcb_numlock_mask);
++    GRAB_KEY(mods | XCB_MOD_MASK_LOCK);
++    GRAB_KEY(mods | xcb_numlock_mask | XCB_MOD_MASK_LOCK);
++}
++
++
++/*
++ * Grab the bound keys (tell X to send us keypress events for those keycodes)
++ *
++ */
++void grab_all_keys(xcb_connection_t *conn, bool bind_mode_switch) {
++    Binding *bind;
++    TAILQ_FOREACH(bind, bindings, bindings) {
++        if (bind->input_type != B_KEYBOARD ||
++                (bind_mode_switch && (bind->mods & BIND_MODE_SWITCH) == 0) ||
++                (!bind_mode_switch && (bind->mods & BIND_MODE_SWITCH) != 0))
++            continue;
++
++        /* The easy case: the user specified a keycode directly. */
++        if (bind->keycode > 0) {
++            grab_keycode_for_binding(conn, bind, bind->keycode);
++            continue;
++        }
++
++        xcb_keycode_t *walk = bind->translated_to;
++        for (uint32_t i = 0; i < bind->number_keycodes; i++)
++            grab_keycode_for_binding(conn, bind, *walk++);
++    }
++}
+diff --git a/src/config.c b/src/config.c
+index 4ce45ad..e8596c7 100644
+--- a/src/config.c
++++ b/src/config.c
+@@ -30,26 +30,6 @@ void ungrab_all_keys(xcb_connection_t *conn) {
+     xcb_ungrab_key(conn, XCB_GRAB_ANY, root, XCB_BUTTON_MASK_ANY);
+ }
+ 
+-static void grab_keycode_for_binding(xcb_connection_t *conn, Binding *bind, uint32_t keycode) {
+-    DLOG("Grabbing %d with modifiers %d (with mod_mask_lock %d)\n", keycode, bind->mods, bind->mods | XCB_MOD_MASK_LOCK);
+-    /* Grab the key in all combinations */
+-    #define GRAB_KEY(modifier) \
+-        do { \
+-            xcb_grab_key(conn, 0, root, modifier, keycode, \
+-                         XCB_GRAB_MODE_SYNC, XCB_GRAB_MODE_ASYNC); \
+-        } while (0)
+-    int mods = bind->mods;
+-    if ((bind->mods & BIND_MODE_SWITCH) != 0) {
+-        mods &= ~BIND_MODE_SWITCH;
+-        if (mods == 0)
+-            mods = XCB_MOD_MASK_ANY;
+-    }
+-    GRAB_KEY(mods);
+-    GRAB_KEY(mods | xcb_numlock_mask);
+-    GRAB_KEY(mods | XCB_MOD_MASK_LOCK);
+-    GRAB_KEY(mods | xcb_numlock_mask | XCB_MOD_MASK_LOCK);
+-}
+-
+ /*
+  * Returns a pointer to the Binding with the specified modifiers and keycode
+  * or NULL if no such binding exists.
+@@ -158,29 +138,6 @@ void translate_keysyms(void) {
+ }
+ 
+ /*
+- * Grab the bound keys (tell X to send us keypress events for those keycodes)
+- *
+- */
+-void grab_all_keys(xcb_connection_t *conn, bool bind_mode_switch) {
+-    Binding *bind;
+-    TAILQ_FOREACH(bind, bindings, bindings) {
+-        if ((bind_mode_switch && (bind->mods & BIND_MODE_SWITCH) == 0) ||
+-            (!bind_mode_switch && (bind->mods & BIND_MODE_SWITCH) != 0))
+-            continue;
+-
+-        /* The easy case: the user specified a keycode directly. */
+-        if (bind->keycode > 0) {
+-            grab_keycode_for_binding(conn, bind, bind->keycode);
+-            continue;
+-        }
+-
+-        xcb_keycode_t *walk = bind->translated_to;
+-        for (uint32_t i = 0; i < bind->number_keycodes; i++)
+-            grab_keycode_for_binding(conn, bind, *walk++);
+-    }
+-}
+-
+-/*
+  * Switches the key bindings to the given mode, if the mode exists
+  *
+  */
+-- 
+1.8.5.5
+

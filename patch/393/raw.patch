@@ -1,0 +1,258 @@
+From 256921380da536ce92685470976bea3f39fcac83 Mon Sep 17 00:00:00 2001
+From: EscapedNull <escapednull@…>
+Date: Sat, 1 Feb 2014 14:18:35 +0000
+Subject: [PATCH] Added support for i3status to display file contents
+
+---
+ i3status.c         |  16 +++++++
+ include/i3status.h |   1 +
+ man/i3status.man   |  43 ++++++++++++++++++
+ src/print_file.c   | 129 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 189 insertions(+)
+ create mode 100644 src/print_file.c
+
+diff --git a/i3status.c b/i3status.c
+index b359370..8b0e0dc 100644
+--- a/i3status.c
++++ b/i3status.c
+@@ -302,6 +302,15 @@ int main(int argc, char *argv[]) {
+                 CFG_END()
+         };
+ 
++        cfg_opt_t file_opts[] = {
++                CFG_STR("format", "%contents (%mtime_diff)", CFGF_NONE),
++                CFG_INT("line", 1, CFGF_NONE),
++                CFG_INT("skip", 0, CFGF_NONE),
++                CFG_INT("limit", 4096, CFGF_NONE),
++                CFG_STR("mtime_format", "%H:%M:%S", CFGF_NONE),
++                CFG_END()
++        };
++
+         cfg_opt_t opts[] = {
+                 CFG_STR_LIST("order", "{}", CFGF_NONE),
+                 CFG_SEC("general", general_opts, CFGF_NONE),
+@@ -319,6 +328,7 @@ int main(int argc, char *argv[]) {
+                 CFG_SEC("ddate", ddate_opts, CFGF_NONE),
+                 CFG_SEC("load", load_opts, CFGF_NONE),
+                 CFG_SEC("cpu_usage", usage_opts, CFGF_NONE),
++                CFG_SEC("file", file_opts, CFGF_TITLE | CFGF_MULTI),
+                 CFG_CUSTOM_COLOR_OPTS,
+                 CFG_END()
+         };
+@@ -547,6 +557,12 @@ int main(int argc, char *argv[]) {
+                                 print_cpu_usage(json_gen, buffer, cfg_getstr(sec, "format"));
+                                 SEC_CLOSE_MAP;
+                         }
++
++                        CASE_SEC_TITLE("file") {
++                                SEC_OPEN_MAP("file");
++                                print_file(json_gen, buffer, title, cfg_getstr(sec, "format"), cfg_getint(sec, "line"), cfg_getint(sec, "skip"), cfg_getint(sec, "limit"), cfg_getstr(sec, "mtime_format"));
++                                SEC_CLOSE_MAP;
++                        }
+                 }
+                 if (output_format == O_I3BAR) {
+                         yajl_gen_array_close(json_gen);
+diff --git a/include/i3status.h b/include/i3status.h
+index 5ab310b..46342f4 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -158,6 +158,7 @@ void print_cpu_usage(yajl_gen json_gen, char *buffer, const char *format);
+ void print_eth_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
+ void print_load(yajl_gen json_gen, char *buffer, const char *format, const float max_threshold);
+ void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *fmt_muted, const char *device, const char *mixer, int mixer_idx);
++void print_file(yajl_gen json_gen, char *buffer, const char *title, const char *format, const int line, const int skip, const int limit, const char *mtime_format);
+ bool process_runs(const char *path);
+ 
+ /* socket file descriptor for general purposes */
+diff --git a/man/i3status.man b/man/i3status.man
+index c36694a..4ac87c5 100644
+--- a/man/i3status.man
++++ b/man/i3status.man
+@@ -376,6 +376,49 @@ volume master {
+ }
+ -------------------------------------------------------------
+ 
++=== File
++
++Prints a file's contents at the specified line, and/or its modification time.
++
+++format+ specifies how the file should be displayed. It has the following variables:
++
+++%contents+ displays the file's contents according to +line+, +skip+, and +limit+.
++
+++%mtime+ shows the file's modification time according to +mtime_format+. By default,
++"%H:%M:%S" is used.
++
+++%mtime_diff+ expands to the file's age in a coarse, concise, human-readable format.
++For example, "1y" or "28m". Only the largest unit of time is displayed.
++
+++mtime_format+ defines which units of time should be displayed as specified by
++strftime(3).
++
+++line+ specifies which line (delimited by "\r", "\n", or "\r\n") should be displayed.
++Negative values for +line+ will be counted from the bottom. For example, +line = -1+
++behaves similarly to tail(1). If the line does not exist, +%contents+ will be blank.
++Note that many plain text files contain a trailing newline, in which case you should
++subtract one from the desired +line+ when using a negative value.
++
++i3status removes +skip+ bytes from the beginning of the specified line before
++displaying it. Similarly, i3status will not display more than +limit+ bytes
++after +skip+.
++
++*Example order*: +file /var/log/Xorg.0.log+
++
++*Example format*: +(%mtime_diff) %contents+
++*Example format_mtime*: +%a %Y/%m/%d %H:%M:%S+
++
++*Example configuration*:
++-------------------------------------------------------------
++file /var/log/Xorg.0.log {
++	format = "[%mtime] %contents (%mtime_diff ago)"
++	mtime_format = "%a %H:%M:%S"
++	line = -2
++	skip = 10
++	limit = 20
++}
++-------------------------------------------------------------
++
+ == Using i3status with dzen2
+ 
+ After installing dzen2, you can directly use it with i3status. Just ensure that
+diff --git a/src/print_file.c b/src/print_file.c
+new file mode 100644
+index 0000000..e93e484
+--- /dev/null
++++ b/src/print_file.c
+@@ -0,0 +1,129 @@
++#include <stdio.h>
++#include <string.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <time.h>
++#include <yajl/yajl_gen.h>
++#include <yajl/yajl_version.h>
++#include <sys/stat.h>
++#include "i3status.h"
++
++bool file_line(char *buffer, const char *title, const int line, const int skip, const int limit);
++void format(char *buffer, const char *fmt, const char *title, const struct stat *st);
++void format_mtime_diff(char *buffer, const time_t end, const time_t beginning);
++
++/**Prints the contents of a file, up to 4096 bytes, according to the configuration.
++ * @param title - the title of the "file" directive (the path of the file)
++ * @param fmt - the output format string specified by the config file. 
++ * @param line - the line of the file to display. Negative values start at the bottom of the file.*/
++void print_file(yajl_gen json_gen, char *buffer, const char *title, const char *format, const int line, const int skip, const int limit, const char *mtime_format) {
++	char *outwalk = buffer;
++	const char *walk = format;
++	for(; *walk != '\0'; walk++) {
++		if(*walk == '%') {
++			if(BEGINS_WITH(walk+1, "mtime")) {
++				struct stat st;
++				int err = stat(title, &st);
++				if(err) {
++					perror(title);
++					return;
++				} else if(BEGINS_WITH(walk+1, "mtime_diff")) {
++					char buf[1024];
++					format_mtime_diff(buf, time(NULL), st.st_mtime);
++					outwalk += sprintf(outwalk, buf);
++				} else {
++					char mtime_buf[1024]; //holds the nicely formatted output text from format_mtime
++					struct tm *lmtime = localtime(&(st.st_mtime));
++					strftime(mtime_buf, 1024, mtime_format, lmtime);
++					outwalk += sprintf(outwalk, mtime_buf);
++				}
++			} else if(BEGINS_WITH(walk+1, "contents")) {
++				char fbuf[4096];
++				file_line(fbuf, title, line, skip, limit);
++				outwalk += sprintf(outwalk, fbuf);
++			}
++		}
++	}
++        OUTPUT_FULL_TEXT(buffer);
++}
++
++bool file_line(char *buffer, const char *title, const int line, const int skip, const int limit) {
++	char rb[4096]; //read buffer (next 4096 byte block of data)
++	int last_read; //number of bytes returned by the last read(3)
++	int cline = 0; //current line
++	int i = 0; //position in the read buffer
++	int j = 0; //position in the line buffer
++	int k = 0; //bytes read since last new line
++
++	int fd = open(title, O_RDONLY);
++	if(fd == -1) {
++		perror(title);
++		return false;
++	}
++
++	if(line < 0) {
++		/* Seek to the end of the file.
++ 		 * Read backwards, decrementing cline every time we hit a newline.
++ 		 * When cline == line, seek to the newline+1 and let the next code block do the work. */
++		int pos = lseek(fd, 0, SEEK_END);
++		int last_pos = pos;
++		while(cline != line) {
++			pos = lseek(fd, pos > 4096 ? pos-4096 : 0, SEEK_SET);
++			if(last_pos == pos) { //we have hit the beginning of the file
++				cline--;
++				pos = lseek(fd, 0, SEEK_SET);
++				fprintf(stderr, "%s: Hit top of file searching for line %d.", title, line);
++				break;
++			}
++			last_read = read(fd, rb, last_pos-pos);
++			if(last_read < 0) {
++				perror(title);
++				return false;
++			}
++			for(i = last_read; i > 0 && cline != line; i--) {
++				if(rb[i-1] == '\r' && rb[i] == '\n') {
++					cline--;
++					i--; //skip the \n
++				} else if(rb[i] == '\r' || rb[i] == '\n') cline--;
++				if(cline == line) pos = lseek(fd, pos+i+1, SEEK_SET);
++			}
++			last_pos = pos;
++		}
++	}
++
++	do {
++		last_read = read(fd, rb, 4096);
++		if(last_read < 0) {
++			perror(title);
++			return false;
++		}
++		for(i = 0; i < last_read && cline <= line; i++, k++) {
++			if(rb[i] == '\r' && rb[i+1] == '\n') {
++				cline++;
++				i++; //skip the \n
++				k  = j = 0;
++			} else if(rb[i] == '\r' || rb[i] == '\n') {
++				cline++;
++				k = j = 0;
++			} else if(cline == line && k >= skip && j < limit) buffer[j++] = rb[i];
++		}
++	} while(last_read == 4096 && cline <= line);
++	return true;
++}
++
++void format_mtime_diff(char *buffer, const time_t end, const time_t beginning) {
++	time_t diff = difftime(end, beginning);
++	time_t years = diff / (60*60*24*365);
++	time_t months = diff / (60*60*24*30);
++	time_t days = diff / (60*60*24);
++	time_t hours = diff / (60*60);
++	time_t minutes = diff / 60;
++	time_t seconds = diff;
++	if(years >= 1) sprintf(buffer, "%dy", (int) years);
++	else if(months >= 1) sprintf(buffer, "%dmo", (int) months);
++	else if(days >= 1) sprintf(buffer, "%dd", (int) days);
++	else if(hours >= 1) sprintf(buffer, "%dh", (int) hours);
++	else if(minutes >= 1) sprintf(buffer, "%dm", (int) minutes);
++	else if(seconds >= 1) sprintf(buffer, "%ds", (int) seconds);
++
++}
+-- 
+1.8.5.3
+

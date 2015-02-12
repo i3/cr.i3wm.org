@@ -1,0 +1,140 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 19,
+    "Comment": "Woohoo, thanks for tackling this issue! :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 24,
+    "Comment": "Please use 4 spaces for indentation (I realize it’s not consistent in this particular header file, feel free to :retab! it).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 28,
+    "Comment": "In general, X11 coordinates (x/y) are signed, i.e. int16_t, whereas the width and height are unsigned, i.e. uint16_t. See also the xcb_rectangle_t type from \u003cxcb/xproto.h\u003e.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 41,
+    "Comment": "coding style: we place the asterisk before the variable name, i.e. *focus_reply",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 50,
+    "Comment": "Why are you changing this part of the code in this commit? Is this related to the commit’s description or a separate thing? If the latter, please send a separate patch.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 187,
+    "Comment": "Here and below, please use sstrdup (wrapper that does error-checking)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 196,
+    "Comment": "The canonical X11 speak is “geometry”, which gets the -g parameter.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 243,
+    "Comment": "double space",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 247,
+    "Comment": "An info message does not belong to stderr, please just use printf()",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 28,
+    "Comment": "Thinking about it, you probably should just use the xcb_rectangle_t type :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 50,
+    "Comment": "Ok, further below I see that moving this code around makes things easier. Given that restore_input_focus() is now very small, can you get rid of that entire function and just use xcb_set_input_focus directly instead?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 124,
+    "Comment": "Why are you not just using coordinates_t (without a pointer)? That seems much simpler.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 131,
+    "Comment": "This whole block of code can be simplified into coordinates = (coordinates_t){ 50, 50, 500, 0 };",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 140,
+    "Comment": "Please use strcasecmp so that it’s case-insensitive.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 141,
+    "Comment": "Here and below, please use printf() for info messages.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 172,
+    "Comment": "Uh, please debug this closer and find a proper solution instead of using such a workaround! :)",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Bastian",
+    "Line": 124,
+    "Comment": "I always prefer returning pointers to struct instances (habit for performance). For me there is no trade-off in making it simpler or more complicated by using either method. I chose to keep it like that, until you have a heavy demand against it.",
+    "EmailHash": "2bd639a5f8bab8cf925706e9299bfd46"
+  },
+  {
+    "Author": "Bastian",
+    "Line": 140,
+    "Comment": "done",
+    "EmailHash": "2bd639a5f8bab8cf925706e9299bfd46"
+  },
+  {
+    "Author": "Bastian",
+    "Line": 141,
+    "Comment": "done via fprintf(stdout,...) but I will do printf in the next successor",
+    "EmailHash": "2bd639a5f8bab8cf925706e9299bfd46"
+  },
+  {
+    "Author": "Bastian",
+    "Line": 172,
+    "Comment": "Sure, I will follow one of your advices from #231",
+    "EmailHash": "2bd639a5f8bab8cf925706e9299bfd46"
+  },
+  {
+    "Author": "Bastian",
+    "Line": 187,
+    "Comment": "Applied, also for other cases not related to my patch, that's ok?",
+    "EmailHash": "2bd639a5f8bab8cf925706e9299bfd46"
+  },
+  {
+    "Author": "Bastian",
+    "Line": 196,
+    "Comment": "Had this also in mind, Done!",
+    "EmailHash": "2bd639a5f8bab8cf925706e9299bfd46"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 124,
+    "Comment": "Please don’t use pointers unless absolutely necessary, so yes, change this.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

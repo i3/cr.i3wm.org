@@ -1,0 +1,154 @@
+From e6cc302909f12ade90584be3ebba14ac66b41fa2 Mon Sep 17 00:00:00 2001
+From: Arnaud Degroote <degroote@…>
+Date: Sun, 6 Oct 2013 21:18:53 +0000
+Subject: [PATCH 4/4] Add support for cpu temperature on NetBSD (using
+ envsys(4))
+
+---
+ Makefile                    |  5 +++
+ include/i3status.h          |  3 ++
+ src/print_cpu_temperature.c | 90 +++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 98 insertions(+)
+
+diff --git a/Makefile b/Makefile
+index f454fe8..bef469a 100644
+--- a/Makefile
++++ b/Makefile
+@@ -47,6 +47,11 @@ CFLAGS+=-I/usr/pkg/include/
+ LDFLAGS+=-L/usr/pkg/lib/
+ endif
+ 
++ifeq ($(OS), NetBSD)
++LIBS+= -lprop
++endif
++
++
+ V ?= 0
+ ifeq ($(V),0)
+ # Don’t print command lines which are run
+diff --git a/include/i3status.h b/include/i3status.h
+index 5d8d27b..d0361d1 100644
+--- a/include/i3status.h
++++ b/include/i3status.h
+@@ -33,6 +33,9 @@ enum { O_DZEN2, O_XMOBAR, O_I3BAR, O_TERM, O_NONE } output_format;
+ #elif defined(__OpenBSD__)
+ /* Default to acpitz(4) if no path is set. */
+ #define THERMAL_ZONE "acpitz%d"
++#elif defined(__NetBSD__)
++/* Rely on envsys(4). The key of the sensor is generally cpu%d temperature */
++#define THERMAL_ZONE "cpu%d temperature"
+ #endif
+ 
+ #if defined(__FreeBSD_kernel__) && defined(__GLIBC__)
+diff --git a/src/print_cpu_temperature.c b/src/print_cpu_temperature.c
+index aefbcfb..b045ea0 100644
+--- a/src/print_cpu_temperature.c
++++ b/src/print_cpu_temperature.c
+@@ -28,6 +28,15 @@
+ #define MUKTOC(v) ((v - 273150000) / 1000000.0)
+ #endif
+ 
++#if defined(__NetBSD__)
++#include <fcntl.h>
++#include <prop/proplib.h>
++#include <sys/envsys.h>
++
++#define MUKTOC(v) ((v - 273150000) / 1000000.0)
++#endif
++
++
+ static char *thermal_zone;
+ 
+ /*
+@@ -135,7 +144,88 @@ void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const
+                         }
+                 }
+         }
++#elif defined(__NetBSD__)
++        int fd, rval;
++        bool err = false;
++        prop_dictionary_t dict;
++        prop_array_t array;
++        prop_object_iterator_t iter;
++        prop_object_iterator_t iter2;
++        prop_object_t obj, obj2, obj3;
++
++        fd = open("/dev/sysmon", O_RDONLY);
++        if (fd == -1)
++                goto error;
++
++        rval = prop_dictionary_recv_ioctl(fd, ENVSYS_GETDICTIONARY, &dict);
++        if (rval == -1) {
++            err = true;
++            goto error_netbsd1;
++        }
++
++        /* No drivers registered? */
++        if (prop_dictionary_count(dict) == 0) {
++            err = true;
++            goto error_netbsd2;
++        }
++
++        /* print sensors for all devices registered */
++        iter = prop_dictionary_iterator(dict);
++        if (iter == NULL) {
++            err = true;
++            goto error_netbsd2;
++        }
++
++        /* iterate over the dictionary returned by the kernel */
++        while ((obj = prop_object_iterator_next(iter)) != NULL) {
++                array = prop_dictionary_get_keysym(dict, obj);
++                if (prop_object_type(array) != PROP_TYPE_ARRAY) {
++                    err = true;
++                    goto error_netbsd3;
++                }
++                iter2 = prop_array_iterator(array);
++                if (!iter2) {
++                    err = true;
++                    goto error_netbsd3;
++                }
++
++                /* iterate over the array of dictionaries */
++                while ((obj2 = prop_object_iterator_next(iter2)) != NULL) {
++                        obj3 = prop_dictionary_get(obj2, "description");
++                        if (obj3 &&
++                            strcmp(path, prop_string_cstring_nocopy(obj3)) == 0) 
++                                                
++                        {
++                                obj3 = prop_dictionary_get(obj2, "cur-value");
++                                float temp = MUKTOC(prop_number_integer_value(obj3));
++                                if ((int)temp >= max_threshold) {
++                                        START_COLOR("color_bad");
++                                        colorful_output = true;
++                                }
++
++                                outwalk += sprintf(outwalk, "%.2f", temp);
++
++                                if (colorful_output) {
++                                        END_COLOR;
++                                        colorful_output = false;
++                                }
++                                break;
++                        }
++
++                }
++                prop_object_iterator_release(iter2);
++        }
++error_netbsd3:
++        prop_object_iterator_release(iter);
++error_netbsd2:
++	prop_object_release(dict);
++error_netbsd1:
++        close(fd);
++        if (err) goto error;
++
+ #endif
++
++
+                         walk += strlen("degrees");
+                 }
+         }
+-- 
+1.8.4
+

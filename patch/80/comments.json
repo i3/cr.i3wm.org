@@ -1,0 +1,38 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 54,
+    "Comment": "FYI: I intend to do a new stable i3 release soon and will take care of this patch afterwards for the next merge window.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 59,
+    "Comment": "This still says “1” instead of “true”, as does the patch long description.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 80,
+    "Comment": "I’m thinking about narrowing down the whole feature. That is, instead of having the generic name “bidirectional communication”, make it “click events”. I cannot imagine anything else that we’d want to implement in the same fashion. Can you? What do you think?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 175,
+    "Comment": "The if (x != NULL) checks are within the FREE macro, so leave them out please.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 369,
+    "Comment": "Just use “val” here, it correlates with C’s true/false.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "enkore",
+    "Line": 80,
+    "Comment": "I don't think that leaving out the generic framing would make a big difference on the code side of things ; but yes, I can't think of anything else that would use this interface. But I'm not a creative person either ;)",
+    "EmailHash": "74c72d1772fea338830cafcef605fb7c"
+  }
+]

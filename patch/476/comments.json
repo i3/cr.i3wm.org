@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 23,
+    "Comment": "This is for cr.i3wm.org/patch/407\n\nIf you need any more work done on that patch, I can take it over.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 23,
+    "Comment": "Can you please merge that patch and the testcase into the same commit?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 67,
+    "Comment": "Instead of these three lines, I’d prefer something like this:\n\nmy $len = $reply-\u003e{length};\nreturn () if $len == 0;\nreturn unpack(\"L$len\", $reply-\u003e{value});",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 23,
+    "Comment": "It seems to dangerous to me to add such a binding. People may be in the habit of right- or middle-clicking titlebars just to focus them. Especially the “kill” command is a dangerous one to accidentally trigger.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 33,
+    "Comment": "This does not align with our philosophy that floating windows are discouraged.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 18,
+    "Comment": "I understand that you want to have wide exposure for your feature, but I don’t think we should configure any mouse bindings in the default config (see the specific comments below). Feel free to write an announcement post to i3-discuss so that existing users will get to know the feature. New users will read the userguide and see it there.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

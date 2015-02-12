@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 30,
+    "Comment": "Adding this alone fixes the issue. It seems this is the standard way of handling this right now.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 40,
+    "Comment": "I renamed this because I confused it with the variable `$focus` that appears later at first glance. The new name is more descriptive and hints at its role later.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 66,
+    "Comment": "This is incorrect because the most likely way this will fail is when the event is actually received, but we were not satisfied with what it was telling us.\n\n(if you trust it, like I did, you might waste 5-10 minutes messing with the timer code)",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 23,
+    "Comment": "To reproduce:\n\n`./complete-run.pl --parallel=1 t/511-scratchpad-configure-request.t t/514-ipc-workspace-multi-monitor.t`",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 15,
+    "Comment": "Is this a theoreticaly thing or did you actually observe the message in the wild without a visible change?\n\nI am just asking because I have a hard time imagining that this would actually ever happen.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Leo Gaspard",
+    "Line": 15,
+    "Comment": "Sorry, I have no idea why it might be so, but noticed the message spawning huge numbers of times.\n\nFor example, when putting an urxvt tail-ing the i3 log in fullscreen, nothing happens. When exiting fullscreen, the message appears 68 times, all with the same displayed DPI. Same happens when switching workspace. I do absolutely not know why this happens, but so it does. And I do not notice anything changing on the screen.\n\nThe only reason I can find is a really small change, or a FPU error on floating points that makes the value change.\n\nBTW, I first noticed this message when updating to xorg to 1.14 and linux to 3.12, maybe is that part of the reason.\n\nCheers \u0026 HTH,\n\nLeo",
+    "EmailHash": "34daab7f59c1647fabab6619f274dfd9"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 15,
+    "Comment": "But when you saw the message, did you actually run a development version? Because the behavior changed between the 4.7 release and the current development versions.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Leo Gaspard",
+    "Line": 15,
+    "Comment": "Oh, didn't notice behaviour had already changed from 4.7 to devel, sorry. From what I can guess the issue is already fixed in next.\n\nSorry for making you waste your time!",
+    "EmailHash": "34daab7f59c1647fabab6619f274dfd9"
+  }
+]

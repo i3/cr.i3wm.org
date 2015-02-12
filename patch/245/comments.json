@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 25,
+    "Comment": "The problem with a patch like this is that it might break the existing habits of users — it removes functionality that was available before. Granted, the functionality is not very useful (I think), but is it bad enough to forbid it and risk breakage? I don’t think so. You can always reach any workspace by adressing it directly, e.g. “workspace \"1: foo\"”.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "anonymous",
+    "Line": 25,
+    "Comment": "That's up to you, you're the author. But according to me, I would prefer to have this warning (making the highlight on \"x: \" being a number for the workspace btw), rather than having the possibility to reuse a number and break the expected behavior of commands such as \"workspace next_on_output\".\n\nI mean, breaking the next_on_output binding is more annoying than not being able to reuse an existing number (which is weird).",
+    "EmailHash": ""
+  }
+]

@@ -1,0 +1,124 @@
+From 7650873bb345a9d3a59ec6801bb71052fe9ec33d Mon Sep 17 00:00:00 2001
+From: Romuald Brunet <romuald@…>
+Date: Tue, 21 Oct 2014 20:10:15 +0200
+Subject: [PATCH] Add option to center image
+
+Added an optional -x|--center to center the i3lock image on each screen,
+instead of being drawn on the upper left corner.
+---
+ i3lock.1           |  4 ++++
+ i3lock.c           |  9 +++++++--
+ unlock_indicator.c | 27 +++++++++++++++++++++++++--
+ 3 files changed, 36 insertions(+), 4 deletions(-)
+
+diff --git a/i3lock.1 b/i3lock.1
+index 8b07229..819cff9 100644
+--- a/i3lock.1
++++ b/i3lock.1
+@@ -99,6 +99,10 @@ If an image is specified (via \-i) it will display the image tiled all over the
+ (if it is a multi-monitor setup, the image is visible on all screens).
+ 
+ .TP
++.B \-x, \-\-center
++If an image is specified (via \-i) it will display the image centered inside each screen
++
++.TP
+ .BI \-p\  win|default \fR,\ \fB\-\-pointer= win|default
+ If you specify "default",
+ .B i3lock
+diff --git a/i3lock.c b/i3lock.c
+index 71b02ee..39817d7 100644
+--- a/i3lock.c
++++ b/i3lock.c
+@@ -75,6 +75,7 @@ static uint8_t xkb_base_error;
+ 
+ cairo_surface_t *img = NULL;
+ bool tile = false;
++bool center = false;
+ bool ignore_empty_password = false;
+ bool skip_repeated_empty_password = false;
+ 
+@@ -677,6 +678,7 @@ int main(int argc, char *argv[]) {
+         {"help", no_argument, NULL, 'h'},
+         {"no-unlock-indicator", no_argument, NULL, 'u'},
+         {"image", required_argument, NULL, 'i'},
++        {"center-image", no_argument, NULL, 'x'},
+         {"tiling", no_argument, NULL, 't'},
+         {"ignore-empty-password", no_argument, NULL, 'e'},
+         {"inactivity-timeout", required_argument, NULL, 'I'},
+@@ -687,7 +689,7 @@ int main(int argc, char *argv[]) {
+     if ((username = getenv("USER")) == NULL)
+         errx(EXIT_FAILURE, "USER environment variable not set, please set it.\n");
+ 
+-    char *optstring = "hvnbdc:p:ui:teI:f";
++    char *optstring = "hvnbdc:p:ui:teI:fx";
+     while ((o = getopt_long(argc, argv, optstring, longopts, &optind)) != -1) {
+         switch (o) {
+         case 'v':
+@@ -726,6 +728,9 @@ int main(int argc, char *argv[]) {
+         case 'i':
+             image_path = strdup(optarg);
+             break;
++        case 'x':
++            center = true;
++            break;
+         case 't':
+             tile = true;
+             break;
+@@ -750,7 +755,7 @@ int main(int argc, char *argv[]) {
+             break;
+         default:
+             errx(EXIT_FAILURE, "Syntax: i3lock [-v] [-n] [-b] [-d] [-c color] [-u] [-p win|default]"
+-            " [-i image.png] [-t] [-e] [-I] [-f]"
++            " [-i image.png] [-t] [-e] [-I] [-f] [-x]"
+             );
+         }
+     }
+diff --git a/unlock_indicator.c b/unlock_indicator.c
+index e543f96..58cd143 100644
+--- a/unlock_indicator.c
++++ b/unlock_indicator.c
+@@ -49,6 +49,9 @@ extern cairo_surface_t *img;
+ 
+ /* Whether the image should be tiled. */
+ extern bool tile;
++/* Whether the image should be centered. */
++extern bool center;
++
+ /* The background color to use (in hex). */
+ extern char color[7];
+ 
+@@ -112,8 +115,28 @@ xcb_pixmap_t draw_image(uint32_t *resolution) {
+ 
+     if (img) {
+         if (!tile) {
+-            cairo_set_source_surface(xcb_ctx, img, 0, 0);
+-            cairo_paint(xcb_ctx);
++            double x = 0;
++            double y = 0;
++
++            int width = cairo_image_surface_get_width(img);
++            int height = cairo_image_surface_get_height(img);
++
++            if (center && xr_screens > 0) {
++                for (int screen = 0; screen < xr_screens; screen++) {
++                    x = xr_resolutions[screen].x + ((xr_resolutions[screen].width / 2) - (width / 2));
++                    y = xr_resolutions[screen].y + ((xr_resolutions[screen].height / 2) - (height / 2));
++
++                    cairo_set_source_surface(xcb_ctx, img, x, y);
++                    cairo_paint(xcb_ctx);
++                }
++            } else {
++                if (center) {
++                    x = resolution[0] / 2 - width / 2;
++                    y = resolution[1] / 2 - height / 2;
++                }
++                cairo_set_source_surface(xcb_ctx, img, x, y);
++                cairo_paint(xcb_ctx);
++            }
+         } else {
+             /* create a pattern and fill a rectangle as big as the screen */
+             cairo_pattern_t *pattern;
+-- 
+2.1.1
+

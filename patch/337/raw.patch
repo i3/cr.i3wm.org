@@ -1,0 +1,218 @@
+From fe321de441e924fe39a339c9c4cb6ab9d3874b5b Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Tue, 26 Nov 2013 05:46:10 -0500
+Subject: [PATCH] Movement into a branch considers movement direction
+
+Changes the behavior of movement into a branch with respect to the
+position the moving con will be placed within the branch when the
+movement is complete.
+
+The correct position is determined by the direction of movement and the
+position of the focused-inactive container within the branch.
+
+When the movement is down or to the right, the moving con should be
+placed before the focused-inactive container within the branch.
+
+When the movement is up or to the left, the moving con should be placed
+after the focused-inactive container within the branch.
+
+fixes #1060
+---
+ src/move.c                             |   7 +-
+ testcases/t/213-move-branch-position.t | 151 +++++++++++++++++++++++++++++++++
+ 2 files changed, 156 insertions(+), 2 deletions(-)
+ create mode 100644 testcases/t/213-move-branch-position.t
+
+diff --git a/src/move.c b/src/move.c
+index 0b3ab66..bbb1b85 100644
+--- a/src/move.c
++++ b/src/move.c
+@@ -125,7 +125,9 @@ static void move_to_output_directed(Con *con, direction_t direction) {
+  *
+  */
+ void tree_move(int direction) {
++    position_t position;
+     DLOG("Moving in direction %d\n", direction);
++
+     /* 1: get the first parent with the same orientation */
+     Con *con = focused;
+ 
+@@ -173,7 +175,9 @@ void tree_move(int direction) {
+                           TAILQ_PREV(con, nodes_head, nodes) :
+                           TAILQ_NEXT(con, nodes)))) {
+                 if (!con_is_leaf(swap)) {
+-                    insert_con_into(con, con_descend_focused(swap), AFTER);
++                    DLOG("Moving into a branch\n");
++                    position = (direction == D_UP || direction == D_LEFT ? AFTER : BEFORE);
++                    insert_con_into(con, con_descend_focused(swap), position);
+                     goto end;
+                 }
+                 if (direction == D_LEFT || direction == D_UP)
+@@ -215,7 +219,6 @@ void tree_move(int direction) {
+ 
+     DLOG("above = %p\n", above);
+     Con *next;
+-    position_t position;
+     if (direction == D_UP || direction == D_LEFT) {
+         position = BEFORE;
+         next = TAILQ_PREV(above, nodes_head, nodes);
+diff --git a/testcases/t/213-move-branch-position.t b/testcases/t/213-move-branch-position.t
+new file mode 100644
+index 0000000..dd182db
+--- /dev/null
++++ b/testcases/t/213-move-branch-position.t
+@@ -0,0 +1,151 @@
++#!perl
++# vim:ts=4:sw=4:expandtab
++#
++# Please read the following documents before working on tests:
++# • http://build.i3wm.org/docs/testsuite.html
++#   (or docs/testsuite)
++#
++# • http://build.i3wm.org/docs/lib-i3test.html
++#   (alternatively: perldoc ./testcases/lib/i3test.pm)
++#
++# • http://build.i3wm.org/docs/ipc.html
++#   (or docs/ipc)
++#
++# • http://onyxneon.com/books/modern_perl/modern_perl_a4.pdf
++#   (unless you are already familiar with Perl)
++#
++# Test that movement of a con into a branch will place the moving con at the
++# correct position within the branch.
++#
++# The correct position is determined by the direction of movement and the
++# position of the focused-inactive container within the branch.
++#
++# Ticket: #1060
++# Bug still in: 4.6-109-g18cfc36
++
++use i3test;
++
++# Opens tabs on the presently focused branch and adds several additional
++# windows. Shifts focus to somewhere in the middle of the tabs so the most
++# general case can be assumed.
++sub open_tabs {
++    cmd 'layout tabbed';
++    open_window;
++    open_window;
++    open_window;
++    open_window;
++    cmd 'focus left; focus left'
++}
++
++############################################################################
++# When the movement is down or to the right, the moving con should be placed
++# before the focused-inactive container within the branch.
++############################################################################
++
++################
++## Move Right ##
++################
++my $ws = fresh_workspace;
++
++# create the target leaf
++my $leaf = open_window;
++
++# create the tabbed container and find the focused tab
++open_window;
++cmd 'splith';
++open_tabs;
++my $secondary_focus_tab = get_focused($ws);
++
++# focus the target leaf to the left
++cmd 'focus parent; focus left';
++# move the target leaf into the branch
++cmd 'move right';
++
++# the secondary focus tab should be to the right
++cmd 'focus right';
++is($secondary_focus_tab, get_focused($ws), 'moving con *right* into tabs placed it *before* the focused-inactive tab container');
++
++$leaf->unmap;
++wait_for_unmap;
++
++###############
++## Move down ##
++###############
++$ws = fresh_workspace;
++cmd 'layout splitv';
++
++# create the target leaf
++$leaf = open_window;
++
++# create the tabbed container and find the focused tab
++open_window;
++cmd 'splitv';
++open_tabs;
++$secondary_focus_tab = get_focused($ws);
++
++# focus the target leaf above
++cmd 'focus parent; focus up';
++
++# move the target leaf into the branch
++cmd 'move down';
++
++# the secondary focus tab should be to the right
++cmd 'focus right';
++is($secondary_focus_tab, get_focused($ws), 'moving con *down* into tabs placed it *before* the focused-inactive tab container');
++
++$leaf->unmap;
++wait_for_unmap;
++
++############################################################################
++# When the movement is up or to the left, the moving con should be placed
++# after the focused-inactive container within the branch.
++############################################################################
++
++###############
++## Move Left ##
++###############
++$ws = fresh_workspace;
++
++# create the tabbed container and find the focused tab
++open_window;
++open_tabs;
++$secondary_focus_tab = get_focused($ws);
++
++# create the target leaf to the right
++cmd 'focus parent';
++$leaf = open_window;
++
++# move the target leaf into the branch
++cmd 'move left';
++
++# the secondary focus tab should be to the left
++cmd 'focus left';
++is($secondary_focus_tab, get_focused($ws), 'moving con *left* into tabs placed it *after* the focused-inactive tab container');
++
++$leaf->unmap;
++wait_for_unmap;
++
++#############
++## Move Up ##
++#############
++$ws = fresh_workspace;
++cmd 'layout splitv';
++
++# create the tabbed container and find the focused tab
++open_window;
++cmd 'splitv';
++open_tabs;
++$secondary_focus_tab = get_focused($ws);
++
++# create the target leaf below
++cmd 'focus parent';
++$leaf = open_window;
++
++# move the target leaf into the branch
++cmd 'move up';
++
++# the secondary focus tab should be to the left
++cmd 'focus left';
++is($secondary_focus_tab, get_focused($ws), 'moving con *up* into tabs placed it *after* the focused-inactive tab container');
++
++done_testing;
+-- 
+1.8.4.2
+

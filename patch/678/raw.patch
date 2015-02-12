@@ -1,0 +1,125 @@
+From abfd21eaa84d9ca5135bdbd816fd3eb896c1317d Mon Sep 17 00:00:00 2001
+From: cornerman <cornerman@…>
+Date: Sun, 16 Nov 2014 22:05:51 +0100
+Subject: [PATCH] add deco_rect property to con in ipc response
+
+---
+ docs/ipc                     |  4 ++++
+ src/ipc.c                    |  1 +
+ src/load_layout.c            | 15 ++++++++++++---
+ testcases/t/116-nestedcons.t |  1 +
+ 4 files changed, 18 insertions(+), 3 deletions(-)
+
+diff --git a/docs/ipc b/docs/ipc
+index 3cf6636..55177f2 100644
+--- a/docs/ipc
++++ b/docs/ipc
+@@ -316,6 +316,10 @@ window_rect (map)::
+ 	So, when using the +default+ layout, you will have a 2 pixel border on
+ 	each side, making the window_rect +{ "x": 2, "y": 0, "width": 632,
+ 	"height": 366 }+ (for example).
++deco_rect (map)::
++	The coordinates of the *window decoration* inside its container. These
++	coordinates are relative to the container and do not include the actual
++	client window.
+ geometry (map)::
+ 	The original geometry the window specified when i3 mapped it. Used when
+ 	switching a window to floating mode, for example.
+diff --git a/src/ipc.c b/src/ipc.c
+index 4c39a04..c70ec32 100644
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -347,6 +347,7 @@ void dump_node(yajl_gen gen, struct Con *con, bool inplace_restart) {
+     y(integer, con->current_border_width);
+ 
+     dump_rect(gen, "rect", con->rect);
++    dump_rect(gen, "deco_rect", con->deco_rect);
+     dump_rect(gen, "window_rect", con->window_rect);
+     dump_rect(gen, "geometry", con->geometry);
+ 
+diff --git a/src/load_layout.c b/src/load_layout.c
+index 5fe7c84..19163e7 100644
+--- a/src/load_layout.c
++++ b/src/load_layout.c
+@@ -24,6 +24,7 @@ static Con *json_node;
+ static Con *to_focus;
+ static bool parsing_swallows;
+ static bool parsing_rect;
++static bool parsing_deco_rect;
+ static bool parsing_window_rect;
+ static bool parsing_geometry;
+ static bool parsing_focus;
+@@ -47,7 +48,7 @@ static int json_start_map(void *ctx) {
+         match_init(current_swallow);
+         TAILQ_INSERT_TAIL(&(json_node->swallow_head), current_swallow, matches);
+     } else {
+-        if (!parsing_rect && !parsing_window_rect && !parsing_geometry) {
++        if (!parsing_rect && !parsing_deco_rect && !parsing_window_rect && !parsing_geometry) {
+             if (last_key && strcasecmp(last_key, "floating_nodes") == 0) {
+                 DLOG("New floating_node\n");
+                 Con *ws = con_get_workspace(json_node);
+@@ -68,7 +69,7 @@ static int json_start_map(void *ctx) {
+ 
+ static int json_end_map(void *ctx) {
+     LOG("end of map\n");
+-    if (!parsing_swallows && !parsing_rect && !parsing_window_rect && !parsing_geometry) {
++    if (!parsing_swallows && !parsing_rect && !parsing_deco_rect && !parsing_window_rect && !parsing_geometry) {
+         /* Set a few default values to simplify manually crafted layout files. */
+         if (json_node->layout == L_DEFAULT) {
+             DLOG("Setting layout = L_SPLITH\n");
+@@ -123,6 +124,8 @@ static int json_end_map(void *ctx) {
+     }
+     if (parsing_rect)
+         parsing_rect = false;
++    if (parsing_deco_rect)
++        parsing_deco_rect = false;
+     if (parsing_window_rect)
+         parsing_window_rect = false;
+     if (parsing_geometry)
+@@ -175,6 +178,9 @@ static int json_key(void *ctx, const unsigned char *val, size_t len) {
+     if (strcasecmp(last_key, "rect") == 0)
+         parsing_rect = true;
+ 
++    if (strcasecmp(last_key, "deco_rect") == 0)
++        parsing_deco_rect = true;
++
+     if (strcasecmp(last_key, "window_rect") == 0)
+         parsing_window_rect = true;
+ 
+@@ -363,10 +369,12 @@ static int json_int(void *ctx, long long val) {
+         TAILQ_INSERT_TAIL(&focus_mappings, focus_mapping, focus_mappings);
+     }
+ 
+-    if (parsing_rect || parsing_window_rect || parsing_geometry) {
++    if (parsing_rect || parsing_deco_rect || parsing_window_rect || parsing_geometry) {
+         Rect *r;
+         if (parsing_rect)
+             r = &(json_node->rect);
++        else if (parsing_deco_rect)
++            r = &(json_node->deco_rect);
+         else if (parsing_window_rect)
+             r = &(json_node->window_rect);
+         else
+@@ -532,6 +540,7 @@ void tree_append_json(Con *con, const char *filename, char **errormsg) {
+     to_focus = NULL;
+     parsing_swallows = false;
+     parsing_rect = false;
++    parsing_deco_rect = false;
+     parsing_window_rect = false;
+     parsing_geometry = false;
+     parsing_focus = false;
+diff --git a/testcases/t/116-nestedcons.t b/testcases/t/116-nestedcons.t
+index eb2fe14..d9ff1c3 100644
+--- a/testcases/t/116-nestedcons.t
++++ b/testcases/t/116-nestedcons.t
+@@ -54,6 +54,7 @@ my $expected = {
+     type => 'root',
+     id => $ignore,
+     rect => $ignore,
++    deco_rect => $ignore,
+     window_rect => $ignore,
+     geometry => $ignore,
+     swallows => $ignore,
+-- 
+2.1.0
+

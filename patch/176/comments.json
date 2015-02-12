@@ -1,0 +1,8 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 91,
+    "Comment": "This patch works fine now, but you are introducing a new command without updating docs/userguide (I missed that before). Please fix this and I’ll merge your new version :).",
+    "EmailHash": "5bdf83a1a4bc863ebee0dea0ddd26ead"
+  }
+]

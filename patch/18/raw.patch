@@ -1,0 +1,32 @@
+From e68f0ea06a58bec1251e7bb2a55c7cd2ccdaec62 Mon Sep 17 00:00:00 2001
+From: Adrien Schildknecht <adrien+dev@…>
+Date: Fri, 25 Jan 2013 15:42:16 +0100
+Subject: [PATCH] remove the urgency indicator when a window is closed
+
+If a window with the urgency hint was unmap, the workspace still showed
+the indicator
+---
+ src/handlers.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/src/handlers.c b/src/handlers.c
+index 4f2d870..1ccf087 100644
+--- a/src/handlers.c
++++ b/src/handlers.c
+@@ -466,6 +466,13 @@ static void handle_unmap_notify_event(xcb_unmap_notify_event_t *event) {
+         goto ignore_end;
+     }
+ 
++    /* remove the urgency hint of the worskpace (if set) */
++    if (con->urgent) {
++        con->urgent = false;
++        con_update_parents_urgency(con);
++        workspace_update_urgent_flag(con_get_workspace(con));
++    }
++
+     tree_close(con, DONT_KILL_WINDOW, false, false);
+     tree_render();
+     x_push_changes(croot);
+-- 
+1.8.1.1
+

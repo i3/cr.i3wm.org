@@ -1,0 +1,248 @@
+From fd65fde02da231a8811d4b526c6fdcec36fde703 Mon Sep 17 00:00:00 2001
+From: Alexander Berntsen <alexander@…>
+Date: Wed, 5 Jun 2013 15:04:57 +0200
+Subject: [PATCH 2/4] Implement shmlog command
+
+Add shmlog command that takes <size>|toggle|on|off. Separate logbuffer
+management into open_logbuffer() and close_logbuffer(). Make
+t/187-commands-parser.t expect 'shmlog'. Add update_shmlog_atom() to
+update the SHMLOG_PATH.
+---
+ include/commands.h                |  6 ++++++
+ include/log.h                     | 12 ++++++++++++
+ include/x.h                       |  6 ++++++
+ parser-specs/commands.spec        |  7 +++++++
+ src/commands.c                    | 26 ++++++++++++++++++++++++++
+ src/log.c                         | 33 +++++++++++++++++++++++++--------
+ src/x.c                           | 13 +++++++++++--
+ testcases/t/187-commands-parser.t |  2 +-
+ 8 files changed, 94 insertions(+), 11 deletions(-)
+
+diff --git a/include/commands.h b/include/commands.h
+index 87f0ac1..a09e746 100644
+--- a/include/commands.h
++++ b/include/commands.h
+@@ -271,4 +271,10 @@ void cmd_rename_workspace(I3_CMD, char *old_name, char *new_name);
+  */
+ void cmd_bar(I3_CMD, char *bar_type, char *bar_value, char *bar_id);
+ 
++/*
++ * Implementation of 'shmlog <size>|toggle|on|off'
++ *
++ */
++void cmd_shmlog(I3_CMD, char *argument);
++
+ #endif
+diff --git a/include/log.h b/include/log.h
+index 6fabeca..c9d1d0c 100644
+--- a/include/log.h
++++ b/include/log.h
+@@ -39,6 +39,18 @@ extern int shmlog_size;
+ void init_logging(void);
+ 
+ /**
++ * Opens the logbuffer.
++ *
++ */
++void open_logbuffer(void);
++
++/**
++ * Closes the logbuffer.
++ *
++ */
++void close_logbuffer(void);
++
++/**
+  * Set debug logging.
+  *
+  */
+diff --git a/include/x.h b/include/x.h
+index b712c78..b6bb4a5 100644
+--- a/include/x.h
++++ b/include/x.h
+@@ -109,6 +109,12 @@ void x_raise_con(Con *con, bool above_all);
+ void x_set_name(Con *con, const char *name);
+ 
+ /**
++ * Set up the SHMLOG_PATH atom.
++ *
++ */
++void update_shmlog_atom(void);
++
++/**
+  * Sets up i3 specific atoms (I3_SOCKET_PATH and I3_CONFIG_PATH)
+  *
+  */
+diff --git a/parser-specs/commands.spec b/parser-specs/commands.spec
+index 12737a2..4407158 100644
+--- a/parser-specs/commands.spec
++++ b/parser-specs/commands.spec
+@@ -19,6 +19,7 @@ state INITIAL:
+   'exit' -> call cmd_exit()
+   'restart' -> call cmd_restart()
+   'reload' -> call cmd_reload()
++  'shmlog' -> SHMLOG
+   'border' -> BORDER
+   'layout' -> LAYOUT
+   'append_layout' -> APPEND_LAYOUT
+@@ -62,6 +63,12 @@ state EXEC:
+   command = string
+       -> call cmd_exec($nosn, $command)
+ 
++# shmlog <size>|toggle|on|off
++state SHMLOG:
++  # argument may be a number
++  argument = string
++    -> call cmd_shmlog($argument)
++
+ # border normal|none|1pixel|toggle|1pixel
+ state BORDER:
+   border_style = 'normal', 'pixel'
+diff --git a/src/commands.c b/src/commands.c
+index f361f86..7ff7035 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -13,6 +13,7 @@
+ #include <stdarg.h>
+ 
+ #include "all.h"
++#include "shmlog.h"
+ 
+ // Macros to make the YAJL API a bit easier to use.
+ #define y(x, ...) yajl_gen_ ## x (cmd_output->json_gen, ##__VA_ARGS__)
+@@ -2027,3 +2028,28 @@ void cmd_bar(I3_CMD, char *bar_type, char *bar_value, char *bar_id) {
+ 
+     update_barconfig();
+ }
++
++/*
++ * Implementation of 'shmlog <size>|toggle|on|off'
++ *
++ */
++void cmd_shmlog(I3_CMD, char *argument) {
++    if (!strcmp(argument,"toggle"))
++        /* Toggle if default is not 0. If it is 0, set to default. */
++        shmlog_size = shmlog_size ? -shmlog_size : default_shmlog_size;
++    else if (!strcmp(argument, "off"))
++        shmlog_size = 0;
++    else if (!strcmp(argument, "on"))
++        shmlog_size = default_shmlog_size;
++    else {
++        /* Restart logging with the new size in the argument. */
++        shmlog_size = 0;
++        LOG("Restarting shm logging...\n");
++        init_logging();
++        shmlog_size = atoi(argument);
++    }
++    LOG("%s shm logging\n", shmlog_size > 0 ? "Enabling" : "Disabling");
++    init_logging();
++    update_shmlog_atom();
++    ysuccess(true);
++}
+diff --git a/src/log.c b/src/log.c
+index 0269fb2..5530f66 100644
+--- a/src/log.c
++++ b/src/log.c
+@@ -89,10 +89,21 @@ void init_logging(void) {
+             }
+         }
+     }
++    /* Start SHM logging if shmlog_size is > 0. shmlog_size is SHMLOG_SIZE by
++     * default on development versions, and 0 on release versions. If it is
++     * not > 0, the user has turned it off, so let's close the logbuffer. */
++     if (shmlog_size > 0 && logbuffer == NULL)
++        open_logbuffer();
++     else if (shmlog_size <= 0 && logbuffer)
++        close_logbuffer();
++     atexit(purge_zerobyte_logfile);
++}
+ 
+-    /* If this is a debug build (not a release version), we will enable SHM
+-     * logging by default, unless the user turned it off explicitly. */
+-    if (logbuffer == NULL && shmlog_size > 0) {
++/*
++ * Opens the logbuffer.
++ *
++ */
++void open_logbuffer(void) {
+         /* Reserve 1% of the RAM for the logfile, but at max 25 MiB.
+          * For 512 MiB of RAM this will lead to a 5 MiB log buffer.
+          * At the moment (2011-12-10), no testcase leads to an i3 log
+@@ -127,10 +138,8 @@ void init_logging(void) {
+ 
+         logbuffer = mmap(NULL, logbuffer_size, PROT_READ | PROT_WRITE, MAP_SHARED, logbuffer_shm, 0);
+         if (logbuffer == MAP_FAILED) {
+-            close(logbuffer_shm);
+-            shm_unlink(shmlogname);
++            close_logbuffer();
+             fprintf(stderr, "Could not mmap SHM segment for the i3 log: %s\n", strerror(errno));
+-            logbuffer = NULL;
+             return;
+         }
+ 
+@@ -148,8 +157,16 @@ void init_logging(void) {
+         logwalk = logbuffer + sizeof(i3_shmlog_header);
+         loglastwrap = logbuffer + logbuffer_size;
+         store_log_markers();
+-    }
+-    atexit(purge_zerobyte_logfile);
++}
++
++/*
++ * Closes the logbuffer.
++ *
++ */
++void close_logbuffer(void) {
++    close(logbuffer_shm);
++    shm_unlink(shmlogname);
++    logbuffer = NULL;
+ }
+ 
+ /*
+diff --git a/src/x.c b/src/x.c
+index f865594..27d92ac 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -1064,6 +1064,16 @@ void x_set_name(Con *con, const char *name) {
+ }
+ 
+ /*
++ * Set up the I3_SHMLOG_PATH atom.
++ *
++ */
++void update_shmlog_atom() {
++    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root,
++            A_I3_SHMLOG_PATH, A_UTF8_STRING, 8,
++            strlen(shmlogname), shmlogname);
++}
++
++/*
+  * Sets up i3 specific atoms (I3_SOCKET_PATH and I3_CONFIG_PATH)
+  *
+  */
+@@ -1075,8 +1085,7 @@ void x_set_i3_atoms(void) {
+     xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A_I3_PID, XCB_ATOM_CARDINAL, 32, 1, &pid);
+     xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A_I3_CONFIG_PATH, A_UTF8_STRING, 8,
+                         strlen(current_configpath), current_configpath);
+-    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, root, A_I3_SHMLOG_PATH, A_UTF8_STRING, 8,
+-                        strlen(shmlogname), shmlogname);
++    update_shmlog_atom();
+ }
+ 
+ /*
+diff --git a/testcases/t/187-commands-parser.t b/testcases/t/187-commands-parser.t
+index 65c7212..a6bb1c5 100644
+--- a/testcases/t/187-commands-parser.t
++++ b/testcases/t/187-commands-parser.t
+@@ -144,7 +144,7 @@ is(parser_calls("\nworkspace test"),
+ ################################################################################
+ 
+ is(parser_calls('unknown_literal'),
+-   "ERROR: Expected one of these tokens: <end>, '[', 'move', 'exec', 'exit', 'restart', 'reload', 'border', 'layout', 'append_layout', 'workspace', 'focus', 'kill', 'open', 'fullscreen', 'split', 'floating', 'mark', 'resize', 'rename', 'nop', 'scratchpad', 'mode', 'bar'\n" .
++   "ERROR: Expected one of these tokens: <end>, '[', 'move', 'exec', 'exit', 'restart', 'reload', 'shmlog', 'border', 'layout', 'append_layout', 'workspace', 'focus', 'kill', 'open', 'fullscreen', 'split', 'floating', 'mark', 'resize', 'rename', 'nop', 'scratchpad', 'mode', 'bar'\n" .
+    "ERROR: Your command: unknown_literal\n" .
+    "ERROR:               ^^^^^^^^^^^^^^^",
+    'error for unknown literal ok');
+-- 
+1.8.1.5
+

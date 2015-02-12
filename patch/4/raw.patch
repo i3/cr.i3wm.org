@@ -1,0 +1,33 @@
+From 7acb6940b19f7496d840964b33b9126999cd2ba0 Mon Sep 17 00:00:00 2001
+From: Francesco Mazzoli <f@…>
+Date: Sat, 22 Dec 2012 17:25:00 +0100
+Subject: [PATCH 2/2] update tests to test the output wrapping
+
+---
+ testcases/t/504-move-workspace-to-output.t |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/testcases/t/504-move-workspace-to-output.t b/testcases/t/504-move-workspace-to-output.t
+index c087f9f..018707e 100644
+--- a/testcases/t/504-move-workspace-to-output.t
++++ b/testcases/t/504-move-workspace-to-output.t
+@@ -114,6 +114,16 @@ cmd 'move workspace to output left';
+ ($x0, $x1) = workspaces_per_screen();
+ ok('5' ~~ @$x0, 'workspace 5 back on fake-0');
+ 
++# Verify that wrapping works
++cmd 'move workspace to output left';
++($x0, $x1) = workspaces_per_screen();
++ok('5' ~~ @$x1, 'workspace 5 on fake-1');
++
++# Put workspace 5 where it should
++cmd 'move workspace to output left';
++($x0, $x1) = workspaces_per_screen();
++ok('5' ~~ @$x0, 'workspace 5 on fake-0 again');
++
+ ################################################################################
+ # Verify that coordinates of floating windows are fixed correctly when moving a
+ # workspace to a different output.
+-- 
+1.7.10.4
+

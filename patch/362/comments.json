@@ -1,0 +1,26 @@
+[
+  {
+    "Author": "Tony Crisci",
+    "Line": 32,
+    "Comment": "Forgot \"fixes #832\" once again...",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 117,
+    "Comment": "In .c files, we use /*, in .h files we use /**. This is for doxygen, a tool to generate “documentation” (well, a function reference in our case) from C code.\n\nAlso, the comments don’t match — please fix this. The .h file and the .c file should have exactly the same comment.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 32,
+    "Comment": "Please add it in the next version of this patch :).\n\nAlso, can you shed some light on why/how this fixes the eclipse problems precisely, please?",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Tony Crisci",
+    "Line": 32,
+    "Comment": "This does not fix the Eclipse problem (#882 is just for respecting Motif hints), but it does remove the i3 decorations from the Eclipse overlay windows.\n\nOriginally I thought I could fix the Eclipse problem with Motif hints, but it seems like that is not possible. That will require implementing either an alpha channel for transparency or double buffering.",
+    "EmailHash": "126a315c4f487b618b6b9809086bb4ad"
+  }
+]

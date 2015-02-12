@@ -1,0 +1,118 @@
+From c5379f8c7e8330fb8772d3318cd0d964d740fcf7 Mon Sep 17 00:00:00 2001
+From: oblique <psyberbits@…>
+Date: Fri, 8 Feb 2013 18:41:41 +0200
+Subject: [PATCH 2/2] Obey WM_SIZE_HINTS's resize increments in floating
+
+---
+ src/commands.c   |  4 ++--
+ src/floating.c   | 46 ++++++++++++++++++++++++++++++++++++++--------
+ src/scratchpad.c |  1 +
+ 3 files changed, 41 insertions(+), 10 deletions(-)
+
+diff --git a/src/commands.c b/src/commands.c
+index 0fbf26c..6179e75 100644
+--- a/src/commands.c
++++ b/src/commands.c
+@@ -588,9 +588,9 @@ static void cmd_resize_floating(I3_CMD, char *way, char *direction, Con *floatin
+         return;
+ 
+     if (strcmp(direction, "up") == 0) {
+-        floating_con->rect.y -= px;
++        floating_con->rect.y -= (floating_con->rect.height - old_rect.height);
+     } else if (strcmp(direction, "left") == 0) {
+-        floating_con->rect.x -= px;
++        floating_con->rect.x -= (floating_con->rect.width - old_rect.width);
+     }
+ }
+ 
+diff --git a/src/floating.c b/src/floating.c
+index b37f167..66fdeac 100644
+--- a/src/floating.c
++++ b/src/floating.c
+@@ -39,6 +39,35 @@ void floating_check_size(Con *floating_con) {
+     const int floating_sane_min_height = 50;
+     const int floating_sane_min_width = 75;
+     Rect floating_sane_max_dimensions;
++    Con *focused_con = con_descend_focused(floating_con);
++
++    /* obey size increments */
++    if (focused_con->height_increment || focused_con->width_increment) {
++        Rect border_rect = con_border_style_rect(focused_con);
++
++        /* We have to do the opposite calculations that render_con() do
++         * to get the exact size we want. */
++        border_rect.width = -border_rect.width;
++        border_rect.width += 2 * focused_con->border_width;
++        border_rect.height = -border_rect.height;
++        border_rect.height += 2 * focused_con->border_width;
++        if (con_border_style(focused_con) == BS_NORMAL)
++            border_rect.height += render_deco_height();
++
++        if (focused_con->height_increment &&
++            floating_con->rect.height >= focused_con->base_height + border_rect.height) {
++            floating_con->rect.height -= focused_con->base_height + border_rect.height;
++            floating_con->rect.height -= floating_con->rect.height % focused_con->height_increment;
++            floating_con->rect.height += focused_con->base_height + border_rect.height;
++        }
++
++        if (focused_con->width_increment &&
++            floating_con->rect.width >= focused_con->base_width + border_rect.width) {
++            floating_con->rect.width -= focused_con->base_width + border_rect.width;
++            floating_con->rect.width -= floating_con->rect.width % focused_con->width_increment;
++            floating_con->rect.width += focused_con->base_width + border_rect.width;
++        }
++    }
+ 
+     /* Unless user requests otherwise (-1), ensure width/height do not exceed
+      * configured maxima or, if unconfigured, limit to combined width of all
+@@ -447,26 +476,27 @@ DRAGGING_CB(resize_window_callback) {
+         dest_height = old_rect->height - (new_y - event->root_y);
+     else dest_height = old_rect->height + (new_y - event->root_y);
+ 
+-    /* Obey minimum window size */
+-    Rect minimum = con_minimum_size(con);
+-    dest_width = max(dest_width, minimum.width);
+-    dest_height = max(dest_height, minimum.height);
+-
+     /* User wants to keep proportions, so we may have to adjust our values */
+     if (params->proportional) {
+         dest_width = max(dest_width, (int) (dest_height * ratio));
+         dest_height = max(dest_height, (int) (dest_width / ratio));
+     }
+ 
++    con->rect = (Rect) { dest_x, dest_y, dest_width, dest_height };
++
++    /* Obey window size */
++    floating_check_size(con);
++
+     /* If not the lower right corner is grabbed, we must also reposition
+      * the client by exactly the amount we resized it */
+     if (corner & BORDER_LEFT)
+-        dest_x = old_rect->x + (old_rect->width - dest_width);
++        dest_x = old_rect->x + (old_rect->width - con->rect.width);
+ 
+     if (corner & BORDER_TOP)
+-        dest_y = old_rect->y + (old_rect->height - dest_height);
++        dest_y = old_rect->y + (old_rect->height - con->rect.height);
+ 
+-    con->rect = (Rect) { dest_x, dest_y, dest_width, dest_height };
++    con->rect.x = dest_x;
++    con->rect.y = dest_y;
+ 
+     /* TODO: don’t re-render the whole tree just because we change
+      * coordinates of a floating window */
+diff --git a/src/scratchpad.c b/src/scratchpad.c
+index 8b96521..bca44e5 100644
+--- a/src/scratchpad.c
++++ b/src/scratchpad.c
+@@ -173,6 +173,7 @@ void scratchpad_show(Con *con) {
+         Con *output = con_get_output(con);
+         con->rect.width = output->rect.width * 0.5;
+         con->rect.height = output->rect.height * 0.75;
++        floating_check_size(con);
+         con->rect.x = output->rect.x +
+                       ((output->rect.width / 2.0) - (con->rect.width / 2.0));
+         con->rect.y = output->rect.y +
+-- 
+1.8.1.1
+

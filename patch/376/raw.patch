@@ -1,0 +1,25 @@
+From 7807d3908eea271ade0964074328693aabea7fb5 Mon Sep 17 00:00:00 2001
+From: Joep van Delft <mekanik@…>
+Date: Sun, 12 Jan 2014 12:28:43 +0100
+Subject: [PATCH] Docs: Change title of hide_edge_borders paragraph
+
+---
+ docs/userguide | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/docs/userguide b/docs/userguide
+index 8758e7c..4de6681 100644
+--- a/docs/userguide
++++ b/docs/userguide
+@@ -509,7 +509,7 @@ new_window pixel 3
+ ---------------------
+ 
+ 
+-=== Hiding vertical borders
++=== Hiding edge borders
+ 
+ You can hide vertical borders adjacent to the screen edges using
+ +hide_edge_borders+. This is useful if you are using scrollbars, or do not want
+-- 
+1.8.5.2
+

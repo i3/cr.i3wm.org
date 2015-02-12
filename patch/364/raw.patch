@@ -1,0 +1,37 @@
+From 1abacf0d6eb17b3057687cb1a8e4bb3936b3e627 Mon Sep 17 00:00:00 2001
+From: Tony Crisci <tony@…>
+Date: Sat, 4 Jan 2014 07:04:56 -0500
+Subject: [PATCH] Disable render-time pointer warps if asked
+
+When `focus_follows_mouse` configuration option is disabled, do not warp
+the pointer when focus changes outputs after rendering.
+
+Rationale: this option is meant to be disabled by users who have a setup
+where the mouse is usually in the way. These users tend to move the
+mouse to a corner or use a utility to hide the pointer when it is not
+active. When this user switches focus between outputs, the mouse is
+placed in the center of the screen.
+
+This is clearly against the spirit of disabling `focus_follows_mouse`.
+Disabling this option now implies disabling "mouse follows focus".
+---
+ src/x.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/x.c b/src/x.c
+index 6fe7df3..366cbe1 100644
+--- a/src/x.c
++++ b/src/x.c
+@@ -1083,7 +1083,8 @@ void x_set_i3_atoms(void) {
+  */
+ void x_set_warp_to(Rect *rect)
+ {
+-    warp_to = rect;
++    if (!config.disable_focus_follows_mouse)
++        warp_to = rect;
+ }
+ 
+ /*
+-- 
+1.8.5.2
+

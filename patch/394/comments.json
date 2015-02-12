@@ -1,0 +1,56 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 69,
+    "Comment": "Please be more verbose than “behaves correctly”. I suggest “is set after starting i3 and updated whenever a workspace change occurs”.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 69,
+    "Comment": "Also please include the git revision until which the bug was still present, see t/215-layout-restore-crash.t for an example.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 22,
+    "Comment": "It seems like your long description is garbled: “[…] set the _NET Without this […]”. Please fix.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 78,
+    "Comment": "I don’t think you need this line, since this test is not a multi-monitor test (i.e. t/5*.t).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 83,
+    "Comment": "$atom_cookie and $atom_reply are unused, please remove.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 95,
+    "Comment": "Please reuse $_NET_CURRENT_DESKTOP here or kill it above — but make it consistent :).",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 109,
+    "Comment": "Here and below, please use “cmd 'workspace 1';” for consistency with the rest of our testcases.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 86,
+    "Comment": "$CARDINAL is unused. Please remove.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 92,
+    "Comment": "I think it’d be more idiomatic to rename this to “current_desktop”, then “return unpack('L', $reply-\u003e{value});” and use “is(current_desktop(), 0, \"Starting on desktop 0\");” below.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]

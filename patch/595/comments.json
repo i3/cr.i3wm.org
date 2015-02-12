@@ -1,0 +1,14 @@
+[
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 102,
+    "Comment": "s/int/size_t/",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  },
+  {
+    "Author": "Michael Stapelberg",
+    "Line": 103,
+    "Comment": "current_position++ for consistency with the other EWMH code please.",
+    "EmailHash": "4765bd9e861fbe7308126c1e2d216912"
+  }
+]
