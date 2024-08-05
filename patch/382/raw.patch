@@ -59,7 +59,7 @@ index 0000000..e54db65
 +/*
 + * vim:ts=4:sw=4:expandtab
 + *
-+ * i3 - an improved dynamic tiling window manager
++ * i3 - an improved tiling window manager
 + * © 2009-2014 Michael Stapelberg and contributors (see also: LICENSE)
 + *
 + * bindings.h: Functions for configuring, finding, and running bindings.
@@ -140,11 +140,11 @@ index b625999..d7ea434 100644
  extern Config config;
 -extern SLIST_HEAD(modes_head, Mode) modes;
  extern TAILQ_HEAD(barconfig_head, Barconfig) barconfigs;
- 
+
  /**
 @@ -70,19 +69,6 @@ struct Variable {
  };
- 
+
  /**
 - * The configuration file can contain multiple sets of bindings. Apart from the
 - * default set (name == "default"), you can specify other sets and change the
@@ -164,7 +164,7 @@ index b625999..d7ea434 100644
   *
 @@ -340,13 +326,6 @@ void switch_mode(const char *new_mode);
   */void update_barconfig();
- 
+
  /**
 - * Returns a pointer to the Binding with the specified modifiers and keycode
 - * or NULL if no such binding exists.
@@ -181,9 +181,9 @@ index e6b792c..a95a647 100644
 --- a/include/config_directives.h
 +++ b/include/config_directives.h
 @@ -11,6 +11,12 @@
- 
+
  #include "config_parser.h"
- 
+
 +/**
 + * A utility function to convert a string of modifiers to the corresponding bit
 + * mask.
@@ -192,7 +192,7 @@ index e6b792c..a95a647 100644
 +
  /** The beginning of the prototype for every cfg_ function. */
  #define I3_CFG Match *current_match, struct ConfigResult *result
- 
+
 diff --git a/src/bindings.c b/src/bindings.c
 new file mode 100644
 index 0000000..e0942ba
@@ -202,7 +202,7 @@ index 0000000..e0942ba
 +/*
 + * vim:ts=4:sw=4:expandtab
 + *
-+ * i3 - an improved dynamic tiling window manager
++ * i3 - an improved tiling window manager
 + * © 2009-2014 Michael Stapelberg and contributors (see also: LICENSE)
 + *
 + * binding.c: Functions for configuring, finding and, running bindings.
@@ -573,7 +573,7 @@ index 7ad3aba..acbdf0b 100644
      DLOG("mode=%s\n", mode);
 -    switch_mode(mode);
 +    switch_binding_mode(mode);
- 
+
      // XXX: default reply for now, make this a better reply
      ysuccess(true);
 diff --git a/src/config.c b/src/config.c
@@ -581,17 +581,17 @@ index 4ce45ad..bcae6d3 100644
 --- a/src/config.c
 +++ b/src/config.c
 @@ -17,7 +17,6 @@
- 
+
  char *current_configpath = NULL;
  Config config;
 -struct modes_head modes;
  struct barconfig_head barconfigs = TAILQ_HEAD_INITIALIZER(barconfigs);
- 
+
  /**
 @@ -30,186 +29,6 @@ void ungrab_all_keys(xcb_connection_t *conn) {
      xcb_ungrab_key(conn, XCB_GRAB_ANY, root, XCB_BUTTON_MASK_ANY);
  }
- 
+
 -static void grab_keycode_for_binding(xcb_connection_t *conn, Binding *bind, uint32_t keycode) {
 -    DLOG("Grabbing %d with modifiers %d (with mod_mask_lock %d)\n", keycode, bind->mods, bind->mods | XCB_MOD_MASK_LOCK);
 -    /* Grab the key in all combinations */
@@ -778,7 +778,7 @@ index 4ce45ad..bcae6d3 100644
 @@ -344,25 +163,6 @@ void load_configuration(xcb_connection_t *conn, const char *override_configpath,
          /* First ungrab the keys */
          ungrab_all_keys(conn);
- 
+
 -        struct Mode *mode;
 -        Binding *bind;
 -        while (!SLIST_EMPTY(&modes)) {
@@ -804,7 +804,7 @@ index 4ce45ad..bcae6d3 100644
 @@ -424,15 +224,7 @@ void load_configuration(xcb_connection_t *conn, const char *override_configpath,
          free_font();
      }
- 
+
 -    SLIST_INIT(&modes);
 -
 -    struct Mode *default_mode = scalloc(sizeof(struct Mode));
@@ -815,19 +815,19 @@ index 4ce45ad..bcae6d3 100644
 -
 -    bindings = default_mode->bindings;
 +    initialize_bindings();
- 
+
  #define REQUIRED_OPTION(name) \
      if (config.name == NULL) \
 @@ -477,8 +269,8 @@ void load_configuration(xcb_connection_t *conn, const char *override_configpath,
      parse_configuration(override_configpath);
- 
+
      if (reload) {
 -        translate_keysyms();
 -        grab_all_keys(conn, false);
 +        translate_binding_keysyms();
 +        grab_bound_keys(conn, false);
      }
- 
+
      if (config.font.type == FONT_TYPE_NONE) {
 diff --git a/src/config_directives.c b/src/config_directives.c
 index 96d29ee..a27a861 100644
@@ -836,7 +836,7 @@ index 96d29ee..a27a861 100644
 @@ -130,7 +130,11 @@ static bool eval_boolstr(const char *str) {
              strcasecmp(str, "active") == 0);
  }
- 
+
 -static uint32_t modifiers_from_str(const char *str) {
 +/*
 + * A utility function to convert a string of modifiers to the corresponding bit
@@ -849,7 +849,7 @@ index 96d29ee..a27a861 100644
 @@ -167,24 +171,8 @@ CFGFUN(font, const char *font) {
  	font_pattern = sstrdup(font);
  }
- 
+
 -// TODO: refactor with mode_binding
  CFGFUN(binding, const char *bindtype, const char *modifiers, const char *key, const char *release, const char *command) {
 -    Binding *new_binding = scalloc(sizeof(Binding));
@@ -870,15 +870,15 @@ index 96d29ee..a27a861 100644
 -    TAILQ_INSERT_TAIL(bindings, new_binding, bindings);
 +    configure_binding(bindtype, modifiers, key, release, command, DEFAULT_BINDING_MODE);
  }
- 
- 
+
+
 @@ -192,39 +180,20 @@ CFGFUN(binding, const char *bindtype, const char *modifiers, const char *key, co
   * Mode handling
   ******************************************************************************/
- 
+
 -static struct bindings_head *current_bindings;
 +static char *current_mode;
- 
+
  CFGFUN(mode_binding, const char *bindtype, const char *modifiers, const char *key, const char *release, const char *command) {
 -    Binding *new_binding = scalloc(sizeof(Binding));
 -    DLOG("bindtype %s, modifiers %s, key %s, release %s\n", bindtype, modifiers, key, release);
@@ -898,7 +898,7 @@ index 96d29ee..a27a861 100644
 -    TAILQ_INSERT_TAIL(current_bindings, new_binding, bindings);
 +    configure_binding(bindtype, modifiers, key, release, command, current_mode);
  }
- 
+
  CFGFUN(enter_mode, const char *modename) {
 -    if (strcasecmp(modename, "default") == 0) {
 -        ELOG("You cannot use the name \"default\" for your mode\n");
@@ -916,7 +916,7 @@ index 96d29ee..a27a861 100644
 +    FREE(current_mode);
 +    current_mode = sstrdup(modename);
  }
- 
+
  CFGFUN(exec, const char *exectype, const char *no_startup_id, const char *command) {
 diff --git a/src/config_parser.c b/src/config_parser.c
 index cb21dae..04e4a4d 100644
@@ -924,7 +924,7 @@ index cb21dae..04e4a4d 100644
 +++ b/src/config_parser.c
 @@ -844,55 +844,6 @@ static char *migrate_config(char *input, off_t size) {
  }
- 
+
  /*
 - * Checks for duplicate key bindings (the same keycode or keysym is configured
 - * more than once). If a duplicate binding is found, a message is printed to
@@ -981,10 +981,10 @@ index cb21dae..04e4a4d 100644
 @@ -1056,7 +1007,7 @@ void parse_file(const char *f) {
      struct ConfigResult *config_output = parse_config(new, context);
      yajl_gen_free(config_output->json_gen);
- 
+
 -    check_for_duplicate_bindings(context);
 +    validate_bindings(context);
- 
+
      if (context->has_errors || context->has_warnings) {
          ELOG("FYI: You are using i3 version " I3_VERSION "\n");
 diff --git a/src/handlers.c b/src/handlers.c
@@ -993,13 +993,13 @@ index 312372a..7bdb544 100644
 +++ b/src/handlers.c
 @@ -259,8 +259,8 @@ static void handle_mapping_notify(xcb_mapping_notify_event_t *event) {
      xcb_numlock_mask = aio_get_mod_mask_for(XCB_NUM_LOCK, keysyms);
- 
+
      ungrab_all_keys(conn);
 -    translate_keysyms();
 -    grab_all_keys(conn, false);
 +    translate_binding_keysyms();
 +    grab_bound_keys(conn, false);
- 
+
      return;
  }
 diff --git a/src/key_press.c b/src/key_press.c
@@ -1008,11 +1008,11 @@ index b8c8cd2..582715f 100644
 +++ b/src/key_press.c
 @@ -84,7 +84,7 @@ void handle_key_press(xcb_key_press_event_t *event) {
      DLOG("(checked mode_switch, state %d)\n", state_filtered);
- 
+
      /* Find the binding */
 -    Binding *bind = get_binding(state_filtered, key_release, event->detail);
 +    Binding *bind = get_keyboard_binding(state_filtered, event->detail, key_release);
- 
+
      /* No match? Then the user has Mode_switch enabled but does not have a
       * specific keybinding. Fall back to the default keybindings (without
 @@ -93,7 +93,7 @@ void handle_key_press(xcb_key_press_event_t *event) {
@@ -1027,7 +1027,7 @@ index b8c8cd2..582715f 100644
 @@ -105,12 +105,7 @@ void handle_key_press(xcb_key_press_event_t *event) {
          }
      }
- 
+
 -    char *command_copy = sstrdup(bind->command);
 -    struct CommandResult *command_output = parse_command(command_copy);
 -    free(command_copy);
@@ -1035,7 +1035,7 @@ index b8c8cd2..582715f 100644
 -    if (command_output->needs_tree_render)
 -        tree_render();
 +    struct CommandResult *command_output = run_binding(bind);
- 
+
      /* We parse the JSON reply to figure out whether there was an error
       * ("success" being false in on of the returned dictionaries). */
 diff --git a/src/main.c b/src/main.c
@@ -1043,13 +1043,13 @@ index 878ea5b..30ba2cf 100644
 --- a/src/main.c
 +++ b/src/main.c
 @@ -206,13 +206,13 @@ static void xkb_got_event(EV_P_ struct ev_io *w, int revents) {
- 
+
          if (ev.state.group == XkbGroup2Index) {
              DLOG("Mode_switch enabled\n");
 -            grab_all_keys(conn, true);
 +            grab_bound_keys(conn, true);
          }
- 
+
          if (ev.state.group == XkbGroup1Index) {
              DLOG("Mode_switch disabled\n");
              ungrab_all_keys(conn);
@@ -1057,9 +1057,9 @@ index 878ea5b..30ba2cf 100644
 +            grab_bound_keys(conn, false);
          }
      }
- 
+
 @@ -227,8 +227,8 @@ static void xkb_got_event(EV_P_ struct ev_io *w, int revents) {
- 
+
      ungrab_all_keys(conn);
      DLOG("Re-grabbing...\n");
 -    translate_keysyms();
@@ -1068,16 +1068,16 @@ index 878ea5b..30ba2cf 100644
 +    grab_bound_keys(conn, (xkb_current_group == XkbGroup2Index));
      DLOG("Done\n");
  }
- 
+
 @@ -663,8 +663,8 @@ int main(int argc, char *argv[]) {
- 
+
      xcb_numlock_mask = aio_get_mod_mask_for(XCB_NUM_LOCK, keysyms);
- 
+
 -    translate_keysyms();
 -    grab_all_keys(conn, false);
 +    translate_binding_keysyms();
 +    grab_bound_keys(conn, false);
- 
+
      bool needs_tree_init = true;
      if (layout_path) {
 diff --git a/src/workspace.c b/src/workspace.c
@@ -1087,7 +1087,7 @@ index 670322a..6ccf33b 100644
 @@ -116,7 +116,9 @@ Con *create_workspace_on_output(Output *output, Con *content) {
      Con *ws = con_new(NULL, NULL);
      ws->type = CT_WORKSPACE;
- 
+
 -    /* try the configured workspace bindings first to find a free name */
 +    /* try the configured workspace bindings first to find a free name.
 +    *  TODO: try to figure out a way to do this without directly using the list
@@ -1095,6 +1095,5 @@ index 670322a..6ccf33b 100644
      Binding *bind;
      TAILQ_FOREACH(bind, bindings, bindings) {
          DLOG("binding with command %s\n", bind->command);
--- 
+--
 1.8.5.3
-

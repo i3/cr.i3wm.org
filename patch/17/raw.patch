@@ -45,7 +45,7 @@ index 0000000..113c6dd
 +[Desktop Entry]
 +Type=Application
 +Name=i3-gnome
-+Comment=improved dynamic tiling window manager with GNOME integration
++Comment=improved tiling window manager with GNOME integration
 +Exec=i3-gnome
 +X-GNOME-WMName=i3-gnome
 +X-GNOME-Autostart-Phase=WindowManager
@@ -59,7 +59,7 @@ index 0000000..ac298bc
 @@ -0,0 +1,5 @@
 +[Desktop Entry]
 +Name=i3-gnome
-+Comment=improved dynamic tiling window manager with GNOME integration
++Comment=improved tiling window manager with GNOME integration
 +Exec=gnome-session-i3
 +Type=Application
 diff --git a/i3.applications.desktop b/i3.applications.desktop
@@ -113,8 +113,7 @@ index 38099fb..4706822 100644
 +	$(INSTALL) -m 0644 i3-gnome.applications.desktop $(DESTDIR)$(PREFIX)/share/applications/i3-gnome.desktop
 +	$(INSTALL) -m 0644 i3.gnome.session $(DESTDIR)$(PREFIX)/share/gnome-session/sessions/i3-gnome.session
  	$(INSTALL) -m 0644 include/i3/ipc.h $(DESTDIR)$(PREFIX)/include/i3/
- 
- clean-i3:
--- 
-1.7.10.4
 
+ clean-i3:
+--
+1.7.10.4

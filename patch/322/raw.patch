@@ -23,7 +23,7 @@ index cec7ab8..56d9056 100644
 @@ -960,24 +960,19 @@ char *init_xcb_early() {
      /* Now we get the atoms and save them in a nice data structure */
      get_atoms();
- 
+
 -    xcb_get_property_cookie_t path_cookie;
 -    path_cookie = xcb_get_property_unchecked(xcb_connection,
 -                                   0,
@@ -48,15 +48,15 @@ index cec7ab8..56d9056 100644
          }
 +        free(path_reply);
      }
- 
- 
+
+
 diff --git a/include/libi3.h b/include/libi3.h
 index b0141f1..c6cad6b 100644
 --- a/include/libi3.h
 +++ b/include/libi3.h
 @@ -91,6 +91,19 @@ void errorlog(char *fmt, ...);
  char *root_atom_contents(const char *atomname);
- 
+
  /**
 + * Wrapper around xcb_get_property_unchecked where the length of the property
 + * does not need to be specified. The wrapper specifies a size sufficient to
@@ -83,13 +83,13 @@ index cabaaf2..b0877db 100644
  #include <stdbool.h>
  #include <limits.h>
 +#include <stdlib.h>
- 
+
  #include <xcb/xcb.h>
  #include <xcb/xcb_aux.h>
 @@ -43,24 +44,27 @@ char *root_atom_contents(const char *atomname) {
      if (atom_reply == NULL)
          return NULL;
- 
+
 -    xcb_get_property_cookie_t prop_cookie;
 -    xcb_get_property_reply_t *prop_reply;
 -    prop_cookie = xcb_get_property_unchecked(conn, false, root, atom_reply->atom,
@@ -120,7 +120,7 @@ index cabaaf2..b0877db 100644
 +    free(prop_reply);
      return content;
  }
- 
+
 diff --git a/libi3/xcb_get_property_unchecked_no_length.c b/libi3/xcb_get_property_unchecked_no_length.c
 new file mode 100644
 index 0000000..c585a4d
@@ -130,7 +130,7 @@ index 0000000..c585a4d
 +/*
 + * vim:ts=4:sw=4:expandtab
 + *
-+ * i3 - an improved dynamic tiling window manager
++ * i3 - an improved tiling window manager
 + * © 2009-2011 Michael Stapelberg and contributors (see also: LICENSE)
 + *
 + */
@@ -180,6 +180,5 @@ index 0000000..c585a4d
 +    }
 +    return prop_reply;
 +}
--- 
+--
 1.8.4.2
-

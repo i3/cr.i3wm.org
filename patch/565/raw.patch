@@ -17,11 +17,10 @@ index ff698f2..d370352 100644
 +++ b/i3.xsession.desktop
 @@ -2,4 +2,6 @@
  Name=i3
- Comment=improved dynamic tiling window manager
+ Comment=improved tiling window manager
  Exec=i3
 +TryExec=13
  Type=Application
 +X-LightDM-DesktopName=i3
--- 
+--
 1.8.3.2
-

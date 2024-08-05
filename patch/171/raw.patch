@@ -16,9 +16,8 @@ index 31d6704..e40689d 100644
  Type=Application
  Name=i3
 +NoDisplay=true
- Comment=improved dynamic tiling window manager
+ Comment=improved tiling window manager
  Exec=i3
  X-GNOME-WMName=i3
--- 
+--
 1.7.1
-
